@@ -386,6 +386,10 @@ static void process_mod_param_profile(struct mlx4_profile *profile)
 						 1 << (MLX4_LOG_NUM_MTT - log_mtts_per_seg),
 						 min(1UL << (MLX4_MAX_LOG_NUM_MTT - log_mtts_per_seg),
 						     (si.totalram << 1) >> log_mtts_per_seg)));
+		/* set the actual value, so it will be reflected to the user
+		 * using the sysfs
+		 */
+		mod_param_profile.num_mtt = ilog2(profile->num_mtt);
 	}
 }
 
@@ -5236,6 +5240,43 @@ static int __init mlx4_verify_params(void)
 		pr_warn("mlx4_core: Can't support IPoIB flow steering along with optimized steering\n");
 		return -1;
 	}
+
+	if (mod_param_profile.num_qp < 18 || mod_param_profile.num_qp > 23) {
+		pr_warn("mlx4_core: bad log_num_qp: %d\n",
+			mod_param_profile.num_qp);
+		return -1;
+	}
+
+	if (mod_param_profile.num_srq < 10) {
+		pr_warn("mlx4_core: too low log_num_srq: %d\n",
+			mod_param_profile.num_srq);
+		return -1;
+	}
+
+	if (mod_param_profile.num_cq < 10) {
+		pr_warn("mlx4_core: too low log_num_cq: %d\n",
+			mod_param_profile.num_cq);
+		return -1;
+	}
+
+	if (mod_param_profile.num_mpt < 10) {
+		pr_warn("mlx4_core: too low log_num_mpt: %d\n",
+			mod_param_profile.num_mpt);
+		return -1;
+	}
+
+	if (mod_param_profile.num_mtt && mod_param_profile.num_mtt < 15) {
+		pr_warn("mlx4_core: too low log_num_mtt: %d\n",
+			mod_param_profile.num_mtt);
+		return -1;
+	}
+
+	if (mod_param_profile.num_mtt > MLX4_MAX_LOG_NUM_MTT) {
+		pr_warn("mlx4_core: too high log_num_mtt: %d\n",
+			mod_param_profile.num_mtt);
+		return -1;
+	}
+
 	return 0;
 }
 
