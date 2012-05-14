@@ -81,6 +81,11 @@ MODULE_PARM_DESC(msi_x, "0 - don't use MSI-X, 1 - use MSI-X, >1 - limit number o
 
 #endif /* CONFIG_PCI_MSI */
 
+int mlx4_blck_lb = 1;
+module_param_named(block_loopback, mlx4_blck_lb, int, 0644);
+MODULE_PARM_DESC(block_loopback, "Block multicast loopback packets if > 0 "
+		 "(default: 1)");
+
 static uint8_t num_vfs[3] = {0, 0, 0};
 static int num_vfs_argc;
 module_param_array(num_vfs, byte , &num_vfs_argc, 0444);
