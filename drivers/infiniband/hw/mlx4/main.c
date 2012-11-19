@@ -2560,10 +2560,12 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
 	if (mlx4_uar_alloc(dev, &ibdev->priv_uar))
 		goto err_pd;
 
-	ibdev->uar_map = ioremap((phys_addr_t) ibdev->priv_uar.pfn << PAGE_SHIFT,
-				 PAGE_SIZE);
-	if (!ibdev->uar_map)
+	ibdev->priv_uar.map = ioremap(ibdev->priv_uar.pfn << PAGE_SHIFT,
+		PAGE_SIZE);
+
+	if (!ibdev->priv_uar.map)
 		goto err_uar;
+
 	MLX4_INIT_DOORBELL_LOCK(&ibdev->uar_lock);
 
 	ibdev->dev = dev;
@@ -2917,7 +2919,7 @@ err_counter:
 
 err_map:
 	mlx4_ib_free_eqs(dev, ibdev);
-	iounmap(ibdev->uar_map);
+	iounmap(ibdev->priv_uar.map);
 
 err_uar:
 	mlx4_uar_free(dev, &ibdev->priv_uar);
@@ -3022,7 +3024,7 @@ static void mlx4_ib_remove(struct mlx4_dev *dev, void *ibdev_ptr)
 			      ibdev->steer_qpn_count);
 	kfree(ibdev->ib_uc_qpns_bitmap);
 
-	iounmap(ibdev->uar_map);
+	iounmap(ibdev->priv_uar.map);
 	for (p = 0; p < ibdev->num_ports; ++p)
 		mlx4_ib_delete_counters_table(ibdev, &ibdev->counters_table[p]);
 
