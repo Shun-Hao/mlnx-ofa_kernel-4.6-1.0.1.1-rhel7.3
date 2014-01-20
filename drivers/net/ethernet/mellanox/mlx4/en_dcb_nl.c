@@ -807,6 +807,9 @@ const struct dcbnl_rtnl_ops mlx4_en_dcbnl_ops = {
 
 	.getdcbx	= mlx4_en_dcbnl_getdcbx,
 	.setdcbx	= mlx4_en_dcbnl_setdcbx,
+	.ieee_getqcn	= mlx4_en_dcbnl_ieee_getqcn,
+	.ieee_setqcn	= mlx4_en_dcbnl_ieee_setqcn,
+	.ieee_getqcnstats = mlx4_en_dcbnl_ieee_getqcnstats,
 };
 
 const struct dcbnl_rtnl_ops mlx4_en_dcbnl_pfc_ops = {
