@@ -617,8 +617,12 @@ int mlx4_buf_alloc(struct mlx4_dev *dev, int size, int max_direct,
 		buf->nbufs      = DIV_ROUND_UP(size, PAGE_SIZE);
 		buf->npages	= buf->nbufs;
 		buf->page_shift  = PAGE_SHIFT;
-		buf->page_list   = kcalloc(buf->nbufs, sizeof(*buf->page_list),
-					   GFP_KERNEL);
+		buf->page_list  = kzalloc_node(buf->nbufs * sizeof(*buf->page_list),
+					       GFP_KERNEL,
+					       dev_to_node(&dev->persist->pdev->dev));
+		if (!buf->page_list)
+			buf->page_list = kcalloc(buf->nbufs, sizeof(*buf->page_list),
+						 GFP_KERNEL);
 		if (!buf->page_list)
 			return -ENOMEM;
 
@@ -665,7 +669,10 @@ static struct mlx4_db_pgdir *mlx4_alloc_db_pgdir(struct device *dma_device)
 {
 	struct mlx4_db_pgdir *pgdir;
 
-	pgdir = kzalloc(sizeof(*pgdir), GFP_KERNEL);
+	pgdir = kzalloc_node(sizeof(*pgdir), GFP_KERNEL,
+			     dev_to_node(dma_device));
+	if (!pgdir)
+		pgdir = kzalloc(sizeof(*pgdir), GFP_KERNEL);
 	if (!pgdir)
 		return NULL;
 

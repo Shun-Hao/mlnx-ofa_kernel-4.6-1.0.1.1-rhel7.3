@@ -4068,6 +4068,8 @@ static int mlx4_load_one(struct pci_dev *pdev, int pci_dev_data,
 
 	dev->rev_id = pdev->revision;
 	dev->numa_node = dev_to_node(&pdev->dev);
+	if (dev->numa_node == -1)
+		dev->numa_node = first_online_node;
 
 	/* Detect if this device is a virtual function */
 	if (pci_dev_data & MLX4_PCI_DEV_IS_VF) {
