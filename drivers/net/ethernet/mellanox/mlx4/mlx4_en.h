@@ -95,8 +95,11 @@
  * OS related constants and tunables
  */
 
-#define MLX4_EN_PRIV_FLAGS_BLUEFLAME 1
-#define MLX4_EN_PRIV_FLAGS_PHV	     2
+#define MLX4_EN_PRIV_FLAGS_BLUEFLAME		(1 << 0)
+#define MLX4_EN_PRIV_FLAGS_PHV			(1 << 1)
+#ifdef CONFIG_MLX4_EN_DCB
+#define MLX4_EN_PRIV_FLAGS_DISABLE_32_14_4_E	(1 << 2)
+#endif
 
 #define MLX4_EN_WATCHDOG_TIMEOUT	(15 * HZ)
 
@@ -676,6 +679,11 @@ int mlx4_en_init_netdev(struct mlx4_en_dev *mdev, int port,
 
 int mlx4_en_start_port(struct net_device *dev);
 void mlx4_en_stop_port(struct net_device *dev, int detach);
+
+#ifdef CONFIG_MLX4_EN_DCB
+int mlx4_disable_32_14_4_e_write(struct mlx4_dev *dev, u8 config, int port);
+int mlx4_disable_32_14_4_e_read(struct mlx4_dev *dev, u8 *config, int port);
+#endif
 
 void mlx4_en_set_stats_bitmap(struct mlx4_dev *dev,
 			      struct mlx4_en_stats_bitmap *stats_bitmap,

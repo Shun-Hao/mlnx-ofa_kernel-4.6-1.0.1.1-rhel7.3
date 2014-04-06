@@ -3311,6 +3311,7 @@ int mlx4_en_init_netdev(struct mlx4_en_dev *mdev, int port,
 	priv->msg_enable = MLX4_EN_MSG_LEVEL;
 #ifdef CONFIG_MLX4_EN_DCB
 	if (!mlx4_is_slave(priv->mdev->dev)) {
+		u8 config = 0;
 		u8 prio;
 
 		for (prio = 0; prio < IEEE_8021QAZ_MAX_TCS; ++prio) {
@@ -3331,6 +3332,16 @@ int mlx4_en_init_netdev(struct mlx4_en_dev *mdev, int port,
 		} else {
 			en_info(priv, "enabling only PFC DCB ops\n");
 			dev->dcbnl_ops = &mlx4_en_dcbnl_pfc_ops;
+		}
+		/* Query for defalut disable_32_14_4_e value for qcn */
+		err = mlx4_disable_32_14_4_e_read(priv->mdev->dev, &config, priv->port);
+		if (!err) {
+			if (config)
+				priv->pflags |= MLX4_EN_PRIV_FLAGS_DISABLE_32_14_4_E;
+			else
+				priv->pflags &= ~MLX4_EN_PRIV_FLAGS_DISABLE_32_14_4_E;
+		} else {
+			en_err(priv, "Failed to query disable_32_14_4_e field for QCN\n");
 		}
 	}
 #endif
