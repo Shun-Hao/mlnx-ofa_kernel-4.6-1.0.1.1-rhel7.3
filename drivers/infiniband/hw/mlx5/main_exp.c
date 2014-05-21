@@ -315,6 +315,8 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		}
 	}
 
+	props->device_cap_flags2 |= IB_EXP_DEVICE_NOP;
+
 	return 0;
 }
 

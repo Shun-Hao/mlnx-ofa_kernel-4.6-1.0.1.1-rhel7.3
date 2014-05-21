@@ -152,6 +152,7 @@ enum ib_exp_device_cap_flags2 {
 	IB_EXP_DEVICE_UD_RSS		= 1 << 2,
 	IB_EXP_DEVICE_UD_TSS		= 1 << 3,
 	IB_EXP_DEVICE_EXT_ATOMICS	= 1 << 4,
+	IB_EXP_DEVICE_NOP		= 1 << 5,
 	IB_EXP_DEVICE_UMR		= 1 << 6,
 	IB_EXP_DEVICE_ODP               = 1 << 7,
 	IB_EXP_DEVICE_VXLAN_SUPPORT		= 1 << 10,
