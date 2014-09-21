@@ -68,6 +68,12 @@
 
 #define MLX4_QUERY_IF_STAT_RESET	BIT(31)
 
+ enum {
+	 MLX4_INGRESS_PARSER_MODE_STANDARD               = 0,
+	 MLX4_INGRESS_PARSER_MODE_NON_L4_CSUM_OFFLOAD    = 1,
+	 MLX4_INGRESS_PARSER_MODE_MAX                    = 2
+ };
+
 enum {
 	MLX4_HCR_BASE		= 0x80680,
 	MLX4_HCR_SIZE		= 0x0001c,
@@ -232,6 +238,7 @@ do {									\
 extern int log_mtts_per_seg;
 extern int mlx4_internal_err_reset;
 extern int mlx4_blck_lb;
+extern int ingress_parser_mode;
 
 #define MLX4_MAX_NUM_SLAVES	(min(MLX4_MAX_NUM_PF + MLX4_MAX_NUM_VF, \
 				     MLX4_MFUNC_MAX))

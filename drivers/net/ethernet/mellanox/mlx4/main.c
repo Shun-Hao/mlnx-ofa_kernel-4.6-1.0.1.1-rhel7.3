@@ -86,6 +86,10 @@ module_param_named(block_loopback, mlx4_blck_lb, int, 0644);
 MODULE_PARM_DESC(block_loopback, "Block multicast loopback packets if > 0 "
 		 "(default: 1)");
 
+int ingress_parser_mode = MLX4_INGRESS_PARSER_MODE_STANDARD;
+module_param(ingress_parser_mode, int, 0444);
+MODULE_PARM_DESC(ingress_parser_mode, "Mode of ingress parser for ConnectX3-Pro. 0 - standard. 1 - checksum for non TCP/UDP. (default: standard)");
+
 static uint8_t num_vfs[3] = {0, 0, 0};
 static int num_vfs_argc;
 module_param_array(num_vfs, byte , &num_vfs_argc, 0444);
@@ -474,6 +478,12 @@ static int mlx4_dev_cap(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 		mlx4_err(dev, "QUERY_DEV_CAP command failed, aborting\n");
 		return err;
 	}
+
+	if ((ingress_parser_mode != MLX4_INGRESS_PARSER_MODE_STANDARD) &&
+	    (dev_cap->flags2 & MLX4_DEV_CAP_FLAG2_MODIFY_PARSER)) {
+		dev_cap->flags2 &= ~MLX4_DEV_CAP_FLAG2_VXLAN_OFFLOADS;
+	}
+
 	mlx4_dev_cap_dump(dev, dev_cap);
 
 	if (dev_cap->min_page_sz > PAGE_SIZE) {
@@ -4442,6 +4452,17 @@ static int __init mlx4_verify_params(void)
 			MLX4_MIN_MGM_LOG_ENTRY_SIZE,
 			MLX4_MAX_MGM_LOG_ENTRY_SIZE);
 		return -1;
+	}
+
+	if (ingress_parser_mode < MLX4_INGRESS_PARSER_MODE_STANDARD ||
+	    ingress_parser_mode >= MLX4_INGRESS_PARSER_MODE_MAX) {
+		pr_warn("mlx4_core: ingress_parser_mode (%d) not "
+			"in legal range %d..%d. "
+			"Changing to default\n",
+			ingress_parser_mode,
+			MLX4_INGRESS_PARSER_MODE_STANDARD,
+			MLX4_INGRESS_PARSER_MODE_MAX - 1);
+		ingress_parser_mode = MLX4_INGRESS_PARSER_MODE_STANDARD;
 	}
 
 	return 0;
