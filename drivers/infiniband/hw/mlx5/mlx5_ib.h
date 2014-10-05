@@ -615,6 +615,13 @@ enum {
 	MLX5_FMR_BUSY,
 };
 
+struct cache_order {
+	struct kobject		kobj;
+	int			order;
+	int			index;
+	struct mlx5_ib_dev     *dev;
+};
+
 struct mlx5_cache_ent {
 	struct list_head	head;
 	/* sync access to the cahce entry
@@ -622,8 +629,6 @@ struct mlx5_cache_ent {
 	spinlock_t		lock;
 
 
-	struct dentry	       *dir;
-	char                    name[4];
 	u32                     order;
 	u32			xlt;
 	u32			access_mode;
@@ -634,16 +639,12 @@ struct mlx5_cache_ent {
 	u32                     miss;
 	u32			limit;
 
-	struct dentry          *fsize;
-	struct dentry          *fcur;
-	struct dentry          *fmiss;
-	struct dentry          *flimit;
-
 	struct mlx5_ib_dev     *dev;
 	struct work_struct	work;
 	struct delayed_work	dwork;
 	int			pending;
 	struct completion	compl;
+	struct cache_order	co;
 };
 
 struct mlx5_mr_cache {
@@ -926,6 +927,7 @@ struct mlx5_ib_dev {
 	struct list_head	ib_dev_list;
 	u64			sys_image_guid;
 	struct mlx5_memic	memic;
+	struct kobject          *mr_cache;
 	u16			devx_whitelist_uid;
 };
 
