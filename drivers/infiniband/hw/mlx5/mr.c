@@ -45,6 +45,7 @@
 
 enum {
 	MAX_PENDING_REG_MR = 8,
+	MAX_MR_RELEASE_TIMEOUT = (60 * 20) /* Allow release timeout up to 20 min */
 };
 
 #define MLX5_UMR_ALIGN 2048
@@ -284,12 +285,25 @@ static int someone_adding(struct mlx5_mr_cache *cache)
 	return 0;
 }
 
+static int someone_releasing(struct mlx5_mr_cache *cache)
+{
+	int i;
+
+	for (i = 0; i < MAX_MR_CACHE_ENTRIES; i++) {
+		if (cache->ent[i].cur > 2 * cache->ent[i].limit)
+			return 1;
+	}
+
+	return 0;
+}
+
 static void __cache_work_func(struct mlx5_cache_ent *ent)
 {
 	struct mlx5_ib_dev *dev = ent->dev;
 	struct mlx5_mr_cache *cache = &dev->cache;
 	int i = order2idx(dev, ent->order);
 	int err;
+	s64 dtime;
 
 	if (cache->stopped)
 		return;
@@ -301,11 +315,13 @@ static void __cache_work_func(struct mlx5_cache_ent *ent)
 			if (err == -EAGAIN) {
 				mlx5_ib_dbg(dev, "returned eagain, order %d\n",
 					    i + 2);
+				cancel_delayed_work(&ent->dwork);
 				queue_delayed_work(cache->wq, &ent->dwork,
 						   msecs_to_jiffies(3));
 			} else if (err) {
 				mlx5_ib_warn(dev, "command failed order %d, err %d\n",
 					     i + 2, err);
+				cancel_delayed_work(&ent->dwork);
 				queue_delayed_work(cache->wq, &ent->dwork,
 						   msecs_to_jiffies(1000));
 			} else {
@@ -325,14 +341,22 @@ static void __cache_work_func(struct mlx5_cache_ent *ent)
 		 * the garbage collection work to try to run in next cycle,
 		 * in order to free CPU resources to other tasks.
 		 */
-		if (!need_resched() && !someone_adding(cache) &&
-		    time_after(jiffies, cache->last_add + 300 * HZ)) {
+		dtime = (cache->last_add + (s64)cache->rel_timeout * HZ) -
+			jiffies;
+		if (cache->rel_imm || (!need_resched() &&
+		    cache->rel_timeout >= 0 && !someone_adding(cache) &&
+		    dtime <= 0)) {
 			remove_keys(dev, i, 1);
 			if (ent->cur > ent->limit)
 				queue_work(cache->wq, &ent->work);
-		} else {
-			queue_delayed_work(cache->wq, &ent->dwork, 300 * HZ);
+		} else if (cache->rel_timeout >= 0) {
+			dtime = max_t(s64, dtime, 0);
+			dtime = min_t(s64, dtime, (MAX_MR_RELEASE_TIMEOUT * HZ));
+			cancel_delayed_work(&ent->dwork);
+			queue_delayed_work(cache->wq, &ent->dwork, dtime);
 		}
+	} else if (cache->rel_imm && !someone_releasing(cache)) {
+		cache->rel_imm = 0;
 	}
 }
 
@@ -510,6 +534,7 @@ int mlx5_mr_cache_init(struct mlx5_ib_dev *dev)
 	int i;
 
 	mutex_init(&dev->slow_path_mutex);
+	cache->rel_timeout = 300;
 	cache->wq = alloc_ordered_workqueue("mkey_cache", WQ_MEM_RECLAIM);
 	if (!cache->wq) {
 		mlx5_ib_warn(dev, "failed to create work queue\n");
@@ -2010,6 +2035,138 @@ static struct kobj_type order_type = {
 	.default_attrs = order_default_attrs
 };
 
+
+
+struct cache_attribute {
+	struct attribute attr;
+	ssize_t (*show)(struct mlx5_ib_dev *dev, char *buf);
+	ssize_t (*store)(struct mlx5_ib_dev *dev, const char *buf, size_t count);
+};
+
+static ssize_t rel_imm_show(struct mlx5_ib_dev *dev, char *buf)
+{
+	struct mlx5_mr_cache *cache = &dev->cache;
+	int err;
+
+	err = snprintf(buf, 20, "%d\n", cache->rel_imm);
+	return err;
+}
+
+static ssize_t rel_imm_store(struct mlx5_ib_dev *dev, const char *buf, size_t count)
+{
+	struct mlx5_mr_cache *cache = &dev->cache;
+	u32 var;
+	int i;
+	int found = 0;
+
+	if (kstrtouint(buf, 0, &var))
+		return -EINVAL;
+
+	if (var > 1)
+		return -EINVAL;
+
+	if (var == cache->rel_imm)
+		return count;
+
+	cache->rel_imm = var;
+	if (cache->rel_imm == 1) {
+		for (i = 0; i < MAX_MR_CACHE_ENTRIES; i++) {
+			if (cache->ent[i].cur > 2 * cache->ent[i].limit) {
+				queue_work(cache->wq, &cache->ent[i].work);
+				found = 1;
+			}
+		}
+		if (!found)
+			cache->rel_imm = 0;
+	}
+
+	return count;
+}
+static ssize_t rel_timeout_show(struct mlx5_ib_dev *dev, char *buf)
+{
+	struct mlx5_mr_cache *cache = &dev->cache;
+	int err;
+
+	err = snprintf(buf, 20, "%d\n", cache->rel_timeout);
+	return err;
+}
+
+static ssize_t rel_timeout_store(struct mlx5_ib_dev *dev, const char *buf, size_t count)
+{
+	struct mlx5_mr_cache *cache = &dev->cache;
+	int var;
+	int i;
+
+	if (kstrtoint(buf, 0, &var))
+		return -EINVAL;
+
+	if (var < -1 || var > MAX_MR_RELEASE_TIMEOUT)
+		return -EINVAL;
+
+	if (var == cache->rel_timeout)
+		return count;
+
+	if (cache->rel_timeout == -1 || (var < cache->rel_timeout && var != -1)) {
+		cache->rel_timeout = var;
+		for (i = 0; i < MAX_MR_CACHE_ENTRIES; i++) {
+			if (cache->ent[i].cur > 2 * cache->ent[i].limit)
+				queue_work(cache->wq, &cache->ent[i].work);
+		}
+	} else {
+		cache->rel_timeout = var;
+	}
+
+	return count;
+}
+
+static ssize_t cache_attr_show(struct kobject *kobj,
+			       struct attribute *attr, char *buf)
+{
+	struct cache_attribute *ca =
+		container_of(attr, struct cache_attribute, attr);
+	struct mlx5_ib_dev *dev = container_of(kobj, struct mlx5_ib_dev, mr_cache);
+
+	if (!ca->show)
+		return -EIO;
+
+	return ca->show(dev, buf);
+}
+
+static ssize_t cache_attr_store(struct kobject *kobj,
+				struct attribute *attr, const char *buf, size_t size)
+{
+	struct cache_attribute *ca =
+		container_of(attr, struct cache_attribute, attr);
+	struct mlx5_ib_dev *dev = container_of(kobj, struct mlx5_ib_dev, mr_cache);
+
+	if (!ca->store)
+		return -EIO;
+
+	return ca->store(dev, buf, size);
+}
+
+static const struct sysfs_ops cache_sysfs_ops = {
+	.show = cache_attr_show,
+	.store = cache_attr_store,
+};
+
+#define CACHE_ATTR(_name) struct cache_attribute cache_attr_##_name = \
+	__ATTR(_name, 0644, _name##_show, _name##_store)
+
+static CACHE_ATTR(rel_imm);
+static CACHE_ATTR(rel_timeout);
+
+static struct attribute *cache_default_attrs[] = {
+	&cache_attr_rel_imm.attr,
+	&cache_attr_rel_timeout.attr,
+	NULL
+};
+
+static struct kobj_type cache_type = {
+	.sysfs_ops     = &cache_sysfs_ops,
+	.default_attrs = cache_default_attrs
+};
+
 static int mlx5_mr_sysfs_init(struct mlx5_ib_dev *dev)
 {
 	struct mlx5_mr_cache *cache = &dev->cache;
@@ -2019,8 +2176,9 @@ static int mlx5_mr_sysfs_init(struct mlx5_ib_dev *dev)
 	int i;
 	int err;
 
-	dev->mr_cache = kobject_create_and_add("mr_cache", &device->kobj);
-	if (!dev->mr_cache)
+	err = kobject_init_and_add(&dev->mr_cache, &cache_type,
+				   &device->kobj, "mr_cache");
+	if (err)
 		return -ENOMEM;
 
 	for (o = 2, i = 0; i < MAX_MR_CACHE_ENTRIES; o++, i++) {
@@ -2029,7 +2187,7 @@ static int mlx5_mr_sysfs_init(struct mlx5_ib_dev *dev)
 		co->index = i;
 		co->dev = dev;
 		err = kobject_init_and_add(&co->kobj, &order_type,
-					   dev->mr_cache, "%d", o);
+					   &dev->mr_cache, "%d", o);
 		if (err)
 			goto err_put;
 
@@ -2043,8 +2201,8 @@ err_put:
 		co = &cache->ent[i].co;
 		kobject_put(&co->kobj);
 	}
-	kobject_put(dev->mr_cache);
-	dev->mr_cache = NULL;
+	kobject_put(&dev->mr_cache);
+
 	return err;
 }
 
@@ -2058,6 +2216,5 @@ static void mlx5_mr_sysfs_cleanup(struct mlx5_ib_dev *dev)
 		co = &cache->ent[i].co;
 		kobject_put(&co->kobj);
 	}
-	if (dev->mr_cache)
-		kobject_put(dev->mr_cache);
+	kobject_put(&dev->mr_cache);
 }
