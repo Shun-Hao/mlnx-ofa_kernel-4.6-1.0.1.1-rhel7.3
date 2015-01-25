@@ -74,6 +74,11 @@ extern int mlx4_ib_sm_guid_assign;
 #define MLX4_IB_UC_STEER_QPN_ALIGN 1
 #define MLX4_IB_UC_MAX_NUM_QPS     256
 
+#ifdef CONFIG_MLX4_IB_DEBUG_FS
+#include "ecn.h"
+extern bool en_ecn;
+#endif
+
 enum hw_bar_type {
 	HW_BAR_BF,
 	HW_BAR_DB,
@@ -636,6 +641,11 @@ struct mlx4_ib_dev {
 	spinlock_t		reset_flow_resource_lock;
 	struct list_head		qp_list;
 	struct mlx4_ib_diag_counters diag_counters[MLX4_DIAG_COUNTERS_TYPES];
+#ifdef CONFIG_MLX4_IB_DEBUG_FS
+	struct dentry		*dev_root;
+	struct ecn_control	cong;
+	struct list_head	dbgfs_resources_list;
+#endif
 };
 
 struct ib_event_work {
@@ -945,5 +955,12 @@ struct ib_rwq_ind_table
 int mlx4_ib_destroy_rwq_ind_table(struct ib_rwq_ind_table *wq_ind_table);
 int mlx4_ib_umem_calc_optimal_mtt_size(struct ib_umem *umem, u64 start_va,
 				       int *num_of_mtts);
+
+#ifdef CONFIG_MLX4_IB_DEBUG_FS
+void mlx4_ib_create_debug_files(struct mlx4_ib_dev *dev);
+void mlx4_ib_delete_debug_files(struct mlx4_ib_dev *dev);
+int mlx4_ib_register_debugfs(void);
+void mlx4_ib_unregister_debugfs(void);
+#endif
 
 #endif /* MLX4_IB_H */

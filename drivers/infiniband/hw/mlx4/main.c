@@ -76,6 +76,12 @@ int mlx4_ib_sm_guid_assign = 0;
 module_param_named(sm_guid_assign, mlx4_ib_sm_guid_assign, int, 0444);
 MODULE_PARM_DESC(sm_guid_assign, "Enable SM alias_GUID assignment if sm_guid_assign > 0 (Default: 0)");
 
+#ifdef CONFIG_MLX4_IB_DEBUG_FS
+bool en_ecn;
+module_param_named(en_ecn, en_ecn, bool, 0444);
+MODULE_PARM_DESC(en_ecn, "Enable q/ecn [enable = 1, disable = 0 (default)]");
+#endif
+
 static const char mlx4_ib_version[] =
 	DRV_NAME ": Mellanox ConnectX InfiniBand driver v"
 	DRV_VERSION "\n";
@@ -2886,6 +2892,9 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
 				do_slave_init(ibdev, j, 1);
 		}
 	}
+#ifdef CONFIG_MLX4_IB_DEBUG_FS
+	mlx4_ib_create_debug_files(ibdev);
+#endif
 	return ibdev;
 
 err_notif:
@@ -3023,6 +3032,10 @@ static void mlx4_ib_remove(struct mlx4_dev *dev, void *ibdev_ptr)
 	mlx4_qp_release_range(dev, ibdev->steer_qpn_base,
 			      ibdev->steer_qpn_count);
 	kfree(ibdev->ib_uc_qpns_bitmap);
+
+#ifdef CONFIG_MLX4_IB_DEBUG_FS
+	mlx4_ib_delete_debug_files(ibdev);
+#endif
 
 	iounmap(ibdev->priv_uar.map);
 	for (p = 0; p < ibdev->num_ports; ++p)
@@ -3351,6 +3364,10 @@ static int __init mlx4_ib_init(void)
 	if (!wq)
 		return -ENOMEM;
 
+#ifdef CONFIG_MLX4_IB_DEBUG_FS
+	mlx4_ib_register_debugfs();
+#endif
+
 	err = mlx4_ib_mcg_init();
 	if (err)
 		goto clean_wq;
@@ -3372,6 +3389,9 @@ clean_wq:
 static void __exit mlx4_ib_cleanup(void)
 {
 	mlx4_unregister_interface(&mlx4_ib_interface);
+#ifdef CONFIG_MLX4_IB_DEBUG_FS
+	mlx4_ib_unregister_debugfs();
+#endif
 	mlx4_ib_mcg_destroy();
 	destroy_workqueue(wq);
 }

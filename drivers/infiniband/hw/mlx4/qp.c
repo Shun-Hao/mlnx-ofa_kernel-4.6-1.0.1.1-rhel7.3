@@ -36,6 +36,7 @@
 #include <net/ip.h>
 #include <linux/slab.h>
 #include <linux/netdevice.h>
+#include <net/inet_ecn.h>
 
 #include <rdma/ib_cache.h>
 #include <rdma/ib_pack.h>
@@ -48,6 +49,10 @@
 
 #include "mlx4_ib.h"
 #include <rdma/mlx4-abi.h>
+
+#define TRAFFIC_CLASS_MASK(mib_dev, port)				  \
+		((rdma_port_get_link_layer(&(mib_dev)->ib_dev, (port)) == \
+		 IB_LINK_LAYER_ETHERNET) ? 3 : 0)
 
 static void mlx4_ib_lock_cqs(struct mlx4_ib_cq *send_cq,
 			     struct mlx4_ib_cq *recv_cq);
@@ -1774,7 +1779,13 @@ static int _mlx4_set_path(struct mlx4_ib_dev *dev,
 		path->mgid_index = real_sgid_index;
 		path->hop_limit  = grh->hop_limit;
 		path->tclass_flowlabel =
-			cpu_to_be32((grh->traffic_class << 20) |
+			cpu_to_be32(
+				    ((ah->grh.traffic_class		       &
+				      ~TRAFFIC_CLASS_MASK(dev, port)) << 20)   |
+#ifdef CONFIG_MLX4_IB_DEBUG_FS
+				    ((ecn_enabled(dev, port, ah->sl & 7) &
+				      TRAFFIC_CLASS_MASK(dev, port)) << 21) |
+#endif
 				    (grh->flow_label));
 		memcpy(path->rgid, grh->dgid.raw, 16);
 	}
@@ -2984,6 +2995,7 @@ static int build_mlx_header(struct mlx4_ib_sqp *sqp, const struct ib_ud_wr *wr,
 			    void *wqe, unsigned *mlx_seg_len)
 {
 	struct ib_device *ib_dev = sqp->qp.ibqp.device;
+	struct mlx4_ib_dev *mibdev = to_mdev(ib_dev);
 	struct mlx4_ib_dev *ibdev = to_mdev(ib_dev);
 	struct mlx4_wqe_mlx_seg *mlx = wqe;
 	struct mlx4_wqe_ctrl_seg *ctrl = wqe;
@@ -3002,6 +3014,14 @@ static int build_mlx_header(struct mlx4_ib_sqp *sqp, const struct ib_ud_wr *wr,
 	bool is_grh;
 	bool is_udp = false;
 	int ip_version = 0;
+	u8 ecn =
+#ifdef CONFIG_MLX4_IB_DEBUG_FS
+		ecn_enabled(mibdev, sqp->qp.port,
+			    be32_to_cpu(ah->av.eth.sl_tclass_flowlabel) >> 29) ?
+				INET_ECN_ECT_0 : INET_ECN_NOT_ECT;
+#else
+		INET_ECN_NOT_ECT;
+#endif
 
 	send_size = 0;
 	for (i = 0; i < wr->wr.num_sge; ++i)
@@ -3056,7 +3076,9 @@ static int build_mlx_header(struct mlx4_ib_sqp *sqp, const struct ib_ud_wr *wr,
 
 	if (is_grh || (ip_version == 6)) {
 		sqp->ud_header.grh.traffic_class =
-			(be32_to_cpu(ah->av.ib.sl_tclass_flowlabel) >> 20) & 0xff;
+			((be32_to_cpu(ah->av.ib.sl_tclass_flowlabel) >> 20) &
+			 ~TRAFFIC_CLASS_MASK(mibdev, sqp->qp.port)) |
+			(ecn & TRAFFIC_CLASS_MASK(mibdev, sqp->qp.port));
 		sqp->ud_header.grh.flow_label    =
 			ah->av.ib.sl_tclass_flowlabel & cpu_to_be32(0xfffff);
 		sqp->ud_header.grh.hop_limit     = ah->av.ib.hop_limit;
@@ -3086,7 +3108,9 @@ static int build_mlx_header(struct mlx4_ib_sqp *sqp, const struct ib_ud_wr *wr,
 
 	if (ip_version == 4) {
 		sqp->ud_header.ip4.tos =
-			(be32_to_cpu(ah->av.ib.sl_tclass_flowlabel) >> 20) & 0xff;
+			((be32_to_cpu(ah->av.ib.sl_tclass_flowlabel) >> 20) &
+			 ~TRAFFIC_CLASS_MASK(mibdev, sqp->qp.port)) |
+			(ecn & TRAFFIC_CLASS_MASK(mibdev, sqp->qp.port));
 		sqp->ud_header.ip4.id = 0;
 		sqp->ud_header.ip4.frag_off = htons(IP_DF);
 		sqp->ud_header.ip4.ttl = ah->av.eth.hop_limit;
