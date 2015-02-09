@@ -120,14 +120,42 @@ end:
 	return odp;
 }
 
-void mlx5_odp_populate_klm(struct mlx5_klm *pklm, size_t offset,
-			   size_t nentries, struct mlx5_ib_mr *mr, int flags)
+static u64 umem_dma_to_mtt(dma_addr_t umem_dma)
+{
+	u64 mtt_entry = umem_dma & ODP_DMA_ADDR_MASK;
+
+	if (umem_dma & ODP_READ_ALLOWED_BIT)
+		mtt_entry |= MLX5_IB_MTT_READ;
+	if (umem_dma & ODP_WRITE_ALLOWED_BIT)
+		mtt_entry |= MLX5_IB_MTT_WRITE;
+
+	return mtt_entry;
+}
+
+int mlx5_odp_populate_xlt(void *xlt, size_t offset, size_t nentries,
+			  struct mlx5_ib_mr *mr, int flags)
 {
 	struct ib_pd *pd = mr->ibmr.pd;
 	struct mlx5_ib_dev *dev = to_mdev(pd->device);
+	struct mlx5_klm *pklm = xlt;
 	struct ib_umem_odp *odp;
 	unsigned long va;
 	int i;
+
+	if (!(flags & MLX5_IB_UPD_XLT_INDIRECT)) {
+		__be64 *pas = xlt;
+
+		nentries = min(nentries, ib_umem_num_pages(mr->umem) - offset);
+		if (!(flags & MLX5_IB_UPD_XLT_ZAP)) {
+			odp = to_ib_umem_odp(mr->umem);
+			for (i = 0; i < nentries; i++) {
+				dma_addr_t pa = odp->dma_list[offset + i];
+
+				pas[i] = cpu_to_be64(umem_dma_to_mtt(pa));
+			}
+		}
+		return nentries;
+	}
 
 	if (flags & MLX5_IB_UPD_XLT_ZAP) {
 		for (i = 0; i < nentries; i++, pklm++) {
@@ -135,7 +163,7 @@ void mlx5_odp_populate_klm(struct mlx5_klm *pklm, size_t offset,
 			pklm->key = cpu_to_be32(dev->null_mkey);
 			pklm->va = 0;
 		}
-		return;
+		return nentries;
 	}
 
 	odp = odp_lookup(offset * MLX5_IMR_MTT_SIZE,
@@ -155,6 +183,7 @@ void mlx5_odp_populate_klm(struct mlx5_klm *pklm, size_t offset,
 		mlx5_ib_dbg(dev, "[%d] va %lx key %x\n",
 			    i, va, be32_to_cpu(pklm->key));
 	}
+	return nentries;
 }
 
 static void mr_leaf_free_action(struct work_struct *work)
@@ -168,7 +197,7 @@ static void mr_leaf_free_action(struct work_struct *work)
 
 	ib_umem_release(&odp->umem);
 	if (imr->live)
-		mlx5_ib_update_xlt(imr, idx, 1, 0,
+		mlx5_ib_update_xlt(imr, idx, 0, 1, 0,
 				   MLX5_IB_UPD_XLT_INDIRECT |
 				   MLX5_IB_UPD_XLT_ATOMIC);
 	mlx5_mr_cache_free(mr->dev, mr);
@@ -227,7 +256,7 @@ void mlx5_ib_invalidate_range(struct ib_umem_odp *umem_odp, unsigned long start,
 			u64 umr_offset = idx & umr_block_mask;
 
 			if (in_block && umr_offset == 0) {
-				mlx5_ib_update_xlt(mr, blk_start_idx,
+				mlx5_ib_update_xlt(mr, blk_start_idx, 0,
 						   idx - blk_start_idx, 0,
 						   MLX5_IB_UPD_XLT_ZAP |
 						   MLX5_IB_UPD_XLT_ATOMIC);
@@ -236,7 +265,7 @@ void mlx5_ib_invalidate_range(struct ib_umem_odp *umem_odp, unsigned long start,
 		}
 	}
 	if (in_block)
-		mlx5_ib_update_xlt(mr, blk_start_idx,
+		mlx5_ib_update_xlt(mr, blk_start_idx, 0,
 				   idx - blk_start_idx + 1, 0,
 				   MLX5_IB_UPD_XLT_ZAP |
 				   MLX5_IB_UPD_XLT_ATOMIC);
@@ -336,7 +365,7 @@ static struct mlx5_ib_mr *implicit_mr_alloc(struct ib_pd *pd,
 	mr->umem = umem;
 
 	if (ksm) {
-		err = mlx5_ib_update_xlt(mr, 0,
+		err = mlx5_ib_update_xlt(mr, 0, 0,
 					 mlx5_imr_ksm_entries,
 					 MLX5_KSM_PAGE_SHIFT,
 					 MLX5_IB_UPD_XLT_INDIRECT |
@@ -344,7 +373,7 @@ static struct mlx5_ib_mr *implicit_mr_alloc(struct ib_pd *pd,
 					 MLX5_IB_UPD_XLT_ENABLE);
 
 	} else {
-		err = mlx5_ib_update_xlt(mr, 0,
+		err = mlx5_ib_update_xlt(mr, 0, 0,
 					 MLX5_IMR_MTT_ENTRIES,
 					 PAGE_SHIFT,
 					 MLX5_IB_UPD_XLT_ZAP |
@@ -359,6 +388,7 @@ static struct mlx5_ib_mr *implicit_mr_alloc(struct ib_pd *pd,
 	mr->ibmr.rkey = mr->mmkey.key;
 
 	mr->live = 1;
+	mr->free = 0;
 
 	mlx5_ib_dbg(dev, "key %x dev %p mr %p\n",
 		    mr->mmkey.key, dev->mdev, mr);
@@ -432,7 +462,7 @@ next_mr:
 	}
 
 	if (unlikely(nentries)) {
-		ret = mlx5_ib_update_xlt(mr, start_idx, nentries, 0,
+		ret = mlx5_ib_update_xlt(mr, start_idx, 0, nentries, 0,
 					 MLX5_IB_UPD_XLT_INDIRECT |
 					 MLX5_IB_UPD_XLT_ATOMIC);
 		if (ret) {
@@ -559,7 +589,7 @@ next_mr:
 		 * this MR, since ib_umem_odp_map_dma_pages already
 		 * checks this.
 		 */
-		ret = mlx5_ib_update_xlt(mr, start_idx, np,
+		ret = mlx5_ib_update_xlt(mr, start_idx, 0, np,
 					 page_shift, MLX5_IB_UPD_XLT_ATOMIC);
 	} else {
 		ret = -EAGAIN;
