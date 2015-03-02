@@ -799,6 +799,10 @@ static int mlx4_eq_int(struct mlx4_dev *dev, struct mlx4_eq *eq)
 			case MLX4_RECOVERABLE_ERROR_EVENT_SUBTYPE_UNSUPPORTED_CABLE:
 				mlx4_warn(dev, "Unsupported cable detected\n");
 				break;
+			case MLX4_RECOVERABLE_ERROR_EVENT_SUBTYPE_BAD_UNREADABLE_EEPROM:
+				mlx4_warn(dev, "Bad or unreadable EEPROM on port %u\n",
+					  eqe->event.bad_cable.port);
+				break;
 			default:
 				mlx4_dbg(dev,
 					 "Unhandled recoverable error event detected: %02x(%02x) on EQ %d at index %u. owner=%x, nent=0x%x, ownership=%s\n",
