@@ -590,6 +590,11 @@ enum mlx4_roce_gid_type {
 	MLX4_ROCE_GID_TYPE_INVALID = MLX4_ROCE_GID_TYPE_MAX,
 };
 
+static inline int mlx4_roce_is_over_ip(int roce_mode)
+{
+	return roce_mode != MLX4_ROCE_GID_TYPE_V1;
+}
+
 static inline const char *mlx4_roce_gid_type_to_str(enum mlx4_roce_gid_type t)
 {
 	switch (t) {
