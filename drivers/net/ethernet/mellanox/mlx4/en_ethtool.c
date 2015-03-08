@@ -106,6 +106,10 @@ static const char mlx4_en_priv_flags[][ETH_GSTRING_LEN] = {
 #ifdef CONFIG_MLX4_EN_DCB
 	"qcn_disable_32_14_4_e",
 #endif
+	"mlx4_flow_steering_ethernet_l2",
+	"mlx4_flow_steering_ipv4",
+	"mlx4_flow_steering_tcp",
+	"mlx4_flow_steering_udp",
 };
 
 static const char main_strings[][ETH_GSTRING_LEN] = {
@@ -1923,6 +1927,13 @@ static int mlx4_en_set_priv_flags(struct net_device *dev, u32 flags)
 #endif
 	int i;
 	int ret = 0;
+
+	if ((flags ^ priv->pflags) &
+	    (MLX4_EN_PRIV_FLAGS_FS_EN_L2	|
+	     MLX4_EN_PRIV_FLAGS_FS_EN_IPV4	|
+	     MLX4_EN_PRIV_FLAGS_FS_EN_TCP	|
+	     MLX4_EN_PRIV_FLAGS_FS_EN_UDP))
+		return -EINVAL;
 
 
 #ifdef CONFIG_MLX4_EN_DCB

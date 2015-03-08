@@ -100,6 +100,10 @@
 #ifdef CONFIG_MLX4_EN_DCB
 #define MLX4_EN_PRIV_FLAGS_DISABLE_32_14_4_E	(1 << 2)
 #endif
+#define MLX4_EN_PRIV_FLAGS_FS_EN_L2		(1 << 3)
+#define MLX4_EN_PRIV_FLAGS_FS_EN_IPV4		(1 << 4)
+#define MLX4_EN_PRIV_FLAGS_FS_EN_TCP		(1 << 5)
+#define MLX4_EN_PRIV_FLAGS_FS_EN_UDP		(1 << 6)
 
 #define MLX4_EN_WATCHDOG_TIMEOUT	(15 * HZ)
 
