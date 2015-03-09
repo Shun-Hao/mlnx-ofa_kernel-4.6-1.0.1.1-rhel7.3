@@ -1968,6 +1968,18 @@ enum {
 	MLX4_QPC_ROCE_MODE_UNDEFINED = 0xff
 };
 
+static enum ib_gid_type mlx4_gid_type_to_ib_gid_type(enum mlx4_roce_gid_type mlx4_gid_type)
+{
+	switch (mlx4_gid_type) {
+	case MLX4_ROCE_GID_TYPE_V1:
+		return IB_GID_TYPE_IB;
+	case MLX4_ROCE_GID_TYPE_V2:
+		return IB_GID_TYPE_ROCE_UDP_ENCAP;
+	default:
+		return IB_GID_TYPE_SIZE;
+	}
+}
+
 static u8 gid_type_to_qpc(enum ib_gid_type gid_type)
 {
 	switch (gid_type) {
@@ -2250,6 +2262,13 @@ static int __mlx4_ib_modify_qp(void *src, enum mlx4_ib_source_type src_type,
 			steer_qp = 1;
 		}
 
+		if (qp_type == IB_QPT_UD) {
+			enum ib_gid_type ud_gid_type =
+				mlx4_gid_type_to_ib_gid_type(dev->dev->caps.ud_gid_type);
+			u8 qpc_roce_mode = gid_type_to_qpc(ud_gid_type);
+
+			context->rlkey_roce_mode |= (qpc_roce_mode << 6);
+		}
 		if (qp_type == IB_QPT_GSI) {
 			enum ib_gid_type gid_type = qp->flags & MLX4_IB_ROCE_V2_GSI_QP ?
 				IB_GID_TYPE_ROCE_UDP_ENCAP : IB_GID_TYPE_ROCE;

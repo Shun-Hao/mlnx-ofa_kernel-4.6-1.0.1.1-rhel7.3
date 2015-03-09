@@ -1430,6 +1430,9 @@ int mlx4_config_mad_demux(struct mlx4_dev *dev);
 int mlx4_do_bond(struct mlx4_dev *dev, bool enable);
 int mlx4_bond_fs_rules(struct mlx4_dev *dev);
 int mlx4_unbond_fs_rules(struct mlx4_dev *dev);
+int mlx4_verify_supported_gid_type(struct mlx4_dev *dev,
+				   enum mlx4_roce_gid_type type,
+				   enum mlx4_roce_gid_type *alt_type);
 
 enum mlx4_zone_flags {
 	MLX4_ZONE_ALLOW_ALLOC_FROM_LOWER_PRIO	= 1UL << 0,

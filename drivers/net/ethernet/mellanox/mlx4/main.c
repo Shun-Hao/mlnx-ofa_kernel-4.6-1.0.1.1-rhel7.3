@@ -101,6 +101,7 @@ enum {
 	PROBE_VF,
 	PORT_TYPE_ARRAY,
 	ROCE_MODE,
+	UD_GID_TYPE,
 };
 
 enum {
@@ -131,6 +132,25 @@ MODULE_PARM_DESC(roce_mode,
 		 "\tA single value (e.g. 0) to define uniform preferred RoCE_mode value for all devices\n"
 		 "\t\tor a string to map device function numbers to their RoCE mode value (e.g. '0000:04:00.0-0,002b:1c:0b.a-0').\n"
 		 "\t\tAllowed values are 0: RoCEv1 (default), 1: RoCEv2, 2: RoCEv1+2)\n");
+
+static struct param_data ud_gid_type = {
+	.id		= UD_GID_TYPE,
+	.dbdf2val = {
+		.name		= "ud_gid_type param",
+		.num_vals	= 1,
+		.def_val	= {MLX4_ROCE_GID_TYPE_V1},
+		.range		= {MLX4_ROCE_GID_TYPE_V1,
+				   MLX4_ROCE_GID_TYPE_V2},
+		.num_inval_vals = 0
+	}
+};
+module_param_string(ud_gid_type, ud_gid_type.dbdf2val.str,
+		    sizeof(ud_gid_type.dbdf2val.str), 0444);
+MODULE_PARM_DESC(ud_gid_type,
+		 "Set gid type for UD QPs\n"
+		 "\tA single value (e.g. 1) to define uniform UD QP gid type for all devices\n"
+		 "\t\tor a string to map device function numbers to their UD QP gid type (e.g. '0000:04:00.0-0,002b:1c:0b.a-1').\n"
+		 "\t\tAllowed values are 0 for RoCEv1, 1 for RoCEv1.5 (default) and 2 for RoCEv2");
 
 static struct param_data num_vfs = {
 	.id		= NUM_VFS,
@@ -621,6 +641,7 @@ static int update_defaults(struct param_data *pdata)
 		return INVALID_STR;
 
 	switch (pdata->id) {
+	case UD_GID_TYPE:
 	case ROCE_MODE:
 	case PORT_TYPE_ARRAY:
 	case NUM_VFS:
@@ -1454,11 +1475,44 @@ err_mem:
 	return err;
 }
 
+int mlx4_verify_supported_gid_type(struct mlx4_dev *dev,
+				   enum mlx4_roce_gid_type gid_type,
+				   enum mlx4_roce_gid_type *alt_type)
+{
+	static const int supported_gid_types[][2] = {
+		[MLX4_ROCE_MODE_1]		= {MLX4_ROCE_GID_TYPE_V1, -1},
+		[MLX4_ROCE_MODE_2]		= {MLX4_ROCE_GID_TYPE_V2, -1},
+		[MLX4_ROCE_MODE_1_PLUS_2]	= {MLX4_ROCE_GID_TYPE_V1,
+						   MLX4_ROCE_GID_TYPE_V2},
+	};
+	enum mlx4_roce_mode roce_mode = dev->caps.roce_mode;
+	int i;
+
+	if (roce_mode == MLX4_ROCE_MODE_INVALID) {
+		if (alt_type)
+			*alt_type = MLX4_ROCE_GID_TYPE_INVALID;
+		return -EINVAL;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(supported_gid_types[roce_mode]) &&
+	     gid_type != supported_gid_types[roce_mode][i]; i++)
+		;
+
+	if (i == ARRAY_SIZE(supported_gid_types[roce_mode])) {
+		if (alt_type)
+			*alt_type = supported_gid_types[roce_mode][0];
+		return -EINVAL;
+	}
+	return 0;
+}
+
 static void choose_roce_mode(struct mlx4_dev *dev,
 			     struct mlx4_dev_cap *dev_cap)
 {
 	int req_roce_mode;
 	enum mlx4_roce_mode def_roce_mode;
+	int req_ud_gid_type;
+	enum mlx4_roce_gid_type alt_gid_type;
 
 	def_roce_mode = mlx4_is_roce_dev(dev) ?
 		MLX4_ROCE_MODE_1 : MLX4_ROCE_MODE_INVALID;
@@ -1485,6 +1539,18 @@ static void choose_roce_mode(struct mlx4_dev *dev,
 	dev->caps.roce_mode = req_roce_mode;
 	pr_info("mlx4_core: device is working in RoCE mode: %s\n",
 		mlx4_roce_mode_to_str(dev->caps.roce_mode));
+
+	mlx4_get_val(ud_gid_type.dbdf2val.tbl, pci_physfn(dev->persist->pdev),
+		     0, &req_ud_gid_type);
+	if (mlx4_verify_supported_gid_type(dev, req_ud_gid_type,
+					   &alt_gid_type)) {
+		pr_warn("mlx4_core: gid_type %d for UD QPs is not supported by the device, gid_type %d was chosen instead\n",
+			req_ud_gid_type, alt_gid_type);
+		req_ud_gid_type = alt_gid_type;
+	}
+	dev->caps.ud_gid_type = req_ud_gid_type;
+	pr_info("mlx4_core: UD QP Gid type is: %s\n",
+		mlx4_roce_gid_type_to_str(dev->caps.ud_gid_type));
 }
 
 static int mlx4_slave_cap(struct mlx4_dev *dev)
@@ -2084,7 +2150,6 @@ int mlx4_unbond(struct mlx4_dev *dev)
 	return ret;
 }
 EXPORT_SYMBOL_GPL(mlx4_unbond);
-
 
 int mlx4_port_map_set(struct mlx4_dev *dev, struct mlx4_port_map *v2p)
 {
@@ -5086,6 +5151,14 @@ static int __init mlx4_verify_params(void)
 	status = update_defaults(&roce_mode);
 	if (status == INVALID_STR) {
 		if (mlx4_fill_dbdf2val_tbl(&roce_mode.dbdf2val))
+			return -1;
+	} else if (status == INVALID_DATA) {
+		return -1;
+	}
+
+	status = update_defaults(&ud_gid_type);
+	if (status == INVALID_STR) {
+		if (mlx4_fill_dbdf2val_tbl(&ud_gid_type.dbdf2val))
 			return -1;
 	} else if (status == INVALID_DATA) {
 		return -1;

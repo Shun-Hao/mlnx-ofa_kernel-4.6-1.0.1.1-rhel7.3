@@ -576,6 +576,25 @@ struct mlx4_phys_caps {
 	u32			base_tunnel_sqpn;
 };
 
+enum mlx4_roce_gid_type {
+	MLX4_ROCE_GID_TYPE_V1   = 0,
+	MLX4_ROCE_GID_TYPE_V2   = 2,
+	MLX4_ROCE_GID_TYPE_MAX,
+	MLX4_ROCE_GID_TYPE_INVALID = MLX4_ROCE_GID_TYPE_MAX,
+};
+
+static inline const char *mlx4_roce_gid_type_to_str(enum mlx4_roce_gid_type t)
+{
+	switch (t) {
+	case MLX4_ROCE_GID_TYPE_V1:
+		return "V1";
+	case MLX4_ROCE_GID_TYPE_V2:
+		return "V2";
+	default:
+		return "Unknown";
+	}
+}
+
 struct mlx4_spec_qps {
 	u32 qp0_qkey;
 	u32 qp0_proxy;
@@ -639,6 +658,7 @@ struct mlx4_caps {
 	int			steering_mode;
 	int			steering_attr;
 	enum mlx4_roce_mode	roce_mode;
+	enum mlx4_roce_gid_type	ud_gid_type;
 	int			dmfs_high_steer_mode;
 	int			fs_log_max_ucast_qp_range_size;
 	int			num_pds;
