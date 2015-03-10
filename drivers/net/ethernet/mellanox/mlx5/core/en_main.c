@@ -2966,6 +2966,7 @@ int mlx5e_open_locked(struct net_device *netdev)
 
 	mlx5e_refresh_tirs(priv, false);
 	mlx5e_activate_priv_channels(priv);
+	mlx5e_create_debugfs(priv);
 	if (priv->profile->update_carrier)
 		priv->profile->update_carrier(priv);
 
@@ -3007,6 +3008,7 @@ int mlx5e_close_locked(struct net_device *netdev)
 	clear_bit(MLX5E_STATE_OPENED, &priv->state);
 
 	netif_carrier_off(priv->netdev);
+	mlx5e_destroy_debugfs(priv);
 	mlx5e_deactivate_priv_channels(priv);
 	mlx5e_close_channels(&priv->channels);
 

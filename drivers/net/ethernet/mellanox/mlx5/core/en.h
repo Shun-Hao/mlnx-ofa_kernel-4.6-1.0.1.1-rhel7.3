@@ -615,6 +615,8 @@ struct mlx5e_channel {
 	struct hwtstamp_config    *tstamp;
 	int                        ix;
 	int                        cpu;
+
+	struct dentry             *dfs_root;
 };
 
 struct mlx5e_channels {
@@ -703,6 +705,8 @@ struct mlx5e_priv {
 #ifdef CONFIG_MLX5_EN_TLS
 	struct mlx5e_tls          *tls;
 #endif
+
+	struct dentry *dfs_root;
 };
 
 struct mlx5e_profile {
@@ -834,6 +838,9 @@ static inline bool mlx5e_tunnel_inner_ft_supported(struct mlx5_core_dev *mdev)
 	return (MLX5_CAP_ETH(mdev, tunnel_stateless_gre) &&
 		MLX5_CAP_FLOWTABLE_NIC_RX(mdev, ft_field_support.inner_ip_version));
 }
+
+void mlx5e_create_debugfs(struct mlx5e_priv *priv);
+void mlx5e_destroy_debugfs(struct mlx5e_priv *priv);
 
 static inline void mlx5e_sq_fetch_wqe(struct mlx5e_txqsq *sq,
 				      struct mlx5e_tx_wqe **wqe,
