@@ -2808,8 +2808,9 @@ static int mlx4_en_copy_priv(struct mlx4_en_priv *dst,
 	dst->port = src->port;
 	dst->dev = src->dev;
 	dst->prof = prof;
-	dst->stride = roundup_pow_of_two(sizeof(struct mlx4_en_rx_desc) +
-					 DS_SIZE * MLX4_EN_MAX_RX_FRAGS);
+	dst->stride = prof->inline_scatter_thold ? :
+		roundup_pow_of_two(sizeof(struct mlx4_en_rx_desc) +
+				   DS_SIZE * MLX4_EN_MAX_RX_FRAGS);
 
 	for (t = 0; t < MLX4_EN_NUM_TX_TYPES; t++) {
 		dst->tx_ring_num[t] = prof->tx_ring_num[t];
@@ -2858,6 +2859,7 @@ static void mlx4_en_update_priv(struct mlx4_en_priv *dst,
 	}
 	dst->num_tx_rings_p_up = src->num_tx_rings_p_up;
 	dst->rx_ring_num = src->rx_ring_num;
+	dst->stride = src->stride;
 	memcpy(dst->prof, src->prof, sizeof(struct mlx4_en_port_profile));
 }
 
@@ -2997,6 +2999,11 @@ static int mlx4_en_change_mtu(struct net_device *dev, int new_mtu)
 	if (priv->tx_ring_num[TX_XDP] &&
 	    !mlx4_en_check_xdp_mtu(dev, new_mtu))
 		return -EOPNOTSUPP;
+
+	if (priv->prof->inline_scatter_thold) {
+		en_err(priv, "Please disable RX Copybreak by setting to 0\n");
+		return -EPERM;
+	}
 
 	dev->mtu = new_mtu;
 
@@ -4024,8 +4031,10 @@ int mlx4_en_init_netdev(struct mlx4_en_dev *mdev, int port,
 
 	memcpy(priv->current_mac, dev->dev_addr, sizeof(priv->current_mac));
 
-	priv->stride = roundup_pow_of_two(sizeof(struct mlx4_en_rx_desc) +
-					  DS_SIZE * MLX4_EN_MAX_RX_FRAGS);
+	priv->stride = prof->inline_scatter_thold ? :
+		roundup_pow_of_two(sizeof(struct mlx4_en_rx_desc) +
+				   DS_SIZE * MLX4_EN_MAX_RX_FRAGS);
+
 	err = mlx4_en_alloc_resources(priv);
 	if (err)
 		goto out;

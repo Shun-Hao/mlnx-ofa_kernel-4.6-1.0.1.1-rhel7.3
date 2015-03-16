@@ -181,6 +181,7 @@ static void mlx4_en_get_profile(struct mlx4_en_dev *mdev)
 			params->prof[i].num_up;
 		params->prof[i].rss_rings = 0;
 		params->prof[i].inline_thold = inline_thold;
+		params->prof[i].inline_scatter_thold = 0;
 	}
 }
 

@@ -332,8 +332,9 @@ int mlx4_en_activate_rx_rings(struct mlx4_en_priv *priv)
 	int i;
 	int ring_ind;
 	int err;
-	int stride = roundup_pow_of_two(sizeof(struct mlx4_en_rx_desc) +
-					DS_SIZE * priv->num_frags);
+	int stride = priv->prof->inline_scatter_thold ? priv->stride :
+		roundup_pow_of_two(sizeof(struct mlx4_en_rx_desc) +
+				   DS_SIZE * priv->num_frags);
 
 	for (ring_ind = 0; ring_ind < priv->rx_ring_num; ring_ind++) {
 		ring = priv->rx_ring[ring_ind];
@@ -620,6 +621,32 @@ static int get_fixed_ipv6_csum(__wsum hw_checksum, struct sk_buff *skb,
 }
 #endif
 
+static void mlx4_en_inline_scatter(struct mlx4_en_rx_ring *ring,
+				   struct mlx4_en_rx_alloc *frags,
+				   struct mlx4_en_priv *priv,
+				   unsigned int length,
+				   int index, void *va)
+{
+	struct mlx4_en_rx_desc *rx_desc = ring->buf + (index << ring->log_stride);
+	dma_addr_t dma;
+	int frag_size;
+
+	/* fill frag */
+	frag_size = priv->frag_info[0].frag_size;
+	dma = frags[0].dma + frags[0].page_offset;
+	dma_sync_single_for_cpu(priv->ddev, dma, frag_size,
+				DMA_FROM_DEVICE);
+	memcpy(va, rx_desc, length);
+
+	/* prepare a valid rx_desc */
+	memset(rx_desc, 0, ring->stride);
+	rx_desc->data[0].byte_count = cpu_to_be32(frag_size);
+	rx_desc->data[0].lkey = cpu_to_be32(priv->mdev->mr.key);
+	rx_desc->data[0].addr = cpu_to_be64(dma);
+
+	rx_desc->data[1].lkey = cpu_to_be32(MLX4_EN_MEMTYPE_PAD);
+}
+
 /* We reach this function only after checking that any of
  * the (IPv4 | IPv6) bits are set in cqe->status.
  */
@@ -713,6 +740,12 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
 			goto next;
 		}
 
+		length = be32_to_cpu(cqe->byte_cnt);
+		length -= ring->fcs_del;
+
+		if (cqe->owner_sr_opcode & MLX4_CQE_IS_RECV_MASK)
+			mlx4_en_inline_scatter(ring, frags, priv, length, index, va);
+
 		/* Check if we need to drop the packet if SRIOV is not enabled
 		 * and not performing the selftest or flb disabled
 		 */
@@ -750,9 +783,6 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
 		/*
 		 * Packet is OK - process it.
 		 */
-		length = be32_to_cpu(cqe->byte_cnt);
-		length -= ring->fcs_del;
-
 		/* A bpf program gets first chance to drop the packet. It may
 		 * read bytes but not past the end of the frag.
 		 */

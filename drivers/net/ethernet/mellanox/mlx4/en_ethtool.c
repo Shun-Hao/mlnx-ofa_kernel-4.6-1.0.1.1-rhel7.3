@@ -2007,6 +2007,73 @@ static int mlx4_en_get_ts_info(struct net_device *dev,
 	return ret;
 }
 
+static int mlx4_en_set_inline_scatter_thold(struct net_device *dev, int thold)
+{
+	struct mlx4_en_priv *priv = netdev_priv(dev);
+	struct mlx4_en_dev *mdev = priv->mdev;
+	struct mlx4_en_port_profile new_prof;
+	struct mlx4_en_priv *tmp;
+	int port_up = 0;
+	int err = 0;
+
+	/* can enable inline scatter if port is up and MTU is 1500 */
+	if (priv->num_frags != 1)
+		return -EINVAL;
+
+	if (thold >= MIN_INLINE_SCATTER) {
+		int stride;
+
+		thold = roundup_pow_of_two(thold);
+
+		if (thold > MAX_INLINE_SCATTER)
+			return -EINVAL;
+
+		stride = thold;
+		/* stride cannot be larger than MAX_DESC_SIZE,
+		 * unless we ensure that all packets will
+		 * be inline scatterd - thold >= MTU
+		 */
+		if (stride > MAX_DESC_SIZE && stride < dev->mtu)
+			return -EINVAL;
+	} else {
+		/* disable inline scatter and reset stride */
+		thold = 0;
+	}
+
+	/* inline scatter thold is good */
+	tmp = kzalloc(sizeof(*tmp), GFP_KERNEL);
+	if (!tmp)
+		return -ENOMEM;
+
+	mutex_lock(&mdev->state_lock);
+	memcpy(&new_prof, priv->prof, sizeof(struct mlx4_en_port_profile));
+	new_prof.inline_scatter_thold = thold;
+	err = mlx4_en_try_alloc_resources(priv, tmp, &new_prof, true);
+	if (err) {
+		en_err(priv, "Failed allocating port resources\n");
+		goto out;
+	}
+
+	if (priv->port_up) {
+		port_up = 1;
+		mlx4_en_stop_port(dev, 1);
+	}
+
+	mlx4_en_safe_replace_resources(priv, tmp);
+
+	if (port_up) {
+		err = mlx4_en_start_port(dev);
+		if (err)
+			en_err(priv, "Failed starting port\n");
+	}
+
+out:
+	mutex_unlock(&mdev->state_lock);
+	kfree(tmp);
+
+	return err;
+}
+
 static int mlx4_en_set_priv_flags(struct net_device *dev, u32 flags)
 {
 	struct mlx4_en_priv *priv = netdev_priv(dev);
@@ -2135,6 +2202,9 @@ static int mlx4_en_get_tunable(struct net_device *dev,
 	case ETHTOOL_TX_COPYBREAK:
 		*(u32 *)data = priv->prof->inline_thold;
 		break;
+	case ETHTOOL_RX_COPYBREAK:
+		*(u32 *)data = priv->prof->inline_scatter_thold;
+		break;
 	default:
 		ret = -EINVAL;
 		break;
@@ -2157,6 +2227,10 @@ static int mlx4_en_set_tunable(struct net_device *dev,
 			ret = -EINVAL;
 		else
 			priv->prof->inline_thold = val;
+		break;
+	case ETHTOOL_RX_COPYBREAK:
+		val = *(u32 *)data;
+		ret = mlx4_en_set_inline_scatter_thold(dev, val);
 		break;
 	default:
 		ret = -EINVAL;

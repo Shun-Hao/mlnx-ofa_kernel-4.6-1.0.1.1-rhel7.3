@@ -91,10 +91,16 @@ void mlx4_en_fill_qp_context(struct mlx4_en_priv *priv, int size, int stride,
 	if (!(dev->features & NETIF_F_HW_VLAN_CTAG_RX))
 		context->param3 |= cpu_to_be32(1 << 30);
 
-	if (!is_tx && !rss &&
-	    (mdev->dev->caps.tunnel_offload_mode ==  MLX4_TUNNEL_OFFLOAD_MODE_VXLAN)) {
-		en_dbg(HW, priv, "Setting RX qp %x tunnel mode to RX tunneled & non-tunneled\n", qpn);
-		context->srqn = cpu_to_be32(7 << 28); /* this fills bits 30:28 */
+	if (!is_tx && !rss) {
+		if (priv->prof->inline_scatter_thold >= MIN_INLINE_SCATTER)
+			context->param3 |= cpu_to_be32(1 << 25);
+
+		if (mdev->dev->caps.tunnel_offload_mode ==
+		    MLX4_TUNNEL_OFFLOAD_MODE_VXLAN) {
+			    en_dbg(HW, priv, "Setting RX qp %x tunnel mode to RX tunneled & non-tunneled\n", qpn);
+			    /* this fills bits 30:28 */
+			    context->srqn = cpu_to_be32(7 << 28);
+		    }
 	}
 }
 

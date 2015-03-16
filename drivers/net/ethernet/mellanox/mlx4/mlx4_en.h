@@ -213,6 +213,12 @@ enum {
 	MIN_PKT_LEN = 17,
 };
 
+/* Constants for RX flow */
+enum {
+	MAX_INLINE_SCATTER = 2048,
+	MIN_INLINE_SCATTER = 64,
+};
+
 /*
  * Configurables
  */
@@ -412,6 +418,7 @@ struct mlx4_en_port_profile {
 	u8 num_up;
 	int rss_rings;
 	int inline_thold;
+	int inline_scatter_thold;
 	struct hwtstamp_config hwtstamp_config;
 };
 
