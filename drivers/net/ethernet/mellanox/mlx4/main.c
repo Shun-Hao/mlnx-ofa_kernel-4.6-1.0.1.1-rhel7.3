@@ -3525,7 +3525,10 @@ static void mlx4_enable_msi_x(struct mlx4_dev *dev)
 		nreq = pci_enable_msix_range(dev->persist->pdev, entries, 2,
 					     nreq);
 
-		if (nreq < 0 || nreq < MLX4_EQ_ASYNC) {
+		/* At least 2 vectors are required, one for the ASYNC EQ and
+		 * a completion EQ.
+		 */
+		if (nreq < 2) {
 			kfree(entries);
 			goto no_msi;
 		}

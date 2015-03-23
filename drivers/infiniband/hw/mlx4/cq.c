@@ -34,6 +34,7 @@
 #include <linux/mlx4/cq.h>
 #include <linux/mlx4/qp.h>
 #include <linux/mlx4/srq.h>
+#include <linux/mlx4/driver.h>
 #include <linux/slab.h>
 
 #include "mlx4_ib.h"
@@ -242,7 +243,8 @@ struct ib_cq *mlx4_ib_create_cq(struct ib_device *ibdev,
 	}
 
 	if (dev->eq_table)
-		vector = dev->eq_table[vector % ibdev->num_comp_vectors];
+		vector = mlx4_choose_vector(dev->dev, vector,
+					    ibdev->num_comp_vectors);
 
 	err = mlx4_cq_alloc(dev->dev, entries, &cq->buf.mtt, uar,
 			    cq->db.dma, &cq->mcq, vector, 0,

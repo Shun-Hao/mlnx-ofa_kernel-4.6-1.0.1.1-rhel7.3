@@ -89,6 +89,29 @@ err_cq:
 	return err;
 }
 
+#define MLX4_EN_EQ_NAME_PRIORITY	2
+
+static void mlx4_en_cq_eq_cb(unsigned int vector, u32 uuid, void *data)
+{
+	int err;
+	struct mlx4_en_cq **pcq = data;
+
+	if (MLX4_EQ_UUID_TO_ID(uuid) ==  MLX4_EQ_ID_EN) {
+		struct mlx4_en_cq *cq = *pcq;
+		struct mlx4_en_priv *priv = netdev_priv(cq->dev);
+		struct mlx4_en_dev *mdev = priv->mdev;
+
+		if (uuid == MLX4_EQ_ID_TO_UUID(MLX4_EQ_ID_EN, priv->port,
+					       pcq - priv->rx_cq)) {
+			err = mlx4_rename_eq(mdev->dev, priv->port, vector,
+					     MLX4_EN_EQ_NAME_PRIORITY, "%s-%d",
+					     priv->dev->name, cq->ring);
+			if (err)
+				mlx4_warn(mdev, "Failed to rename EQ, continuing with default name\n");
+		}
+	}
+}
+
 int mlx4_en_activate_cq(struct mlx4_en_priv *priv, struct mlx4_en_cq *cq,
 			int cq_idx)
 {
@@ -110,6 +133,11 @@ int mlx4_en_activate_cq(struct mlx4_en_priv *priv, struct mlx4_en_cq *cq,
 			cq->vector = cpumask_first(priv->rx_ring[cq->ring]->affinity_mask);
 
 			err = mlx4_assign_eq(mdev->dev, priv->port,
+					     MLX4_EQ_ID_TO_UUID(MLX4_EQ_ID_EN,
+								priv->port,
+								cq_idx),
+					     mlx4_en_cq_eq_cb,
+					     &priv->rx_cq[cq_idx],
 					     &cq->vector);
 			if (err) {
 				mlx4_err(mdev, "Failed assigning an EQ to CQ vector %d\n",
@@ -118,6 +146,16 @@ int mlx4_en_activate_cq(struct mlx4_en_priv *priv, struct mlx4_en_cq *cq,
 			}
 
 			assigned_eq = true;
+		}
+
+		/* Set IRQ for specific name (per ring) */
+		err = mlx4_rename_eq(mdev->dev, priv->port, cq->vector,
+				     MLX4_EN_EQ_NAME_PRIORITY, "%s-%d",
+				     priv->dev->name, cq->ring);
+
+		if (err) {
+			mlx4_warn(mdev, "Failed to rename EQ, continuing with default name\n");
+			err = 0;
 		}
 
 		cq->irq_desc =
@@ -171,7 +209,11 @@ int mlx4_en_activate_cq(struct mlx4_en_priv *priv, struct mlx4_en_cq *cq,
 
 free_eq:
 	if (assigned_eq)
-		mlx4_release_eq(mdev->dev, cq->vector);
+		mlx4_release_eq(mdev->dev,
+				MLX4_EQ_ID_TO_UUID(MLX4_EQ_ID_EN,
+						   priv->port,
+						   cq_idx),
+				cq->vector);
 	cq->vector = mdev->dev->caps.num_comp_vectors;
 	return err;
 }
@@ -184,7 +226,11 @@ void mlx4_en_destroy_cq(struct mlx4_en_priv *priv, struct mlx4_en_cq **pcq)
 	mlx4_free_hwq_res(mdev->dev, &cq->wqres, cq->buf_size);
 	if (mlx4_is_eq_vector_valid(mdev->dev, priv->port, cq->vector) &&
 	    cq->type == RX)
-		mlx4_release_eq(priv->mdev->dev, cq->vector);
+		mlx4_release_eq(priv->mdev->dev,
+				MLX4_EQ_ID_TO_UUID(MLX4_EQ_ID_EN,
+						   priv->port,
+						   pcq - priv->rx_cq),
+				cq->vector);
 	cq->vector = 0;
 	cq->buf_size = 0;
 	cq->buf = NULL;

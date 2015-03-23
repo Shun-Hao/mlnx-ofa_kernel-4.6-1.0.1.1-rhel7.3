@@ -2438,6 +2438,28 @@ static void init_pkeys(struct mlx4_ib_dev *ibdev)
 	}
 }
 
+#define MLX4_IB_EQ_NAME_PRIORITY	1
+static void mlx4_ib_eq_cb(unsigned int vector, u32 uuid, void *data)
+{
+	int err;
+	struct mlx4_ib_eq_table_entry *entry = data;
+
+	if (MLX4_EQ_UUID_TO_ID(uuid) ==  MLX4_EQ_ID_IB) {
+		struct mlx4_ib_dev *ibdev = entry->ibdev;
+
+		if (uuid == MLX4_EQ_ID_TO_UUID(MLX4_EQ_ID_IB, entry->port,
+					       entry - ibdev->eq_table)) {
+			err = mlx4_rename_eq(ibdev->dev, entry->port, vector,
+					     MLX4_IB_EQ_NAME_PRIORITY, "%s-%d",
+					     ibdev->ib_dev.name,
+					     (unsigned int)(entry - ibdev->eq_table));
+			if (err)
+				dev_warn(&ibdev->dev->persist->pdev->dev,
+					 "Failed to rename EQ, continuing with default name\n");
+		}
+	}
+}
+
 static void mlx4_ib_alloc_eqs(struct mlx4_dev *dev, struct mlx4_ib_dev *ibdev)
 {
 	int i, j, eq = 0, total_eqs = 0;
@@ -2452,17 +2474,23 @@ static void mlx4_ib_alloc_eqs(struct mlx4_dev *dev, struct mlx4_ib_dev *ibdev)
 		     j++, total_eqs++) {
 			if (i > 1 &&  mlx4_is_eq_shared(dev, total_eqs))
 				continue;
-			ibdev->eq_table[eq] = total_eqs;
+			ibdev->eq_table[eq].vector = total_eqs;
+			ibdev->eq_table[eq].ibdev = ibdev;
+			ibdev->eq_table[eq].port = i;
 			if (!mlx4_assign_eq(dev, i,
-					    &ibdev->eq_table[eq]))
+					    MLX4_EQ_ID_TO_UUID(MLX4_EQ_ID_IB,
+							       i, eq),
+					    mlx4_ib_eq_cb,
+					    &ibdev->eq_table[eq],
+					    &ibdev->eq_table[eq].vector))
 				eq++;
 			else
-				ibdev->eq_table[eq] = -1;
+				ibdev->eq_table[eq].vector = -1;
 		}
 	}
 
 	for (i = eq; i < dev->caps.num_comp_vectors;
-	     ibdev->eq_table[i++] = -1)
+	     ibdev->eq_table[i++].vector = -1)
 		;
 
 	/* Advertise the new number of EQs to clients */
@@ -2482,7 +2510,11 @@ static void mlx4_ib_free_eqs(struct mlx4_dev *dev, struct mlx4_ib_dev *ibdev)
 	ibdev->ib_dev.num_comp_vectors = 0;
 
 	for (i = 0; i < total_eqs; i++)
-		mlx4_release_eq(dev, ibdev->eq_table[i]);
+		mlx4_release_eq(dev,
+				MLX4_EQ_ID_TO_UUID(MLX4_EQ_ID_IB,
+						   ibdev->eq_table[i].port,
+						   i),
+				ibdev->eq_table[i].vector);
 
 	kfree(ibdev->eq_table);
 	ibdev->eq_table = NULL;
@@ -2857,6 +2889,16 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
 	ibdev->ib_dev.driver_id = RDMA_DRIVER_MLX4;
 	if (ib_register_device(&ibdev->ib_dev, "mlx4_%d", NULL))
 		goto err_diag_counters;
+
+	for (j = 0; j < ibdev->ib_dev.num_comp_vectors; j++)
+		if (mlx4_rename_eq(dev, ibdev->eq_table[j].port,
+				   ibdev->eq_table[j].vector,
+				   MLX4_IB_EQ_NAME_PRIORITY,
+				   "%s-%d", ibdev->ib_dev.name,
+				   ibdev->eq_table[j].vector))
+			dev_warn(&dev->persist->pdev->dev,
+				 "failed to rename eq %d, continuing with default name\n",
+				 j);
 
 	if (mlx4_ib_mad_init(ibdev))
 		goto err_reg;

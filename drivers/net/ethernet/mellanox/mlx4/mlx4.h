@@ -404,9 +404,12 @@ struct mlx4_eq {
 	int			nent;
 	struct mlx4_buf_list   *page_list;
 	struct mlx4_mtt		mtt;
+	u32                     ncqs;
 	struct mlx4_eq_tasklet	tasklet_ctx;
 	struct mlx4_active_ports actv_ports;
 	u32			ref_count;
+	u8			name_priority;
+	struct raw_notifier_head notifiers_list;
 	cpumask_var_t		affinity_mask;
 };
 

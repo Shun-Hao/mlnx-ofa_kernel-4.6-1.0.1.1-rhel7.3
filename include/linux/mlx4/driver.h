@@ -170,4 +170,6 @@ static inline void mlx4_u64_to_mac(u8 *addr, u64 mac)
 	}
 }
 
+int mlx4_choose_vector(struct mlx4_dev *dev, int vector, int num_comp);
+void mlx4_release_vector(struct mlx4_dev *dev, int vector);
 #endif /* MLX4_DRIVER_H */

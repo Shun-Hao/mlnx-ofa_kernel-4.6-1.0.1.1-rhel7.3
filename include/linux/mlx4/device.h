@@ -981,6 +981,7 @@ struct mlx4_dev {
 	u64			regid_promisc_array[MLX4_MAX_PORTS + 1];
 	u64			regid_allmulti_array[MLX4_MAX_PORTS + 1];
 	struct mlx4_vf_dev     *dev_vfs;
+	spinlock_t		eq_accounting_lock;
 	u8  uar_page_shift;
 };
 
@@ -1459,6 +1460,14 @@ enum {
 	MLX4_OP_MOD_QUERY_TRANSPORT_CI_ERRORS = 0x2,
 };
 
+enum {
+	MLX4_EQ_ID_EN,
+	MLX4_EQ_ID_IB,
+};
+
+#define MLX4_EQ_ID_TO_UUID(id, port, n) (((unsigned int)id) << 31 | (port) << 24 | (n))
+#define MLX4_EQ_UUID_TO_ID(uuid)        ((uuid) >> 31)
+
 int mlx4_flow_steer_promisc_add(struct mlx4_dev *dev, u8 port, u32 qpn,
 				enum mlx4_net_trans_promisc_mode mode);
 int mlx4_flow_steer_promisc_remove(struct mlx4_dev *dev, u8 port,
@@ -1513,8 +1522,12 @@ int mlx4_query_diag_counters(struct mlx4_dev *dev, u8 op_modifier,
 u32 mlx4_get_eqs_per_port(struct mlx4_dev *dev, u8 port);
 bool mlx4_is_eq_vector_valid(struct mlx4_dev *dev, u8 port, int vector);
 struct cpu_rmap *mlx4_get_cpu_rmap(struct mlx4_dev *dev, int port);
-int mlx4_assign_eq(struct mlx4_dev *dev, u8 port, int *vector);
-void mlx4_release_eq(struct mlx4_dev *dev, int vec);
+int mlx4_assign_eq(struct mlx4_dev *dev, u8 port, u32 consumer_uuid,
+		   void (*cb)(unsigned int vector, u32 uuid, void *data),
+		   void *notifier_data, int *vector);
+void mlx4_release_eq(struct mlx4_dev *dev, int uuid, int vec);
+__printf(5, 6) int mlx4_rename_eq(struct mlx4_dev *dev, int port, int vector,
+				  u8 priority, const char namefmt[], ...);
 
 int mlx4_is_eq_shared(struct mlx4_dev *dev, int vector);
 int mlx4_eq_get_irq(struct mlx4_dev *dev, int vec);

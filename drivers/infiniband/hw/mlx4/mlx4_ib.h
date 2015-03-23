@@ -610,6 +610,12 @@ struct mlx4_ib_diag_counters {
 	u32 num_counters;
 };
 
+struct mlx4_ib_eq_table_entry {
+	int			vector;
+	int			port;
+	struct mlx4_ib_dev	*ibdev;
+};
+
 struct mlx4_ib_dev {
 	struct ib_device	ib_dev;
 	struct mlx4_dev	       *dev;
@@ -628,7 +634,7 @@ struct mlx4_ib_dev {
 	bool			ib_active;
 	struct mlx4_ib_iboe	iboe;
 	struct mlx4_ib_counters counters_table[MLX4_MAX_PORTS];
-	int		       *eq_table;
+	struct mlx4_ib_eq_table_entry	*eq_table;
 	struct kobject	       *iov_parent;
 	struct kobject	       *ports_parent;
 	struct kobject	       *dev_ports_parent[MLX4_MFUNC_MAX];
