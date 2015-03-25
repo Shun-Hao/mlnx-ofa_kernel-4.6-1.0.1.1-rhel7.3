@@ -186,6 +186,7 @@ enum {
 	MLX4_DEV_CAP_FLAG_RSS_IP_FRAG   = 1LL << 52,
 	MLX4_DEV_CAP_FLAG_SET_ETH_SCHED = 1LL << 53,
 	MLX4_DEV_CAP_FLAG_SENSE_SUPPORT	= 1LL << 55,
+	MLX4_DEV_CAP_FLAG_FAST_DROP     = 1LL << 57,
 	MLX4_DEV_CAP_FLAG_PORT_MNG_CHG_EV = 1LL << 59,
 	MLX4_DEV_CAP_FLAG_64B_EQE	= 1LL << 61,
 	MLX4_DEV_CAP_FLAG_64B_CQE	= 1LL << 62
@@ -633,6 +634,7 @@ struct mlx4_caps {
 	u8			eqe_factor;
 	u32			userspace_caps; /* userspace must be aware of these */
 	u32			function_caps;  /* VFs must be aware of these */
+	u8			fast_drop;
 	u16			hca_core_clock;
 	u64			phys_port_id[MLX4_MAX_PORTS + 1];
 	int			tunnel_offload_mode;
