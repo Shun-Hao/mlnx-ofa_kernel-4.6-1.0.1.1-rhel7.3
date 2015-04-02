@@ -628,6 +628,8 @@ struct mlx4_en_priv {
 	struct mlx4_en_flow_stats_tx tx_flowstats;
 	struct mlx4_en_port_stats port_stats;
 	struct mlx4_en_xdp_stats xdp_stats;
+	struct mlx4_en_vport_stats vport_stats;
+	struct mlx4_en_vf_stats vf_stats;
 	struct mlx4_en_phy_stats phy_stats;
 	struct mlx4_en_stats_bitmap stats_bitmap;
 	struct list_head mc_list;
@@ -699,6 +701,7 @@ int mlx4_disable_32_14_4_e_write(struct mlx4_dev *dev, u8 config, int port);
 int mlx4_disable_32_14_4_e_read(struct mlx4_dev *dev, u8 *config, int port);
 #endif
 
+int mlx4_en_get_vport_stats(struct mlx4_en_dev *mdev, u8 port);
 void mlx4_en_set_stats_bitmap(struct mlx4_dev *dev,
 			      struct mlx4_en_stats_bitmap *stats_bitmap,
 			      u8 rx_ppp, u8 rx_pause,
@@ -789,6 +792,9 @@ void mlx4_en_rx_irq(struct mlx4_cq *mcq);
 int mlx4_SET_MCAST_FLTR(struct mlx4_dev *dev, u8 port, u64 mac, u64 clear, u8 mode);
 int mlx4_SET_VLAN_FLTR(struct mlx4_dev *dev, struct mlx4_en_priv *priv);
 
+int mlx4_get_vport_ethtool_stats(struct mlx4_dev *dev, int port,
+				 struct mlx4_en_vport_stats *vport_stats,
+				 int reset);
 void mlx4_en_fold_software_stats(struct net_device *dev);
 int mlx4_en_DUMP_ETH_STATS(struct mlx4_en_dev *mdev, u8 port, u8 reset);
 int mlx4_en_QUERY_PORT(struct mlx4_en_dev *mdev, u8 port);

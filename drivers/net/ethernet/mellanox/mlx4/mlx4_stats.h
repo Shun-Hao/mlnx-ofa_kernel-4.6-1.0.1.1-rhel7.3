@@ -32,6 +32,35 @@ struct mlx4_en_counter_stats {
 #define NUM_PF_STATS      4
 };
 
+struct mlx4_en_vf_stats {
+	unsigned long rx_multicast_packets;
+	unsigned long rx_broadcast_packets;
+	unsigned long rx_filtered;
+	unsigned long tx_multicast_packets;
+	unsigned long tx_broadcast_packets;
+	unsigned long tx_dropped_hw;
+#define NUM_VF_STATS		6
+};
+
+struct mlx4_en_vport_stats {
+	unsigned long rx_unicast_packets;
+	unsigned long rx_unicast_bytes;
+	unsigned long rx_multicast_packets;
+	unsigned long rx_multicast_bytes;
+	unsigned long rx_broadcast_packets;
+	unsigned long rx_broadcast_bytes;
+	unsigned long rx_dropped;
+	unsigned long rx_filtered;
+	unsigned long tx_unicast_packets;
+	unsigned long tx_unicast_bytes;
+	unsigned long tx_multicast_packets;
+	unsigned long tx_multicast_bytes;
+	unsigned long tx_broadcast_packets;
+	unsigned long tx_broadcast_bytes;
+	unsigned long tx_dropped;
+#define NUM_VPORT_STATS		15
+};
+
 struct mlx4_en_port_stats {
 	unsigned long tso_packets;
 	unsigned long xmit_more;

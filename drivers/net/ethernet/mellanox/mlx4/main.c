@@ -53,6 +53,7 @@
 #include "mlx4.h"
 #include "fw.h"
 #include "icm.h"
+#include "mlx4_stats.h"
 
 MODULE_AUTHOR("Roland Dreier");
 MODULE_DESCRIPTION("Mellanox ConnectX HCA low-level driver");
@@ -3382,6 +3383,48 @@ int mlx4_get_default_counter_index(struct mlx4_dev *dev, int port)
 	return priv->def_counter[port - 1];
 }
 EXPORT_SYMBOL_GPL(mlx4_get_default_counter_index);
+
+int mlx4_get_vport_ethtool_stats(struct mlx4_dev *dev, int port,
+				 struct mlx4_en_vport_stats *vport_stats,
+				 int reset)
+{
+	struct mlx4_counter tmp_counter_stats;
+	struct mlx4_if_stat_ext *ext = &tmp_counter_stats.ext;
+	int counter_index;
+	int err;
+
+	if (!vport_stats)
+		return -EINVAL;
+
+	memset(&tmp_counter_stats, 0, sizeof(tmp_counter_stats));
+	counter_index = mlx4_get_default_counter_index(dev, port);
+	err = mlx4_get_counter_stats(dev, counter_index,
+				     &tmp_counter_stats, reset);
+	if (err)
+		return err;
+
+	if (tmp_counter_stats.counter_mode != MLX4_IF_CNT_MODE_EXT)
+		return -ENOTSUPP;
+
+	vport_stats->rx_broadcast_packets += be64_to_cpu(ext->if_rx_broadcast_frames);
+	vport_stats->rx_unicast_packets += be64_to_cpu(ext->if_rx_unicast_frames);
+	vport_stats->rx_multicast_packets += be64_to_cpu(ext->if_rx_multicast_frames);
+	vport_stats->tx_broadcast_packets += be64_to_cpu(ext->if_tx_broadcast_frames);
+	vport_stats->tx_unicast_packets += be64_to_cpu(ext->if_tx_unicast_frames);
+	vport_stats->tx_multicast_packets += be64_to_cpu(ext->if_tx_multicast_frames);
+	vport_stats->rx_broadcast_bytes += be64_to_cpu(ext->if_rx_broadcast_octets);
+	vport_stats->rx_unicast_bytes += be64_to_cpu(ext->if_rx_unicast_octets);
+	vport_stats->rx_multicast_bytes += be64_to_cpu(ext->if_rx_multicast_octets);
+	vport_stats->tx_broadcast_bytes += be64_to_cpu(ext->if_tx_broadcast_octets);
+	vport_stats->tx_unicast_bytes += be64_to_cpu(ext->if_tx_unicast_octets);
+	vport_stats->tx_multicast_bytes += be64_to_cpu(ext->if_tx_multicast_octets);
+	vport_stats->rx_filtered += be64_to_cpu(ext->if_rx_error_frames);
+	vport_stats->rx_dropped += be64_to_cpu(ext->if_rx_nobuffer_frames);
+	vport_stats->tx_dropped += be64_to_cpu(ext->if_tx_dropped_frames);
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(mlx4_get_vport_ethtool_stats);
 
 void mlx4_set_admin_guid(struct mlx4_dev *dev, __be64 guid, int entry, int port)
 {
