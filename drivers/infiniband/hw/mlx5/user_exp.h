@@ -75,6 +75,7 @@ enum mlx5_exp_ib_alloc_ucontext_data_resp_mask {
 	MLX5_EXP_ALLOC_CTX_RESP_MASK_HCA_CORE_CLOCK_OFFSET	= 1 << 4,
 	MLX5_EXP_ALLOC_CTX_RESP_MASK_MAX_DESC_SZ_SQ_DC		= 1 << 5,
 	MLX5_EXP_ALLOC_CTX_RESP_MASK_ATOMIC_ARG_SIZES_DC	= 1 << 6,
+	MLX5_EXP_ALLOC_CTX_RESP_MASK_FLAGS			= 1 << 7,
 };
 
 struct mlx5_exp_ib_alloc_ucontext_data_resp {
@@ -86,6 +87,7 @@ struct mlx5_exp_ib_alloc_ucontext_data_resp {
 	__u32	hca_core_clock_offset;
 	__u32	max_desc_sz_sq_dc;
 	__u32	atomic_arg_sizes_dc;
+	__u32	flags;
 };
 
 struct mlx5_exp_ib_alloc_ucontext_resp {

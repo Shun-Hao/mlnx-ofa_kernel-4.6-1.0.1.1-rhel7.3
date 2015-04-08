@@ -42,6 +42,10 @@ struct mlx5_ib_qp;
 #define MLX5_DC_CONNECT_QP_DEPTH 8192
 #define MLX5_IB_QPT_SW_CNAK	IB_QPT_RESERVED5
 
+enum mlx5_cap_flags {
+	MLX5_CAP_COMPACT_AV = 1 << 0,
+};
+
 enum {
 	MLX5_DCT_CS_RES_64	= 2,
 	MLX5_CNAK_RX_POLL_CQ_QUOTA	= 256,
