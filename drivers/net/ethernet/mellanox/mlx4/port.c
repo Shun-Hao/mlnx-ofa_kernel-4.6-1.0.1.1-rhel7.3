@@ -1504,6 +1504,9 @@ static int mlx4_common_set_port(struct mlx4_dev *dev, int slave, u32 in_mod,
 	__be32 slave_cap_mask;
 	__be32 new_cap_mask;
 	void *mbox, *mbox2;
+	enum mlx4_set_port_roce_mode slave_set_port_mode;
+	struct mlx4_mfunc_master_ctx *master = &priv->mfunc.master;
+	struct mlx4_slave_state *slave_st = &master->slave_state[slave];
 
 	port = in_mod & 0xff;
 	in_modifier = in_mod >> 8;
@@ -1555,8 +1558,45 @@ static int mlx4_common_set_port(struct mlx4_dev *dev, int slave, u32 in_mod,
 				mlx4_en_set_port_global_pause(dev, slave,
 							      gen_context);
 
+			/* For old slaves we parse the port settings and figure
+			 * out the roce_mode of the slave. Such slaves are
+			 * assumed to use input_modifier MLX4_SET_PORT_GID_TABLE
+			 * later on
+			 */
+#define SET_PORT_ROCE_MODE_BITS 0x10
+			if (gen_context->flags & SET_PORT_ROCE_MODE_BITS) {
+				slave_set_port_mode = (gen_context->roce_mode >> 4) & 7;
+				switch (slave_set_port_mode) {
+				case MLX4_SET_PORT_ROCE_MODE_1:
+					slave_st->slave_gid_type = MLX4_ROCE_GID_TYPE_V1;
+					break;
+				case MLX4_SET_PORT_ROCE_MODE_1_PLUS_2:
+					slave_st->slave_gid_type = MLX4_ROCE_GID_TYPE_INVALID;
+					break;
+				default:
+					return -EINVAL;
+				}
+			} else {
+				/* Old slaves don't set roce_mode in old slaves
+				 * if mode if V1
+				 */
+				slave_st->slave_gid_type = MLX4_ROCE_GID_TYPE_V1;
+			}
+
+			if ((slave_st->slave_gid_type != MLX4_ROCE_GID_TYPE_INVALID) &&
+			    (mlx4_verify_supported_gid_type(dev, slave_st->slave_gid_type, NULL))) {
+				slave_st->slave_gid_type = MLX4_ROCE_GID_TYPE_INVALID;
+				return -EINVAL;
+			}
+
+#define SET_PORT_ROCE_IP_PROTO_BITS 0x20
+			if (slave)
+				gen_context->flags &= ~(SET_PORT_ROCE_MODE_BITS |
+							SET_PORT_ROCE_IP_PROTO_BITS);
 			break;
 		case MLX4_SET_PORT_GID_TABLE:
+			if (slave_st->slave_gid_type == MLX4_ROCE_GID_TYPE_INVALID)
+				return -EINVAL;
 		case MLX4_SET_PORT_ROCE_ADDR:
 			num_gids = mlx4_get_slave_num_gids(dev, slave, port);
 			base = mlx4_get_base_gid_ix(dev, slave, port);
@@ -1623,6 +1663,12 @@ static int mlx4_common_set_port(struct mlx4_dev *dev, int slave, u32 in_mod,
 				struct mlx4_roce_addr *a = &priv->port[port].roce.addr_table.addr[offset];
 
 				roce_table_entry_copy(in_modifier, mbox, a);
+
+				/* If slave doesn't use MLX4_SET_PORT_ROCE_ADDR
+				 * take type from slave's global RoCE mode
+				 */
+				if (in_modifier == MLX4_SET_PORT_GID_TABLE)
+					a->type = slave_st->slave_gid_type;
 			}
 			mutex_unlock(&priv->port[port].roce.mutex);
 			err = mlx4_update_roce_addr_table(dev, port, &priv->port[port].roce.addr_table, MLX4_CMD_NATIVE);

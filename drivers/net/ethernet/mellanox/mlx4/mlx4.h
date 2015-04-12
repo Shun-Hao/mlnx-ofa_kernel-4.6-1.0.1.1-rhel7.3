@@ -508,6 +508,7 @@ struct mlx4_slave_state {
 	u8 is_slave_going_down;
 	u32 cookie;
 	enum slave_port_state port_state[MLX4_MAX_PORTS + 1];
+	enum mlx4_roce_gid_type slave_gid_type;
 	u8 counters_mode;
 };
 

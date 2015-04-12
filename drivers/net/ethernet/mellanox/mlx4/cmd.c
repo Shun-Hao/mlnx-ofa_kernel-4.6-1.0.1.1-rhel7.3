@@ -2392,6 +2392,9 @@ int mlx4_multi_func_init(struct mlx4_dev *dev)
 			kcalloc(dev->num_slaves,
 				sizeof(struct mlx4_slave_state),
 				GFP_KERNEL);
+		for (i = 0; i < dev->num_slaves; i++)
+			priv->mfunc.master.slave_state[i].slave_gid_type = MLX4_ROCE_GID_TYPE_INVALID;
+
 		if (!priv->mfunc.master.slave_state)
 			goto err_comm;
 
