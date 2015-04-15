@@ -101,16 +101,26 @@ static int probe_vfs_argc;
 module_param_array(probe_vf, byte, &probe_vfs_argc, 0444);
 MODULE_PARM_DESC(probe_vf, "number of vfs to probe by pf driver (num_vfs > 0)\n"
 			   "probe_vf=port1,port2,port1+2");
+#define MLX4_FORCE_DMFS_IF_NO_NCSI_FS		(1U << 0)
+#define MLX4_DMFS_ETH_ONLY			(1U << 1)
+#define MLX4_DMFS_A0_STEERING			(1U << 2)
+#define MLX4_DISABLE_DMFS_LOW_QP_NUM		(1U << 3)
+#define MLX4_DMFS_PARAM_VALUES			((MLX4_DISABLE_DMFS_LOW_QP_NUM << 1) - 1)
 
-static int mlx4_log_num_mgm_entry_size = MLX4_DEFAULT_MGM_LOG_ENTRY_SIZE;
+static int mlx4_log_num_mgm_entry_size = -(MLX4_DMFS_ETH_ONLY | MLX4_DISABLE_DMFS_LOW_QP_NUM);
 module_param_named(log_num_mgm_entry_size,
 			mlx4_log_num_mgm_entry_size, int, 0444);
-MODULE_PARM_DESC(log_num_mgm_entry_size, "log mgm size, that defines the num"
-					 " of qp per mcg, for example:"
-					 " 10 gives 248.range: 7 <="
-					 " log_num_mgm_entry_size <= 12."
-					 " To activate device managed"
-					 " flow steering when available, set to -1");
+MODULE_PARM_DESC(log_num_mgm_entry_size,
+		 "log mgm size, that defines the num"
+		 " of qp per mcg, for example:"
+		 " 10 gives 248.range: 7 <="
+		 " log_num_mgm_entry_size <= 12 (default = -10).\n"
+		 "\t\tTo activate one of device managed"
+		 " flow steering modes, set to  non positive value (-x) and sets bits in x:\n"
+		 "\t\t0: Force DMFS, even on expense of NCSI support\n"
+		 "\t\t1: Disable IPoIB DMFS rules (if enabled performance might decrease. Can't be cleared if b3 is set)\n"
+		 "\t\t2: Enable optimized steering (even if in limited L2 mode. Can't be set if b2 is cleared)\n"
+		 "\t\t3: Disable DMFS if number of QPs per MCG is low\n");
 
 static int fast_drop;
 module_param_named(fast_drop, fast_drop, int, 0444);
@@ -2189,13 +2199,31 @@ static const char *dmfs_high_rate_steering_mode_str(int dmfs_high_steer_mode)
 	}
 }
 
-#define MLX4_DMFS_A0_STEERING			(1UL << 2)
+#define MLX4_DMFS_LOW_QP_COUNT			63
 
 static void choose_steering_mode(struct mlx4_dev *dev,
 				 struct mlx4_dev_cap *dev_cap)
 {
-	if (mlx4_log_num_mgm_entry_size <= 0) {
-		if ((-mlx4_log_num_mgm_entry_size) & MLX4_DMFS_A0_STEERING) {
+	int mlx4_current_steering_mode = mlx4_log_num_mgm_entry_size;
+
+	dev->caps.steering_attr = 0;
+
+	if (mlx4_current_steering_mode <= 0) {
+		if (!((-mlx4_current_steering_mode) & MLX4_FORCE_DMFS_IF_NO_NCSI_FS))
+			if (!(dev_cap->flags2 & MLX4_DEV_CAP_FLAG2_FS_EN_NCSI))
+				mlx4_current_steering_mode =
+					MLX4_DEFAULT_MGM_LOG_ENTRY_SIZE;
+
+		if ((-mlx4_current_steering_mode) & MLX4_DISABLE_DMFS_LOW_QP_NUM)
+			if (dev_cap->fs_max_num_qp_per_entry <= MLX4_DMFS_LOW_QP_COUNT) {
+				mlx4_warn(dev, "FW supports only %d QPs per mcg entry, "
+					  "falling back to B0\n",
+					  dev_cap->fs_max_num_qp_per_entry);
+				mlx4_current_steering_mode =
+					MLX4_DEFAULT_MGM_LOG_ENTRY_SIZE;
+			}
+
+		if ((-mlx4_current_steering_mode) & MLX4_DMFS_A0_STEERING) {
 			if (dev->caps.dmfs_high_steer_mode ==
 			    MLX4_STEERING_DMFS_A0_NOT_SUPPORTED)
 				mlx4_err(dev, "DMFS high rate mode not supported\n");
@@ -2205,7 +2233,7 @@ static void choose_steering_mode(struct mlx4_dev *dev,
 		}
 	}
 
-	if (mlx4_log_num_mgm_entry_size <= 0 &&
+	if (mlx4_current_steering_mode <= 0 &&
 	    dev_cap->flags2 & MLX4_DEV_CAP_FLAG2_FS_EN &&
 	    (!mlx4_is_mfunc(dev) ||
 	     (dev_cap->fs_max_num_qp_per_entry >=
@@ -2216,6 +2244,13 @@ static void choose_steering_mode(struct mlx4_dev *dev,
 			choose_log_fs_mgm_entry_size(dev_cap->fs_max_num_qp_per_entry);
 		dev->caps.steering_mode = MLX4_STEERING_MODE_DEVICE_MANAGED;
 		dev->caps.num_qp_per_mgm = dev_cap->fs_max_num_qp_per_entry;
+
+		dev->caps.steering_attr |= MLX4_STEERING_ATTR_DMFS_EN;
+
+		if (dev->caps.flags2 & MLX4_DEV_CAP_FLAG2_DMFS_IPOIB &&
+		    (!((-mlx4_current_steering_mode) & MLX4_DMFS_ETH_ONLY)))
+			dev->caps.steering_attr |= MLX4_STEERING_ATTR_DMFS_IPOIB;
+
 		dev->caps.fs_log_max_ucast_qp_range_size =
 			dev_cap->fs_log_max_ucast_qp_range_size;
 	} else {
@@ -2233,15 +2268,15 @@ static void choose_steering_mode(struct mlx4_dev *dev,
 				mlx4_warn(dev, "Must have both UC_STEER and MC_STEER flags set to use B0 steering - falling back to A0 steering mode\n");
 		}
 		dev->oper_log_mgm_entry_size =
-			mlx4_log_num_mgm_entry_size > 0 ?
-			mlx4_log_num_mgm_entry_size :
+			mlx4_current_steering_mode > 0 ?
+			mlx4_current_steering_mode :
 			MLX4_DEFAULT_MGM_LOG_ENTRY_SIZE;
 		dev->caps.num_qp_per_mgm = mlx4_get_qp_per_mgm(dev);
 	}
 	mlx4_dbg(dev, "Steering mode is: %s, oper_log_mgm_entry_size = %d, modparam log_num_mgm_entry_size = %d\n",
 		 mlx4_steering_mode_str(dev->caps.steering_mode),
 		 dev->oper_log_mgm_entry_size,
-		 mlx4_log_num_mgm_entry_size);
+		 mlx4_current_steering_mode);
 }
 
 static void choose_tunnel_offload_mode(struct mlx4_dev *dev,
@@ -4440,12 +4475,14 @@ static int __init mlx4_verify_params(void)
 		port_type_array[0] = true;
 	}
 
-	if (mlx4_log_num_mgm_entry_size < -7 ||
+	if (mlx4_log_num_mgm_entry_size < (int)(-MLX4_DMFS_PARAM_VALUES) ||
 	    (mlx4_log_num_mgm_entry_size > 0 &&
 	     (mlx4_log_num_mgm_entry_size < MLX4_MIN_MGM_LOG_ENTRY_SIZE ||
 	      mlx4_log_num_mgm_entry_size > MLX4_MAX_MGM_LOG_ENTRY_SIZE))) {
-		pr_warn("mlx4_core: mlx4_log_num_mgm_entry_size (%d) not in legal range (-7..0 or %d..%d)\n",
+		pr_warn("mlx4_core: mlx4_log_num_mgm_entry_size (%d) not "
+			"in legal range (-%d..0 or %d..%d)\n",
 			mlx4_log_num_mgm_entry_size,
+			MLX4_DMFS_PARAM_VALUES,
 			MLX4_MIN_MGM_LOG_ENTRY_SIZE,
 			MLX4_MAX_MGM_LOG_ENTRY_SIZE);
 		return -1;

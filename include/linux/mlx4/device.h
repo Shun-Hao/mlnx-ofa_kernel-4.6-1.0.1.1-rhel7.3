@@ -134,6 +134,11 @@ enum {
 	MLX4_STEERING_DMFS_A0_NOT_SUPPORTED
 };
 
+enum {
+	MLX4_STEERING_ATTR_DMFS_IPOIB	= (1UL << 0),
+	MLX4_STEERING_ATTR_DMFS_EN	= (1UL << 1)
+};
+
 static inline const char *mlx4_steering_mode_str(int steering_mode)
 {
 	switch (steering_mode) {
@@ -236,6 +241,7 @@ enum {
 	MLX4_DEV_CAP_FLAG2_ESW_LOOPBACK_DISABLED = 1ULL << 40,
 	MLX4_DEV_CAP_FLAG2_SVLAN_TPID		= 1ULL << 41,
 	MLX4_DEV_CAP_FLAG2_MODIFY_PARSER	= 1ULL << 42,
+	MLX4_DEV_CAP_FLAG2_FS_EN_NCSI		= 1ULL << 43,
 };
 
 enum {
@@ -599,6 +605,7 @@ struct mlx4_caps {
 	int			reserved_mcgs;
 	int			num_qp_per_mgm;
 	int			steering_mode;
+	int			steering_attr;
 	int			dmfs_high_steer_mode;
 	int			fs_log_max_ucast_qp_range_size;
 	int			num_pds;
