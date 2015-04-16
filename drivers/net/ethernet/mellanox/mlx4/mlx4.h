@@ -58,8 +58,6 @@
 #define DRV_VERSION	"4.0-0"
 #define DRV_NAME_FOR_FW		"Linux," DRV_NAME "," DRV_VERSION
 
-#define MLX4_FS_UDP_UC_EN		(1 << 1)
-#define MLX4_FS_TCP_UC_EN		(1 << 2)
 #define MLX4_FS_NUM_OF_L2_ADDR		8
 #define MLX4_FS_MGM_LOG_ENTRY_SIZE	7
 #define MLX4_FS_NUM_MCG			(1 << 17)

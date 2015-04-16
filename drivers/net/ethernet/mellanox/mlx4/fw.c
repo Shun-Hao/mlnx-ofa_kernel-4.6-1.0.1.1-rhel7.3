@@ -175,6 +175,7 @@ static void dump_dev_cap_flags2(struct mlx4_dev *dev, u64 flags)
 		[41] = "QinQ Service VLAN TPID configuration support",
 		[42] = "Set ingress parser mode support",
 		[43] = "NCSI in DMFS mode support",
+		[44] = "Optimized steering table for non source IP rules",
 	};
 	int i;
 
@@ -923,6 +924,8 @@ int mlx4_QUERY_DEV_CAP(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 	if (field & 0x80)
 		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_PORT_BEACON;
 	MLX4_GET(field, outbox, QUERY_DEV_CAP_FLOW_STEERING_IPOIB_OFFSET);
+	if (field & 0x1)
+		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_DISABLE_SIP_CHECK;
 	if (field & 0x80)
 		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_DMFS_IPOIB;
 	MLX4_GET(field, outbox, QUERY_DEV_CAP_FLOW_STEERING_MAX_QP_OFFSET);
@@ -1377,9 +1380,9 @@ int mlx4_QUERY_DEV_CAP_wrapper(struct mlx4_dev *dev, int slave,
 			 QUERY_DEV_CAP_FLOW_STEERING_RANGE_EN_OFFSET);
 	}
 
-	/* turn off ipoib managed steering for guests */
+	/* turn off ipoib managed steering and sip check ignore for guests */
 	MLX4_GET(field, outbox->buf, QUERY_DEV_CAP_FLOW_STEERING_IPOIB_OFFSET);
-	field &= ~0x80;
+	field &= ~0x81;
 	MLX4_PUT(outbox->buf, field, QUERY_DEV_CAP_FLOW_STEERING_IPOIB_OFFSET);
 
 	/* turn off host side virt features (VST, FSM, etc) for guests */
@@ -1927,6 +1930,9 @@ int mlx4_INIT_HCA(struct mlx4_dev *dev, struct mlx4_init_hca_param *param)
 #define INIT_HCA_UAR_OFFSET		 0x120
 #define	 INIT_HCA_LOG_UAR_SZ_OFFSET	 (INIT_HCA_UAR_OFFSET + 0x0a)
 #define  INIT_HCA_UAR_PAGE_SZ_OFFSET     (INIT_HCA_UAR_OFFSET + 0x0b)
+#define MLX4_FS_UDP_UC_EN		(1 << 1)
+#define MLX4_FS_TCP_UC_EN		(1 << 2)
+#define MLX4_FS_IP_SIP_DISABLE		(1 << 3)
 
 	mailbox = mlx4_alloc_cmd_mailbox(dev);
 	if (IS_ERR(mailbox))
@@ -2038,6 +2044,8 @@ int mlx4_INIT_HCA(struct mlx4_dev *dev, struct mlx4_init_hca_param *param)
 	/* steering attributes */
 	if (dev->caps.steering_mode ==
 	    MLX4_STEERING_MODE_DEVICE_MANAGED) {
+		u8 field_ipoib, field_eth;
+
 		*(inbox + INIT_HCA_FLAGS_OFFSET / 4) |=
 			cpu_to_be32(1 <<
 				    INIT_HCA_DEVICE_MANAGED_FLOW_STEERING_EN);
@@ -2047,24 +2055,28 @@ int mlx4_INIT_HCA(struct mlx4_dev *dev, struct mlx4_init_hca_param *param)
 			 INIT_HCA_FS_LOG_ENTRY_SZ_OFFSET);
 		MLX4_PUT(inbox, param->log_mc_table_sz,
 			 INIT_HCA_FS_LOG_TABLE_SZ_OFFSET);
+		field_ipoib = MLX4_FS_UDP_UC_EN | MLX4_FS_TCP_UC_EN;
+		field_eth = field_ipoib;
+		if (dev->caps.steering_attr & MLX4_STEERING_ATTR_ETH_IGNORE_SIP)
+			field_eth |= MLX4_FS_IP_SIP_DISABLE;
+		if (dev->caps.steering_attr & MLX4_STEERING_ATTR_IB_IGNORE_SIP)
+			field_ipoib |= MLX4_FS_IP_SIP_DISABLE;
 		/* Enable Ethernet flow steering
-		 * with udp unicast and tcp unicast
+		 * with udp unicast, tcp unicast and disable sip check
 		 */
 		if (dev->caps.steering_attr & MLX4_STEERING_ATTR_DMFS_EN) {
 			if (dev->caps.dmfs_high_steer_mode !=
 			    MLX4_STEERING_DMFS_A0_STATIC)
-				MLX4_PUT(inbox,
-					 (u8) (MLX4_FS_UDP_UC_EN | MLX4_FS_TCP_UC_EN),
-					 INIT_HCA_FS_ETH_BITS_OFFSET);
+				MLX4_PUT(inbox, field_eth, INIT_HCA_FS_ETH_BITS_OFFSET);
+
 			MLX4_PUT(inbox, (u16)MLX4_FS_NUM_OF_L2_ADDR,
 				 INIT_HCA_FS_ETH_NUM_ADDRS_OFFSET);
 		}
 		/* Enable IPoIB flow steering
-		 * with udp unicast and tcp unicast
+		 * with udp unicast, tcp unicast and disable sip check
 		 */
 		if (dev->caps.steering_attr & MLX4_STEERING_ATTR_DMFS_IPOIB) {
-			MLX4_PUT(inbox, (u8) (MLX4_FS_UDP_UC_EN | MLX4_FS_TCP_UC_EN),
-				 INIT_HCA_FS_IB_BITS_OFFSET);
+			MLX4_PUT(inbox, field_ipoib, INIT_HCA_FS_IB_BITS_OFFSET);
 			MLX4_PUT(inbox, (u16)MLX4_FS_NUM_OF_L2_ADDR,
 				 INIT_HCA_FS_IB_NUM_ADDRS_OFFSET);
 		}

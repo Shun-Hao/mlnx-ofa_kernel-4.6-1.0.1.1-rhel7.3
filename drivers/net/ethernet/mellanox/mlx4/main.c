@@ -105,7 +105,9 @@ MODULE_PARM_DESC(probe_vf, "number of vfs to probe by pf driver (num_vfs > 0)\n"
 #define MLX4_DMFS_ETH_ONLY			(1U << 1)
 #define MLX4_DMFS_A0_STEERING			(1U << 2)
 #define MLX4_DISABLE_DMFS_LOW_QP_NUM		(1U << 3)
-#define MLX4_DMFS_PARAM_VALUES			((MLX4_DISABLE_DMFS_LOW_QP_NUM << 1) - 1)
+#define MLX4_IB_IGNORE_SIP_CHECK		(1U << 4)
+#define MLX4_ETH_IGNORE_SIP_CHECK		(1U << 5)
+#define MLX4_DMFS_PARAM_VALUES			((MLX4_ETH_IGNORE_SIP_CHECK << 1) - 1)
 
 static int mlx4_log_num_mgm_entry_size = -(MLX4_DMFS_ETH_ONLY | MLX4_DISABLE_DMFS_LOW_QP_NUM);
 module_param_named(log_num_mgm_entry_size,
@@ -120,7 +122,9 @@ MODULE_PARM_DESC(log_num_mgm_entry_size,
 		 "\t\t0: Force DMFS, even on expense of NCSI support\n"
 		 "\t\t1: Disable IPoIB DMFS rules (if enabled performance might decrease. Can't be cleared if b3 is set)\n"
 		 "\t\t2: Enable optimized steering (even if in limited L2 mode. Can't be set if b2 is cleared)\n"
-		 "\t\t3: Disable DMFS if number of QPs per MCG is low\n");
+		 "\t\t3: Disable DMFS if number of QPs per MCG is low\n"
+		 "\t\t4: Optimize IPoIB/EoIB steering table for non source IP rules if possible\n"
+		 "\t\t5: Optimize steering table for non source IP rules if possible");
 
 static int fast_drop;
 module_param_named(fast_drop, fast_drop, int, 0444);
@@ -2230,6 +2234,12 @@ static void choose_steering_mode(struct mlx4_dev *dev,
 			else
 				dev->caps.dmfs_high_steer_mode =
 					MLX4_STEERING_DMFS_A0_STATIC;
+		}
+		if (dev_cap->flags2 & MLX4_DEV_CAP_FLAG2_DISABLE_SIP_CHECK) {
+			if (-mlx4_current_steering_mode & MLX4_IB_IGNORE_SIP_CHECK)
+				dev->caps.steering_attr |= MLX4_STEERING_ATTR_IB_IGNORE_SIP;
+			if (-mlx4_current_steering_mode & MLX4_ETH_IGNORE_SIP_CHECK)
+				dev->caps.steering_attr |= MLX4_STEERING_ATTR_ETH_IGNORE_SIP;
 		}
 	}
 

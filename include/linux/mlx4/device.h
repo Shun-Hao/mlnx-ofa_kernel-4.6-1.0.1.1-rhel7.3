@@ -136,7 +136,9 @@ enum {
 
 enum {
 	MLX4_STEERING_ATTR_DMFS_IPOIB	= (1UL << 0),
-	MLX4_STEERING_ATTR_DMFS_EN	= (1UL << 1)
+	MLX4_STEERING_ATTR_DMFS_EN	= (1UL << 1),
+	MLX4_STEERING_ATTR_IB_IGNORE_SIP	= (1UL << 2),
+	MLX4_STEERING_ATTR_ETH_IGNORE_SIP	= (1UL << 3),
 };
 
 static inline const char *mlx4_steering_mode_str(int steering_mode)
@@ -242,6 +244,7 @@ enum {
 	MLX4_DEV_CAP_FLAG2_SVLAN_TPID		= 1ULL << 41,
 	MLX4_DEV_CAP_FLAG2_MODIFY_PARSER	= 1ULL << 42,
 	MLX4_DEV_CAP_FLAG2_FS_EN_NCSI		= 1ULL << 43,
+	MLX4_DEV_CAP_FLAG2_DISABLE_SIP_CHECK	= 1ULL << 44,
 };
 
 enum {
