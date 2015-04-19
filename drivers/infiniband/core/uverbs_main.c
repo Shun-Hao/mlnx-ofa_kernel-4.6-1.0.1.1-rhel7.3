@@ -807,6 +807,11 @@ static ssize_t ib_uverbs_write(struct file *filp, const char __user *buf,
 					ex_hdr.provider_in_words * 8,
 					ex_hdr.provider_out_words * 8);
 
+		if (exp_cmd) {
+			ucore.src = IB_UDATA_EXP_CMD;
+			uhw.src = IB_UDATA_EXP_CMD;
+		}
+
 		ret = cmd_tbl[command](file, &ucore, &uhw);
 		ret = (ret) ? : count;
 	}

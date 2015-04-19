@@ -1541,11 +1541,18 @@ struct ib_uobject {
 	const struct uverbs_api_object *uapi_object;
 };
 
+enum ib_udate_src {
+	IB_UDATA_LEGACY_CMD,
+	IB_UDATA_EX_CMD,
+	IB_UDATA_EXP_CMD = 32,
+};
+
 struct ib_udata {
 	const void __user *inbuf;
 	void __user *outbuf;
 	size_t       inlen;
 	size_t       outlen;
+	enum ib_udate_src	src;
 };
 
 struct ib_pd {
