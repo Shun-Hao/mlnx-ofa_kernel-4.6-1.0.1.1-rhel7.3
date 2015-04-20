@@ -2155,6 +2155,50 @@ static struct kobj_type en_port_stats = {
 	.default_attrs = vfstat_attrs,
 };
 
+static ssize_t mlx4_en_show_vf_link_state(struct en_port *en_p,
+					  struct en_port_attribute *attr,
+					  char *buf)
+{
+	static const char * const str[] = { "auto", "enable", "disable" };
+	int link_state;
+	ssize_t len = 0;
+
+	link_state = mlx4_get_vf_link_state(en_p->dev, en_p->port_num,
+					    en_p->vport_num);
+	if (link_state >= 0)
+		len += sprintf(&buf[len], "%s\n", str[link_state]);
+
+	return len;
+}
+
+static ssize_t mlx4_en_store_vf_link_state(struct en_port *en_p,
+					   struct en_port_attribute *attr,
+					   const char *buf, size_t count)
+{
+	int err, link_state;
+
+	if (count > 128)
+		return -EINVAL;
+
+	if (strstr(buf, "auto"))
+		link_state = IFLA_VF_LINK_STATE_AUTO;
+	else if (strstr(buf, "enable"))
+		link_state = IFLA_VF_LINK_STATE_ENABLE;
+	else if (strstr(buf, "disable"))
+		link_state = IFLA_VF_LINK_STATE_DISABLE;
+	else
+		return -EINVAL;
+
+	err = mlx4_set_vf_link_state(en_p->dev, en_p->port_num,
+				     en_p->vport_num, link_state);
+	return err ? err : count;
+}
+
+struct en_port_attribute en_port_attr_link_state = __ATTR(link_state,
+						S_IRUGO | S_IWUSR,
+						mlx4_en_show_vf_link_state,
+						mlx4_en_store_vf_link_state);
+
 static ssize_t en_port_show(struct kobject *kobj,
 			    struct attribute *attr, char *buf)
 {
@@ -2187,8 +2231,14 @@ static const struct sysfs_ops en_port_vf_ops = {
 	.store = en_port_store,
 };
 
+static struct attribute *vf_attrs[] = {
+	&en_port_attr_link_state.attr,
+	NULL
+};
+
 static struct kobj_type en_port_type = {
 	.sysfs_ops  = &en_port_vf_ops,
+	.default_attrs = vf_attrs,
 };
 
 static void mlx4_en_clear_stats(struct net_device *dev)

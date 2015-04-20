@@ -3302,6 +3302,25 @@ int mlx4_set_vf_link_state(struct mlx4_dev *dev, int port, int vf, int link_stat
 }
 EXPORT_SYMBOL_GPL(mlx4_set_vf_link_state);
 
+int mlx4_get_vf_link_state(struct mlx4_dev *dev, int port, int vf)
+{
+	struct mlx4_priv *priv = mlx4_priv(dev);
+	struct mlx4_vport_state *s_info;
+	int slave;
+
+	if (!mlx4_is_master(dev))
+		return -EPROTONOSUPPORT;
+
+	slave = mlx4_get_slave_indx(dev, vf);
+	if (slave < 0)
+		return -EINVAL;
+
+	s_info = &priv->mfunc.master.vf_admin[slave].vport[port];
+
+	return s_info->link_state;
+}
+EXPORT_SYMBOL_GPL(mlx4_get_vf_link_state);
+
 int mlx4_get_counter_stats(struct mlx4_dev *dev, int counter_index,
 			   struct mlx4_counter *counter_stats, int reset)
 {
