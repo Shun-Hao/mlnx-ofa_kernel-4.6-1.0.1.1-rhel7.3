@@ -1797,8 +1797,10 @@ static int mlx4_master_process_vhcr(struct mlx4_dev *dev, int slave,
 					 "Unable to allocate counter for slave %d (%d)\n",
 					 slave, err);
 			else
-				mlx4_warn(dev, "vhcr command:0x%x slave:%d failed with error:%d, status %d\n",
-					  vhcr->op, slave, vhcr->errno, err);
+				mlx4_warn(dev, "vhcr command 0x%x slave:%d in_param 0x%llx in_mod=0x%x op_mod=0x%x failed with error:%d, status %d\n",
+					  vhcr->op, slave, vhcr->in_param,
+					  vhcr->in_modifier, vhcr->op_modifier,
+					  vhcr->errno, err);
 		}
 		vhcr_cmd->status = mlx4_errno_to_status(err);
 		goto out_status;
