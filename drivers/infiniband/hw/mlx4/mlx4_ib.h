@@ -170,9 +170,16 @@ struct mlx4_ib_fmr {
 
 #define MAX_REGS_PER_FLOW 2
 
+struct mlx4_ib_hw_flow {
+	u64 reg_id;
+	/* dst_mac is used in order to register MAC if L2 ethernet is used */
+	u64 dst_mac;
+	u8 port;
+};
+
 struct mlx4_flow_reg_id {
-	u64 id;
-	u64 mirror;
+	struct mlx4_ib_hw_flow flow;
+	struct mlx4_ib_hw_flow mirror;
 };
 
 struct mlx4_ib_flow {
@@ -370,7 +377,7 @@ struct mlx4_ib_qp {
 	struct mlx4_roce_smac_vlan_info alt;
 	int                     max_inline_data;
 	struct mlx4_bf          bf;
-	u64			reg_id;
+	struct mlx4_ib_hw_flow	flow;
 	/* Experimental data */
 	int			max_inlr_data;
 	struct list_head	qps_list;

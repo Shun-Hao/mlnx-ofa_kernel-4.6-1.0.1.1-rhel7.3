@@ -1348,7 +1348,8 @@ struct mlx4_ib_steering {
 static int parse_flow_attr(struct mlx4_dev *dev,
 			   u32 qp_num,
 			   union ib_flow_spec *ib_spec,
-			   struct _rule_hw *mlx4_spec)
+			   struct _rule_hw *mlx4_spec,
+			   struct mlx4_ib_hw_flow *hwflow)
 {
 	enum mlx4_net_trans_rule_id type;
 
@@ -1364,6 +1365,22 @@ static int parse_flow_attr(struct mlx4_dev *dev,
 		       ETH_ALEN);
 		mlx4_spec->eth.vlan_tag = ib_spec->eth.val.vlan_tag;
 		mlx4_spec->eth.vlan_tag_msk = ib_spec->eth.mask.vlan_tag;
+		if (!is_multicast_ether_addr(mlx4_spec->eth.dst_mac) &&
+		    !is_broadcast_ether_addr(mlx4_spec->eth.dst_mac)) {
+			hwflow->dst_mac = mlx4_mac_to_u64(mlx4_spec->eth.dst_mac)
+				& mlx4_mac_to_u64(mlx4_spec->eth.dst_mac_msk);
+			if (hwflow->dst_mac) {
+				int ret = mlx4_register_mac(dev, hwflow->port,
+							    hwflow->dst_mac);
+
+				if (ret < 0) {
+					pr_warn("mlx4: can't register MAC %pM when registering flow\n",
+						ib_spec->eth.val.dst_mac);
+					hwflow->dst_mac = 0;
+					return ret;
+				}
+			}
+		}
 		break;
 	case IB_FLOW_SPEC_IB:
 		if (FIELDS_NOT_SUPPORTED(ib_spec->ib.mask, LAST_IB_FIELD))
@@ -1486,7 +1503,8 @@ static int __mlx4_ib_create_default_rules(
 		struct mlx4_ib_dev *mdev,
 		struct ib_qp *qp,
 		const struct default_rules *pdefault_rules,
-		struct _rule_hw *mlx4_spec) {
+		struct _rule_hw *mlx4_spec,
+		struct mlx4_ib_hw_flow *hwflow) {
 	int size = 0;
 	int i;
 
@@ -1508,7 +1526,7 @@ static int __mlx4_ib_create_default_rules(
 		}
 		/* We must put empty rule, qpn is being ignored */
 		ret = parse_flow_attr(mdev->dev, 0, &ib_spec,
-				      mlx4_spec);
+				      mlx4_spec, hwflow);
 		if (ret < 0) {
 			pr_info("invalid parsing\n");
 			return -EINVAL;
@@ -1521,9 +1539,9 @@ static int __mlx4_ib_create_default_rules(
 }
 
 static int __mlx4_ib_create_flow(struct ib_qp *qp, struct ib_flow_attr *flow_attr,
-			  int domain,
-			  enum mlx4_net_trans_promisc_mode flow_type,
-			  u64 *reg_id)
+				 int domain,
+				 enum mlx4_net_trans_promisc_mode flow_type,
+				 struct mlx4_ib_hw_flow *hwflow)
 {
 	int ret, i;
 	int size = 0;
@@ -1563,6 +1581,7 @@ static int __mlx4_ib_create_flow(struct ib_qp *qp, struct ib_flow_attr *flow_att
 	ctrl->type = mlx4_map_sw_to_hw_steering_mode(mdev->dev, flow_type);
 	ctrl->port = flow_attr->port;
 	ctrl->qpn = cpu_to_be32(qp->qp_num);
+	hwflow->port = flow_attr->port;
 
 	ib_flow = flow_attr + 1;
 	size += sizeof(struct mlx4_net_trans_rule_hw_ctrl);
@@ -1570,21 +1589,20 @@ static int __mlx4_ib_create_flow(struct ib_qp *qp, struct ib_flow_attr *flow_att
 	default_flow = __mlx4_ib_default_rules_match(qp, flow_attr);
 	if (default_flow >= 0) {
 		ret = __mlx4_ib_create_default_rules(
-				mdev, qp, default_table + default_flow,
-				mailbox->buf + size);
-		if (ret < 0) {
-			mlx4_free_cmd_mailbox(mdev->dev, mailbox);
-			return -EINVAL;
-		}
+				mdev, qp,
+				default_table + default_flow,
+				mailbox->buf + size, hwflow);
+		if (ret < 0)
+			goto free_mailbox;
+
 		size += ret;
 	}
 	for (i = 0; i < flow_attr->num_of_specs; i++) {
 		ret = parse_flow_attr(mdev->dev, qp->qp_num, ib_flow,
-				      mailbox->buf + size);
-		if (ret < 0) {
-			mlx4_free_cmd_mailbox(mdev->dev, mailbox);
-			return -EINVAL;
-		}
+				      mailbox->buf + size, hwflow);
+		if (ret < 0)
+			goto unregister_mac;
+
 		ib_flow += ((union ib_flow_spec *) ib_flow)->size;
 		size += ret;
 	}
@@ -1599,7 +1617,7 @@ static int __mlx4_ib_create_flow(struct ib_qp *qp, struct ib_flow_attr *flow_att
 			mlx4_handle_eth_header_mcast_prio(ctrl, rule_header);
 	}
 
-	ret = mlx4_cmd_imm(mdev->dev, mailbox->dma, reg_id, size >> 2, 0,
+	ret = mlx4_cmd_imm(mdev->dev, mailbox->dma, &hwflow->reg_id, size >> 2, 0,
 			   MLX4_QP_FLOW_STEERING_ATTACH, MLX4_CMD_TIME_CLASS_A,
 			   MLX4_CMD_NATIVE);
 	if (ret == -ENOMEM)
@@ -1609,24 +1627,36 @@ static int __mlx4_ib_create_flow(struct ib_qp *qp, struct ib_flow_attr *flow_att
 	else if (ret)
 		pr_err("Invalid argument. Fail to register network rule.\n");
 
+unregister_mac:
+	if (ret && hwflow->dst_mac) {
+		mlx4_unregister_mac(mdev->dev, hwflow->port, hwflow->dst_mac);
+		hwflow->dst_mac = 0;
+	}
+free_mailbox:
 	mlx4_free_cmd_mailbox(mdev->dev, mailbox);
+
 	return ret;
 }
 
-static int __mlx4_ib_destroy_flow(struct mlx4_dev *dev, u64 reg_id)
+static int __mlx4_ib_destroy_flow(struct mlx4_dev *dev,
+				  const struct mlx4_ib_hw_flow *hwflow)
 {
 	int err;
-	err = mlx4_cmd(dev, reg_id, 0, 0,
+
+	if (hwflow->dst_mac)
+		mlx4_unregister_mac(dev, hwflow->port, hwflow->dst_mac);
+
+	err = mlx4_cmd(dev, hwflow->reg_id, 0, 0,
 		       MLX4_QP_FLOW_STEERING_DETACH, MLX4_CMD_TIME_CLASS_A,
 		       MLX4_CMD_NATIVE);
 	if (err)
 		pr_err("Fail to detach network rule. registration id = 0x%llx\n",
-		       reg_id);
+		       hwflow->reg_id);
 	return err;
 }
 
 static int mlx4_ib_tunnel_steer_add(struct ib_qp *qp, struct ib_flow_attr *flow_attr,
-				    u64 *reg_id)
+				    struct mlx4_ib_hw_flow *hwflow)
 {
 	void *ib_flow;
 	union ib_flow_spec *ib_spec;
@@ -1646,7 +1676,7 @@ static int mlx4_ib_tunnel_steer_add(struct ib_qp *qp, struct ib_flow_attr *flow_
 	err = mlx4_tunnel_steer_add(to_mdev(qp->device)->dev, ib_spec->eth.val.dst_mac,
 				    flow_attr->port, qp->qp_num,
 				    MLX4_DOMAIN_UVERBS | (flow_attr->priority & 0xff),
-				    reg_id);
+				    &hwflow->reg_id);
 	return err;
 }
 
@@ -1769,7 +1799,7 @@ static struct ib_flow *mlx4_ib_create_flow(struct ib_qp *qp,
 
 	while (i < ARRAY_SIZE(type) && type[i]) {
 		err = __mlx4_ib_create_flow(qp, flow_attr, domain, type[i],
-					    &mflow->reg_id[i].id);
+					    &mflow->reg_id[i].flow);
 		if (err)
 			goto err_create_flow;
 		if (is_bonded) {
@@ -1791,7 +1821,7 @@ static struct ib_flow *mlx4_ib_create_flow(struct ib_qp *qp,
 
 	if (i < ARRAY_SIZE(type) && flow_attr->type == IB_FLOW_ATTR_NORMAL) {
 		err = mlx4_ib_tunnel_steer_add(qp, flow_attr,
-					       &mflow->reg_id[i].id);
+					       &mflow->reg_id[i].flow);
 		if (err)
 			goto err_create_flow;
 
@@ -1813,13 +1843,13 @@ static struct ib_flow *mlx4_ib_create_flow(struct ib_qp *qp,
 err_create_flow:
 	while (i) {
 		(void)__mlx4_ib_destroy_flow(to_mdev(qp->device)->dev,
-					     mflow->reg_id[i].id);
+					     &mflow->reg_id[i].flow);
 		i--;
 	}
 
 	while (j) {
 		(void)__mlx4_ib_destroy_flow(to_mdev(qp->device)->dev,
-					     mflow->reg_id[j].mirror);
+					     &mflow->reg_id[j].mirror);
 		j--;
 	}
 err_free:
@@ -1834,13 +1864,13 @@ static int mlx4_ib_destroy_flow(struct ib_flow *flow_id)
 	struct mlx4_ib_dev *mdev = to_mdev(flow_id->qp->device);
 	struct mlx4_ib_flow *mflow = to_mflow(flow_id);
 
-	while (i < ARRAY_SIZE(mflow->reg_id) && mflow->reg_id[i].id) {
-		err = __mlx4_ib_destroy_flow(mdev->dev, mflow->reg_id[i].id);
+	while (i < ARRAY_SIZE(mflow->reg_id) && mflow->reg_id[i].flow.reg_id) {
+		err = __mlx4_ib_destroy_flow(mdev->dev, &mflow->reg_id[i].flow);
 		if (err)
 			ret = err;
-		if (mflow->reg_id[i].mirror) {
+		if (mflow->reg_id[i].mirror.reg_id) {
 			err = __mlx4_ib_destroy_flow(mdev->dev,
-						     mflow->reg_id[i].mirror);
+						     &mflow->reg_id[i].mirror);
 			if (err)
 				ret = err;
 		}
@@ -1881,7 +1911,7 @@ static int mlx4_ib_mcg_attach(struct ib_qp *ibqp, union ib_gid *gid, u16 lid)
 	}
 
 	for (; i < mdev->dev->caps.num_ports; i++) {
-		struct mlx4_flow_reg_id reg_id;
+		struct mlx4_flow_reg_id reg_id = {.flow = {.dst_mac = 0, .port = i + 1}};
 		struct mlx4_ib_steering *ib_steering = NULL;
 
 		if (!test_bit(i, ports))
@@ -1898,7 +1928,7 @@ static int mlx4_ib_mcg_attach(struct ib_qp *ibqp, union ib_gid *gid, u16 lid)
 					    !!(mqp->flags &
 					       MLX4_IB_QP_BLOCK_MULTICAST_LOOPBACK),
 					    prot,
-					    &reg_id.id);
+					    &reg_id.flow.reg_id);
 		if (err) {
 			kfree(ib_steering);
 			goto err_add;
@@ -1907,7 +1937,7 @@ static int mlx4_ib_mcg_attach(struct ib_qp *ibqp, union ib_gid *gid, u16 lid)
 		err = add_gid_entry(ibqp, gid);
 		if (err) {
 			mlx4_multicast_detach(mdev->dev, &mqp->mqp, gid->raw,
-					      prot, reg_id.id);
+					      prot, reg_id.flow.reg_id);
 			kfree(ib_steering);
 			goto err_add;
 		}
@@ -2038,7 +2068,7 @@ static int _mlx4_ib_mcg_detach(struct ib_qp *ibqp, union ib_gid *gid, u16 lid,
 		mutex_unlock(&mqp->mutex);
 		list_for_each_entry_safe(ib_steering, tmp, &temp,
 					 list) {
-			reg_id = ib_steering->reg_id.id;
+			reg_id = ib_steering->reg_id.flow.reg_id;
 			err = __mlx4_ib_mcg_detach(mdev, mqp,
 						   gid, prot, reg_id);
 			if (err) {
@@ -3151,9 +3181,9 @@ int mlx4_ib_steer_qp_reg(struct mlx4_ib_dev *mdev, struct mlx4_ib_qp *mqp,
 		err = __mlx4_ib_create_flow(&mqp->ibqp, flow,
 					    IB_FLOW_DOMAIN_NIC,
 					    MLX4_FS_REGULAR,
-					    &mqp->reg_id);
+					    &mqp->flow);
 	} else {
-		err = __mlx4_ib_destroy_flow(mdev->dev, mqp->reg_id);
+		err = __mlx4_ib_destroy_flow(mdev->dev, &mqp->flow);
 	}
 	kfree(flow);
 	return err;
