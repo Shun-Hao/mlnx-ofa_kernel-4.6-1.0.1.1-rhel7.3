@@ -2203,6 +2203,17 @@ int mlx4_QUERY_HCA(struct mlx4_dev *dev,
 			 INIT_HCA_FS_A0_OFFSET);
 		param->dmfs_high_steer_mode =
 			a0_dmfs_query_hw_steering[(byte_field >> 6) & 3];
+
+		param->steering_attr = MLX4_STEERING_ATTR_DMFS_EN;
+
+		MLX4_GET(byte_field, outbox, INIT_HCA_FS_ETH_BITS_OFFSET);
+		if (byte_field & MLX4_FS_IP_SIP_DISABLE)
+			param->steering_attr |= MLX4_STEERING_ATTR_ETH_IGNORE_SIP;
+		MLX4_GET(byte_field, outbox, INIT_HCA_FS_IB_BITS_OFFSET);
+		if (byte_field & MLX4_FS_UDP_UC_EN && byte_field & MLX4_FS_TCP_UC_EN)
+			param->steering_attr |= MLX4_STEERING_ATTR_DMFS_IPOIB;
+		if (byte_field & MLX4_FS_IP_SIP_DISABLE)
+			param->steering_attr |= MLX4_STEERING_ATTR_IB_IGNORE_SIP;
 	} else {
 		MLX4_GET(param->mc_base, outbox, INIT_HCA_MC_BASE_OFFSET);
 		MLX4_GET(param->log_mc_entry_sz, outbox,

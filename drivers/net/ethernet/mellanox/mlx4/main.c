@@ -885,6 +885,7 @@ static void slave_adjust_steering_mode(struct mlx4_dev *dev,
 				       struct mlx4_init_hca_param *hca_param)
 {
 	dev->caps.steering_mode = hca_param->steering_mode;
+	dev->caps.steering_attr = hca_param->steering_attr;
 	if (dev->caps.steering_mode == MLX4_STEERING_MODE_DEVICE_MANAGED) {
 		dev->caps.num_qp_per_mgm = dev_cap->fs_max_num_qp_per_entry;
 		dev->caps.fs_log_max_ucast_qp_range_size =
