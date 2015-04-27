@@ -202,6 +202,10 @@ int mlx5_query_hca_caps(struct mlx5_core_dev *dev)
 			return err;
 	}
 
+	err = mlx5_core_query_special_contexts(dev);
+	if (err)
+		return err;
+
 	return 0;
 }
 

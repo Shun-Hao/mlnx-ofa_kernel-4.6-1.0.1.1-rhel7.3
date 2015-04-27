@@ -846,6 +846,10 @@ struct mlx5_clock {
 
 struct mlx5_mst_dump;
 
+struct mlx5_special_contexts {
+	int resd_lkey;
+};
+
 struct mlx5_fw_tracer;
 struct mlx5_vxlan;
 
@@ -897,6 +901,7 @@ struct mlx5_core_dev {
 	struct mlx5_ib_clock_info  *clock_info;
 	struct page             *clock_info_page;
 	struct mlx5_mst_dump *mst_dump;
+	struct mlx5_special_contexts special_contexts;
 	struct mlx5_fw_tracer   *tracer;
 };
 
@@ -1099,6 +1104,7 @@ int mlx5_cmd_exec_polling(struct mlx5_core_dev *dev, void *in, int in_size,
 			  void *out, int out_size);
 void mlx5_cmd_mbox_status(void *out, u8 *status, u32 *syndrome);
 
+int mlx5_core_query_special_contexts(struct mlx5_core_dev *dev);
 int mlx5_core_get_caps(struct mlx5_core_dev *dev, enum mlx5_cap_type cap_type);
 int mlx5_cmd_alloc_uar(struct mlx5_core_dev *dev, u32 *uarn);
 int mlx5_cmd_free_uar(struct mlx5_core_dev *dev, u32 uarn);

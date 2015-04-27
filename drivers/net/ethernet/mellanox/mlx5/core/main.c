@@ -450,6 +450,28 @@ query_ex:
 	return err;
 }
 
+int mlx5_core_query_special_contexts(struct mlx5_core_dev *dev)
+{
+	u32 in[MLX5_ST_SZ_DW(query_special_contexts_in)];
+	u32 out[MLX5_ST_SZ_DW(query_special_contexts_out)];
+	int err;
+
+	memset(in, 0, sizeof(in));
+	memset(out, 0, sizeof(out));
+
+	MLX5_SET(query_special_contexts_in, in, opcode,
+		 MLX5_CMD_OP_QUERY_SPECIAL_CONTEXTS);
+	err = mlx5_cmd_exec(dev, in, sizeof(in), out,
+			    sizeof(out));
+	if (err)
+		return err;
+
+	dev->special_contexts.resd_lkey = MLX5_GET(query_special_contexts_out,
+						   out, resd_lkey);
+
+	return err;
+}
+
 int mlx5_core_get_caps(struct mlx5_core_dev *dev, enum mlx5_cap_type cap_type)
 {
 	int ret;
