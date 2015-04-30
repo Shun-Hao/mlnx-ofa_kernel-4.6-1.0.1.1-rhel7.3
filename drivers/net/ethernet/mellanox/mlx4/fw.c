@@ -38,6 +38,7 @@
 #include <linux/cache.h>
 #include <linux/kernel.h>
 #include <uapi/rdma/mlx4-abi.h>
+#include <net/ipv6.h>
 
 #include "fw.h"
 #include "icm.h"
@@ -3195,3 +3196,69 @@ void mlx4_replace_zero_macs(struct mlx4_dev *dev)
 		}
 }
 EXPORT_SYMBOL_GPL(mlx4_replace_zero_macs);
+
+#define MLX4_ROCE_ADDR_L3_TYPE_IPV4 0
+#define MLX4_ROCE_ADDR_L3_TYPE_IPV6 1
+
+int mlx4_update_roce_addr_table(struct mlx4_dev *dev, u8 port_num,
+				struct mlx4_roce_addr_table *table)
+{
+	struct mlx4_cmd_mailbox *mailbox;
+	int i;
+	int err;
+	u32 in_modifier;
+
+	mailbox = mlx4_alloc_cmd_mailbox(dev);
+	if (IS_ERR_OR_NULL(mailbox))
+		return -ENOMEM;
+
+	if (dev->caps.flags2 & MLX4_DEV_CAP_FLAG2_ROCE_V1_V2) {
+		struct {
+			u8		gid[MLX4_GID_LEN];
+			__be32		rsrvd1[2];
+			__be16		rsrvd2;
+			u8		type;
+			u8		version;
+			__be32		rsrvd3;
+		} *gid_tbl;
+
+		gid_tbl = mailbox->buf;
+		for (i = 0; i < MLX4_MAX_PORT_GIDS; ++i) {
+			memcpy(gid_tbl[i].gid, table->entry[i].gid,
+			       MLX4_GID_LEN);
+			gid_tbl[i].version = table->entry[i].type;
+
+			if (table->entry[i].type != MLX4_ROCE_GID_TYPE_V1) {
+				if (ipv6_addr_v4mapped((struct in6_addr *)table->entry[i].gid))
+					gid_tbl[i].type = MLX4_ROCE_ADDR_L3_TYPE_IPV4;
+				else
+					gid_tbl[i].type = MLX4_ROCE_ADDR_L3_TYPE_IPV6;
+			}
+		}
+		in_modifier = MLX4_SET_PORT_ROCE_ADDR;
+	} else {
+		struct {
+			u8		gid[MLX4_GID_LEN];
+		} *gid_tbl;
+
+		gid_tbl = mailbox->buf;
+
+		for (i = 0; i < MLX4_MAX_PORT_GIDS; ++i)
+			memcpy(gid_tbl[i].gid, table->entry[i].gid,
+			       MLX4_GID_LEN);
+		in_modifier = MLX4_SET_PORT_GID_TABLE;
+	}
+
+	err = mlx4_cmd(dev, mailbox->dma,
+		       in_modifier << 8 | port_num,
+		       1, MLX4_CMD_SET_PORT, MLX4_CMD_TIME_CLASS_B,
+		       MLX4_CMD_WRAPPED);
+	if (!err && mlx4_is_bonded(dev))
+		err = mlx4_cmd(dev, mailbox->dma,
+			       in_modifier << 8 | 2,
+			       1, MLX4_CMD_SET_PORT, MLX4_CMD_TIME_CLASS_B,
+			       MLX4_CMD_WRAPPED);
+	mlx4_free_cmd_mailbox(dev, mailbox);
+	return err;
+}
+EXPORT_SYMBOL_GPL(mlx4_update_roce_addr_table);

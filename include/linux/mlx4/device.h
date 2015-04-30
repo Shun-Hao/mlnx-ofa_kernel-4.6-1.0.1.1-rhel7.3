@@ -62,6 +62,7 @@
 #define MLX4_RATELIMIT_1G_UNITS		4	/* 1 Gbps */
 #define MLX4_RATELIMIT_DEFAULT		0x00ff
 
+#define MLX4_GID_LEN		16
 #define MLX4_ROCE_MAX_GIDS	128
 #define MLX4_ROCE_PF_GIDS	16
 
@@ -1761,4 +1762,17 @@ static inline int mlx4_get_num_reserved_uar(struct mlx4_dev *dev)
 	/* The first 128 UARs are used for EQ doorbells */
 	return (128 >> (PAGE_SHIFT - dev->uar_page_shift));
 }
+
+struct mlx4_roce_addr {
+	u8			gid[MLX4_GID_LEN];
+	enum mlx4_roce_gid_type	type;
+};
+
+struct mlx4_roce_addr_table {
+	struct mlx4_roce_addr entry[MLX4_ROCE_MAX_GIDS];
+};
+
+int mlx4_update_roce_addr_table(struct mlx4_dev *dev, u8 port_num,
+				struct mlx4_roce_addr_table *table);
+
 #endif /* MLX4_DEVICE_H */
