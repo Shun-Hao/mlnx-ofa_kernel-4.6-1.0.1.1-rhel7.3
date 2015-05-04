@@ -264,10 +264,10 @@ static int mlx4_ib_add_gid(const struct ib_gid_attr *attr, void **context)
 			ret = -ENOMEM;
 		} else {
 			for (i = 0; i < MLX4_MAX_PORT_GIDS; i++) {
-				memcpy(addr_table->entry[i].gid,
+				memcpy(addr_table->addr[i].gid,
 				       &port_gid_table->gids[i].gid,
 				       sizeof(union ib_gid));
-				addr_table->entry[i].type =
+				addr_table->addr[i].type =
 					ib_gid_type_to_mlx4_gid_type(
 						port_gid_table->gids[i].gid_type);
 			}
@@ -277,7 +277,8 @@ static int mlx4_ib_add_gid(const struct ib_gid_attr *attr, void **context)
 
 	if (!ret && hw_update) {
 		ret = mlx4_update_roce_addr_table(ibdev->dev, attr->port_num,
-						  addr_table);
+						  addr_table,
+						  MLX4_CMD_WRAPPED);
 		kfree(addr_table);
 	}
 
@@ -322,10 +323,10 @@ static int mlx4_ib_del_gid(const struct ib_gid_attr *attr, void **context)
 			ret = -ENOMEM;
 		} else {
 			for (i = 0; i < MLX4_MAX_PORT_GIDS; i++) {
-				memcpy(addr_table->entry[i].gid,
+				memcpy(addr_table->addr[i].gid,
 				       &port_gid_table->gids[i].gid,
 				       sizeof(union ib_gid));
-				addr_table->entry[i].type =
+				addr_table->addr[i].type =
 					ib_gid_type_to_mlx4_gid_type(
 							port_gid_table->gids[i].gid_type);
 			}
@@ -337,7 +338,8 @@ static int mlx4_ib_del_gid(const struct ib_gid_attr *attr, void **context)
 
 	if (!ret && hw_update) {
 		ret = mlx4_update_roce_addr_table(ibdev->dev, attr->port_num,
-						  addr_table);
+						  addr_table,
+						  MLX4_CMD_WRAPPED);
 		kfree(addr_table);
 	}
 	return ret;

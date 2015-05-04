@@ -3201,7 +3201,8 @@ EXPORT_SYMBOL_GPL(mlx4_replace_zero_macs);
 #define MLX4_ROCE_ADDR_L3_TYPE_IPV6 1
 
 int mlx4_update_roce_addr_table(struct mlx4_dev *dev, u8 port_num,
-				struct mlx4_roce_addr_table *table)
+				struct mlx4_roce_addr_table *table,
+				int native_or_wrapped)
 {
 	struct mlx4_cmd_mailbox *mailbox;
 	int i;
@@ -3211,6 +3212,10 @@ int mlx4_update_roce_addr_table(struct mlx4_dev *dev, u8 port_num,
 	mailbox = mlx4_alloc_cmd_mailbox(dev);
 	if (IS_ERR_OR_NULL(mailbox))
 		return -ENOMEM;
+
+	if ((native_or_wrapped != MLX4_CMD_WRAPPED) &&
+	    (native_or_wrapped != MLX4_CMD_NATIVE))
+		return -EINVAL;
 
 	if (dev->caps.flags2 & MLX4_DEV_CAP_FLAG2_ROCE_V1_V2) {
 		struct {
@@ -3224,12 +3229,12 @@ int mlx4_update_roce_addr_table(struct mlx4_dev *dev, u8 port_num,
 
 		gid_tbl = mailbox->buf;
 		for (i = 0; i < MLX4_MAX_PORT_GIDS; ++i) {
-			memcpy(gid_tbl[i].gid, table->entry[i].gid,
+			memcpy(gid_tbl[i].gid, table->addr[i].gid,
 			       MLX4_GID_LEN);
-			gid_tbl[i].version = table->entry[i].type;
+			gid_tbl[i].version = table->addr[i].type;
 
-			if (table->entry[i].type != MLX4_ROCE_GID_TYPE_V1) {
-				if (ipv6_addr_v4mapped((struct in6_addr *)table->entry[i].gid))
+			if (table->addr[i].type != MLX4_ROCE_GID_TYPE_V1) {
+				if (ipv6_addr_v4mapped((struct in6_addr *)table->addr[i].gid))
 					gid_tbl[i].type = MLX4_ROCE_ADDR_L3_TYPE_IPV4;
 				else
 					gid_tbl[i].type = MLX4_ROCE_ADDR_L3_TYPE_IPV6;
@@ -3244,20 +3249,20 @@ int mlx4_update_roce_addr_table(struct mlx4_dev *dev, u8 port_num,
 		gid_tbl = mailbox->buf;
 
 		for (i = 0; i < MLX4_MAX_PORT_GIDS; ++i)
-			memcpy(gid_tbl[i].gid, table->entry[i].gid,
+			memcpy(gid_tbl[i].gid, table->addr[i].gid,
 			       MLX4_GID_LEN);
 		in_modifier = MLX4_SET_PORT_GID_TABLE;
 	}
 
 	err = mlx4_cmd(dev, mailbox->dma,
 		       in_modifier << 8 | port_num,
-		       1, MLX4_CMD_SET_PORT, MLX4_CMD_TIME_CLASS_B,
-		       MLX4_CMD_WRAPPED);
+		       MLX4_SET_PORT_ETH_OPCODE, MLX4_CMD_SET_PORT, MLX4_CMD_TIME_CLASS_B,
+		       native_or_wrapped);
 	if (!err && mlx4_is_bonded(dev))
 		err = mlx4_cmd(dev, mailbox->dma,
 			       in_modifier << 8 | 2,
-			       1, MLX4_CMD_SET_PORT, MLX4_CMD_TIME_CLASS_B,
-			       MLX4_CMD_WRAPPED);
+			       MLX4_SET_PORT_ETH_OPCODE, MLX4_CMD_SET_PORT, MLX4_CMD_TIME_CLASS_B,
+			       native_or_wrapped);
 	mlx4_free_cmd_mailbox(dev, mailbox);
 	return err;
 }

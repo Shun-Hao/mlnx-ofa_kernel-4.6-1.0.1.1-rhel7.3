@@ -3737,7 +3737,7 @@ static int mlx4_init_port_info(struct mlx4_dev *dev, int port)
 	info->port = port;
 	if (!mlx4_is_slave(dev)) {
 		mlx4_init_vlan_table(dev, &info->vlan_table);
-		mlx4_init_roce_gid_table(dev, &info->gid_table);
+		mlx4_init_roce_gid_table(dev, &info->roce);
 		info->base_qpn = mlx4_get_base_qpn(dev, port);
 	}
 

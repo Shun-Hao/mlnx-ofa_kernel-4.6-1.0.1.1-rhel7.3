@@ -761,14 +761,8 @@ struct mlx4_mac_table {
 	int			max;
 };
 
-#define MLX4_ROCE_GID_ENTRY_SIZE	16
-
-struct mlx4_roce_gid_entry {
-	u8 raw[MLX4_ROCE_GID_ENTRY_SIZE];
-};
-
-struct mlx4_roce_gid_table {
-	struct mlx4_roce_gid_entry	roce_gids[MLX4_ROCE_MAX_GIDS];
+struct mlx4_roce_info {
+	struct mlx4_roce_addr_table	addr_table;
 	struct mutex			mutex;
 };
 
@@ -849,7 +843,7 @@ struct mlx4_port_info {
 	struct device_attribute port_mtu_attr;
 	struct mlx4_mac_table	mac_table;
 	struct mlx4_vlan_table	vlan_table;
-	struct mlx4_roce_gid_table gid_table;
+	struct mlx4_roce_info	roce;
 	int			base_qpn;
 	struct cpu_rmap		*rmap;
 	struct devlink_port	devlink_port;
@@ -1258,7 +1252,7 @@ int mlx4_change_port_types(struct mlx4_dev *dev,
 void mlx4_init_mac_table(struct mlx4_dev *dev, struct mlx4_mac_table *table);
 void mlx4_init_vlan_table(struct mlx4_dev *dev, struct mlx4_vlan_table *table);
 void mlx4_init_roce_gid_table(struct mlx4_dev *dev,
-			      struct mlx4_roce_gid_table *table);
+			      struct mlx4_roce_info *roce);
 void __mlx4_unregister_vlan(struct mlx4_dev *dev, u8 port, u16 vlan);
 int __mlx4_register_vlan(struct mlx4_dev *dev, u8 port, u16 vlan, int *index);
 int mlx4_bond_vlan_table(struct mlx4_dev *dev);

@@ -1769,10 +1769,11 @@ struct mlx4_roce_addr {
 };
 
 struct mlx4_roce_addr_table {
-	struct mlx4_roce_addr entry[MLX4_ROCE_MAX_GIDS];
+	struct mlx4_roce_addr addr[MLX4_ROCE_MAX_GIDS];
 };
 
 int mlx4_update_roce_addr_table(struct mlx4_dev *dev, u8 port_num,
-				struct mlx4_roce_addr_table *table);
+				struct mlx4_roce_addr_table *table,
+				int native_or_wrapped);
 
 #endif /* MLX4_DEVICE_H */
