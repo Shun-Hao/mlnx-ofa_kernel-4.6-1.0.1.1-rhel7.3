@@ -3058,32 +3058,35 @@ static int build_mlx_header(struct mlx4_ib_sqp *sqp, const struct ib_ud_wr *wr,
 	is_grh = mlx4_ib_ah_grh_present(ah);
 	if (is_eth) {
 		enum ib_gid_type gid_type;
+
 		if (mlx4_is_mfunc(to_mdev(ib_dev)->dev)) {
+			enum mlx4_roce_gid_type roce_gid_type;
+
 			/* When multi-function is enabled, the ib_core gid
 			 * indexes don't necessarily match the hw ones, so
 			 * we must use our own cache */
 			err = mlx4_get_roce_gid_from_slave(to_mdev(ib_dev)->dev,
 							   be32_to_cpu(ah->av.ib.port_pd) >> 24,
-							   ah->av.ib.gid_index, &sgid.raw[0]);
-			if (err)
-				return err;
+							   ah->av.ib.gid_index, &sgid.raw[0], &roce_gid_type);
+			gid_type = mlx4_gid_type_to_ib_gid_type(roce_gid_type);
 		} else  {
 			err = fill_gid_by_hw_index(ibdev, sqp->qp.port,
 					    ah->av.ib.gid_index,
 					    &sgid, &gid_type);
-			if (!err) {
-				is_udp = gid_type == IB_GID_TYPE_ROCE_UDP_ENCAP;
-				if (is_udp) {
-					if (ipv6_addr_v4mapped((struct in6_addr *)&sgid))
-						ip_version = 4;
-					else
-						ip_version = 6;
-					is_grh = false;
-				}
-			} else {
-				return err;
-			}
 		}
+		if (!err) {
+			is_udp = gid_type == IB_GID_TYPE_ROCE_UDP_ENCAP;
+			if (is_udp) {
+				if (ipv6_addr_v4mapped((struct in6_addr *)&sgid))
+					ip_version = 4;
+				else
+					ip_version = 6;
+				is_grh = false;
+			}
+		} else {
+			return err;
+		}
+
 		if (ah->av.eth.vlan != cpu_to_be16(0xffff)) {
 			vlan = be16_to_cpu(ah->av.eth.vlan) & 0x0fff;
 			is_vlan = 1;

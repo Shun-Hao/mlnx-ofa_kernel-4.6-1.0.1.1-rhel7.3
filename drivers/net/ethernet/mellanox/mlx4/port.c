@@ -2206,7 +2206,7 @@ int mlx4_get_slave_from_roce_gid(struct mlx4_dev *dev, int port, u8 *gid,
 EXPORT_SYMBOL(mlx4_get_slave_from_roce_gid);
 
 int mlx4_get_roce_gid_from_slave(struct mlx4_dev *dev, int port, int slave_id,
-				 u8 *gid)
+				 u8 *gid, enum mlx4_roce_gid_type *gid_type)
 {
 	struct mlx4_priv *priv = mlx4_priv(dev);
 	struct mlx4_roce_addr *a = &priv->port[port].roce.addr_table.addr[slave_id];
@@ -2216,6 +2216,7 @@ int mlx4_get_roce_gid_from_slave(struct mlx4_dev *dev, int port, int slave_id,
 		return -EINVAL;
 
 	memcpy(gid, a->gid, MLX4_GID_LEN);
+	*gid_type = a->type;
 	return 0;
 }
 EXPORT_SYMBOL(mlx4_get_roce_gid_from_slave);
