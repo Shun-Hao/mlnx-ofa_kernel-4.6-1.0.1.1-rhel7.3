@@ -1727,6 +1727,7 @@ static int mlx4_slave_cap(struct mlx4_dev *dev)
 	mlx4_dbg(dev, "User MAC FW update is not supported in slave mode\n");
 
 	slave_adjust_steering_mode(dev, dev_cap, hca_param);
+	choose_roce_mode(dev, dev_cap);
 	mlx4_dbg(dev, "RSS support for IP fragments is %s\n",
 		 hca_param->rss_ip_frags ? "on" : "off");
 

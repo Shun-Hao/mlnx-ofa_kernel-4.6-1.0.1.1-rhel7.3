@@ -733,8 +733,6 @@ out:
 	return err;
 }
 
-static void disable_unsupported_roce_caps(void *buf);
-
 int mlx4_QUERY_DEV_CAP(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 {
 	struct mlx4_cmd_mailbox *mailbox;
@@ -856,8 +854,6 @@ int mlx4_QUERY_DEV_CAP(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 	if (err)
 		goto out;
 
-	if (mlx4_is_mfunc(dev))
-		disable_unsupported_roce_caps(outbox);
 	MLX4_GET(field, outbox, QUERY_DEV_CAP_RSVD_QP_OFFSET);
 	dev_cap->reserved_qps = 1 << (field & 0xf);
 	MLX4_GET(field, outbox, QUERY_DEV_CAP_MAX_QP_OFFSET);
@@ -1301,6 +1297,33 @@ out:
 #define DEV_CAP_EXT_2_FLAG_80_VFS	(1 << 21)
 #define DEV_CAP_EXT_2_FLAG_FSM		(1 << 20)
 
+static void slave_disable_roce_caps(void *buf, bool dis_roce_1,
+				    bool dis_roce_2,
+				    bool dis_roce_1_plus_2)
+{
+	u32 flags;
+
+	if (dis_roce_1) {
+		MLX4_GET(flags, buf, QUERY_DEV_CAP_FLAGS_OFFSET);
+		flags &= ~(1UL << 30);
+		MLX4_PUT(buf, flags, QUERY_DEV_CAP_FLAGS_OFFSET);
+	}
+	/* unconditionally disable ROCE 1.5 */
+	MLX4_GET(flags, buf, QUERY_DEV_CAP_EXT_FLAGS_OFFSET);
+	flags &= ~(1UL << 31);
+	MLX4_PUT(buf, flags, QUERY_DEV_CAP_EXT_FLAGS_OFFSET);
+	if (dis_roce_2) {
+		MLX4_GET(flags, buf, QUERY_DEV_CAP_EXT_2_FLAGS_OFFSET);
+		flags &= ~(1UL << 24);
+		MLX4_PUT(buf, flags, QUERY_DEV_CAP_EXT_2_FLAGS_OFFSET);
+	}
+	if (dis_roce_1_plus_2) {
+		MLX4_GET(flags, buf, QUERY_DEV_CAP_BMME_FLAGS_OFFSET);
+		flags &= ~(MLX4_FLAG_ROCE_V1_V2);
+		MLX4_PUT(buf, flags, QUERY_DEV_CAP_BMME_FLAGS_OFFSET);
+	}
+}
+
 int mlx4_QUERY_DEV_CAP_wrapper(struct mlx4_dev *dev, int slave,
 			       struct mlx4_vhcr *vhcr,
 			       struct mlx4_cmd_mailbox *inbox,
@@ -1322,7 +1345,6 @@ int mlx4_QUERY_DEV_CAP_wrapper(struct mlx4_dev *dev, int slave,
 	if (err)
 		return err;
 
-	disable_unsupported_roce_caps(outbox->buf);
 	/* add port mng change event capability and disable mw type 1
 	 * unconditionally to slaves
 	 */
@@ -1422,22 +1444,24 @@ int mlx4_QUERY_DEV_CAP_wrapper(struct mlx4_dev *dev, int slave,
 	field &= 0xfb;
 	MLX4_PUT(outbox->buf, field, QUERY_DEV_CAP_CONFIG_DEV_OFFSET);
 
+	if (slave) {
+		switch (dev->caps.roce_mode) {
+		case MLX4_ROCE_MODE_1:
+			slave_disable_roce_caps(outbox->buf, false, true, true);
+			break;
+		case MLX4_ROCE_MODE_2:
+			slave_disable_roce_caps(outbox->buf, true, false, true);
+			break;
+		case MLX4_ROCE_MODE_1_PLUS_2:
+			slave_disable_roce_caps(outbox->buf, false, false,
+						false);
+			break;
+		default:
+			break;
+		}
+	}
+
 	return 0;
-}
-
-static void disable_unsupported_roce_caps(void *buf)
-{
-	u32 flags;
-
-	MLX4_GET(flags, buf, QUERY_DEV_CAP_EXT_FLAGS_OFFSET);
-	flags &= ~(1UL << 31);
-	MLX4_PUT(buf, flags, QUERY_DEV_CAP_EXT_FLAGS_OFFSET);
-	MLX4_GET(flags, buf, QUERY_DEV_CAP_EXT_2_FLAGS_OFFSET);
-	flags &= ~(1UL << 24);
-	MLX4_PUT(buf, flags, QUERY_DEV_CAP_EXT_2_FLAGS_OFFSET);
-	MLX4_GET(flags, buf, QUERY_DEV_CAP_BMME_FLAGS_OFFSET);
-	flags &= ~(MLX4_FLAG_ROCE_V1_V2);
-	MLX4_PUT(buf, flags, QUERY_DEV_CAP_BMME_FLAGS_OFFSET);
 }
 
 int mlx4_QUERY_PORT_wrapper(struct mlx4_dev *dev, int slave,
