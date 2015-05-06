@@ -828,6 +828,7 @@ int mlx4_QUERY_DEV_CAP(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 #define QUERY_DEV_CAP_DIAG_RPRT_PER_PORT	0x9c
 #define QUERY_DEV_CAP_FW_REASSIGN_MAC		0x9d
 #define QUERY_DEV_CAP_VXLAN			0x9e
+#define QUERY_DEV_CAP_ADD_MAC			0x9f
 #define QUERY_DEV_CAP_MAD_DEMUX_OFFSET		0xb0
 #define QUERY_DEV_CAP_DMFS_HIGH_RATE_QPN_BASE_OFFSET	0xa8
 #define QUERY_DEV_CAP_DMFS_HIGH_RATE_QPN_RANGE_OFFSET	0xac
@@ -1339,6 +1340,11 @@ int mlx4_QUERY_DEV_CAP_wrapper(struct mlx4_dev *dev, int slave,
 	MLX4_GET(field, outbox->buf, QUERY_DEV_CAP_VXLAN);
 	field &= 0xd7;
 	MLX4_PUT(outbox->buf, field, QUERY_DEV_CAP_VXLAN);
+
+	/* For guests report additional-mac query not available */
+	MLX4_GET(field, outbox->buf, QUERY_DEV_CAP_ADD_MAC);
+	field &= 0xfb;
+	MLX4_PUT(outbox->buf, field, QUERY_DEV_CAP_ADD_MAC);
 
 	/* For guests, disable port BEACON */
 	MLX4_GET(field, outbox->buf, QUERY_DEV_CAP_PORT_BEACON_OFFSET);
