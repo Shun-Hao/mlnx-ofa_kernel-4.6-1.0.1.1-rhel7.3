@@ -1051,6 +1051,8 @@ static int mlx4_dev_cap(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 			 pci_resource_len(dev->persist->pdev, 2));
 		return -ENODEV;
 	}
+	if (dev_cap->flags2 & MLX4_DEV_CAP_FLAG2_ROCE_V1_V2)
+		dev->caps.roce_addr_support = 1;
 
 	dev->caps.num_ports	     = dev_cap->num_ports;
 	dev->caps.num_sys_eqs = dev_cap->num_sys_eqs;
@@ -1727,7 +1729,6 @@ static int mlx4_slave_cap(struct mlx4_dev *dev)
 	mlx4_dbg(dev, "User MAC FW update is not supported in slave mode\n");
 
 	slave_adjust_steering_mode(dev, dev_cap, hca_param);
-	choose_roce_mode(dev, dev_cap);
 	mlx4_dbg(dev, "RSS support for IP fragments is %s\n",
 		 hca_param->rss_ip_frags ? "on" : "off");
 
@@ -1737,6 +1738,13 @@ static int mlx4_slave_cap(struct mlx4_dev *dev)
 
 	if (func_cap->extra_flags & MLX4_QUERY_FUNC_FLAGS_A0_RES_QP)
 		dev->caps.alloc_res_qp_mask |= MLX4_RESERVE_A0_QP;
+
+	if (!(func_cap->extra_flags & MLX4_QUERY_FUNC_FLAGS_ROCE_ADDR))
+		dev->caps.roce_addr_support = 0;
+	else
+		dev->caps.roce_addr_support = 1;
+
+	choose_roce_mode(dev, dev_cap);
 
 err_mem:
 	if (err)

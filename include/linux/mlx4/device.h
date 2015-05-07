@@ -256,7 +256,8 @@ enum {
 
 enum {
 	MLX4_QUERY_FUNC_FLAGS_BF_RES_QP		= 1LL << 0,
-	MLX4_QUERY_FUNC_FLAGS_A0_RES_QP		= 1LL << 1
+	MLX4_QUERY_FUNC_FLAGS_A0_RES_QP		= 1LL << 1,
+	MLX4_QUERY_FUNC_FLAGS_ROCE_ADDR		= 1LL << 2
 };
 
 enum {
@@ -716,6 +717,7 @@ struct mlx4_caps {
 	bool			wol_port[MLX4_MAX_PORTS + 1];
 	struct mlx4_rate_limit_caps rl_caps;
 	u32			health_buffer_addrs;
+	u8			roce_addr_support;
 };
 
 struct mlx4_buf_list {

@@ -379,6 +379,7 @@ int mlx4_QUERY_FUNC_CAP_wrapper(struct mlx4_dev *dev, int slave,
 
 #define QUERY_FUNC_CAP_EXTRA_FLAGS_BF_QP_ALLOC_FLAG	(1UL << 31)
 #define QUERY_FUNC_CAP_EXTRA_FLAGS_A0_QP_ALLOC_FLAG	(1UL << 30)
+#define QUERY_FUNC_CAP_EXTRA_FLAGS_ROCE_MODE_PER_ADDR_FLAG	(1UL << 27)
 
 /* when opcode modifier = 1 */
 #define QUERY_FUNC_CAP_PHYS_PORT_OFFSET		0x3
@@ -535,6 +536,9 @@ int mlx4_QUERY_FUNC_CAP_wrapper(struct mlx4_dev *dev, int slave,
 
 		size = QUERY_FUNC_CAP_EXTRA_FLAGS_BF_QP_ALLOC_FLAG |
 			QUERY_FUNC_CAP_EXTRA_FLAGS_A0_QP_ALLOC_FLAG;
+		if (dev->caps.flags2 & MLX4_DEV_CAP_FLAG2_ROCE_V1_V2)
+			size |= QUERY_FUNC_CAP_EXTRA_FLAGS_ROCE_MODE_PER_ADDR_FLAG;
+
 		MLX4_PUT(outbox->buf, size, QUERY_FUNC_CAP_EXTRA_FLAGS_OFFSET);
 
 		size = dev->caps.reserved_lkey + ((slave << 8) & 0xFF00);
@@ -655,6 +659,8 @@ int mlx4_QUERY_FUNC_CAP(struct mlx4_dev *dev, u8 gen_or_port,
 				func_cap->extra_flags |= MLX4_QUERY_FUNC_FLAGS_BF_RES_QP;
 			if (size & QUERY_FUNC_CAP_EXTRA_FLAGS_A0_QP_ALLOC_FLAG)
 				func_cap->extra_flags |= MLX4_QUERY_FUNC_FLAGS_A0_RES_QP;
+			if (size & QUERY_FUNC_CAP_EXTRA_FLAGS_ROCE_MODE_PER_ADDR_FLAG)
+				func_cap->extra_flags |= MLX4_QUERY_FUNC_FLAGS_ROCE_ADDR;
 		}
 
 		goto out;
@@ -3241,7 +3247,7 @@ int mlx4_update_roce_addr_table(struct mlx4_dev *dev, u8 port_num,
 	    (native_or_wrapped != MLX4_CMD_NATIVE))
 		return -EINVAL;
 
-	if (dev->caps.flags2 & MLX4_DEV_CAP_FLAG2_ROCE_V1_V2) {
+	if (dev->caps.roce_addr_support) {
 		struct {
 			u8		gid[MLX4_GID_LEN];
 			__be32		rsrvd1[2];
