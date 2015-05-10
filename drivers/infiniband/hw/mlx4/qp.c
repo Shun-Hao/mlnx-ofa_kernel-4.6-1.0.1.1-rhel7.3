@@ -1605,7 +1605,8 @@ struct ib_qp *mlx4_ib_create_qp(struct ib_pd *pd,
 
 	ibqp = _mlx4_ib_create_qp(pd, init_attr, udata, is_exp);
 
-	if (!IS_ERR(ibqp) &&
+	if (!mlx4_is_slave(dev->dev) &&
+	    !IS_ERR_OR_NULL(ibqp) &&
 	    (init_attr->qp_type == IB_QPT_GSI) &&
 	    !(init_attr->create_flags & MLX4_IB_QP_CREATE_ROCE_V2_GSI)) {
 		struct mlx4_ib_sqp *sqp = to_msqp((to_mqp(ibqp)));
