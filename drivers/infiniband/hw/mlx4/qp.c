@@ -3641,14 +3641,24 @@ static int _mlx4_ib_post_send(struct ib_qp *ibqp, const struct ib_send_wr *wr,
 			enum ib_gid_type gid_type;
 			union ib_gid gid;
 
-			if (!fill_gid_by_hw_index(mdev, sqp->qp.port,
-					   ah->av.ib.gid_index,
-					   &gid, &gid_type))
-				qp = (gid_type == IB_GID_TYPE_ROCE_UDP_ENCAP) ?
-						to_mqp(sqp->roce_v2_gsi) : qp;
-			else
-				pr_err("Failed to get gid at index %d. RoCEv2 will not work properly\n",
-				       ah->av.ib.gid_index);
+			if (mlx4_is_mfunc(mdev->dev)) {
+				enum mlx4_roce_gid_type roce_gid_type;
+				union ib_gid sgid;
+
+				/* When multi-function is enabled, the ib_core gid
+				 * indexes don't necessarily match the hw ones, so
+				 * we must use our own cache */
+				err = mlx4_get_roce_gid_from_slave(mdev->dev,
+								   be32_to_cpu(ah->av.ib.port_pd) >> 24,
+								   ah->av.ib.gid_index, &sgid.raw[0], &roce_gid_type);
+				gid_type = mlx4_gid_type_to_ib_gid_type(roce_gid_type);
+			} else  {
+				err = fill_gid_by_hw_index(mdev, sqp->qp.port,
+							   ah->av.ib.gid_index,
+							   &gid, &gid_type);
+			}
+			qp = (gid_type == IB_GID_TYPE_ROCE_UDP_ENCAP) ?
+					to_mqp(sqp->roce_v2_gsi) : qp;
 		}
 	}
 
