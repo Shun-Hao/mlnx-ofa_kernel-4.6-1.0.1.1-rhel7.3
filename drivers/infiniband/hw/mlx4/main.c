@@ -1333,7 +1333,7 @@ struct mlx4_ib_steering {
 };
 
 #define LAST_ETH_FIELD vlan_tag
-#define LAST_IB_FIELD sl
+#define LAST_IB_FIELD dst_gid
 #define LAST_IPV4_FIELD dst_ip
 #define LAST_TCP_UDP_FIELD src_port
 
@@ -1387,10 +1387,11 @@ static int parse_flow_attr(struct mlx4_dev *dev,
 			return -ENOTSUPP;
 
 		type = MLX4_NET_TRANS_RULE_ID_IB;
-		mlx4_spec->ib.l3_qpn =
-			cpu_to_be32(qp_num);
-		mlx4_spec->ib.qpn_mask =
-			cpu_to_be32(MLX4_IB_FLOW_QPN_MASK);
+		mlx4_spec->ib.l3_qpn = ib_spec->ib.val.l3_type_qpn;
+		mlx4_spec->ib.qpn_mask = ib_spec->ib.mask.l3_type_qpn;
+		memcpy(&mlx4_spec->ib.dst_gid, ib_spec->ib.val.dst_gid, 16);
+		memcpy(&mlx4_spec->ib.dst_gid_msk,
+		       ib_spec->ib.mask.dst_gid, 16);
 		break;
 
 
@@ -1516,6 +1517,7 @@ static int __mlx4_ib_create_default_rules(
 			/* no rule */
 			continue;
 		case IB_FLOW_SPEC_IB:
+			memset(&ib_spec, 0, sizeof(ib_spec));
 			ib_spec.type = IB_FLOW_SPEC_IB;
 			ib_spec.size = sizeof(struct ib_flow_spec_ib);
 
@@ -3175,9 +3177,9 @@ int mlx4_ib_steer_qp_reg(struct mlx4_ib_dev *mdev, struct mlx4_ib_qp *mqp,
 		ib_spec = (struct ib_flow_spec_ib *)(flow + 1);
 		ib_spec->type = IB_FLOW_SPEC_IB;
 		ib_spec->size = sizeof(struct ib_flow_spec_ib);
-		/* Add an empty rule for IB L2 */
-		memset(&ib_spec->mask, 0, sizeof(ib_spec->mask));
-
+		ib_spec->val.l3_type_qpn =
+			cpu_to_be32(mqp->ibqp.qp_num & MLX4_IB_FLOW_QPN_MASK);
+		ib_spec->mask.l3_type_qpn = cpu_to_be32(MLX4_IB_FLOW_QPN_MASK);
 		err = __mlx4_ib_create_flow(&mqp->ibqp, flow,
 					    IB_FLOW_DOMAIN_NIC,
 					    MLX4_FS_REGULAR,

@@ -1901,7 +1901,7 @@ enum ib_flow_attr_type {
 enum ib_flow_spec_type {
 	/* L2 headers*/
 	IB_FLOW_SPEC_ETH		= 0x20,
-	IB_FLOW_SPEC_IB			= 0x22,
+	IB_FLOW_SPEC_IB			= 0x21,
 	/* L3 header*/
 	IB_FLOW_SPEC_IPV4		= 0x30,
 	IB_FLOW_SPEC_IPV6		= 0x31,
@@ -1956,8 +1956,8 @@ struct ib_flow_spec_eth {
 };
 
 struct ib_flow_ib_filter {
-	__be16 dlid;
-	__u8   sl;
+	__be32	l3_type_qpn;
+	u8	dst_gid[16];
 	/* Must be last */
 	u8	real_sz[0];
 };
