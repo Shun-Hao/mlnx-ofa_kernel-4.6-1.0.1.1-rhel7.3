@@ -3906,6 +3906,14 @@ int mlx4_RTS2RTS_QP_wrapper(struct mlx4_dev *dev, int slave,
 	if (err)
 		return err;
 
+	if ((dev->caps.roce_mode == MLX4_ROCE_MODE_2) ||
+	    (dev->caps.roce_mode == MLX4_ROCE_MODE_1_PLUS_2)) {
+		int qpn = vhcr->in_modifier & 0x7fffff;
+
+		context->roce_entropy = cpu_to_be16(mlx4_qp_roce_entropy(dev,
+									 qpn));
+	}
+
 	update_pkey_index(dev, slave, inbox);
 	update_gid(dev, inbox, (u8)slave);
 	adjust_proxy_tun_qkey(dev, vhcr, context);

@@ -44,6 +44,7 @@
 #include <rdma/ib_mad.h>
 
 #include <linux/mlx4/driver.h>
+#include <linux/mlx4/cmd.h>
 #include <linux/mlx4/qp.h>
 #include <linux/io.h>
 
@@ -4156,7 +4157,7 @@ int mlx4_ib_query_qp(struct ib_qp *ibqp, struct ib_qp_attr *qp_attr, int qp_attr
 		goto done;
 	}
 
-	err = mlx4_qp_query(dev->dev, &qp->mqp, &context);
+	err = mlx4_qp_query(dev->dev, &qp->mqp, &context, MLX4_CMD_WRAPPED);
 	if (err) {
 		err = -EINVAL;
 		goto out;

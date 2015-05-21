@@ -893,7 +893,7 @@ void mlx4_cleanup_qp_table(struct mlx4_dev *dev)
 }
 
 int mlx4_qp_query(struct mlx4_dev *dev, struct mlx4_qp *qp,
-		  struct mlx4_qp_context *context)
+		  struct mlx4_qp_context *context, int native_or_wrapped)
 {
 	struct mlx4_cmd_mailbox *mailbox;
 	int err;
@@ -904,7 +904,7 @@ int mlx4_qp_query(struct mlx4_dev *dev, struct mlx4_qp *qp,
 
 	err = mlx4_cmd_box(dev, 0, mailbox->dma, qp->qpn, 0,
 			   MLX4_CMD_QUERY_QP, MLX4_CMD_TIME_CLASS_A,
-			   MLX4_CMD_WRAPPED);
+			   native_or_wrapped);
 	if (!err)
 		memcpy(context, mailbox->buf + 8, sizeof(*context));
 
@@ -953,7 +953,7 @@ u16 mlx4_qp_roce_entropy(struct mlx4_dev *dev, u32 qpn)
 	int err;
 
 	qp.qpn = qpn;
-	err = mlx4_qp_query(dev, &qp, &context);
+	err = mlx4_qp_query(dev, &qp, &context, MLX4_CMD_NATIVE);
 	if (!err) {
 		u32 dest_qpn = be32_to_cpu(context.remote_qpn) & 0xffffff;
 		u16 folded_dst = folded_qp(dest_qpn);

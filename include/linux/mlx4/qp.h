@@ -483,7 +483,7 @@ int mlx4_qp_modify(struct mlx4_dev *dev, struct mlx4_mtt *mtt,
 		   int sqd_event, struct mlx4_qp *qp);
 
 int mlx4_qp_query(struct mlx4_dev *dev, struct mlx4_qp *qp,
-		  struct mlx4_qp_context *context);
+		  struct mlx4_qp_context *context, int native_or_wrapped);
 
 int mlx4_qp_to_ready(struct mlx4_dev *dev, struct mlx4_mtt *mtt,
 		     struct mlx4_qp_context *context,
