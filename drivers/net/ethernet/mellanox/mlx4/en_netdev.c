@@ -2199,6 +2199,19 @@ struct en_port_attribute en_port_attr_link_state = __ATTR(link_state,
 						mlx4_en_show_vf_link_state,
 						mlx4_en_store_vf_link_state);
 
+static ssize_t mlx4_en_show_tx_rate(struct en_port *en_p,
+				    struct en_port_attribute *attr,
+				    char *buf)
+{
+	return mlx4_get_vf_rate(en_p->dev, en_p->port_num,
+				en_p->vport_num, buf);
+}
+
+struct en_port_attribute en_port_attr_tx_rate = __ATTR(tx_rate,
+						       S_IRUGO,
+						       mlx4_en_show_tx_rate,
+						       NULL);
+
 static ssize_t en_port_show(struct kobject *kobj,
 			    struct attribute *attr, char *buf)
 {
@@ -2233,6 +2246,7 @@ static const struct sysfs_ops en_port_vf_ops = {
 
 static struct attribute *vf_attrs[] = {
 	&en_port_attr_link_state.attr,
+	&en_port_attr_tx_rate.attr,
 	NULL
 };
 

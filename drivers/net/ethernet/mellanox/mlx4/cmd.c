@@ -3574,3 +3574,30 @@ int mlx4_vf_set_enable_smi_admin(struct mlx4_dev *dev, int slave, int port,
 	return 0;
 }
 EXPORT_SYMBOL_GPL(mlx4_vf_set_enable_smi_admin);
+
+ssize_t mlx4_get_vf_rate(struct mlx4_dev *dev, int port, int vf, char *buf)
+{
+	int slave;
+	int rate = 0;
+	ssize_t len = 0;
+	struct mlx4_vport_state *s_info;
+	struct mlx4_priv *priv = mlx4_priv(dev);
+
+	if (!mlx4_is_master(dev) ||
+	    !(dev->caps.flags2 & MLX4_DEV_CAP_FLAG2_QOS_VPP))
+		return -EOPNOTSUPP;
+
+	slave = mlx4_get_slave_indx(dev, vf);
+	if (slave < 0)
+		return -EINVAL;
+
+	s_info = &priv->mfunc.master.vf_admin[slave].vport[port];
+
+	if (mlx4_is_vf_vst_and_prio_qos(dev, port, s_info))
+		rate = s_info->tx_rate;
+
+	len += sprintf(&buf[len], "%d\n", rate);
+
+	return len;
+}
+EXPORT_SYMBOL_GPL(mlx4_get_vf_rate);

@@ -325,6 +325,7 @@ int mlx4_config_dev_retrieval(struct mlx4_dev *dev,
 			      struct mlx4_config_dev_params *params);
 void mlx4_cmd_wake_completions(struct mlx4_dev *dev);
 void mlx4_report_internal_err_comm_event(struct mlx4_dev *dev);
+ssize_t mlx4_get_vf_rate(struct mlx4_dev *dev, int port, int vf, char *buf);
 /*
  * mlx4_get_slave_default_vlan -
  * return true if VST ( default vlan)
