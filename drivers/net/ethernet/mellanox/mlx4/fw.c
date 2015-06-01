@@ -55,6 +55,10 @@ static bool enable_qos;
 module_param(enable_qos, bool, 0444);
 MODULE_PARM_DESC(enable_qos, "Enable Enhanced QoS support (default: off)");
 
+static bool enable_vfs_qos;
+module_param(enable_vfs_qos, bool, 0444);
+MODULE_PARM_DESC(enable_vfs_qos, "Enable Virtual VFs QoS (default: off)");
+
 #define MLX4_GET(dest, source, offset)				      \
 	do {							      \
 		void *__p = (char *) (source) + (offset);	      \
@@ -1011,7 +1015,7 @@ int mlx4_QUERY_DEV_CAP(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 	MLX4_GET(field, outbox, QUERY_DEV_CAP_CQ_OVERRUN_OFFSET);
 	dev_cap->cq_overrun = (field >> 1) & 1;
 	MLX4_GET(field, outbox, QUERY_DEV_CAP_CQ_EQ_CACHE_LINE_STRIDE);
-	if (field & (1 << 4))
+	if (field & (1 << 4) && enable_vfs_qos)
 		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_QOS_VPP;
 	if (field & (1 << 5))
 		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_ETH_PROT_CTRL;
