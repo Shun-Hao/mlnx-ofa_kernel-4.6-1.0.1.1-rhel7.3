@@ -66,6 +66,28 @@
 #define MLX4_ROCE_MAX_GIDS	128
 #define MLX4_ROCE_PF_GIDS	16
 
+#if defined(__i386__) || defined(__x86_64__)
+static inline bool mlx4_arch_bf_support(void)
+{
+	pgprot_t prot = __pgprot(0);
+
+	if (pgprot_val(pgprot_writecombine(prot)) == pgprot_val(pgprot_noncached(prot)))
+		return false;
+
+	return true;
+}
+#elif defined(CONFIG_PPC64)
+static inline bool mlx4_arch_bf_support(void)
+{
+	return true;
+}
+#else
+static inline bool mlx4_arch_bf_support(void)
+{
+	return false;
+}
+#endif
+
 enum {
 	MLX4_FLAG_MSI_X		= 1 << 0,
 	MLX4_FLAG_OLD_PORT_CMDS	= 1 << 1,
