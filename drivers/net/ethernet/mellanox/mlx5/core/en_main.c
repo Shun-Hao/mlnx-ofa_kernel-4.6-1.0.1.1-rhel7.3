@@ -5138,10 +5138,17 @@ static void *mlx5e_add(struct mlx5_core_dev *mdev)
 		goto err_detach;
 	}
 
+	err = mlx5e_sysfs_create(netdev);
+	if (err)
+		goto err_unregister_netdev;
+
 #ifdef CONFIG_MLX5_CORE_EN_DCB
 	mlx5e_dcbnl_init_app(priv);
 #endif
 	return priv;
+
+err_unregister_netdev:
+	unregister_netdev(netdev);
 
 err_detach:
 	mlx5e_detach(mdev, priv);
@@ -5160,6 +5167,7 @@ static void mlx5e_remove(struct mlx5_core_dev *mdev, void *vpriv)
 #ifdef CONFIG_MLX5_CORE_EN_DCB
 	mlx5e_dcbnl_delete_app(priv);
 #endif
+	mlx5e_sysfs_remove(priv->netdev);
 	unregister_netdev(priv->netdev);
 	mlx5e_detach(mdev, vpriv);
 	mlx5e_destroy_netdev(priv);

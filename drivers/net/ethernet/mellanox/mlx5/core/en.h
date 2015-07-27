@@ -189,6 +189,13 @@ static inline int mlx5e_get_netdev_max_channels(struct net_device *netdev)
 		     netdev->num_tx_queues);
 }
 
+enum {
+	MLX5E_CON_PROTOCOL_802_1_RP,
+	MLX5E_CON_PROTOCOL_R_ROCE_RP,
+	MLX5E_CON_PROTOCOL_R_ROCE_NP,
+	MLX5E_CONG_PROTOCOL_NUM,
+};
+
 struct mlx5e_tx_wqe {
 	struct mlx5_wqe_ctrl_seg ctrl;
 	struct mlx5_wqe_eth_seg  eth;
@@ -655,6 +662,56 @@ enum {
 	MLX5E_NIC_PRIO
 };
 
+struct mlx5e_ecn_rp_attributes {
+	struct mlx5_core_dev	*mdev;
+	/* ATTRIBUTES */
+	struct kobj_attribute	enable;
+	struct kobj_attribute	clamp_tgt_rate;
+	struct kobj_attribute	clamp_tgt_rate_ati;
+	struct kobj_attribute	rpg_time_reset;
+	struct kobj_attribute	rpg_byte_reset;
+	struct kobj_attribute	rpg_threshold;
+	struct kobj_attribute	rpg_max_rate;
+	struct kobj_attribute	rpg_ai_rate;
+	struct kobj_attribute	rpg_hai_rate;
+	struct kobj_attribute	rpg_gd;
+	struct kobj_attribute	rpg_min_dec_fac;
+	struct kobj_attribute	rpg_min_rate;
+	struct kobj_attribute	rate2set_fcnp;
+	struct kobj_attribute	dce_tcp_g;
+	struct kobj_attribute	dce_tcp_rtt;
+	struct kobj_attribute	rreduce_mperiod;
+	struct kobj_attribute	initial_alpha_value;
+};
+
+struct mlx5e_ecn_np_attributes {
+	struct mlx5_core_dev	*mdev;
+	/* ATTRIBUTES */
+	struct kobj_attribute	enable;
+	struct kobj_attribute	min_time_between_cnps;
+	struct kobj_attribute	cnp_dscp;
+	struct kobj_attribute	cnp_802p_prio;
+};
+
+union mlx5e_ecn_attributes {
+	struct mlx5e_ecn_rp_attributes rp_attr;
+	struct mlx5e_ecn_np_attributes np_attr;
+};
+
+struct mlx5e_ecn_ctx {
+	union mlx5e_ecn_attributes ecn_attr;
+	struct kobject *ecn_proto_kobj;
+	struct kobject *ecn_enable_kobj;
+};
+
+struct mlx5e_ecn_enable_ctx {
+	int cong_protocol;
+	int priority;
+	struct mlx5_core_dev	*mdev;
+
+	struct kobj_attribute	enable;
+};
+
 struct mlx5e_priv {
 	/* priv data path fields - start */
 	struct mlx5e_txqsq *txq2sq[MLX5E_MAX_NUM_CHANNELS * MLX5E_MAX_NUM_TC];
@@ -707,6 +764,11 @@ struct mlx5e_priv {
 #endif
 
 	struct dentry *dfs_root;
+
+	struct kobject *ecn_root_kobj;
+
+	struct mlx5e_ecn_ctx ecn_ctx[MLX5E_CONG_PROTOCOL_NUM];
+	struct mlx5e_ecn_enable_ctx ecn_enable_ctx[MLX5E_CONG_PROTOCOL_NUM][8];
 };
 
 struct mlx5e_profile {
@@ -772,6 +834,9 @@ mlx5e_skb_from_cqe_nonlinear(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe,
 			     struct mlx5e_wqe_frag_info *wi, u32 cqe_bcnt);
 
 void mlx5e_update_stats(struct mlx5e_priv *priv);
+
+int mlx5e_sysfs_create(struct net_device *dev);
+void mlx5e_sysfs_remove(struct net_device *dev);
 
 void mlx5e_init_l2_addr(struct mlx5e_priv *priv);
 int mlx5e_self_test_num(struct mlx5e_priv *priv);
