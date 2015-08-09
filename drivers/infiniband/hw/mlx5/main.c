@@ -61,6 +61,7 @@
 #include "mlx5_ib.h"
 #include "ib_rep.h"
 #include "cmd.h"
+#include "user_exp.h"
 #include <linux/mlx5/fs_helpers.h>
 #include <linux/mlx5/accel.h>
 #include <rdma/uverbs_std_types.h>
@@ -1650,12 +1651,22 @@ static void mlx5_ib_dealloc_transport_domain(struct mlx5_ib_dev *dev, u32 tdn,
 	mlx5_ib_disable_lb(dev, true, false);
 }
 
+static void set_exp_data(struct mlx5_ib_dev *dev,
+			 struct mlx5_exp_ib_alloc_ucontext_resp *resp)
+{
+	resp->exp_data.comp_mask = MLX5_EXP_ALLOC_CTX_RESP_MASK_CQE_VERSION |
+		MLX5_EXP_ALLOC_CTX_RESP_MASK_CQE_COMP_MAX_NUM;
+	resp->exp_data.cqe_version = MLX5_CAP_GEN(dev->mdev, cqe_version);
+	resp->exp_data.cqe_comp_max_num = MLX5_CAP_GEN(dev->mdev,
+						      cqe_compression_max_num);
+}
+
 static struct ib_ucontext *mlx5_ib_alloc_ucontext(struct ib_device *ibdev,
 						  struct ib_udata *udata)
 {
 	struct mlx5_ib_dev *dev = to_mdev(ibdev);
 	struct mlx5_ib_alloc_ucontext_req_v2 req = {};
-	struct mlx5_ib_alloc_ucontext_resp resp = {};
+	struct mlx5_exp_ib_alloc_ucontext_resp resp = {};
 	struct mlx5_core_dev *mdev = dev->mdev;
 	struct mlx5_ib_ucontext *context;
 	struct mlx5_bfreg_info *bfregi;
@@ -1840,6 +1851,12 @@ static struct ib_ucontext *mlx5_ib_alloc_ucontext(struct ib_device *ibdev,
 				MLX5_IB_ALLOC_UCONTEXT_RESP_MASK_DUMP_FILL_MKEY;
 		}
 		resp.response_length += sizeof(resp.dump_fill_mkey);
+	}
+
+	if (field_avail(typeof(resp), exp_data, udata->outlen)) {
+		set_exp_data(dev, &resp);
+		resp.response_length = min_t(size_t, udata->outlen,
+					     sizeof(resp));
 	}
 
 	err = ib_copy_to_udata(udata, &resp, resp.response_length);

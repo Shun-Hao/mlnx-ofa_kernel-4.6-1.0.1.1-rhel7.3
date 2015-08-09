@@ -35,6 +35,81 @@
 
 #include <rdma/mlx5-abi.h>
 
+enum mlx5_exp_ib_create_cq_mask {
+	MLX5_EXP_CREATE_CQ_MASK_CQE_COMP_EN		= 1 << 0,
+	MLX5_EXP_CREATE_CQ_MASK_CQE_COMP_RECV_TYPE      = 1 << 1,
+	MLX5_EXP_CREATE_CQ_MASK_RESERVED		= 1 << 2,
+};
+
+enum mlx5_exp_cqe_comp_recv_type {
+	MLX5_IB_CQE_FORMAT_HASH,
+	MLX5_IB_CQE_FORMAT_CSUM,
+};
+
+struct mlx5_exp_ib_create_cq_data {
+	__u32   comp_mask; /* use mlx5_exp_ib_creaet_cq_mask */
+	__u8    cqe_comp_en;
+	__u8    cqe_comp_recv_type; /* use mlx5_exp_cqe_comp_recv_type */
+	__u16	reserved;
+};
+
+struct mlx5_exp_ib_create_cq {
+	__u64					buf_addr;
+	__u64					db_addr;
+	__u32					cqe_size;
+	__u8					cqe_comp_en;
+	__u8					cqe_comp_res_format;
+	__u16					flags; /* Use mlx5_ib_create_cq_flags */
+
+	/* Some more reserved fields for future growth of mlx5_ib_create_cq */
+	__u64					prefix_reserved[8];
+
+	/* sizeof prefix aligned with mlx5_ib_create_cq */
+	__u64					size_of_prefix;
+	struct mlx5_exp_ib_create_cq_data	exp_data;
+};
+
+enum mlx5_exp_ib_alloc_ucontext_data_resp_mask {
+	MLX5_EXP_ALLOC_CTX_RESP_MASK_CQE_COMP_MAX_NUM	= 1 << 0,
+	MLX5_EXP_ALLOC_CTX_RESP_MASK_CQE_VERSION	= 1 << 1,
+};
+
+struct mlx5_exp_ib_alloc_ucontext_data_resp {
+	__u32   comp_mask; /* use mlx5_ib_exp_alloc_ucontext_data_resp_mask */
+	__u16	cqe_comp_max_num;
+	__u8	cqe_version;
+	__u8	reserved;
+};
+
+struct mlx5_exp_ib_alloc_ucontext_resp {
+	__u32						qp_tab_size;
+	__u32						bf_reg_size;
+	__u32						tot_bfregs;
+	__u32						cache_line_size;
+	__u16						max_sq_desc_sz;
+	__u16						max_rq_desc_sz;
+	__u32						max_send_wqebb;
+	__u32						max_recv_wr;
+	__u32						max_srq_recv_wr;
+	__u16						num_ports;
+	__u16						flow_action_flags;
+	__u32						comp_mask;
+	__u32						response_length;
+	__u8						cqe_version;
+	__u8						cmds_supp_uhw;
+	__u8						eth_min_inline;
+	__u8						clock_info_versions;
+	__u64						hca_core_clock_offset;
+	__u32						log_uar_size;
+	__u32						num_uars_per_page;
+	__u32						num_dyn_bfregs;
+	__u32                                           dump_fill_mkey;
+	__u32						reserved3;
+	/* Some more reserved fields for future growth of mlx5_ib_alloc_ucontext_resp */
+	__u64						prefix_reserved[8];
+	struct mlx5_exp_ib_alloc_ucontext_data_resp	exp_data;
+};
+
 enum mlx5_exp_ib_create_qp_mask {
 	MLX5_EXP_CREATE_QP_MASK_UIDX		= 1 << 0,
 	MLX5_EXP_CREATE_QP_MASK_RESERVED	= 1 << 1,
