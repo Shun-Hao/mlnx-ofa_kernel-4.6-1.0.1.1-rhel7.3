@@ -1622,6 +1622,15 @@ static void set_exp_data(struct mlx5_ib_dev *dev,
 	resp->exp_data.atomic_arg_sizes_dc = MLX5_CAP_ATOMIC(dev->mdev, atomic_size_dc);
 	resp->exp_data.flags |= MLX5_CAP_GEN(dev->mdev, compact_address_vector) ?
 		MLX5_CAP_COMPACT_AV : 0;
+
+	if (MLX5_CAP_GEN(dev->mdev, roce)) {
+		resp->exp_data.comp_mask |= MLX5_EXP_ALLOC_CTX_RESP_MASK_RROCE_UDP_SPORT_MIN |
+			MLX5_EXP_ALLOC_CTX_RESP_MASK_RROCE_UDP_SPORT_MAX;
+		resp->exp_data.rroce_udp_sport_min = MLX5_CAP_ROCE(dev->mdev,
+								   r_roce_min_src_udp_port);
+		resp->exp_data.rroce_udp_sport_max = MLX5_CAP_ROCE(dev->mdev,
+								   r_roce_max_src_udp_port);
+	}
 }
 
 static struct ib_ucontext *mlx5_ib_alloc_ucontext(struct ib_device *ibdev,
