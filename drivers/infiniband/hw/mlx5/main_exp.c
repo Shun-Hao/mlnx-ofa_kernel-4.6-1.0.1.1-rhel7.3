@@ -31,6 +31,7 @@
  */
 
 #include <linux/highmem.h>
+#include <rdma/ib_cache.h>
 #include "mlx5_ib.h"
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING

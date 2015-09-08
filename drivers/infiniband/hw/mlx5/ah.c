@@ -54,6 +54,12 @@ static struct ib_ah *create_ib_ah(struct mlx5_ib_dev *dev,
 	if (ah_attr->type == RDMA_AH_ATTR_TYPE_ROCE) {
 		gid_type = ah_attr->grh.sgid_attr->gid_type;
 
+		if ((gid_type != IB_GID_TYPE_IB) &&
+		    (ah_attr->grh.hop_limit < 2))
+			ah->av.hop_limit = IPV6_DEFAULT_HOPLIMIT;
+		else
+			ah->av.hop_limit  = ah_attr->grh.hop_limit;
+
 		memcpy(ah->av.rmac, ah_attr->roce.dmac,
 		       sizeof(ah_attr->roce.dmac));
 		ah->av.udp_sport =
