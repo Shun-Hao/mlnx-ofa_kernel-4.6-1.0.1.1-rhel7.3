@@ -113,54 +113,63 @@ static void mlx5e_fill_rp_attributes(struct kobject *kobj,
 
 	rp_attr->mdev = mdev;
 
+	sysfs_attr_init(&rp_attr->clamp_tgt_rate.attr);
 	rp_attr->clamp_tgt_rate.attr.name = "clamp_tgt_rate";
 	rp_attr->clamp_tgt_rate.attr.mode = set_kobj_mode(mdev);
 	rp_attr->clamp_tgt_rate.show = mlx5e_show_clamp_tgt_rate;
 	rp_attr->clamp_tgt_rate.store = mlx5e_store_clamp_tgt_rate;
 	err = sysfs_create_file(kobj, &rp_attr->clamp_tgt_rate.attr);
 
+	sysfs_attr_init(&rp_attr->clamp_tgt_rate_ati.attr);
 	rp_attr->clamp_tgt_rate_ati.attr.name = "clamp_tgt_rate_after_time_inc";
 	rp_attr->clamp_tgt_rate_ati.attr.mode = set_kobj_mode(mdev);
 	rp_attr->clamp_tgt_rate_ati.show = mlx5e_show_clamp_tgt_rate_ati;
 	rp_attr->clamp_tgt_rate_ati.store = mlx5e_store_clamp_tgt_rate_ati;
 	err = sysfs_create_file(kobj, &rp_attr->clamp_tgt_rate_ati.attr);
 
+	sysfs_attr_init(&rp_attr->rpg_time_reset.attr);
 	rp_attr->rpg_time_reset.attr.name = "rpg_time_reset";
 	rp_attr->rpg_time_reset.attr.mode = set_kobj_mode(mdev);
 	rp_attr->rpg_time_reset.show = mlx5e_show_rpg_time_reset;
 	rp_attr->rpg_time_reset.store = mlx5e_store_rpg_time_reset;
 	err = sysfs_create_file(kobj, &rp_attr->rpg_time_reset.attr);
 
+	sysfs_attr_init(&rp_attr->rpg_byte_reset.attr);
 	rp_attr->rpg_byte_reset.attr.name = "rpg_byte_reset";
 	rp_attr->rpg_byte_reset.attr.mode = set_kobj_mode(mdev);
 	rp_attr->rpg_byte_reset.show = mlx5e_show_rpg_byte_reset;
 	rp_attr->rpg_byte_reset.store = mlx5e_store_rpg_byte_reset;
 	err = sysfs_create_file(kobj, &rp_attr->rpg_byte_reset.attr);
 
+	sysfs_attr_init(&rp_attr->rpg_threshold.attr);
 	rp_attr->rpg_threshold.attr.name = "rpg_threshold";
 	rp_attr->rpg_threshold.attr.mode = set_kobj_mode(mdev);
 	rp_attr->rpg_threshold.show = mlx5e_show_rpg_threshold;
 	rp_attr->rpg_threshold.store = mlx5e_store_rpg_threshold;
 	err = sysfs_create_file(kobj, &rp_attr->rpg_threshold.attr);
 
+	sysfs_attr_init(&rp_attr->rpg_max_rate.attr);
 	rp_attr->rpg_max_rate.attr.name = "rpg_max_rate";
 	rp_attr->rpg_max_rate.attr.mode = set_kobj_mode(mdev);
 	rp_attr->rpg_max_rate.show = mlx5e_show_rpg_max_rate;
 	rp_attr->rpg_max_rate.store = mlx5e_store_rpg_max_rate;
 	err = sysfs_create_file(kobj, &rp_attr->rpg_max_rate.attr);
 
+	sysfs_attr_init(&rp_attr->rpg_ai_rate.attr);
 	rp_attr->rpg_ai_rate.attr.name = "rpg_ai_rate";
 	rp_attr->rpg_ai_rate.attr.mode = set_kobj_mode(mdev);
 	rp_attr->rpg_ai_rate.show = mlx5e_show_rpg_ai_rate;
 	rp_attr->rpg_ai_rate.store = mlx5e_store_rpg_ai_rate;
 	err = sysfs_create_file(kobj, &rp_attr->rpg_ai_rate.attr);
 
+	sysfs_attr_init(&rp_attr->rpg_hai_rate.attr);
 	rp_attr->rpg_hai_rate.attr.name = "rpg_hai_rate";
 	rp_attr->rpg_hai_rate.attr.mode = set_kobj_mode(mdev);
 	rp_attr->rpg_hai_rate.show = mlx5e_show_rpg_hai_rate;
 	rp_attr->rpg_hai_rate.store = mlx5e_store_rpg_hai_rate;
 	err = sysfs_create_file(kobj, &rp_attr->rpg_hai_rate.attr);
 
+	sysfs_attr_init(&rp_attr->rpg_gd.attr);
 	rp_attr->rpg_gd.attr.name = "rpg_gd";
 	rp_attr->rpg_gd.attr.mode = set_kobj_mode(mdev);
 	rp_attr->rpg_gd.show = mlx5e_show_rpg_gd;
@@ -168,42 +177,49 @@ static void mlx5e_fill_rp_attributes(struct kobject *kobj,
 
 	err = sysfs_create_file(kobj, &rp_attr->rpg_gd.attr);
 
+	sysfs_attr_init(&rp_attr->rpg_min_dec_fac.attr);
 	rp_attr->rpg_min_dec_fac.attr.name = "rpg_min_dec_fac";
 	rp_attr->rpg_min_dec_fac.attr.mode = set_kobj_mode(mdev);
 	rp_attr->rpg_min_dec_fac.show = mlx5e_show_rpg_min_dec_fac;
 	rp_attr->rpg_min_dec_fac.store = mlx5e_store_rpg_min_dec_fac;
 	err = sysfs_create_file(kobj, &rp_attr->rpg_min_dec_fac.attr);
 
+	sysfs_attr_init(&rp_attr->rpg_min_rate.attr);
 	rp_attr->rpg_min_rate.attr.name = "rpg_min_rate";
 	rp_attr->rpg_min_rate.attr.mode = set_kobj_mode(mdev);
 	rp_attr->rpg_min_rate.show = mlx5e_show_rpg_min_rate;
 	rp_attr->rpg_min_rate.store = mlx5e_store_rpg_min_rate;
 	err = sysfs_create_file(kobj, &rp_attr->rpg_min_rate.attr);
 
+	sysfs_attr_init(&rp_attr->rate2set_fcnp.attr);
 	rp_attr->rate2set_fcnp.attr.name = "rate_to_set_on_first_cnp";
 	rp_attr->rate2set_fcnp.attr.mode = set_kobj_mode(mdev);
 	rp_attr->rate2set_fcnp.show = mlx5e_show_rate2set_fcnp;
 	rp_attr->rate2set_fcnp.store = mlx5e_store_rate2set_fcnp;
 	err = sysfs_create_file(kobj, &rp_attr->rate2set_fcnp.attr);
 
+	sysfs_attr_init(&rp_attr->dce_tcp_g.attr);
 	rp_attr->dce_tcp_g.attr.name = "dce_tcp_g";
 	rp_attr->dce_tcp_g.attr.mode = set_kobj_mode(mdev);
 	rp_attr->dce_tcp_g.show = mlx5e_show_dce_tcp_g;
 	rp_attr->dce_tcp_g.store = mlx5e_store_dce_tcp_g;
 	err = sysfs_create_file(kobj, &rp_attr->dce_tcp_g.attr);
 
+	sysfs_attr_init(&rp_attr->dce_tcp_rtt.attr);
 	rp_attr->dce_tcp_rtt.attr.name = "dce_tcp_rtt";
 	rp_attr->dce_tcp_rtt.attr.mode = set_kobj_mode(mdev);
 	rp_attr->dce_tcp_rtt.show = mlx5e_show_dce_tcp_rtt;
 	rp_attr->dce_tcp_rtt.store = mlx5e_store_dce_tcp_rtt;
 	err = sysfs_create_file(kobj, &rp_attr->dce_tcp_rtt.attr);
 
+	sysfs_attr_init(&rp_attr->rreduce_mperiod.attr);
 	rp_attr->rreduce_mperiod.attr.name = "rate_reduce_monitor_period";
 	rp_attr->rreduce_mperiod.attr.mode = set_kobj_mode(mdev);
 	rp_attr->rreduce_mperiod.show = mlx5e_show_rreduce_mperiod;
 	rp_attr->rreduce_mperiod.store = mlx5e_store_rreduce_mperiod;
 	err = sysfs_create_file(kobj, &rp_attr->rreduce_mperiod.attr);
 
+	sysfs_attr_init(&rp_attr->initial_alpha_value.attr);
 	rp_attr->initial_alpha_value.attr.name = "initial_alpha_value";
 	rp_attr->initial_alpha_value.attr.mode = set_kobj_mode(mdev);
 	rp_attr->initial_alpha_value.show = mlx5e_show_initial_alpha_value;
@@ -240,6 +256,7 @@ static void mlx5e_fill_np_attributes(struct kobject *kobj,
 
 	np_attr->mdev = mdev;
 
+	sysfs_attr_init(&np_attr->min_time_between_cnps.attr);
 	np_attr->min_time_between_cnps.attr.name = "min_time_between_cnps";
 	np_attr->min_time_between_cnps.attr.mode = set_kobj_mode(mdev);
 	np_attr->min_time_between_cnps.show  = mlx5e_show_min_time_between_cnps;
@@ -247,12 +264,14 @@ static void mlx5e_fill_np_attributes(struct kobject *kobj,
 					  mlx5e_store_min_time_between_cnps;
 	err = sysfs_create_file(kobj, &np_attr->min_time_between_cnps.attr);
 
+	sysfs_attr_init(&np_attr->cnp_dscp.attr);
 	np_attr->cnp_dscp.attr.name = "cnp_dscp";
 	np_attr->cnp_dscp.attr.mode = set_kobj_mode(mdev);
 	np_attr->cnp_dscp.show  = mlx5e_show_cnp_dscp;
 	np_attr->cnp_dscp.store = mlx5e_store_cnp_dscp;
 	err = sysfs_create_file(kobj, &np_attr->cnp_dscp.attr);
 
+	sysfs_attr_init(&np_attr->cnp_802p_prio.attr);
 	np_attr->cnp_802p_prio.attr.name = "cnp_802p_prio";
 	np_attr->cnp_802p_prio.attr.mode = set_kobj_mode(mdev);
 	np_attr->cnp_802p_prio.show  = mlx5e_show_cnp_802p_prio;
@@ -284,6 +303,7 @@ static void mlx5e_fill_attributes(struct mlx5e_priv *priv,
 		ecn_enable_ctx->priority = i;
 		ecn_enable_ctx->cong_protocol = proto;
 		ecn_enable_ctx->mdev = priv->mdev;
+		sysfs_attr_init(&ecn_enable_ctx->enable.attr);
 		ecn_enable_ctx->enable.attr.name = priority_arr[i];
 		ecn_enable_ctx->enable.attr.mode = set_kobj_mode(priv->mdev);
 		ecn_enable_ctx->enable.show  = mlx5e_show_ecn_enable;
