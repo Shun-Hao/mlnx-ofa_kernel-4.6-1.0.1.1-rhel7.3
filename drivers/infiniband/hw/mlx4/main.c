@@ -1147,6 +1147,11 @@ static void mlx4_ib_disassociate_ucontext(struct ib_ucontext *ibcontext)
 static int mlx4_ib_mmap(struct ib_ucontext *context, struct vm_area_struct *vma)
 {
 	struct mlx4_ib_dev *dev = to_mdev(context->device);
+	/* Last 8 bits hold the command others are data per that command */
+	unsigned long  command = vma->vm_pgoff & MLX4_IB_EXP_MMAP_CMD_MASK;
+
+	if (is_exp_contig_command(command))
+		return mlx4_ib_exp_contig_mmap(context, vma, command);
 
 	switch (vma->vm_pgoff) {
 	case 0:
