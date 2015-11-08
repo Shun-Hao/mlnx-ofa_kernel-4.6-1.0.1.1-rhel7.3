@@ -30,4 +30,5 @@ static inline int is_exp_contig_command(unsigned long  command)
 	return 0;
 }
 
+int mlx4_ib_exp_modify_cq(struct ib_cq *cq, struct ib_cq_attr *cq_attr, int cq_attr_mask);
 #endif

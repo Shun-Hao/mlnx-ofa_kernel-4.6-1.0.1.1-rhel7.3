@@ -2630,6 +2630,8 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
 	ibdev->ib_dev.req_notify_cq	= mlx4_ib_arm_cq;
 	ibdev->ib_dev.get_dma_mr	= mlx4_ib_get_dma_mr;
 	ibdev->ib_dev.reg_user_mr	= mlx4_ib_reg_user_mr;
+	/* Add EXP verbs here to minimize conflicts via rebase */
+	ibdev->ib_dev.exp_modify_cq	= mlx4_ib_exp_modify_cq;
 	ibdev->ib_dev.rereg_user_mr	= mlx4_ib_rereg_user_mr;
 	ibdev->ib_dev.dereg_mr		= mlx4_ib_dereg_mr;
 	ibdev->ib_dev.alloc_mr		= mlx4_ib_alloc_mr;
