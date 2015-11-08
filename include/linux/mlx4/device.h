@@ -86,6 +86,10 @@ enum {
 	MLX4_MAX_PORT_GIDS	= 128
 };
 
+enum {
+	MLX4_DEV_CAP_CQ_FLAG_IO			= 1 <<  0
+};
+
 /* base qkey for use in sriov tunnel-qp/proxy-qp communication.
  * These qkeys must not be allowed for general use. This is a 64k range,
  * and to test for violation, we use the mask (protect against future chg).
@@ -603,6 +607,8 @@ struct mlx4_caps {
 	int                     reserved_qps_cnt[MLX4_NUM_QP_REGION];
 	int			reserved_qps;
 	int                     reserved_qps_base[MLX4_NUM_QP_REGION];
+	u32			cq_flags;
+	u8			cq_overrun;
 	int                     log_num_macs;
 	int                     log_num_vlans;
 	enum mlx4_port_type	port_type[MLX4_MAX_PORTS + 1];

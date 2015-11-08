@@ -119,6 +119,7 @@ struct mlx4_dev_cap {
 	int cmpt_entry_sz;
 	int mtt_entry_sz;
 	int resize_srq;
+	u8 cq_overrun;
 	u32 bmme_flags;
 	u32 reserved_lkey;
 	u64 max_icm_sz;

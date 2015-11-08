@@ -512,6 +512,7 @@ static int mlx4_dev_cap(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 	dev->caps.reserved_srqs	     = dev_cap->reserved_srqs;
 	dev->caps.max_sq_desc_sz     = dev_cap->max_sq_desc_sz;
 	dev->caps.max_rq_desc_sz     = dev_cap->max_rq_desc_sz;
+	dev->caps.cq_overrun         = dev_cap->cq_overrun;
 	/*
 	 * Subtract 1 from the limit because we need to allocate a
 	 * spare CQE so the HCA HW can tell the difference between an
@@ -693,6 +694,8 @@ static int mlx4_dev_cap(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 		dev->caps.reserved_qps_cnt[MLX4_QP_REGION_FC_EXCH];
 
 	dev->caps.sqp_demux = (mlx4_is_master(dev)) ? MLX4_MAX_NUM_SLAVES : 0;
+	if (dev->persist->pdev->device == 0x1003 || dev->caps.cq_overrun)
+		dev->caps.cq_flags |= MLX4_DEV_CAP_CQ_FLAG_IO;
 
 	if (!enable_64b_cqe_eqe && !mlx4_is_slave(dev)) {
 		if (dev_cap->flags &

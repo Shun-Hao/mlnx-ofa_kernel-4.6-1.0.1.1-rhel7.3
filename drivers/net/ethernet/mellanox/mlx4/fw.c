@@ -799,6 +799,7 @@ int mlx4_QUERY_DEV_CAP(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 #define QUERY_DEV_CAP_FLOW_STEERING_MAX_QP_OFFSET	0x77
 #define QUERY_DEV_CAP_SL2VL_EVENT_OFFSET	0x78
 #define QUERY_DEV_CAP_CQ_EQ_CACHE_LINE_STRIDE	0x7a
+#define QUERY_DEV_CAP_CQ_OVERRUN_OFFSET		0x7a
 #define QUERY_DEV_CAP_ECN_QCN_VER_OFFSET	0x7b
 #define QUERY_DEV_CAP_RDMARC_ENTRY_SZ_OFFSET	0x80
 #define QUERY_DEV_CAP_QPC_ENTRY_SZ_OFFSET	0x82
@@ -1006,6 +1007,8 @@ int mlx4_QUERY_DEV_CAP(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 	dev_cap->max_rq_sg = field;
 	MLX4_GET(size, outbox, QUERY_DEV_CAP_MAX_DESC_SZ_RQ_OFFSET);
 	dev_cap->max_rq_desc_sz = size;
+	MLX4_GET(field, outbox, QUERY_DEV_CAP_CQ_OVERRUN_OFFSET);
+	dev_cap->cq_overrun = (field >> 1) & 1;
 	MLX4_GET(field, outbox, QUERY_DEV_CAP_CQ_EQ_CACHE_LINE_STRIDE);
 	if (field & (1 << 4))
 		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_QOS_VPP;

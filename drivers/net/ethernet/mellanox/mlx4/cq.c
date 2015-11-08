@@ -47,7 +47,6 @@
 #define MLX4_CQ_STATUS_OVERFLOW		( 9 << 28)
 #define MLX4_CQ_STATUS_WRITE_FAIL	(10 << 28)
 #define MLX4_CQ_FLAG_CC			( 1 << 18)
-#define MLX4_CQ_FLAG_OI			( 1 << 17)
 #define MLX4_CQ_STATE_ARMED		( 9 <<  8)
 #define MLX4_CQ_STATE_ARMED_SOL		( 6 <<  8)
 #define MLX4_EQ_STATE_FIRED		(10 <<  8)
@@ -419,3 +418,4 @@ void mlx4_cleanup_cq_table(struct mlx4_dev *dev)
 	/* Nothing to do to clean up radix_tree */
 	mlx4_bitmap_cleanup(&mlx4_priv(dev)->cq_table.bitmap);
 }
+
