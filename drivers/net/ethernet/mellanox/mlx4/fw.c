@@ -1437,6 +1437,9 @@ int mlx4_QUERY_PORT_wrapper(struct mlx4_dev *dev, int slave,
 			   MLX4_CMD_NATIVE);
 
 	if (!err && dev->caps.function != slave) {
+		u8 field;
+		u8 vlan;
+
 		def_mac = priv->mfunc.master.vf_oper[slave].vport[vhcr->in_modifier].state.mac;
 		MLX4_PUT(outbox->buf, def_mac, QUERY_PORT_MAC_OFFSET);
 
@@ -1477,6 +1480,16 @@ int mlx4_QUERY_PORT_wrapper(struct mlx4_dev *dev, int slave,
 		short_field = dev->caps.pkey_table_len[vhcr->in_modifier];
 		MLX4_PUT(outbox->buf, short_field,
 			 QUERY_PORT_CUR_MAX_PKEY_OFFSET);
+
+		/* Change the mac table size for the VF */
+		MLX4_GET(field, outbox, QUERY_PORT_MAX_MACVLAN_OFFSET);
+		/* keep the origin vlan of the VF */
+		vlan = field >> 4;
+		/* set the field with the prev vlan and the mac defined quota */
+		field = vlan << 4;
+		field |= ilog2(mlx4_get_port_free_macs(dev,
+						       priv->port->port + 1));
+		MLX4_PUT(outbox->buf, field, QUERY_PORT_MAX_MACVLAN_OFFSET);
 	}
 out:
 	return err;
