@@ -255,3 +255,33 @@ err_cmd_attr:
 	return ret;
 }
 
+int ib_uverbs_exp_modify_cq(struct ib_uverbs_file *file, struct ib_device *ib_dev,
+			    struct ib_udata *ucore, struct ib_udata *uhw)
+{
+	struct ib_uverbs_exp_modify_cq cmd;
+	struct ib_cq               *cq;
+	struct ib_cq_attr           attr;
+	int                         ret;
+
+	memset(&cmd, 0, sizeof(cmd));
+	ret = ib_copy_from_udata(&cmd, ucore, sizeof(cmd));
+	if (ret)
+		return ret;
+
+	if (cmd.comp_mask >= IB_UVERBS_EXP_CQ_ATTR_RESERVED)
+		return -ENOSYS;
+
+	cq = uobj_get_obj_read(cq, UVERBS_OBJECT_CQ, cmd.cq_handle, file);
+	if (!cq)
+		return -EINVAL;
+
+	attr.moderation.cq_count  = cmd.cq_count;
+	attr.moderation.cq_period = cmd.cq_period;
+	attr.cq_cap_flags         = cmd.cq_cap_flags;
+
+	ret = ib_exp_modify_cq(cq, &attr, cmd.attr_mask);
+
+	uobj_put_obj_read(cq);
+
+	return ret;
+}

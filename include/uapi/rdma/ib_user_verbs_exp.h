@@ -9,6 +9,7 @@ enum {
 
 enum {
 	IB_USER_VERBS_EXP_CMD_CREATE_QP,
+	IB_USER_VERBS_EXP_CMD_MODIFY_CQ,
 };
 
 enum ib_uverbs_exp_create_qp_flags {
@@ -51,6 +52,21 @@ struct ib_uverbs_exp_create_qp_resp {
 	__u32 max_recv_sge;
 	__u32 max_inline_data;
 	__u32 reserved;
+};
+
+enum ib_uverbs_exp_modify_cq_comp_mask {
+	/* set supported bits for validity check */
+	IB_UVERBS_EXP_CQ_ATTR_RESERVED	= 1 << 0
+};
+
+struct ib_uverbs_exp_modify_cq {
+	__u32 cq_handle;
+	__u32 attr_mask;
+	__u16 cq_count;
+	__u16 cq_period;
+	__u32 cq_cap_flags;
+	__u32 comp_mask;
+	__u32 rsvd;
 };
 
 #endif
