@@ -335,3 +335,59 @@ out:
 	kfree(resp);
 	return ret;
 }
+
+enum ib_uverbs_cq_exp_create_flags {
+	IB_UVERBS_CQ_EXP_TIMESTAMP	= 1 << 1,
+};
+
+static u32 create_cq_exp_flags_to_ex_flags(__u64 create_flags)
+{
+	switch (create_flags) {
+	case IB_UVERBS_CQ_EXP_TIMESTAMP:
+		return IB_UVERBS_CQ_FLAGS_TIMESTAMP_COMPLETION;
+	default:
+		return 0;
+	}
+}
+
+int ib_uverbs_exp_create_cq(struct ib_uverbs_file *file, struct ib_device *ib_dev,
+			    struct ib_udata *ucore, struct ib_udata *uhw)
+{
+	int out_len = ucore->outlen + uhw->outlen;
+	struct ib_uverbs_exp_create_cq cmd_exp;
+	struct ib_uverbs_ex_create_cq	cmd_ex;
+	struct ib_uverbs_create_cq_resp resp;
+	int ret;
+	struct ib_ucq_object           *obj;
+
+	if (out_len < sizeof(resp))
+		return -ENOSPC;
+
+	ret = ib_copy_from_udata(&cmd_exp, ucore, sizeof(cmd_exp));
+	if (ret)
+		return ret;
+
+	if (cmd_exp.comp_mask >= IB_UVERBS_EXP_CREATE_CQ_ATTR_RESERVED)
+		return -ENOSYS;
+
+	if (cmd_exp.comp_mask & IB_UVERBS_EXP_CREATE_CQ_CAP_FLAGS &&
+	   /* Check that there is no bit that is not supported */
+	    cmd_exp.create_flags & ~(IB_UVERBS_CQ_EXP_TIMESTAMP))
+		return -EINVAL;
+
+	memset(&cmd_ex, 0, sizeof(cmd_ex));
+	cmd_ex.user_handle = cmd_exp.user_handle;
+	cmd_ex.cqe = cmd_exp.cqe;
+	cmd_ex.comp_vector = cmd_exp.comp_vector;
+	cmd_ex.comp_channel = cmd_exp.comp_channel;
+	cmd_ex.flags = create_cq_exp_flags_to_ex_flags(cmd_exp.create_flags);
+
+	obj = create_cq(file, ucore, uhw, &cmd_ex,
+			sizeof(cmd_ex), ib_uverbs_create_cq_cb,
+			NULL);
+
+	if (IS_ERR(obj))
+		return PTR_ERR(obj);
+
+	return 0;
+}

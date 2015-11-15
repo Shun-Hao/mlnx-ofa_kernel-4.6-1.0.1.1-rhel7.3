@@ -10,6 +10,7 @@ enum {
 enum {
 	IB_USER_VERBS_EXP_CMD_CREATE_QP,
 	IB_USER_VERBS_EXP_CMD_MODIFY_CQ,
+	IB_USER_VERBS_EXP_CMD_CREATE_CQ = 3,
 	IB_USER_VERBS_EXP_CMD_QUERY_DEVICE = 4
 };
 
@@ -81,6 +82,22 @@ struct ib_uverbs_exp_query_device_resp {
 	__u64					reserved_1;
 	__u64					reserved_2;
 	__u64					device_cap_flags2;
+};
+
+enum ib_uverbs_exp_create_cq_comp_mask {
+	IB_UVERBS_EXP_CREATE_CQ_CAP_FLAGS	= (u64)1 << 0,
+	IB_UVERBS_EXP_CREATE_CQ_ATTR_RESERVED	= (u64)1 << 1,
+};
+
+struct ib_uverbs_exp_create_cq {
+	__u64 comp_mask;
+	__u64 user_handle;
+	__u32 cqe;
+	__u32 comp_vector;
+	__s32 comp_channel;
+	__u32 reserved;
+	__u64 create_flags;
+	__u64 driver_data[0];
 };
 
 #endif
