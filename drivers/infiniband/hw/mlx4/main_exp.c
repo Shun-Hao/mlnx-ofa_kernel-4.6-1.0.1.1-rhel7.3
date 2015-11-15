@@ -47,6 +47,7 @@ int mlx4_ib_exp_query_device(struct ib_device *ibdev,
 			     struct ib_udata *uhw)
 {
 	int ret;
+	struct mlx4_ib_dev *dev = to_mdev(ibdev);
 
 	ret = mlx4_ib_query_device(ibdev, &props->base, uhw);
 	if (ret)
@@ -56,5 +57,8 @@ int mlx4_ib_exp_query_device(struct ib_device *ibdev,
 	props->device_cap_flags2 = 0;
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_CAP_FLAGS2;
 
+	if (dev->dev->caps.hca_core_clock > 0)
+		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_WITH_HCA_CORE_CLOCK;
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_WITH_TIMESTAMP_MASK;
 	return 0;
 }
