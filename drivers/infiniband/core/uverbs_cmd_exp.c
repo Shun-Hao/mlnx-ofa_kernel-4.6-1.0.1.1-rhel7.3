@@ -316,6 +316,16 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 	resp->comp_mask = 0;
 	resp->device_cap_flags2 = 0;
 
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_WITH_TIMESTAMP_MASK) {
+		resp->timestamp_mask = exp_attr->base.timestamp_mask;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_WITH_TIMESTAMP_MASK;
+	}
+
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_WITH_HCA_CORE_CLOCK) {
+		resp->hca_core_clock = exp_attr->base.hca_core_clock;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_WITH_HCA_CORE_CLOCK;
+	}
+
 	/* Handle experimental attr fields */
 	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_CAP_FLAGS2 ||
 	    exp_attr->base.device_cap_flags & IB_EXP_DEVICE_MASK) {

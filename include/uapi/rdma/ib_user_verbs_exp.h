@@ -79,8 +79,8 @@ struct ib_uverbs_exp_query_device {
 struct ib_uverbs_exp_query_device_resp {
 	__u64					comp_mask;
 	struct ib_uverbs_query_device_resp	base;
-	__u64					reserved_1;
-	__u64					reserved_2;
+	__u64					timestamp_mask;
+	__u64					hca_core_clock;
 	__u64					device_cap_flags2;
 };
 
