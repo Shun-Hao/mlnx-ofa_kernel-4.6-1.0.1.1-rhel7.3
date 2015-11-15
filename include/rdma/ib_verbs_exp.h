@@ -29,6 +29,8 @@ struct ib_exp_qp_init_attr {
 };
 
 enum ib_exp_device_attr_comp_mask {
+	IB_EXP_DEVICE_ATTR_WITH_TIMESTAMP_MASK = 1ULL << 1,
+	IB_EXP_DEVICE_ATTR_WITH_HCA_CORE_CLOCK = 1ULL << 2,
 	IB_EXP_DEVICE_ATTR_CAP_FLAGS2		= 1ULL << 3,
 };
 
