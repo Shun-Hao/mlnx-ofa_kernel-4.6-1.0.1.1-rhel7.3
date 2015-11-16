@@ -2600,7 +2600,8 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
 	ibdev->ib_dev.uverbs_exp_cmd_mask =
 		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_QP)	|
 		(1ull << IB_USER_VERBS_EXP_CMD_MODIFY_CQ)	|
-		(1ull << IB_USER_VERBS_EXP_CMD_QUERY_DEVICE);
+		(1ull << IB_USER_VERBS_EXP_CMD_QUERY_DEVICE)	|
+		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_CQ);
 
 	ibdev->ib_dev.query_device	= mlx4_ib_query_device;
 	ibdev->ib_dev.query_port	= mlx4_ib_query_port;
