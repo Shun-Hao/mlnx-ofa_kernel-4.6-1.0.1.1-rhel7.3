@@ -2289,6 +2289,8 @@ struct ib_device {
 	struct iw_cm_verbs	     *iwcm;
 
 	/* EXP APIs will be added below to minimize conflicts via upstream rebase */
+	int                     (*exp_ioctl)(struct ib_ucontext *context, unsigned int cmd,
+					     unsigned long arg);
 	int			(*exp_query_device)(struct ib_device *device,
 						    struct ib_exp_device_attr *device_attr,
 						    struct ib_udata *udata);
