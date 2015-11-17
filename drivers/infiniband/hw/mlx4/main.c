@@ -2643,6 +2643,7 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
 	ibdev->ib_dev.exp_modify_cq	= mlx4_ib_exp_modify_cq;
 	ibdev->ib_dev.exp_create_qp	= mlx4_ib_exp_create_qp;
 	ibdev->ib_dev.exp_query_device	= mlx4_ib_exp_query_device;
+	ibdev->ib_dev.exp_ioctl		= mlx4_ib_exp_ioctl;
 	ibdev->ib_dev.rereg_user_mr	= mlx4_ib_rereg_user_mr;
 	ibdev->ib_dev.dereg_mr		= mlx4_ib_dereg_mr;
 	ibdev->ib_dev.alloc_mr		= mlx4_ib_alloc_mr;

@@ -10,6 +10,12 @@
 struct mlx4_ib_qp;
 struct ib_qp_init_attr;
 
+/****************************************/
+/* ioctl codes */
+/****************************************/
+#define MLX4_IOC_MAGIC 'm'
+#define MLX4_IOCHWCLOCKOFFSET _IOR(MLX4_IOC_MAGIC, 1, int)
+
 #define MLX4_IB_EXP_MMAP_CMD_MASK 0xFF
 #define MLX4_IB_EXP_MMAP_CMD_BITS 8
 
@@ -42,4 +48,5 @@ void mlx4_ib_set_exp_attr_flags(struct mlx4_ib_qp *qp, struct ib_qp_init_attr *i
 int mlx4_ib_exp_query_device(struct ib_device *ibdev,
 			     struct ib_exp_device_attr *props,
 			     struct ib_udata *uhw);
+int mlx4_ib_exp_ioctl(struct ib_ucontext *context, unsigned int cmd, unsigned long arg);
 #endif

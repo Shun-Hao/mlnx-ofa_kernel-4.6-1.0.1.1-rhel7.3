@@ -62,3 +62,30 @@ int mlx4_ib_exp_query_device(struct ib_device *ibdev,
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_WITH_TIMESTAMP_MASK;
 	return 0;
 }
+
+int mlx4_ib_exp_ioctl(struct ib_ucontext *context, unsigned int cmd,
+		      unsigned long arg)
+{
+	struct mlx4_ib_dev *dev = to_mdev(context->device);
+	int ret;
+
+	switch (cmd) {
+	case MLX4_IOCHWCLOCKOFFSET: {
+		struct mlx4_clock_params params;
+
+		ret = mlx4_get_internal_clock_params(dev->dev, &params);
+		if (!ret)
+			return __put_user(params.offset % PAGE_SIZE,
+					  (int *)arg);
+		else
+			return ret;
+	}
+	default:
+		pr_err("mlx4_ib: invalid ioctl %u command with arg %lX\n",
+		       cmd, arg);
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
