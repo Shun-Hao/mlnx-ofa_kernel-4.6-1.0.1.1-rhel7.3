@@ -587,12 +587,32 @@ long ib_uverbs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	struct ib_uverbs_ioctl_hdr __user *user_hdr =
 		(struct ib_uverbs_ioctl_hdr __user *)arg;
 	struct ib_uverbs_ioctl_hdr hdr;
+	struct ib_device *ib_dev;
 	int srcu_key;
 	int err;
 
-	if (unlikely(cmd != RDMA_VERBS_IOCTL))
-		return -ENOIOCTLCMD;
+	if (unlikely(cmd != RDMA_VERBS_IOCTL)) {
+		srcu_key = srcu_read_lock(&file->device->disassociate_srcu);
+		ib_dev = srcu_dereference(file->device->ib_dev,
+				&file->device->disassociate_srcu);
+		if (!ib_dev) {
+			err = -EIO;
+			goto out;
+		}
+		
+		if (!ib_dev->exp_ioctl) {
+			err = -ENOIOCTLCMD;
+			goto out;
+		}
 
+		if (!file->ucontext) {
+			err = -ENODEV;
+			goto out;
+		}
+		/* provider should provide it's own locking mechanism */
+		err = ib_dev->exp_ioctl(file->ucontext, cmd, arg);
+		goto out;
+	}	
 	err = copy_from_user(&hdr, user_hdr, sizeof(hdr));
 	if (err)
 		return -EFAULT;
@@ -606,6 +626,7 @@ long ib_uverbs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 	srcu_key = srcu_read_lock(&file->device->disassociate_srcu);
 	err = ib_uverbs_cmd_verbs(file, &hdr, user_hdr->attrs);
+out:
 	srcu_read_unlock(&file->device->disassociate_srcu, srcu_key);
 	return err;
 }

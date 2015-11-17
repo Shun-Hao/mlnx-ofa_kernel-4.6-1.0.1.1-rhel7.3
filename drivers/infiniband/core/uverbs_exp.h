@@ -37,4 +37,6 @@ unsigned long ib_uverbs_exp_get_unmapped_area(struct file *filp,
 					      unsigned long addr,
 					      unsigned long len, unsigned long pgoff,
 					      unsigned long flags);
+long ib_uverbs_exp_ioctl(struct file *filp,
+			 unsigned int cmd, unsigned long arg);
 #endif
