@@ -1655,10 +1655,13 @@ static void set_exp_data(struct mlx5_ib_dev *dev,
 			 struct mlx5_exp_ib_alloc_ucontext_resp *resp)
 {
 	resp->exp_data.comp_mask = MLX5_EXP_ALLOC_CTX_RESP_MASK_CQE_VERSION |
-		MLX5_EXP_ALLOC_CTX_RESP_MASK_CQE_COMP_MAX_NUM;
+		MLX5_EXP_ALLOC_CTX_RESP_MASK_CQE_COMP_MAX_NUM |
+		MLX5_EXP_ALLOC_CTX_RESP_MASK_HCA_CORE_CLOCK_OFFSET;
 	resp->exp_data.cqe_version = MLX5_CAP_GEN(dev->mdev, cqe_version);
 	resp->exp_data.cqe_comp_max_num = MLX5_CAP_GEN(dev->mdev,
 						      cqe_compression_max_num);
+	resp->exp_data.hca_core_clock_offset =
+		offsetof(struct mlx5_init_seg, internal_timer_h) % PAGE_SIZE;
 }
 
 static struct ib_ucontext *mlx5_ib_alloc_ucontext(struct ib_device *ibdev,
