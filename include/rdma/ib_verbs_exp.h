@@ -14,6 +14,11 @@ struct ib_cq_attr {
 	u32     cq_cap_flags;
 };
 
+struct ib_qpg_init_attrib {
+	u32 tss_child_count;
+	u32 rss_child_count;
+};
+
 struct ib_exp_qp_init_attr {
 	void                  (*event_handler)(struct ib_event *, void *);
 	void		       *qp_context;
@@ -26,6 +31,12 @@ struct ib_exp_qp_init_attr {
 	enum ib_qp_type		qp_type;
 	enum ib_qp_create_flags	create_flags;
 	u8			port_num;
+	struct ib_rwq_ind_table *rwq_ind_tbl;
+	enum ib_qpg_type        qpg_type;
+	union {
+		struct ib_qp *qpg_parent; /* see qpg_type */
+		struct ib_qpg_init_attrib parent_attrib;
+	};
 };
 
 enum ib_exp_device_attr_comp_mask {

@@ -63,6 +63,7 @@
 #include <linux/uaccess.h>
 #include <linux/cgroup_rdma.h>
 #include <uapi/rdma/ib_user_verbs.h>
+#include <rdma/ib_verbs_exp_def.h>
 #include <rdma/restrack.h>
 #include <uapi/rdma/rdma_user_ioctl.h>
 #include <uapi/rdma/ib_user_ioctl_verbs.h>
@@ -1078,6 +1079,7 @@ struct ib_qp_cap {
 	 * and MRs based on this.
 	 */
 	u32	max_rdma_ctxs;
+	u32	qpg_tss_mask_sz;
 };
 
 enum ib_sig_type {
@@ -1234,6 +1236,9 @@ enum ib_qp_attr_mask {
 	IB_QP_RESERVED3			= (1<<23),
 	IB_QP_RESERVED4			= (1<<24),
 	IB_QP_RATE_LIMIT		= (1<<25),
+
+	/* EXP stuff with shift of 0x06 to support both user and kernel masks */
+	IB_QP_GROUP_RSS		= (1<<27)
 };
 
 enum ib_qp_state {
@@ -1778,6 +1783,7 @@ struct ib_qp {
 	struct ib_rwq_ind_table *rwq_ind_tbl;
 	struct ib_qp_security  *qp_sec;
 	u8			port;
+	enum ib_qpg_type        qpg_type;
 
 	/*
 	 * Implementation details of the RDMA core, don't use in drivers:
