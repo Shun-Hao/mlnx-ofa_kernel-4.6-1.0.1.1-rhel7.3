@@ -43,9 +43,13 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_WITH_TIMESTAMP_MASK = 1ULL << 1,
 	IB_EXP_DEVICE_ATTR_WITH_HCA_CORE_CLOCK = 1ULL << 2,
 	IB_EXP_DEVICE_ATTR_CAP_FLAGS2		= 1ULL << 3,
+	IB_EXP_DEVICE_ATTR_RSS_TBL_SZ		= 1ULL << 7,
 };
 
 enum ib_exp_device_cap_flags2 {
+	IB_EXP_DEVICE_QPG		= 1 << 1,
+	IB_EXP_DEVICE_UD_RSS		= 1 << 2,
+	IB_EXP_DEVICE_UD_TSS		= 1 << 3,
 	IB_EXP_DEVICE_CROSS_CHANNEL	= 1 << 28, /* Comapt with user exp area */
 	IB_EXP_DEVICE_MASK =	IB_DEVICE_CROSS_CHANNEL,
 };
@@ -55,6 +59,7 @@ struct ib_exp_device_attr {
 	/* Use IB_EXP_DEVICE_ATTR_... for exp_comp_mask */
 	uint32_t		exp_comp_mask;
 	uint64_t		device_cap_flags2;
+	uint32_t		max_rss_tbl_sz;
 };
 
 /**
