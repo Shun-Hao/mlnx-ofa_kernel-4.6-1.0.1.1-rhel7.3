@@ -116,11 +116,6 @@ static const __be32 mlx4_ib_opcode[] = {
 	[IB_WR_MASKED_ATOMIC_FETCH_AND_ADD]	= cpu_to_be32(MLX4_OPCODE_MASKED_ATOMIC_FA),
 };
 
-enum mlx4_ib_source_type {
-	MLX4_IB_QP_SRC	= 0,
-	MLX4_IB_RWQ_SRC	= 1,
-};
-
 static struct mlx4_ib_sqp *to_msqp(struct mlx4_ib_qp *mqp)
 {
 	return container_of(mqp, struct mlx4_ib_sqp, qp);
@@ -825,7 +820,7 @@ out:
 	return err;
 }
 
-static void mlx4_ib_release_wqn(struct mlx4_ib_ucontext *context,
+void mlx4_ib_release_wqn(struct mlx4_ib_ucontext *context,
 				struct mlx4_ib_qp *qp, bool dirty_release)
 {
 	struct mlx4_ib_dev *dev = to_mdev(context->ibucontext.device);
@@ -857,7 +852,8 @@ static int create_qp_common(struct mlx4_ib_dev *dev, struct ib_pd *pd,
 			    enum mlx4_ib_source_type src,
 			    struct ib_qp_init_attr *init_attr,
 			    struct ib_udata *udata, int sqpn,
-			    struct mlx4_ib_qp **caller_qp)
+			    struct mlx4_ib_qp **caller_qp,
+			    int is_exp)
 {
 	int qpn;
 	int err;
@@ -960,7 +956,8 @@ static int create_qp_common(struct mlx4_ib_dev *dev, struct ib_pd *pd,
 			goto err;
 		}
 
-		mlx4_ib_set_exp_qp_flags(qp, init_attr);
+		if  (is_exp)
+			mlx4_ib_set_exp_qp_flags(qp, init_attr);
 
 		if (src == MLX4_IB_RWQ_SRC) {
 			if (ucmd.wq.comp_mask || ucmd.wq.reserved[0] ||
@@ -1115,22 +1112,7 @@ static int create_qp_common(struct mlx4_ib_dev *dev, struct ib_pd *pd,
 		if (err)
 			goto err_wrid;
 	} else {
-		/* Raw packet QPNs may not have bits 6,7 set in their qp_num;
-		 * otherwise, the WQE BlueFlame setup flow wrongly causes
-		 * VLAN insertion. */
-		if (init_attr->qp_type == IB_QPT_RAW_PACKET)
-			err = mlx4_qp_reserve_range(dev->dev, 1, 1, &qpn,
-						    (init_attr->cap.max_send_wr ?
-						     MLX4_RESERVE_ETH_BF_QP : 0) |
-						    (init_attr->cap.max_recv_wr ?
-						     MLX4_RESERVE_A0_QP : 0),
-						    qp->mqp.usage);
-		else
-			if (qp->flags & MLX4_IB_QP_NETIF)
-				err = mlx4_ib_steer_qp_alloc(dev, 1, &qpn);
-			else
-				err = mlx4_qp_reserve_range(dev->dev, 1, 1,
-							    &qpn, 0, qp->mqp.usage);
+		err = mlx4_ib_alloc_qpn_common(dev, qp, init_attr, &qpn, is_exp);
 		if (err)
 			goto err_proxy;
 	}
@@ -1178,15 +1160,11 @@ static int create_qp_common(struct mlx4_ib_dev *dev, struct ib_pd *pd,
 	return 0;
 
 err_qpn:
-	if (!sqpn) {
-		if (qp->flags & MLX4_IB_QP_NETIF)
-			mlx4_ib_steer_qp_free(dev, qpn, 1);
-		else if (src == MLX4_IB_RWQ_SRC)
-			mlx4_ib_release_wqn(to_mucontext(pd->uobject->context),
-					    qp, 0);
-		else
-			mlx4_qp_release_range(dev->dev, qpn, 1);
-	}
+	if (!sqpn)
+		mlx4_ib_unalloc_qpn_common(dev, qp, qpn,
+					   to_mucontext(pd->uobject->context),
+					   src,
+					   0);
 err_proxy:
 	if (qp->mlx4_ib_qp_type == MLX4_IB_QPT_PROXY_GSI)
 		free_proxy_bufs(pd->device, qp);
@@ -1390,15 +1368,11 @@ static void destroy_qp_common(struct mlx4_ib_dev *dev, struct mlx4_ib_qp *qp,
 
 	mlx4_qp_free(dev->dev, &qp->mqp);
 
-	if (!is_sqp(dev, qp) && !is_tunnel_qp(dev, qp)) {
-		if (qp->flags & MLX4_IB_QP_NETIF)
-			mlx4_ib_steer_qp_free(dev, qp->mqp.qpn, 1);
-		else if (src == MLX4_IB_RWQ_SRC)
-			mlx4_ib_release_wqn(to_mucontext(
-					    qp->ibwq.uobject->context), qp, 1);
-		else
-			mlx4_qp_release_range(dev->dev, qp->mqp.qpn, 1);
-	}
+	if (!is_sqp(dev, qp) && !is_tunnel_qp(dev, qp))
+		mlx4_ib_release_qpn_common(dev, qp,
+					   is_user ? to_mucontext(qp->ibwq.uobject->context) : NULL,
+					   src,
+					   1);
 
 	mlx4_mtt_cleanup(dev->dev, &qp->mtt);
 
@@ -1443,7 +1417,8 @@ static u32 get_sqp_num(struct mlx4_ib_dev *dev, struct ib_qp_init_attr *attr)
 
 static struct ib_qp *_mlx4_ib_create_qp(struct ib_pd *pd,
 					struct ib_qp_init_attr *init_attr,
-					struct ib_udata *udata)
+					struct ib_udata *udata,
+					int is_exp)
 {
 	struct mlx4_ib_qp *qp = NULL;
 	int err;
@@ -1495,6 +1470,12 @@ static struct ib_qp *_mlx4_ib_create_qp(struct ib_pd *pd,
 		}
 	}
 
+	if (is_exp) {
+		err = mlx4_ib_check_qpg_attr(pd, init_attr);
+		if (err)
+			return ERR_PTR(err);
+	}
+
 	switch (init_attr->qp_type) {
 	case IB_QPT_XRC_TGT:
 		pd = to_mxrcd(init_attr->xrcd)->pd;
@@ -1518,7 +1499,7 @@ static struct ib_qp *_mlx4_ib_create_qp(struct ib_pd *pd,
 	case IB_QPT_UD:
 	{
 		err = create_qp_common(to_mdev(pd->device), pd,	MLX4_IB_QP_SRC,
-				       init_attr, udata, 0, &qp);
+				       init_attr, udata, 0, &qp, is_exp);
 		if (err) {
 			kfree(qp);
 			return ERR_PTR(err);
@@ -1549,7 +1530,7 @@ static struct ib_qp *_mlx4_ib_create_qp(struct ib_pd *pd,
 		}
 
 		err = create_qp_common(to_mdev(pd->device), pd, MLX4_IB_QP_SRC,
-				       init_attr, udata, sqpn, &qp);
+				       init_attr, udata, sqpn, &qp, is_exp);
 		if (err)
 			return ERR_PTR(err);
 
@@ -1568,12 +1549,13 @@ static struct ib_qp *_mlx4_ib_create_qp(struct ib_pd *pd,
 
 struct ib_qp *mlx4_ib_create_qp(struct ib_pd *pd,
 				struct ib_qp_init_attr *init_attr,
-				struct ib_udata *udata) {
+				struct ib_udata *udata,
+				int is_exp) {
 	struct ib_device *device = pd ? pd->device : init_attr->xrcd->device;
 	struct ib_qp *ibqp;
 	struct mlx4_ib_dev *dev = to_mdev(device);
 
-	ibqp = _mlx4_ib_create_qp(pd, init_attr, udata);
+	ibqp = _mlx4_ib_create_qp(pd, init_attr, udata, is_exp);
 
 	if (!IS_ERR(ibqp) &&
 	    (init_attr->qp_type == IB_QPT_GSI) &&
@@ -2458,6 +2440,9 @@ static int __mlx4_ib_modify_qp(void *src, enum mlx4_ib_source_type src_type,
 	    cur_state == IB_QPS_RESET &&
 	    new_state == IB_QPS_INIT)
 		context->rlkey_roce_mode |= (1 << 4);
+
+	if ((attr_mask & IB_QP_GROUP_RSS) && (qp->qpg_data->rss_child_count > 1))
+		mlx4_ib_modify_qp_rss(dev, qp, context);
 
 	/*
 	 * Before passing a kernel QP to the HW, make sure that the
@@ -4118,7 +4103,7 @@ struct ib_wq *mlx4_ib_create_wq(struct ib_pd *pd,
 		ib_qp_init_attr.create_flags |= IB_QP_CREATE_SCATTER_FCS;
 
 	err = create_qp_common(dev, pd, MLX4_IB_RWQ_SRC, &ib_qp_init_attr,
-			       udata, 0, &qp);
+			       udata, 0, &qp, 0);
 	if (err) {
 		kfree(qp);
 		return ERR_PTR(err);

@@ -60,6 +60,14 @@ int mlx4_ib_exp_query_device(struct ib_device *ibdev,
 	if (dev->dev->caps.hca_core_clock > 0)
 		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_WITH_HCA_CORE_CLOCK;
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_WITH_TIMESTAMP_MASK;
+
+	props->device_cap_flags2 |= IB_EXP_DEVICE_QPG;
+	if (dev->dev->caps.flags2 & MLX4_DEV_CAP_FLAG2_RSS) {
+		props->device_cap_flags2 |= IB_EXP_DEVICE_UD_RSS;
+		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_RSS_TBL_SZ;
+		props->max_rss_tbl_sz = dev->dev->caps.max_rss_tbl_sz;
+	}
+
 	return 0;
 }
 

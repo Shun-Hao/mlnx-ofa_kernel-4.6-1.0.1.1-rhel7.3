@@ -338,6 +338,8 @@ struct mlx4_ib_qp {
 	u8			sq_no_prefetch;
 	u8			state;
 	int			mlx_type;
+	enum ib_qpg_type	qpg_type;
+	struct mlx4_ib_qpg_data *qpg_data;
 	u32			inl_recv_sz;
 	struct list_head	gid_list;
 	struct list_head	steering_rules;
@@ -778,7 +780,8 @@ int mlx4_ib_post_srq_recv(struct ib_srq *ibsrq, const struct ib_recv_wr *wr,
 
 struct ib_qp *mlx4_ib_create_qp(struct ib_pd *pd,
 				struct ib_qp_init_attr *init_attr,
-				struct ib_udata *udata);
+				struct ib_udata *udata,
+				int is_exp);
 int mlx4_ib_destroy_qp(struct ib_qp *qp);
 void mlx4_ib_drain_sq(struct ib_qp *qp);
 void mlx4_ib_drain_rq(struct ib_qp *qp);

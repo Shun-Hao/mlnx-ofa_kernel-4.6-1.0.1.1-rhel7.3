@@ -2623,7 +2623,7 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
 	ibdev->ib_dev.query_srq		= mlx4_ib_query_srq;
 	ibdev->ib_dev.destroy_srq	= mlx4_ib_destroy_srq;
 	ibdev->ib_dev.post_srq_recv	= mlx4_ib_post_srq_recv;
-	ibdev->ib_dev.create_qp		= mlx4_ib_create_qp;
+	ibdev->ib_dev.create_qp		= mlx4_ib_create_qp_wrp;
 	ibdev->ib_dev.modify_qp		= mlx4_ib_modify_qp;
 	ibdev->ib_dev.query_qp		= mlx4_ib_query_qp;
 	ibdev->ib_dev.destroy_qp	= mlx4_ib_destroy_qp;

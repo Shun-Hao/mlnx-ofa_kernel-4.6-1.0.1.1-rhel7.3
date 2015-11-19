@@ -6,9 +6,11 @@
 #include <rdma/ib_verbs.h>
 #include <rdma/ib_cmem.h>
 #include <linux/mlx4/device.h>
+#include <linux/mlx4/qp.h>
 
 struct mlx4_ib_qp;
 struct ib_qp_init_attr;
+struct mlx4_qp_context;
 
 /****************************************/
 /* ioctl codes */
@@ -25,6 +27,20 @@ enum mlx4_ib_exp_mmap_cmd {
 	/* Use EXP mmap commands until it is pushed to upstream */
 	MLX4_IB_EXP_MMAP_GET_CONTIGUOUS_PAGES_CPU_NUMA	= 0xFC,
 	MLX4_IB_EXP_MMAP_GET_CONTIGUOUS_PAGES_DEV_NUMA	= 0xFD,
+};
+
+struct mlx4_ib_qpg_data {
+	unsigned long *tss_bitmap;
+	unsigned long *rss_bitmap;
+	struct mlx4_ib_qp *qpg_parent;
+	int tss_qpn_base;
+	int rss_qpn_base;
+	u32 tss_child_count;
+	u32 rss_child_count;
+	u32 qpg_tss_mask_sz;
+	struct mlx4_ib_dev *dev;
+	unsigned long flags;
+	struct kref refcount;
 };
 
 int mlx4_ib_exp_contig_mmap(struct ib_ucontext *context, struct vm_area_struct *vma,
@@ -49,4 +65,21 @@ int mlx4_ib_exp_query_device(struct ib_device *ibdev,
 			     struct ib_exp_device_attr *props,
 			     struct ib_udata *uhw);
 int mlx4_ib_exp_ioctl(struct ib_ucontext *context, unsigned int cmd, unsigned long arg);
+int mlx4_ib_alloc_qpn_common(struct mlx4_ib_dev *dev, struct mlx4_ib_qp *qp,
+			     struct ib_qp_init_attr *attr, int *qpn, int is_exp);
+struct mlx4_ib_ucontext;
+void mlx4_ib_unalloc_qpn_common(struct mlx4_ib_dev *dev, struct mlx4_ib_qp *qp, int qpn,
+				struct mlx4_ib_ucontext *context,
+				enum mlx4_ib_source_type src,
+				bool dirty_release);
+void mlx4_ib_release_qpn_common(struct mlx4_ib_dev *dev, struct mlx4_ib_qp *qp,
+				struct mlx4_ib_ucontext *context,
+				enum mlx4_ib_source_type src,
+				bool dirty_release);
+int mlx4_ib_check_qpg_attr(struct ib_pd *pd, struct ib_qp_init_attr *attr);
+struct ib_qp *mlx4_ib_create_qp_wrp(struct ib_pd *pd,
+				    struct ib_qp_init_attr *init_attr,
+				    struct ib_udata *udata);
+void mlx4_ib_modify_qp_rss(struct mlx4_ib_dev *dev, struct mlx4_ib_qp *qp,
+			   struct mlx4_qp_context *context);
 #endif

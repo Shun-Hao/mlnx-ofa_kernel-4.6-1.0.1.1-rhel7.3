@@ -506,4 +506,14 @@ static inline u16 folded_qp(u32 q)
 
 u16 mlx4_qp_roce_entropy(struct mlx4_dev *dev, u32 qpn);
 
+enum mlx4_ib_source_type {
+	MLX4_IB_QP_SRC	= 0,
+	MLX4_IB_RWQ_SRC	= 1,
+};
+
+struct mlx4_ib_ucontext;
+struct mlx4_ib_qp;
+void mlx4_ib_release_wqn(struct mlx4_ib_ucontext *context,
+			 struct mlx4_ib_qp *qp, bool dirty_release);
+
 #endif /* MLX4_QP_H */
