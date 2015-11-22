@@ -82,6 +82,10 @@ struct ib_uverbs_exp_query_device_resp {
 	__u64					timestamp_mask;
 	__u64					hca_core_clock;
 	__u64					device_cap_flags2;
+	__u32					reserved;
+	__u32					reserved2;
+	__u32					reserved3;
+	__u32					max_rss_tbl_sz;
 };
 
 enum ib_uverbs_exp_create_cq_comp_mask {

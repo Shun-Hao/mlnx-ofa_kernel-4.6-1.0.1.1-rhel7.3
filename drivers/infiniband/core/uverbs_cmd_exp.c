@@ -339,6 +339,11 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		}
 	}
 
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_RSS_TBL_SZ) {
+		resp->max_rss_tbl_sz = exp_attr->max_rss_tbl_sz;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_RSS_TBL_SZ;
+	}
+
 	ret = ib_copy_to_udata(ucore, resp, min_t(size_t, sizeof(*resp), ucore->outlen));
 out:
 	kfree(exp_attr);
