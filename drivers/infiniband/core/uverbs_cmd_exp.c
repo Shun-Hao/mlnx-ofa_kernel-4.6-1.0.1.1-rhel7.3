@@ -56,6 +56,7 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file, struct ib_device *ib_de
 	struct ib_cq                   *scq = NULL, *rcq = NULL;
 	struct ib_srq                  *srq = NULL;
 	struct ib_qp                   *qp;
+	struct ib_qp                   *parentqp = NULL;
 	struct ib_exp_qp_init_attr     *attr;
 	struct ib_uverbs_exp_create_qp *cmd_exp;
 	struct ib_uverbs_exp_create_qp_resp resp_exp;
@@ -159,6 +160,39 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file, struct ib_device *ib_de
 		attr->create_flags |= cmd_exp->qp_cap_flags;
 	}
 
+	if (cmd_exp->comp_mask & IB_UVERBS_EXP_CREATE_QP_QPG) {
+		struct ib_uverbs_qpg *qpg;
+
+		if (cmd_exp->qp_type != IB_QPT_RAW_PACKET &&
+		    cmd_exp->qp_type != IB_QPT_UD) {
+			ret = -EINVAL;
+			goto err_put;
+		}
+		qpg = &cmd_exp->qpg;
+		switch (qpg->qpg_type) {
+		case IB_QPG_PARENT:
+			attr->parent_attrib.rss_child_count =
+				qpg->parent_attrib.rss_child_count;
+			attr->parent_attrib.tss_child_count =
+				qpg->parent_attrib.tss_child_count;
+			break;
+		case IB_QPG_CHILD_RX:
+		case IB_QPG_CHILD_TX:
+			parentqp = uobj_get_obj_read(qp, UVERBS_OBJECT_QP, qpg->parent_handle,
+						     file);
+			if (!parentqp) {
+				ret = -EINVAL;
+				goto err_put;
+			}
+			attr->qpg_parent = parentqp;
+			break;
+		default:
+			ret = -EINVAL;
+			goto err_put;
+		}
+		attr->qpg_type = qpg->qpg_type;
+	}
+
 	obj->uevent.events_reported     = 0;
 	INIT_LIST_HEAD(&obj->uevent.event_list);
 	INIT_LIST_HEAD(&obj->mcast_list);
@@ -225,7 +259,8 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file, struct ib_device *ib_de
 		uobj_put_obj_read(rcq);
 	if (srq)
 		uobj_put_obj_read(srq);
-
+	if (parentqp)
+		uobj_put_obj_read(parentqp);
 
 	kfree(attr);
 	kfree(cmd_exp);
@@ -246,6 +281,8 @@ err_put:
 		uobj_put_obj_read(rcq);
 	if (srq)
 		uobj_put_obj_read(srq);
+	if (parentqp)
+		uobj_put_obj_read(parentqp);
 
 	uobj_alloc_abort(&obj->uevent.uobject);
 

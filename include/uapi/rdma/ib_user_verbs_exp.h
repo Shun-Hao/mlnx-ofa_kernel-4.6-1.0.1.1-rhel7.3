@@ -22,6 +22,24 @@ enum ib_uverbs_exp_create_qp_flags {
 
 enum ib_uverbs_exp_create_qp_comp_mask {
 	IB_UVERBS_EXP_CREATE_QP_CAP_FLAGS          = (1ULL << 0),
+	IB_UVERBS_EXP_CREATE_QP_QPG		= (1ULL << 2),
+};
+
+struct ib_uverbs_qpg_init_attrib {
+	__u32 tss_child_count;
+	__u32 rss_child_count;
+};
+
+struct ib_uverbs_qpg {
+	__u32 qpg_type;
+	union {
+		struct {
+			__u32 parent_handle;
+			__u32 reserved;
+		};
+		struct ib_uverbs_qpg_init_attrib parent_attrib;
+	};
+	__u32 reserved2;
 };
 
 struct ib_uverbs_exp_create_qp {
@@ -41,6 +59,9 @@ struct ib_uverbs_exp_create_qp {
 	__u8  is_srq;
 	__u8  reserved;
 	__u64 qp_cap_flags;
+	__u32 reserved_max_inl_recv;
+	__u32 reserved1;
+	struct ib_uverbs_qpg qpg;
 	__u64 driver_data[0];
 };
 
