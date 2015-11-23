@@ -25,10 +25,12 @@ IB_UVERBS_DECLARE_EXP_CMD(create_qp);
 IB_UVERBS_DECLARE_EXP_CMD(modify_cq);
 IB_UVERBS_DECLARE_EXP_CMD(query_device);
 IB_UVERBS_DECLARE_EXP_CMD(create_cq);
+IB_UVERBS_DECLARE_EXP_CMD(modify_qp);
 
 uverbs_ex_cmd uverbs_exp_cmd_table[] = {
 	[IB_USER_VERBS_EXP_CMD_CREATE_QP]	= ib_uverbs_exp_create_qp,
 	[IB_USER_VERBS_EXP_CMD_MODIFY_CQ]	= ib_uverbs_exp_modify_cq,
+	[IB_USER_VERBS_EXP_CMD_MODIFY_QP]	= ib_uverbs_exp_modify_qp,
 	[IB_USER_VERBS_EXP_CMD_QUERY_DEVICE]	= ib_uverbs_exp_query_device,
 	[IB_USER_VERBS_EXP_CMD_CREATE_CQ]	= ib_uverbs_exp_create_cq
 };

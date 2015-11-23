@@ -10,8 +10,58 @@ enum {
 enum {
 	IB_USER_VERBS_EXP_CMD_CREATE_QP,
 	IB_USER_VERBS_EXP_CMD_MODIFY_CQ,
+	IB_USER_VERBS_EXP_CMD_MODIFY_QP,
 	IB_USER_VERBS_EXP_CMD_CREATE_CQ = 3,
 	IB_USER_VERBS_EXP_CMD_QUERY_DEVICE = 4
+};
+
+enum ib_uverbs_exp_modify_qp_comp_mask {
+	IB_UVERBS_EXP_QP_ATTR_FLOW_ENTROPY	= 1UL << 0,
+	IB_UVERBS_EXP_QP_ATTR_RESERVED	= 1UL << 1,
+};
+
+/*
+ * Flags for exp_attr_mask field in ibv_exp_qp_attr struct
+ */
+enum ibv_exp_qp_attr_mask {
+	IBV_EXP_QP_GROUP_RSS	= IB_QP_GROUP_RSS,
+	IBV_EXP_QP_ATTR_MASK	= IB_QP_GROUP_RSS,
+	IBV_EXP_QP_ATTR_FIRST = IB_QP_GROUP_RSS,
+	IBV_EXP_ATTR_MASK_SHIFT = 0x06,
+};
+
+struct ib_uverbs_exp_modify_qp {
+	__u32 comp_mask;
+	struct ib_uverbs_qp_dest dest;
+	struct ib_uverbs_qp_dest alt_dest;
+	__u32 qp_handle;
+	__u32 attr_mask;
+	__u32 qkey;
+	__u32 rq_psn;
+	__u32 sq_psn;
+	__u32 dest_qp_num;
+	__u32 qp_access_flags;
+	__u16 pkey_index;
+	__u16 alt_pkey_index;
+	__u8  qp_state;
+	__u8  cur_qp_state;
+	__u8  path_mtu;
+	__u8  path_mig_state;
+	__u8  en_sqd_async_notify;
+	__u8  max_rd_atomic;
+	__u8  max_dest_rd_atomic;
+	__u8  min_rnr_timer;
+	__u8  port_num;
+	__u8  timeout;
+	__u8  retry_cnt;
+	__u8  rnr_retry;
+	__u8  alt_port_num;
+	__u8  alt_timeout;
+	__u8  reserved[6];
+	__u64 reserved1;
+	__u32 exp_attr_mask;
+	__u32 flow_entropy;
+	__u64 driver_data[0];
 };
 
 enum ib_uverbs_exp_create_qp_flags {

@@ -443,3 +443,79 @@ int ib_uverbs_exp_create_cq(struct ib_uverbs_file *file, struct ib_device *ib_de
 
 	return 0;
 }
+
+int ib_uverbs_exp_modify_qp(struct ib_uverbs_file *file, struct ib_device *ib_dev,
+			    struct ib_udata *ucore, struct ib_udata *uhw)
+{
+	struct ib_uverbs_exp_modify_qp	cmd;
+	int ret;
+	struct ib_qp		       *qp;
+	struct ib_qp_attr	       *attr;
+	u32				exp_mask;
+
+	if (ucore->inlen < offsetof(typeof(cmd), comp_mask) +  sizeof(cmd.comp_mask))
+		return -EINVAL;
+
+	ret = ib_copy_from_udata(&cmd, ucore, min(sizeof(cmd), ucore->inlen));
+	if (ret)
+		return ret;
+
+	if (cmd.comp_mask >= IB_UVERBS_EXP_QP_ATTR_RESERVED)
+		return -ENOSYS;
+
+	/* Verify that upper & lower 32 bits from user can fit into qp_attr_mask which is 32 bits
+	 * and there is no overflow.
+	*/
+	if ((cmd.exp_attr_mask << IBV_EXP_ATTR_MASK_SHIFT >= 1ULL << 32) ||
+	    (cmd.attr_mask >= IBV_EXP_QP_ATTR_FIRST))
+		return -EINVAL;
+
+	attr = kzalloc(sizeof(*attr), GFP_KERNEL);
+	if (!attr)
+		return -ENOMEM;
+
+	qp = uobj_get_obj_read(qp, UVERBS_OBJECT_QP, cmd.qp_handle,
+			       file);
+	if (!qp) {
+		kfree(attr);
+		return -EINVAL;
+	}
+
+	attr->qp_state            = cmd.qp_state;
+	attr->cur_qp_state        = cmd.cur_qp_state;
+	attr->path_mtu            = cmd.path_mtu;
+	attr->path_mig_state      = cmd.path_mig_state;
+	attr->qkey                = cmd.qkey;
+	attr->rq_psn              = cmd.rq_psn & 0xffffff;
+	attr->sq_psn              = cmd.sq_psn & 0xffffff;
+	attr->dest_qp_num         = cmd.dest_qp_num;
+	attr->qp_access_flags     = cmd.qp_access_flags;
+	attr->pkey_index          = cmd.pkey_index;
+	attr->alt_pkey_index      = cmd.alt_pkey_index;
+	attr->en_sqd_async_notify = cmd.en_sqd_async_notify;
+	attr->max_rd_atomic       = cmd.max_rd_atomic;
+	attr->max_dest_rd_atomic  = cmd.max_dest_rd_atomic;
+	attr->min_rnr_timer       = cmd.min_rnr_timer;
+	attr->port_num            = cmd.port_num;
+	attr->timeout             = cmd.timeout;
+	attr->retry_cnt           = cmd.retry_cnt;
+	attr->rnr_retry           = cmd.rnr_retry;
+	attr->alt_port_num        = cmd.alt_port_num;
+	attr->alt_timeout         = cmd.alt_timeout;
+
+	copy_ah_attr_from_uverbs(qp->device, &attr->ah_attr, &cmd.dest);
+	copy_ah_attr_from_uverbs(qp->device, &attr->alt_ah_attr,
+				 &cmd.alt_dest);
+
+	exp_mask = (cmd.exp_attr_mask << IBV_EXP_ATTR_MASK_SHIFT) & IBV_EXP_QP_ATTR_MASK;
+
+	ret = ib_modify_qp_with_udata(qp, attr,
+				      modify_qp_mask(qp->qp_type, cmd.attr_mask | exp_mask),
+				      uhw);
+
+out:
+	uobj_put_obj_read(qp);
+	kfree(attr);
+
+	return ret;
+}
