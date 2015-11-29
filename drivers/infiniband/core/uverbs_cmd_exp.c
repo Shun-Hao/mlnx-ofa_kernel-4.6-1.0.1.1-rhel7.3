@@ -507,6 +507,15 @@ int ib_uverbs_exp_modify_qp(struct ib_uverbs_file *file, struct ib_device *ib_de
 	copy_ah_attr_from_uverbs(qp->device, &attr->alt_ah_attr,
 				 &cmd.alt_dest);
 
+	if (cmd.comp_mask & IB_UVERBS_EXP_QP_ATTR_FLOW_ENTROPY) {
+		if (offsetof(typeof(cmd), flow_entropy) + sizeof(cmd.flow_entropy) <= ucore->inlen) {
+			attr->flow_entropy = cmd.flow_entropy;
+		} else {
+			ret = -EINVAL;
+			goto out;
+		}
+	}
+
 	exp_mask = (cmd.exp_attr_mask << IBV_EXP_ATTR_MASK_SHIFT) & IBV_EXP_QP_ATTR_MASK;
 
 	ret = ib_modify_qp_with_udata(qp, attr,
