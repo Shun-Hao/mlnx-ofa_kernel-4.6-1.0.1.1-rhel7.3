@@ -39,6 +39,10 @@ struct ib_qpg_init_attrib {
 	u32 rss_child_count;
 };
 
+enum ib_wq_vlan_offloads {
+	IB_WQ_CVLAN_STRIPPING	= (1 << 0),
+};
+
 enum ib_mp_rq_shifts {
 	IB_MP_RQ_NO_SHIFT	= 0,
 	IB_MP_RQ_2BYTES_SHIFT	= 1 << 0
@@ -134,6 +138,7 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_MAX_WQ_TYPE_RQ	= 1ULL << 14,
 	IB_EXP_DEVICE_ATTR_MAX_DEVICE_CTX	= 1ULL << 15,
 	IB_EXP_DEVICE_ATTR_MP_RQ		= 1ULL << 16,
+	IB_EXP_DEVICE_ATTR_VLAN_OFFLOADS	= 1ULL << 17,
 	IB_EXP_DEVICE_ATTR_EXT_MASKED_ATOMICS	= 1ULL << 19,
 };
 
@@ -187,6 +192,7 @@ struct ib_exp_device_attr {
 	struct ib_exp_rx_hash_caps	rx_hash_caps;
 	uint32_t			max_wq_type_rq;
 	struct ib_exp_mp_rq_caps	mp_rq_caps;
+	u16				vlan_offloads;
 };
 
 enum {

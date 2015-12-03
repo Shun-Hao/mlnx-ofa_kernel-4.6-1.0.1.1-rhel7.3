@@ -257,11 +257,17 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		props->mp_rq_caps.supported_qps = 0;
 	}
 
+	props->vlan_offloads = 0;
 	if (MLX5_CAP_GEN(dev->mdev, eth_net_offloads)) {
 		if (MLX5_CAP_ETH(dev->mdev, csum_cap))
 			props->device_cap_flags2 |=
 				IB_EXP_DEVICE_RX_CSUM_IP_PKT |
 				IB_EXP_DEVICE_RX_CSUM_TCP_UDP_PKT;
+		if (MLX5_CAP_ETH(dev->mdev, vlan_cap)) {
+			props->exp_comp_mask |=
+				IB_EXP_DEVICE_ATTR_VLAN_OFFLOADS;
+			props->vlan_offloads |= IB_WQ_CVLAN_STRIPPING;
+		}
 	}
 
 	return 0;
