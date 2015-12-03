@@ -261,7 +261,8 @@ struct ib_uverbs_exp_query_device_resp {
 	__u32					max_wq_type_rq;
 	__u32					max_device_ctx;
 	struct ib_uverbs_exp_mp_rq_caps		mp_rq_caps;
-	__u8					reserved5[16];
+	__u16					vlan_offloads;
+	__u8					reserved5[14];
 	struct ib_uverbs_exp_masked_atomic_caps masked_atomic_caps;
 
 

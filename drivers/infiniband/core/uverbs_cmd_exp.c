@@ -546,6 +546,10 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_MP_RQ;
 	}
 
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_VLAN_OFFLOADS) {
+		resp->vlan_offloads = exp_attr->vlan_offloads;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_VLAN_OFFLOADS;
+	}
 
 	ret = ib_copy_to_udata(ucore, resp, min_t(size_t, sizeof(*resp), ucore->outlen));
 out:
