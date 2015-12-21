@@ -47,12 +47,14 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_CAP_FLAGS2		= 1ULL << 3,
 	IB_EXP_DEVICE_ATTR_INLINE_RECV_SZ	= 1ULL << 6,
 	IB_EXP_DEVICE_ATTR_RSS_TBL_SZ		= 1ULL << 7,
+	IB_EXP_DEVICE_ATTR_EXT_ATOMIC_ARGS	= 1ULL << 8,
 };
 
 enum ib_exp_device_cap_flags2 {
 	IB_EXP_DEVICE_QPG		= 1 << 1,
 	IB_EXP_DEVICE_UD_RSS		= 1 << 2,
 	IB_EXP_DEVICE_UD_TSS		= 1 << 3,
+	IB_EXP_DEVICE_EXT_ATOMICS	= 1 << 4,
 	IB_EXP_DEVICE_CROSS_CHANNEL	= 1 << 28, /* Comapt with user exp area */
 	IB_EXP_DEVICE_MASK =	IB_DEVICE_CROSS_CHANNEL,
 };
@@ -64,6 +66,14 @@ struct ib_exp_device_attr {
 	uint64_t		device_cap_flags2;
 	uint32_t		inline_recv_sz;
 	uint32_t		max_rss_tbl_sz;
+	/*
+	  * This field is a bit mask for the supported atomic argument sizes.
+	  * A bit set signifies an argument of size of 2 ^ bit_nubmer bytes is
+	  * supported.
+	  */
+	u64                     atomic_arg_sizes;
+	u32                     max_fa_bit_boudary;
+	u32                     log_max_atomic_inline_arg;
 };
 
 /**
