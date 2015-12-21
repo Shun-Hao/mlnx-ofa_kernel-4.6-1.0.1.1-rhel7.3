@@ -169,6 +169,10 @@ struct ib_uverbs_exp_query_device_resp {
 	__u32					reserved2;
 	__u32					inline_recv_sz;
 	__u32					max_rss_tbl_sz;
+	__u64					atomic_arg_sizes;
+	__u32					max_fa_bit_boudary;
+	__u32					log_max_atomic_inline_arg;
+
 };
 
 enum ib_uverbs_exp_create_cq_comp_mask {

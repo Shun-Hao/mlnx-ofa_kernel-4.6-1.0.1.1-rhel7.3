@@ -400,6 +400,13 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_INLINE_RECV_SZ;
 	}
 
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_EXT_ATOMIC_ARGS) {
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_EXT_ATOMIC_ARGS;
+		resp->atomic_arg_sizes = exp_attr->atomic_arg_sizes;
+		resp->max_fa_bit_boudary = exp_attr->max_fa_bit_boudary;
+		resp->log_max_atomic_inline_arg = exp_attr->log_max_atomic_inline_arg;
+	}
+
 	ret = ib_copy_to_udata(ucore, resp, min_t(size_t, sizeof(*resp), ucore->outlen));
 out:
 	kfree(exp_attr);
