@@ -70,6 +70,12 @@ int mlx4_ib_exp_query_device(struct ib_device *ibdev,
 		props->max_rss_tbl_sz = dev->dev->caps.max_rss_tbl_sz;
 	}
 
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_EXT_ATOMIC_ARGS;
+	props->atomic_arg_sizes = 1 << 3;
+	props->max_fa_bit_boudary = 64;
+	props->log_max_atomic_inline_arg = 3;
+	props->device_cap_flags2 |= IB_EXP_DEVICE_EXT_ATOMICS;
+
 	return 0;
 }
 
