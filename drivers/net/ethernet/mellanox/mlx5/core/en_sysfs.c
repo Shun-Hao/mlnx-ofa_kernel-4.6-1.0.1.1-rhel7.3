@@ -35,7 +35,62 @@
 #include "en.h"
 #include "en_ecn.h"
 
+#define MLX5E_SKPRIOS_NUM   16
 #define set_kobj_mode(mdev) mlx5_core_is_pf(mdev) ? S_IWUSR | S_IRUGO : S_IRUGO
+
+static ssize_t mlx5e_show_skprio2up(struct device *device,
+				    struct device_attribute *attr,
+				    char *buf)
+{
+	struct mlx5e_priv *priv = netdev_priv(to_net_dev(device));
+	struct net_device *netdev = priv->netdev;
+	int len = 0;
+	int i;
+
+	for (i = 0; i < MLX5E_SKPRIOS_NUM; i++)
+		len += sprintf(buf + len,  "%d ",
+			       netdev_get_prio_tc_map(netdev, i));
+	len += sprintf(buf + len, "\n");
+
+	return len;
+}
+
+static ssize_t mlx5e_store_skprio2up(struct device *device,
+				     struct device_attribute *attr,
+				     const char *buf, size_t count)
+{
+	struct mlx5e_priv *priv = netdev_priv(to_net_dev(device));
+	struct net_device *netdev = priv->netdev;
+	u8 skprio2up[MLX5E_SKPRIOS_NUM];
+	int ret = count;
+	int up;
+	int skprio = 0;
+	int len;
+
+	while (sscanf(buf, "%d%n", &up, &len) == 1) {
+		if (skprio >= MLX5E_SKPRIOS_NUM)
+			goto bad_elem_count;
+		skprio2up[skprio++] = up;
+		buf += len;
+	}
+
+	if (skprio != MLX5E_SKPRIOS_NUM)
+		goto bad_elem_count;
+
+	netdev_set_num_tc(netdev, MLX5E_MAX_NUM_TC);
+
+	for (skprio = 0; skprio < MLX5E_SKPRIOS_NUM; skprio++)
+		netdev_set_prio_tc_map(netdev, skprio, skprio2up[skprio]);
+
+	return ret;
+
+bad_elem_count:
+	netdev_err(netdev, "bad number of elemets in skprio2up array\n");
+	return -EINVAL;
+}
+
+static DEVICE_ATTR(skprio2up, S_IRUGO | S_IWUSR,
+		   mlx5e_show_skprio2up, mlx5e_store_skprio2up);
 
 static const char *mlx5e_get_cong_protocol(int protocol)
 {
@@ -280,6 +335,16 @@ static void mlx5e_remove_attributes(struct mlx5e_priv *priv,
 	}
 }
 
+static struct attribute *mlx5e_qos_attrs[] = {
+	&dev_attr_skprio2up.attr,
+	NULL,
+};
+
+static struct attribute_group qos_group = {
+	.name = "qos",
+	.attrs = mlx5e_qos_attrs,
+};
+
 int mlx5e_sysfs_create(struct net_device *dev)
 {
 	struct mlx5e_priv *priv = netdev_priv(dev);
@@ -295,6 +360,8 @@ int mlx5e_sysfs_create(struct net_device *dev)
 		mlx5e_fill_attributes(priv, i);
 	}
 
+	err = sysfs_create_group(&dev->dev.kobj, &qos_group);
+
 	return err;
 }
 
@@ -302,6 +369,8 @@ void mlx5e_sysfs_remove(struct net_device *dev)
 {
 	struct mlx5e_priv *priv = netdev_priv(dev);
 	int i;
+
+	sysfs_remove_group(&dev->dev.kobj, &qos_group);
 
 	for (i = 1; i < MLX5E_CONG_PROTOCOL_NUM; i++) {
 		mlx5e_remove_attributes(priv, i);
