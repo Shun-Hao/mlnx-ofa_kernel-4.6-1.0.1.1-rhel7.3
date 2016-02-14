@@ -92,6 +92,83 @@ bad_elem_count:
 static DEVICE_ATTR(skprio2up, S_IRUGO | S_IWUSR,
 		   mlx5e_show_skprio2up, mlx5e_store_skprio2up);
 
+static ssize_t mlx5e_show_lro_timeout(struct device *device,
+				      struct device_attribute *attr,
+				      char *buf)
+{
+	struct mlx5e_priv *priv = netdev_priv(to_net_dev(device));
+	int len = 0;
+	int i;
+
+	rtnl_lock();
+	len += sprintf(buf + len, "Actual timeout: %d\n",
+		       priv->channels.params.lro_timeout);
+
+	len += sprintf(buf + len, "Supported timeout:");
+
+	for (i = 0; i < MLX5E_LRO_TIMEOUT_ARR_SIZE; i++)
+		len += sprintf(buf + len,  " %d",
+		       MLX5_CAP_ETH(priv->mdev,
+				    lro_timer_supported_periods[i]));
+
+	len += sprintf(buf + len, "\n");
+
+	rtnl_unlock();
+
+	return len;
+}
+
+static ssize_t mlx5e_store_lro_timeout(struct device *device,
+				       struct device_attribute *attr,
+				       const char *buf, size_t count)
+{
+	struct mlx5e_priv *priv = netdev_priv(to_net_dev(device));
+	struct net_device *netdev = priv->netdev;
+	u32 lro_timeout;
+	int err = 0;
+
+	err = sscanf(buf, "%d", &lro_timeout);
+
+	if (err != 1)
+		goto bad_input;
+
+	rtnl_lock();
+	if (lro_timeout > MLX5_CAP_ETH(priv->mdev,
+				       lro_timer_supported_periods
+				       [MLX5E_LRO_TIMEOUT_ARR_SIZE - 1]))
+		goto bad_input_unlock;
+
+	lro_timeout = mlx5e_choose_lro_timeout(priv->mdev, lro_timeout);
+
+	mutex_lock(&priv->state_lock);
+
+	if (priv->channels.params.lro_timeout == lro_timeout) {
+		err = 0;
+		goto unlock;
+	}
+
+	priv->channels.params.lro_timeout = lro_timeout;
+	err = mlx5e_modify_tirs_lro(priv);
+
+unlock:
+	mutex_unlock(&priv->state_lock);
+	rtnl_unlock();
+
+	if (err)
+		return err;
+
+	return count;
+
+bad_input_unlock:
+	rtnl_unlock();
+bad_input:
+	netdev_err(netdev, "Bad Input\n");
+	return -EINVAL;
+}
+
+static DEVICE_ATTR(lro_timeout, S_IRUGO | S_IWUSR,
+		  mlx5e_show_lro_timeout, mlx5e_store_lro_timeout);
+
 static const char *mlx5e_get_cong_protocol(int protocol)
 {
 	switch (protocol) {
@@ -355,6 +432,11 @@ static void mlx5e_remove_attributes(struct mlx5e_priv *priv,
 	}
 }
 
+static struct attribute *mlx5e_debug_group_attrs[] = {
+	&dev_attr_lro_timeout.attr,
+	NULL,
+};
+
 static struct attribute *mlx5e_qos_attrs[] = {
 	&dev_attr_skprio2up.attr,
 	NULL,
@@ -363,6 +445,11 @@ static struct attribute *mlx5e_qos_attrs[] = {
 static struct attribute_group qos_group = {
 	.name = "qos",
 	.attrs = mlx5e_qos_attrs,
+};
+
+static struct attribute_group debug_group = {
+	.name = "debug",
+	.attrs = mlx5e_debug_group_attrs,
 };
 
 int mlx5e_sysfs_create(struct net_device *dev)
@@ -381,7 +468,10 @@ int mlx5e_sysfs_create(struct net_device *dev)
 	}
 
 	err = sysfs_create_group(&dev->dev.kobj, &qos_group);
+	if (err)
+		return err;
 
+	err = sysfs_create_group(&dev->dev.kobj, &debug_group);
 	return err;
 }
 
@@ -391,6 +481,7 @@ void mlx5e_sysfs_remove(struct net_device *dev)
 	int i;
 
 	sysfs_remove_group(&dev->dev.kobj, &qos_group);
+	sysfs_remove_group(&dev->dev.kobj, &debug_group);
 
 	for (i = 1; i < MLX5E_CONG_PROTOCOL_NUM; i++) {
 		mlx5e_remove_attributes(priv, i);
