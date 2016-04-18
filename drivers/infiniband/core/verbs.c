@@ -207,6 +207,9 @@ rdma_node_get_transport(enum rdma_node_type node_type)
 	if (node_type == RDMA_NODE_RNIC)
 		return RDMA_TRANSPORT_IWARP;
 
+	if(node_type == RDMA_EXP_NODE_MIC)
+		return RDMA_EXP_TRANSPORT_SCIF;
+
 	return RDMA_TRANSPORT_IB;
 }
 EXPORT_SYMBOL(rdma_node_get_transport);
@@ -220,6 +223,9 @@ enum rdma_link_layer rdma_port_get_link_layer(struct ib_device *device, u8 port_
 	lt = rdma_node_get_transport(device->node_type);
 	if (lt == RDMA_TRANSPORT_IB)
 		return IB_LINK_LAYER_INFINIBAND;
+
+	if (lt == RDMA_EXP_TRANSPORT_SCIF)
+		return IB_EXP_LINK_LAYER_SCIF;
 
 	return IB_LINK_LAYER_ETHERNET;
 }

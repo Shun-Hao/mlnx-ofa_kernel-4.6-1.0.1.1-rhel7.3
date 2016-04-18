@@ -118,6 +118,7 @@ enum rdma_node_type {
 	RDMA_NODE_RNIC,
 	RDMA_NODE_USNIC,
 	RDMA_NODE_USNIC_UDP,
+	RDMA_EXP_NODE_MIC	= 32,
 };
 
 enum {
@@ -129,7 +130,8 @@ enum rdma_transport_type {
 	RDMA_TRANSPORT_IB,
 	RDMA_TRANSPORT_IWARP,
 	RDMA_TRANSPORT_USNIC,
-	RDMA_TRANSPORT_USNIC_UDP
+	RDMA_TRANSPORT_USNIC_UDP,
+	RDMA_EXP_TRANSPORT_SCIF		= 32,
 };
 
 enum rdma_protocol_type {
@@ -175,6 +177,7 @@ enum rdma_link_layer {
 	IB_LINK_LAYER_UNSPECIFIED,
 	IB_LINK_LAYER_INFINIBAND,
 	IB_LINK_LAYER_ETHERNET,
+	IB_EXP_LINK_LAYER_SCIF = 32
 };
 
 enum ib_device_cap_flags {
@@ -2928,6 +2931,13 @@ static inline bool rdma_protocol_iwarp(const struct ib_device *device, u8 port_n
 	return device->port_immutable[port_num].core_cap_flags & RDMA_CORE_CAP_PROT_IWARP;
 }
 
+static inline bool rdma_protocol_scif(const struct ib_device *device, u8 port_num)
+{
+	/* XXX: Fix once tested on a SCIF/MIC platform */
+	return rdma_node_get_transport(device->node_type) ==
+		RDMA_EXP_TRANSPORT_SCIF;
+}
+
 static inline bool rdma_ib_or_roce(const struct ib_device *device, u8 port_num)
 {
 	return rdma_protocol_ib(device, port_num) ||
@@ -3046,6 +3056,13 @@ static inline bool rdma_cap_ib_cm(const struct ib_device *device, u8 port_num)
 static inline bool rdma_cap_iw_cm(const struct ib_device *device, u8 port_num)
 {
 	return device->port_immutable[port_num].core_cap_flags & RDMA_CORE_CAP_IW_CM;
+}
+
+static inline bool rdma_cap_scif_cm(const struct ib_device *device, u8 port_num)
+{
+	/* XXX: Fix once tested on a SCIF/MIC platform */
+	return rdma_node_get_transport(device->node_type) ==
+		RDMA_EXP_TRANSPORT_SCIF;
 }
 
 /**
