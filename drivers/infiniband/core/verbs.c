@@ -2114,6 +2114,10 @@ int ib_attach_mcast(struct ib_qp *qp, union ib_gid *gid, u16 lid)
 	    qp->qp_type != IB_QPT_UD || !is_valid_mcast_lid(qp, lid))
 		return -EINVAL;
 
+	if (rdma_node_get_transport(qp->device->node_type) ==
+	    RDMA_EXP_TRANSPORT_SCIF && (qp->qp_type != IB_QPT_RAW_PACKET))
+		return -EINVAL;
+
 	ret = qp->device->attach_mcast(qp, gid, lid);
 	if (!ret)
 		atomic_inc(&qp->usecnt);
@@ -2130,6 +2134,10 @@ int ib_detach_mcast(struct ib_qp *qp, union ib_gid *gid, u16 lid)
 
 	if (!rdma_is_multicast_addr((struct in6_addr *)gid->raw) ||
 	    qp->qp_type != IB_QPT_UD || !is_valid_mcast_lid(qp, lid))
+		return -EINVAL;
+
+	if (rdma_node_get_transport(qp->device->node_type) ==
+	    RDMA_EXP_TRANSPORT_SCIF && (qp->qp_type != IB_QPT_RAW_PACKET))
 		return -EINVAL;
 
 	ret = qp->device->detach_mcast(qp, gid, lid);
