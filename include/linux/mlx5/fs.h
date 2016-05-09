@@ -79,7 +79,10 @@ enum mlx5_flow_namespace_type {
 struct mlx5_flow_table;
 struct mlx5_flow_group;
 struct mlx5_flow_namespace;
-struct mlx5_flow_handle;
+struct mlx5_flow_handle {
+	int num_rules;
+	struct mlx5_flow_rule *rule[];
+};
 struct mlx5_flow_rule;
 
 struct mlx5_flow_spec {
@@ -209,7 +212,7 @@ u32 mlx5_fc_id(struct mlx5_fc *counter);
 int mlx5_fs_add_rx_underlay_qpn(struct mlx5_core_dev *dev, u32 underlay_qpn);
 int mlx5_fs_remove_rx_underlay_qpn(struct mlx5_core_dev *dev, u32 underlay_qpn);
 
-void mlx3_get_flow_rule(struct mlx5_flow_rule *rule);
+void mlx5_get_flow_rule(struct mlx5_flow_rule *rule);
 void mlx5_put_flow_rule(struct mlx5_flow_rule *rule);
 int mlx5_modify_header_alloc(struct mlx5_core_dev *dev,
 			     u8 namespace, u8 num_actions,

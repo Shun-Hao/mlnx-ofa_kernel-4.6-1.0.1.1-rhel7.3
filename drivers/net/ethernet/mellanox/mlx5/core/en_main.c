@@ -3255,7 +3255,7 @@ static void mlx5e_build_indir_tir_ctx(struct mlx5e_priv *priv,
 	mlx5e_build_indir_tir_ctx_hash(&priv->channels.params, tt, tirc, false);
 }
 
-static void mlx5e_build_direct_tir_ctx(struct mlx5e_priv *priv, u32 rqtn, u32 *tirc)
+void mlx5e_build_direct_tir_ctx(struct mlx5e_priv *priv, u32 rqtn, u32 *tirc)
 {
 	MLX5_SET(tirc, tirc, transport_domain, priv->mdev->mlx5e_res.td.tdn);
 

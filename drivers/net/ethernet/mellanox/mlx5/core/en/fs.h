@@ -164,6 +164,8 @@ static inline int mlx5e_arfs_enable(struct mlx5e_priv *priv) { return -EOPNOTSUP
 static inline int mlx5e_arfs_disable(struct mlx5e_priv *priv) {	return -EOPNOTSUPP; }
 #endif
 
+struct mlx5e_sniffer;
+
 struct mlx5e_flow_steering {
 	struct mlx5_flow_namespace      *ns;
 #ifdef CONFIG_MLX5_EN_RXNFC
@@ -177,6 +179,7 @@ struct mlx5e_flow_steering {
 #ifdef CONFIG_MLX5_EN_ARFS
 	struct mlx5e_arfs_tables        arfs;
 #endif
+	struct mlx5e_sniffer            *sniffer;
 };
 
 struct ttc_params {
@@ -205,6 +208,8 @@ void mlx5e_destroy_flow_table(struct mlx5e_flow_table *ft);
 void mlx5e_enable_cvlan_filter(struct mlx5e_priv *priv);
 void mlx5e_disable_cvlan_filter(struct mlx5e_priv *priv);
 
+int mlx5e_sniffer_start(struct mlx5e_priv *priv);
+int mlx5e_sniffer_stop(struct mlx5e_priv *priv);
 int mlx5e_create_flow_steering(struct mlx5e_priv *priv);
 void mlx5e_destroy_flow_steering(struct mlx5e_priv *priv);
 
