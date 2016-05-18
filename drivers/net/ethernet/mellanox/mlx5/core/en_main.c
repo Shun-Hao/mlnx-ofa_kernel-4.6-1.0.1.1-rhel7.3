@@ -3339,8 +3339,8 @@ static int mlx5e_modify_channels_vsd(struct mlx5e_channels *chs, bool vsd)
 	return 0;
 }
 
-static int mlx5e_setup_tc_mqprio(struct net_device *netdev,
-				 struct tc_mqprio_qopt *mqprio)
+int mlx5e_setup_tc_mqprio(struct net_device *netdev,
+			  struct tc_mqprio_qopt *mqprio)
 {
 	struct mlx5e_priv *priv = netdev_priv(netdev);
 	struct mlx5e_channels new_channels = {};

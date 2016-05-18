@@ -61,32 +61,13 @@ static ssize_t mlx5e_store_skprio2up(struct device *device,
 {
 	struct mlx5e_priv *priv = netdev_priv(to_net_dev(device));
 	struct net_device *netdev = priv->netdev;
-	u8 skprio2up[MLX5E_SKPRIOS_NUM];
-	int ret = count;
-	int up;
-	int skprio = 0;
-	int len;
+	struct tc_mqprio_qopt mqprio = {.num_tc = MLX5E_MAX_NUM_TC};
 
-	while (sscanf(buf, "%d%n", &up, &len) == 1) {
-		if (skprio >= MLX5E_SKPRIOS_NUM)
-			goto bad_elem_count;
-		skprio2up[skprio++] = up;
-		buf += len;
-	}
-
-	if (skprio != MLX5E_SKPRIOS_NUM)
-		goto bad_elem_count;
-
+	rtnl_lock();
 	netdev_set_num_tc(netdev, MLX5E_MAX_NUM_TC);
-
-	for (skprio = 0; skprio < MLX5E_SKPRIOS_NUM; skprio++)
-		netdev_set_prio_tc_map(netdev, skprio, skprio2up[skprio]);
-
-	return ret;
-
-bad_elem_count:
-	netdev_err(netdev, "bad number of elemets in skprio2up array\n");
-	return -EINVAL;
+	mlx5e_setup_tc_mqprio(netdev, &mqprio);
+	rtnl_unlock();
+	return count;
 }
 
 static DEVICE_ATTR(skprio2up, S_IRUGO | S_IWUSR,

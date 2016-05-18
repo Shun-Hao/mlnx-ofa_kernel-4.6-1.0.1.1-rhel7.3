@@ -838,6 +838,9 @@ void mlx5e_update_stats(struct mlx5e_priv *priv);
 int mlx5e_sysfs_create(struct net_device *dev);
 void mlx5e_sysfs_remove(struct net_device *dev);
 
+int mlx5e_setup_tc_mqprio(struct net_device *netdev,
+			  struct tc_mqprio_qopt *mqprio);
+
 void mlx5e_init_l2_addr(struct mlx5e_priv *priv);
 int mlx5e_self_test_num(struct mlx5e_priv *priv);
 void mlx5e_self_test(struct net_device *ndev, struct ethtool_test *etest,
