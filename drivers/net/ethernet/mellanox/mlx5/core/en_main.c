@@ -4982,6 +4982,8 @@ static void mlx5e_nic_enable(struct mlx5e_priv *priv)
 	rtnl_lock();
 	if (netif_running(netdev))
 		mlx5e_open(netdev);
+	else
+		mlx5_set_port_admin_status(mdev, MLX5_PORT_DOWN);
 	netif_device_attach(netdev);
 	rtnl_unlock();
 }

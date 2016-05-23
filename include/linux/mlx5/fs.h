@@ -225,4 +225,24 @@ int mlx5_packet_reformat_alloc(struct mlx5_core_dev *dev,
 void mlx5_packet_reformat_dealloc(struct mlx5_core_dev *dev,
 				  u32 packet_reformat_id);
 
+enum {
+	MLX5_RULE_EVENT_ADD,
+	MLX5_RULE_EVENT_DEL,
+};
+
+int mlx5_set_rule_private_data(struct mlx5_flow_rule *rule,
+			       struct notifier_block *nb, void *client_data);
+void *mlx5_get_rule_private_data(struct mlx5_flow_rule *rule,
+				 struct notifier_block *nb);
+void mlx5_release_rule_private_data(struct mlx5_flow_rule *rule,
+				    struct notifier_block *nb);
+
+int mlx5_register_rule_notifier(struct mlx5_flow_namespace *ns,
+				struct notifier_block *nb);
+int mlx5_unregister_rule_notifier(struct mlx5_flow_namespace *ns,
+				  struct notifier_block *nb);
+struct mlx5_event_data {
+	struct mlx5_flow_table *ft;
+	struct mlx5_flow_rule *rule;
+};
 #endif
