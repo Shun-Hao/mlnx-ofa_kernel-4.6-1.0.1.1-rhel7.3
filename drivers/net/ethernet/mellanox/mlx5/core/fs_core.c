@@ -3024,3 +3024,23 @@ unlock:
 
 	return 0;
 }
+
+void mlx5_get_rule_flow_spec(struct mlx5_flow_spec *flow_spec,
+			     struct mlx5_flow_rule *rule)
+{
+	struct mlx5_flow_group *fg;
+	struct fs_node *pnode;
+	struct fs_fte *fte;
+
+	pnode = rule->node.parent;
+	WARN_ON(!pnode);
+	fs_get_obj(fte, pnode);
+	pnode = pnode->parent;
+	WARN_ON(!pnode);
+	fs_get_obj(fg, pnode);
+
+	memcpy(flow_spec->match_value, fte->val, sizeof(fte->val));
+	memcpy(flow_spec->match_criteria, fg->mask.match_criteria,
+	       sizeof(fg->mask.match_criteria));
+	flow_spec->match_criteria_enable = fg->mask.match_criteria_enable;
+}

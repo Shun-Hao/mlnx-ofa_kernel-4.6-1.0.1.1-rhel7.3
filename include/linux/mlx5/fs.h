@@ -245,4 +245,7 @@ struct mlx5_event_data {
 	struct mlx5_flow_table *ft;
 	struct mlx5_flow_rule *rule;
 };
+
+void mlx5_get_rule_flow_spec(struct mlx5_flow_spec *flow_spec,
+			     struct mlx5_flow_rule *rule);
 #endif
