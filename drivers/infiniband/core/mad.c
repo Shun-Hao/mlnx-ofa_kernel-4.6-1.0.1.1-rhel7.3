@@ -271,6 +271,7 @@ static int tf_enqueue(struct sa_cc_data *cc_obj, struct tf_entry *item,
 
 	spin_lock_irqsave(&tf->lists_lock, flags);
 	if (tf->num_items >= cc_obj->queue_size || tf->stop_enqueue) {
+		cc_obj->drops++;
 		spin_unlock_irqrestore(&tf->lists_lock, flags);
 		return -EBUSY;
 	}
@@ -586,6 +587,7 @@ static int sa_cc_init(struct sa_cc_data *cc_obj)
 	cc_obj->time_sa_mad = SA_CC_DEFAULT_MAD_TIME_MS;
 	cc_obj->max_outstanding = SA_CC_DEFAULT_OUTSTANDING_SA_MADS;
 	cc_obj->outstanding = 0;
+	cc_obj->drops = 0;
 	cc_obj->tf = tf_create();
 	if (!cc_obj->tf) {
 		err = -ENOMEM;
@@ -4008,6 +4010,23 @@ static ssize_t max_outstanding_show(struct sa_cc_data *cc_obj,
 	return sprintf(buf, "%lu\n", cc_obj->max_outstanding);
 }
 
+static ssize_t drops_store(struct sa_cc_data *cc_obj,
+			   const char *buf, size_t count)
+{
+	unsigned long var;
+
+	if (kstrtol(buf, 0, &var) || (var != 0))
+		return -EINVAL;
+
+	cc_obj->drops = 0;
+	return count;
+}
+
+static ssize_t drops_show(struct sa_cc_data *cc_obj, char *buf)
+{
+	return sprintf(buf, "%lu\n", cc_obj->drops);
+}
+
 static ssize_t time_sa_mad_store(struct sa_cc_data *cc_obj, const char *buf,
 				 size_t count)
 {
@@ -4095,11 +4114,13 @@ static const struct sysfs_ops sa_cc_sysfs_ops = {
 static SA_CC_ATTR(queue_size);
 static SA_CC_ATTR(time_sa_mad);
 static SA_CC_ATTR(max_outstanding);
+static SA_CC_ATTR(drops);
 
 static struct attribute *sa_cc_default_attrs[] = {
 	&sa_cc_attr_queue_size.attr,
 	&sa_cc_attr_time_sa_mad.attr,
 	&sa_cc_attr_max_outstanding.attr,
+	&sa_cc_attr_drops.attr,
 	NULL
 };
 

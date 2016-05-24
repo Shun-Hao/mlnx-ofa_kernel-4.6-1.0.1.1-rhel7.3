@@ -227,6 +227,7 @@ struct sa_cc_data {
 	unsigned long queue_size;
 	unsigned long time_sa_mad;
 	unsigned long max_outstanding;
+	unsigned long drops;
 	struct kobject kobj;
 	struct to_fifo  *tf;
 };
