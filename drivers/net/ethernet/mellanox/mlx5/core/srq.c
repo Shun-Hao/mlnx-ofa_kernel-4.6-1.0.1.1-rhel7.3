@@ -477,7 +477,8 @@ static int create_xrq_cmd(struct mlx5_core_dev *dev, struct mlx5_core_srq *srq,
 	set_wq(wq, in);
 	memcpy(MLX5_ADDR_OF(xrqc, xrqc, wq.pas), in->pas, pas_size);
 
-	if (in->type == IB_SRQT_TM) {
+	if (in->type == IB_SRQT_TM ||
+	    in->type == IB_EXP_SRQT_TAG_MATCHING) {
 		MLX5_SET(xrqc, xrqc, topology, MLX5_XRQC_TOPOLOGY_TAG_MATCHING);
 		if (in->flags & MLX5_SRQ_FLAG_RNDV)
 			MLX5_SET(xrqc, xrqc, offload, MLX5_XRQC_OFFLOAD_RNDV);
@@ -609,6 +610,7 @@ int mlx5_core_create_srq(struct mlx5_core_dev *dev, struct mlx5_core_srq *srq,
 		srq->common.res = MLX5_RES_XSRQ;
 		break;
 	case IB_SRQT_TM:
+	case IB_EXP_SRQT_TAG_MATCHING:
 		srq->common.res = MLX5_RES_XRQ;
 		break;
 	default:
