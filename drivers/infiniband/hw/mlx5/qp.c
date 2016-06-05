@@ -2212,7 +2212,8 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 	} else {
 		MLX5_SET(qpc, qpc, no_sq, 1);
 		if (init_attr->srq &&
-		    init_attr->srq->srq_type == IB_SRQT_TM)
+		    (init_attr->srq->srq_type == IB_SRQT_TM ||
+		     init_attr->srq->srq_type == IB_EXP_SRQT_TAG_MATCHING))
 			MLX5_SET(qpc, qpc, offload_type,
 				 MLX5_QPC_OFFLOAD_TYPE_RNDV);
 	}

@@ -229,6 +229,12 @@ void mlx5_ib_exp_set_rq_attr(struct mlx5_ib_create_wq_data *data,
 int mlx5_ib_exp_get_cmd_data(struct mlx5_ib_dev *dev,
 			     struct ib_udata *udata,
 			     struct mlx5_ib_create_wq_data *data);
+
+int mlx5_ib_exp_create_srq_user(struct mlx5_ib_dev *dev,
+				struct mlx5_srq_attr *in,
+				struct ib_udata *udata,
+				struct mlx5_ib_create_srq *ucmd);
+
 struct mlx5_ib_ucontext;
 struct mlx5_ib_vma_private_data;
 

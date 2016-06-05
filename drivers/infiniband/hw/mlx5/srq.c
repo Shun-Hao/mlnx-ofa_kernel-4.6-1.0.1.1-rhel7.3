@@ -86,20 +86,25 @@ static int create_srq_user(struct ib_pd *pd, struct mlx5_ib_srq *srq,
 	u32 offset;
 	u32 uidx = MLX5_IB_DEFAULT_UIDX;
 
-	ucmdlen = min(udata->inlen, sizeof(ucmd));
+	if (udata->src == IB_UDATA_EXP_CMD) {
+		err = mlx5_ib_exp_create_srq_user(dev, in, udata, &ucmd);
+		if (err)
+			return err;
+	} else {
+		ucmdlen = min(udata->inlen, sizeof(ucmd));
+		if (ib_copy_from_udata(&ucmd, udata, ucmdlen)) {
+			mlx5_ib_dbg(dev, "failed copy udata\n");
+			return -EFAULT;
+		}
 
-	if (ib_copy_from_udata(&ucmd, udata, ucmdlen)) {
-		mlx5_ib_dbg(dev, "failed copy udata\n");
-		return -EFAULT;
+		if (ucmd.reserved0 || ucmd.reserved1)
+			return -EINVAL;
+
+		if (udata->inlen > sizeof(ucmd) &&
+		    !ib_is_udata_cleared(udata, sizeof(ucmd),
+					 udata->inlen - sizeof(ucmd)))
+			return -EINVAL;
 	}
-
-	if (ucmd.reserved0 || ucmd.reserved1)
-		return -EINVAL;
-
-	if (udata->inlen > sizeof(ucmd) &&
-	    !ib_is_udata_cleared(udata, sizeof(ucmd),
-				 udata->inlen - sizeof(ucmd)))
-		return -EINVAL;
 
 	if (in->type != IB_SRQT_BASIC) {
 		err = get_srq_user_index(to_mucontext(pd->uobject->context),

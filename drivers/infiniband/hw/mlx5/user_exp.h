@@ -279,6 +279,17 @@ struct mlx5_ib_exp_create_wq {
 	struct mlx5_ib_create_wq_mp_rq mp_rq;
 };
 
+struct mlx5_ib_exp_create_srq {
+	__u64	buf_addr;
+	__u64	db_addr;
+	__u32	flags;
+	__u32	reserved0;
+	__u32	uidx;
+	__u32	reserved1;
+	__u32	max_num_tags;
+	__u32	comp_mask;
+};
+
 static inline int get_qp_exp_user_index(struct mlx5_ib_ucontext *ucontext,
 					struct mlx5_exp_ib_create_qp *ucmd,
 					int inlen,
