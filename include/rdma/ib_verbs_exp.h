@@ -149,6 +149,7 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_OOO_CAPS		= 1ULL << 24,
 	IB_EXP_DEVICE_ATTR_SW_PARSING_CAPS	= 1ULL << 25,
 	IB_EXP_DEVICE_ATTR_ODP_MAX_SIZE		= 1ULL << 26,
+	IB_EXP_DEVICE_ATTR_TM_CAPS		= 1ULL << 27,
 };
 
 enum ib_exp_device_cap_flags2 {
@@ -245,6 +246,19 @@ struct ib_exp_context_attr {
 	u32	comp_mask;
 };
 
+struct ib_exp_tm_caps {
+	/* Max size of RNDV header */
+	u32 max_rndv_hdr_size;
+	/* Max number of entries in a tag matching list */
+	u32 max_num_tags;
+	/* TM capabilities mask - from enum ib_tm_cap_flags */
+	u32 capability_flags;
+	/* Max number of outstanding list operations */
+	u32 max_ops;
+	/* Max number of SGQ in a tag matching entry */
+	u32 max_sge;
+};
+
 struct ib_exp_device_attr {
 	struct ib_device_attr	base;
 	/* Use IB_EXP_DEVICE_ATTR_... for exp_comp_mask */
@@ -290,6 +304,7 @@ struct ib_exp_device_attr {
 	struct ib_exp_packet_pacing_caps packet_pacing_caps;
 	struct ib_exp_ooo_caps		ooo_caps;
 	struct ib_exp_sw_parsing_caps	sw_parsing_caps;
+	struct ib_exp_tm_caps		tm_caps;
 };
 
 enum ib_dct_create_flags {
