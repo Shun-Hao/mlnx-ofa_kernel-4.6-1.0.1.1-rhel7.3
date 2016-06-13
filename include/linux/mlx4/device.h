@@ -234,6 +234,7 @@ enum {
 	MLX4_DEV_CAP_FLAG2_USER_MAC_EN		= 1ULL << 38,
 	MLX4_DEV_CAP_FLAG2_DRIVER_VERSION_TO_FW = 1ULL << 39,
 	MLX4_DEV_CAP_FLAG2_ESW_LOOPBACK_DISABLED = 1ULL << 40,
+	MLX4_DEV_CAP_FLAG2_SVLAN_TPID		= 1ULL << 41,
 };
 
 enum {
@@ -1536,6 +1537,7 @@ int mlx4_get_port_free_macs(struct mlx4_dev *mdev, int port);
 bool mlx4_is_available_mac(struct mlx4_dev *mdev, int port);
 int mlx4_disable_rx_port_check(struct mlx4_dev *dev, bool dis);
 int mlx4_config_roce_v2_port(struct mlx4_dev *dev, u16 udp_port);
+int mlx4_config_svlan_tpid(struct mlx4_dev *dev, __be16 svlan_tpid);
 int mlx4_virt2phy_port_map(struct mlx4_dev *dev, u32 port1, u32 port2);
 int mlx4_vf_smi_enabled(struct mlx4_dev *dev, int slave, int port);
 int mlx4_vf_get_enable_smi_admin(struct mlx4_dev *dev, int slave, int port);
