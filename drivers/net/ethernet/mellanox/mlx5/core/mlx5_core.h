@@ -197,6 +197,12 @@ int mlx5_set_mtppse(struct mlx5_core_dev *mdev, u8 pin, u8 arm, u8 mode);
 
 int mlx5_firmware_flash(struct mlx5_core_dev *dev, const struct firmware *fw);
 
+int mlx5_mst_dump_init(struct mlx5_core_dev *dev);
+int mlx5_mst_capture(struct mlx5_core_dev *dev);
+u32 mlx5_mst_dump(struct mlx5_core_dev *dev, void *buff, u32 buff_sz);
+void mlx5_mst_free_capture(struct mlx5_core_dev *dev);
+void mlx5_mst_dump_cleanup(struct mlx5_core_dev *dev);
+
 void mlx5e_init(void);
 void mlx5e_cleanup(void);
 

@@ -1028,10 +1028,16 @@ static int mlx5_init_once(struct mlx5_core_dev *dev, struct mlx5_priv *priv)
 		goto err_rl_cleanup;
 	}
 
+	err = mlx5_mst_dump_init(dev);
+	if (err) {
+		dev_err(&pdev->dev, "Failed to init mst dump %d\n", err);
+		goto err_mpfs_cleanup;
+	}
+
 	err = mlx5_eswitch_init(dev);
 	if (err) {
 		dev_err(&pdev->dev, "Failed to init eswitch %d\n", err);
-		goto err_mpfs_cleanup;
+		goto err_mst_dump_cleanup;
 	}
 
 	err = mlx5_sriov_init(dev);
@@ -1054,6 +1060,8 @@ err_sriov_cleanup:
 	mlx5_sriov_cleanup(dev);
 err_eswitch_cleanup:
 	mlx5_eswitch_cleanup(dev->priv.eswitch);
+err_mst_dump_cleanup:
+	mlx5_mst_dump_cleanup(dev);
 err_mpfs_cleanup:
 	mlx5_mpfs_cleanup(dev);
 err_rl_cleanup:
@@ -1079,6 +1087,7 @@ static void mlx5_cleanup_once(struct mlx5_core_dev *dev)
 	mlx5_fpga_cleanup(dev);
 	mlx5_sriov_cleanup(dev);
 	mlx5_eswitch_cleanup(dev->priv.eswitch);
+	mlx5_mst_dump_cleanup(dev);
 	mlx5_mpfs_cleanup(dev);
 	mlx5_cleanup_rl_table(dev);
 	mlx5_cleanup_dct_table(dev);
