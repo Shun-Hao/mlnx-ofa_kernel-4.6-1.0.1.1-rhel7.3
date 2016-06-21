@@ -267,6 +267,10 @@ struct mlx5e_params {
 	struct bpf_prog *xdp_prog;
 	unsigned int sw_mtu;
 	int hard_mtu;
+	struct {
+		__u32 flag;
+		u32 mst_size;
+	}                          dump;
 };
 
 #ifdef CONFIG_MLX5_CORE_EN_DCB
@@ -1070,6 +1074,7 @@ u8 mlx5e_params_calculate_tx_min_inline(struct mlx5_core_dev *mdev);
 int mlx5e_get_dump_flag(struct net_device *netdev, struct ethtool_dump *dump);
 int mlx5e_get_dump_data(struct net_device *netdev, struct ethtool_dump *dump,
 			void *buffer);
+int mlx5e_set_dump(struct net_device *dev, struct ethtool_dump *dump);
 
 void mlx5e_rx_dim_work(struct work_struct *work);
 void mlx5e_tx_dim_work(struct work_struct *work);
