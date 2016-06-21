@@ -1369,4 +1369,26 @@ mlx5_get_vector_affinity_hint(struct mlx5_core_dev *dev, int vector)
 	return dev->priv.irq_info[vector].mask;
 }
 
+/* MLX5 Diagnostics */
+
+#define MLX5_DIAG_DUMP_VERSION 1
+
+enum mlx5_diag_type {
+	MLX5_DIAG_DRV_VERSION = 0,
+	MLX5_DIAG_DEVICE_NAME,
+};
+
+struct mlx5_diag_blk {
+	u32	type;
+	u32	length;
+	char	data[0];
+} __packed;
+
+struct mlx5_diag_dump {
+	u32	version;
+	u32	flag;
+	u32	num_blocks;
+	u32	total_length;
+	char	dump[0];
+} __packed;
 #endif /* MLX5_DRIVER_H */
