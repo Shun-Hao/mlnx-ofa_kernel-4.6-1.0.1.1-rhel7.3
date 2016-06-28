@@ -36,6 +36,8 @@
 #include "en_ecn.h"
 
 #define MLX5E_SKPRIOS_NUM   16
+#define MLX5E_GBPS_TO_KBPS 1000000
+#define MLX5E_100MBPS_TO_KBPS 100000
 #define set_kobj_mode(mdev) mlx5_core_is_pf(mdev) ? S_IWUSR | S_IRUGO : S_IRUGO
 
 static ssize_t mlx5e_show_skprio2up(struct device *device,
@@ -70,6 +72,113 @@ static ssize_t mlx5e_store_skprio2up(struct device *device,
 	return count;
 }
 
+static  ssize_t mlx5e_show_maxrate(struct device *device,
+				   struct device_attribute *attr,
+				   char *buf)
+{
+	struct mlx5e_priv *priv = netdev_priv(to_net_dev(device));
+	u8 max_bw_value[MLX5E_MAX_NUM_TC];
+	u8 max_bw_unit[MLX5E_MAX_NUM_TC];
+	int len = 0;
+	int ret;
+	int i;
+
+	ret = mlx5_query_port_ets_rate_limit(priv->mdev,max_bw_value,
+					     max_bw_unit);
+	if (ret) {
+		netdev_err(priv->netdev, "Failed to query port ets rate limit, ret = %d\n", ret);
+		return ret;
+	}
+
+	for (i = 0; i < IEEE_8021QAZ_MAX_TCS; i++) {
+		u64 maxrate = 0;
+		if (max_bw_unit[i] == MLX5_100_MBPS_UNIT)
+			maxrate = max_bw_value[i] * MLX5E_100MBPS_TO_KBPS;
+		else if (max_bw_unit[i] == MLX5_GBPS_UNIT)
+			maxrate = max_bw_value[i] * MLX5E_GBPS_TO_KBPS;
+		len += sprintf(buf + len, "%lld ", maxrate);
+	}
+	len += sprintf(buf + len, "\n");
+
+	return len;
+}
+
+static ssize_t mlx5e_store_maxrate(struct device *device,
+				   struct device_attribute *attr,
+				   const char *buf, size_t count)
+{
+	 __u64 upper_limit_mbps = roundup(255 * MLX5E_100MBPS_TO_KBPS,
+						MLX5E_GBPS_TO_KBPS);
+	struct mlx5e_priv *priv = netdev_priv(to_net_dev(device));
+	u8 max_bw_value[MLX5E_MAX_NUM_TC];
+	u8 max_bw_unit[MLX5E_MAX_NUM_TC];
+	u64 tc_maxrate[IEEE_8021QAZ_MAX_TCS];
+	int i = 0;
+	char delimiter;
+	int ret;
+
+	do {
+		int len;
+		u64 input_maxrate;
+
+		if (i >= MLX5E_MAX_NUM_TC)
+			goto bad_elem_count;
+
+		len = strcspn(buf, " ");
+
+		/* nul-terminate and parse */
+		delimiter = buf[len];
+		((char *)buf)[len] = '\0';
+
+		if (sscanf(buf, "%lld", &input_maxrate) != 1
+			   || input_maxrate < 0) {
+			netdev_err(priv->netdev, "bad maxrate value: '%s'\n",
+				   buf);
+			goto out;
+		}
+		tc_maxrate[i] = input_maxrate;
+
+		buf += len + 1;
+		i++;
+	} while (delimiter == ' ');
+
+	if (i != MLX5E_MAX_NUM_TC)
+		goto bad_elem_count;
+
+	for (i = 0; i < IEEE_8021QAZ_MAX_TCS; i++) {
+		if (!tc_maxrate[i]) {
+			max_bw_unit[i]  = MLX5_BW_NO_LIMIT;
+			continue;
+		}
+		if (tc_maxrate[i] < upper_limit_mbps) {
+			max_bw_value[i] = div_u64(tc_maxrate[i],
+						MLX5E_100MBPS_TO_KBPS);
+			max_bw_value[i] = max_bw_value[i] ? max_bw_value[i] : 1;
+			max_bw_unit[i]  = MLX5_100_MBPS_UNIT;
+		} else {
+			max_bw_value[i] = div_u64(tc_maxrate[i],
+						MLX5E_GBPS_TO_KBPS);
+			max_bw_unit[i]  = MLX5_GBPS_UNIT;
+		}
+	}
+
+	ret = mlx5_modify_port_ets_rate_limit(priv->mdev,
+					      max_bw_value, max_bw_unit);
+	if (ret) {
+		netdev_err(priv->netdev, "Failed to modify port ets rate limit, err = %d\n"
+				, ret);
+		return ret;
+	}
+	return count;
+
+bad_elem_count:
+	netdev_err(priv->netdev, "bad number of elemets in maxrate array\n");
+out:
+	return -EINVAL;
+}
+
+static DEVICE_ATTR(maxrate, S_IRUGO | S_IWUSR,
+		   mlx5e_show_maxrate, mlx5e_store_maxrate);
 static DEVICE_ATTR(skprio2up, S_IRUGO | S_IWUSR,
 		   mlx5e_show_skprio2up, mlx5e_store_skprio2up);
 
@@ -420,6 +529,7 @@ static struct attribute *mlx5e_debug_group_attrs[] = {
 
 static struct attribute *mlx5e_qos_attrs[] = {
 	&dev_attr_skprio2up.attr,
+	&dev_attr_maxrate.attr,
 	NULL,
 };
 
