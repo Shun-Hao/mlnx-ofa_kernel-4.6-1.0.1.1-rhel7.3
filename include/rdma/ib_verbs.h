@@ -1045,12 +1045,14 @@ enum ib_srq_type {
 	IB_SRQT_BASIC,
 	IB_SRQT_XRC,
 	IB_SRQT_TM,
+	IB_EXP_SRQT_TAG_MATCHING = 32,
 };
 
 static inline bool ib_srq_has_cq(enum ib_srq_type srq_type)
 {
 	return srq_type == IB_SRQT_XRC ||
-	       srq_type == IB_SRQT_TM;
+	       srq_type == IB_SRQT_TM ||
+	       srq_type == IB_EXP_SRQT_TAG_MATCHING;
 }
 
 enum ib_srq_attr_mask {
