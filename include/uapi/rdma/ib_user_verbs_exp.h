@@ -288,6 +288,20 @@ struct ib_uverbs_exp_sw_parsing_caps {
 	__u32 supported_qpts;
 };
 
+struct ib_uverbs_exp_tm_caps {
+	/* Max size of RNDV header */
+	__u32 max_rndv_hdr_size;
+	/* Max number of entries in a tag matching list */
+	__u32 max_num_tags;
+	/* TM capabilities mask */
+	__u32 capability_flags;
+	/* Max number of outstanding list operations */
+	__u32 max_ops;
+	/* Max number of SGE in a tag matching entry */
+	__u32 max_sge;
+	__u32 reserved;
+};
+
 struct ib_uverbs_exp_query_device_resp {
 	__u64					comp_mask;
 	struct ib_uverbs_query_device_resp	base;
@@ -321,6 +335,7 @@ struct ib_uverbs_exp_query_device_resp {
 	struct ib_uverbs_exp_ooo_caps		ooo_caps;
 	struct ib_uverbs_exp_sw_parsing_caps	sw_parsing_caps;
 	__u64					odp_mr_max_size;
+	struct ib_uverbs_exp_tm_caps		tm_caps;
 };
 
 enum ib_uverbs_exp_create_cq_comp_mask {
