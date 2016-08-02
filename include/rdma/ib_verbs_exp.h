@@ -141,6 +141,7 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_VLAN_OFFLOADS	= 1ULL << 17,
 	IB_EXP_DEVICE_ATTR_EXT_MASKED_ATOMICS	= 1ULL << 19,
 	IB_EXP_DEVICE_ATTR_RX_PAD_END_ALIGN	= 1ULL << 20,
+	IB_EXP_DEVICE_ATTR_TSO_CAPS		= 1ULL << 21,
 };
 
 enum ib_exp_device_cap_flags2 {
@@ -165,6 +166,16 @@ struct ib_exp_rx_hash_caps {
 	uint8_t  supported_hash_functions; /* from ib_rx_hash_function_flags */
 	uint64_t supported_packet_fields;	/* from ib_rx_hash_fields */
 	uint32_t supported_qps;  /* from ib_exp_supported_qp_types */
+};
+
+struct ib_exp_tso_caps {
+	__u32 max_tso; /* Maximum tso payload size in bytes */
+
+	/* Corresponding bit will be set if qp type from
+	 * 'enum ib_qp_type' is supported, e.g.
+	 * supported_qpts |= 1 << IB_QPT_RAW_PACKET
+	 */
+	__u32 supported_qpts;
 };
 
 struct ib_exp_device_attr {
@@ -201,6 +212,7 @@ struct ib_exp_device_attr {
 	 * aligned to the rx_pad_end_addr_align size.
 	 */
 	u16				rx_pad_end_addr_align;
+	struct ib_exp_tso_caps		tso_caps;
 };
 
 enum {

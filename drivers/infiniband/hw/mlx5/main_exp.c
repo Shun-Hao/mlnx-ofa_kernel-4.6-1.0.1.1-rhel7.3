@@ -181,6 +181,7 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			     struct ib_udata *uhw)
 {
 	struct mlx5_ib_dev *dev = to_mdev(ibdev);
+	u32 max_tso;
 	int ret;
 
 	ret = mlx5_ib_query_device(ibdev, &props->base, uhw);
@@ -285,6 +286,14 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			props->rx_pad_end_addr_align = MLX5_ADDR_ALIGN_64;
 		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_RX_PAD_END_ALIGN;
 	}
+
+		max_tso = MLX5_CAP_ETH(dev->mdev, max_lso_cap);
+		if (max_tso) {
+			props->tso_caps.max_tso = 1 << max_tso;
+			props->tso_caps.supported_qpts |=
+				1 << IB_QPT_RAW_PACKET;
+			props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_TSO_CAPS;
+		}
 
 	return 0;
 }

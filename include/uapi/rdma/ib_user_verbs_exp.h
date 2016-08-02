@@ -242,6 +242,16 @@ struct ib_uverbs_exp_rx_hash_caps {
 	__u8	reserved[3];
 };
 
+struct ib_uverbs_exp_tso_caps {
+	__u32 max_tso; /* Maximum tso payload size in bytes */
+
+	/* Corresponding bit will be set if qp type from
+	 * 'enum ib_qp_type' is supported, e.g.
+	 * supported_qpts |= 1 << IB_QPT_RAW
+	 */
+	__u32 supported_qpts;
+};
+
 struct ib_uverbs_exp_query_device_resp {
 	__u64					comp_mask;
 	struct ib_uverbs_query_device_resp	base;
@@ -268,6 +278,7 @@ struct ib_uverbs_exp_query_device_resp {
 	struct ib_uverbs_exp_masked_atomic_caps masked_atomic_caps;
 	__u16					rx_pad_end_addr_align;
 	__u8					reserved1[6];
+	struct ib_uverbs_exp_tso_caps		tso_caps;
 };
 
 enum ib_uverbs_exp_create_cq_comp_mask {
