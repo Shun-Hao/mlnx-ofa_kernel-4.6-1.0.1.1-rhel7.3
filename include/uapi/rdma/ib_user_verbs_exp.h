@@ -259,6 +259,18 @@ struct ib_uverbs_exp_tso_caps {
 	__u32 supported_qpts;
 };
 
+struct ib_uverbs_exp_packet_pacing_caps {
+	__u32 qp_rate_limit_min;
+	__u32 qp_rate_limit_max; /* In kpbs */
+
+	/* Corresponding bit will be set if qp type from
+	 * 'enum ib_qp_type' is supported, e.g.
+	 * supported_qpts |= 1 << IB_QPT_RAW_PACKET
+	 */
+	__u32 supported_qpts;
+	__u32 reserved;
+};
+
 struct ib_uverbs_exp_query_device_resp {
 	__u64					comp_mask;
 	struct ib_uverbs_query_device_resp	base;
@@ -287,6 +299,7 @@ struct ib_uverbs_exp_query_device_resp {
 	__u16					rx_pad_end_addr_align;
 	__u8					reserved2[6];
 	struct ib_uverbs_exp_tso_caps		tso_caps;
+	struct ib_uverbs_exp_packet_pacing_caps packet_pacing_caps;
 };
 
 enum ib_uverbs_exp_create_cq_comp_mask {

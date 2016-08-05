@@ -144,6 +144,7 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_EXT_MASKED_ATOMICS	= 1ULL << 19,
 	IB_EXP_DEVICE_ATTR_RX_PAD_END_ALIGN	= 1ULL << 20,
 	IB_EXP_DEVICE_ATTR_TSO_CAPS		= 1ULL << 21,
+	IB_EXP_DEVICE_ATTR_PACKET_PACING_CAPS	= 1ULL << 22,
 };
 
 enum ib_exp_device_cap_flags2 {
@@ -183,6 +184,18 @@ struct ib_exp_tso_caps {
 	 * supported_qpts |= 1 << IB_QPT_RAW_PACKET
 	 */
 	__u32 supported_qpts;
+};
+
+struct ib_exp_packet_pacing_caps {
+	__u32 qp_rate_limit_min;
+	__u32 qp_rate_limit_max; /* In kpbs */
+
+	/* Corresponding bit will be set if qp type from
+	 * 'enum ib_qp_type' is supported, e.g.
+	 * supported_qpts |= 1 << IB_QPT_RAW_PACKET
+	 */
+	__u32 supported_qpts;
+	__u32 reserved;
 };
 
 struct ib_exp_ec_caps {
@@ -226,6 +239,7 @@ struct ib_exp_device_attr {
 	 */
 	u16				rx_pad_end_addr_align;
 	struct ib_exp_tso_caps		tso_caps;
+	struct ib_exp_packet_pacing_caps packet_pacing_caps;
 };
 
 enum {

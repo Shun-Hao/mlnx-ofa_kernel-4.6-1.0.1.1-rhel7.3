@@ -316,6 +316,17 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		}
 	}
 
+	if (MLX5_CAP_QOS(dev->mdev, packet_pacing) &&
+	    MLX5_CAP_GEN(dev->mdev, qos)) {
+		props->packet_pacing_caps.qp_rate_limit_max =
+			MLX5_CAP_QOS(dev->mdev, packet_pacing_max_rate);
+		props->packet_pacing_caps.qp_rate_limit_min =
+			MLX5_CAP_QOS(dev->mdev, packet_pacing_min_rate);
+		props->packet_pacing_caps.supported_qpts |=
+			1 << IB_QPT_RAW_PACKET;
+		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_PACKET_PACING_CAPS;
+	}
+
 	props->device_cap_flags2 |= IB_EXP_DEVICE_NOP;
 
 	return 0;

@@ -581,6 +581,16 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_EC_CAPS;
 	}
 
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_PACKET_PACING_CAPS) {
+		resp->packet_pacing_caps.qp_rate_limit_min =
+			exp_attr->packet_pacing_caps.qp_rate_limit_min;
+		resp->packet_pacing_caps.qp_rate_limit_max =
+			exp_attr->packet_pacing_caps.qp_rate_limit_max;
+		resp->packet_pacing_caps.supported_qpts =
+			exp_attr->packet_pacing_caps.supported_qpts;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_PACKET_PACING_CAPS;
+	}
+
 	ret = ib_copy_to_udata(ucore, resp, min_t(size_t, sizeof(*resp), ucore->outlen));
 out:
 	kfree(exp_attr);
