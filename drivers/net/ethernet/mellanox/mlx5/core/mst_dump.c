@@ -53,6 +53,8 @@
 (((len) == 32) ? (rsrc2) : MLX5_MERGE_C(rsrc1, rsrc2, start, len))
 
 #define MLX5_CR_SPACE_DOMAIN 0x2
+#define MLX5_ICMD_SPACE_DOMAIN 0x3
+
 #define MLX5_HWID_ADDR 0xf0014
 #define MLX5_ADDR_REG 0x58
 #define MLX5_DATA_REG 0x5c
@@ -7025,7 +7027,7 @@ static int mlx5_pciconf_read(struct mlx5_core_dev *dev,
 	u32 address;
 	int ret;
 
-	if (MLX5_EXTRACT(offset, 30, 2))
+	if (MLX5_EXTRACT(offset, 31, 1))
 		return -EINVAL;
 	address = MLX5_MERGE(offset, 0, PCI_FLAG_BIT_OFFS, 1);
 	ret = pci_write_config_dword(dev->pdev,
@@ -7041,6 +7043,40 @@ static int mlx5_pciconf_read(struct mlx5_core_dev *dev,
 				    dev->mst_dump->vsec_addr +
 				    PCI_DATA_OFFSET,
 				    data);
+out:
+	return ret;
+}
+
+static int mlx5_pciconf_write(struct mlx5_core_dev *dev,
+			      unsigned int offset,
+			      u32 data)
+{
+	u32 address;
+	int ret;
+
+	if (MLX5_EXTRACT(offset, 31, 1))
+		return -EINVAL;
+
+	/* Set flag to 0x1 */
+	address = MLX5_MERGE(offset, 1, PCI_FLAG_BIT_OFFS, 1);
+
+	ret = pci_write_config_dword(dev->pdev,
+				     dev->mst_dump->vsec_addr +
+				     PCI_DATA_OFFSET,
+				     data);
+	if (ret)
+		goto out;
+
+	ret = pci_write_config_dword(dev->pdev,
+				     dev->mst_dump->vsec_addr +
+				     PCI_ADDR_OFFSET,
+				     address);
+	if (ret)
+		goto out;
+
+	/* Wait for the flag to be cleared */
+	ret = mlx5_pciconf_wait_on_flag(dev, 0);
+
 out:
 	return ret;
 }
@@ -7283,5 +7319,171 @@ int mlx5_mst_dump_init(struct mlx5_core_dev *dev)
 	dev->mst_dump->vsec_addr = mlx5_get_vendor_cap_addr(dev);
 	mutex_init(&dev->mst_dump->lock);
 	return 0;
+}
+
+static int mlx5_icmd_get_max_mailbox_sz(struct mlx5_core_dev *dev,
+					int *max_sz)
+{
+	return mlx5_pciconf_read(dev, MLX5_ICMD_MAILBOX_SZ, max_sz);
+}
+
+static int mlx5_icmd_trigger(struct mlx5_core_dev *dev,
+			     int opcode)
+{
+	union {
+		struct mlx5_icmd_ctrl_bits ctrl;
+		u32 ctrl_in;
+		u32 ctrl_out;
+	} u;
+	int retries = 0;
+	int ret;
+
+	memset(&u.ctrl_in, 0, sizeof(u));
+
+	u.ctrl.opcode = cpu_to_be16(opcode);
+	u.ctrl.busy = 1;
+
+	/* Write opcode to ctrl and set busy bit */
+	ret = mlx5_pciconf_write(dev, MLX5_ICMD_CTRL, cpu_to_be32(u.ctrl_in));
+	if (ret)
+		goto out;
+
+	/* Read back ctrl and wait for busy bit to be cleared by hardware */
+	do {
+		if (retries > IFC_MAX_RETRIES)
+			return -EBUSY;
+
+		ret = mlx5_pciconf_read(dev, MLX5_ICMD_CTRL, &u.ctrl_out);
+		if (ret)
+			goto out;
+
+		u.ctrl_out = cpu_to_be32(u.ctrl_out);
+
+		retries++;
+		if ((retries & 0xf) == 0)
+			usleep_range(1000, 2000);
+
+	} while (u.ctrl.busy != 0);
+
+	if (u.ctrl.status)
+		return -EINVAL;
+
+	return 0;
+out:
+	return ret;
+}
+
+static int mlx5_icmd_send(struct mlx5_core_dev *dev,
+			  int opcode, void *mailbox, int dword_sz)
+{
+	u32 *mail_in = mailbox;
+	u32 *mail_out = mailbox;
+	int ret;
+	int i;
+
+	/* Write mailbox input */
+	for (i = 0; i < dword_sz; i++) {
+		ret = mlx5_pciconf_write(dev,
+					 MLX5_ICMD_MAILBOX + i * 4,
+					 cpu_to_be32(*mail_in++));
+
+		if (ret)
+			goto out;
+	}
+
+	/* Trigger the cmd */
+	mlx5_icmd_trigger(dev, opcode);
+
+	/* Read mailbox output */
+	for (i = 0; i < dword_sz; i++) {
+		*mail_out = 0;
+		ret = mlx5_pciconf_read(dev,
+					MLX5_ICMD_MAILBOX + i * 4,
+					mail_out);
+
+		if (ret)
+			goto out;
+
+		*mail_out = cpu_to_be32(*mail_out);
+		mail_out++;
+	}
+
+out:
+	return ret;
+}
+
+int mlx5_icmd_access_register(struct mlx5_core_dev *dev,
+			      int reg_id,
+			      int method,
+			      void *io_buff,
+			      u32 io_buff_dw_sz)
+{
+	union {
+		struct mlx5_icmd_access_reg_input_bits mailbox_in;
+		struct mlx5_icmd_access_reg_output_bits mailbox_out;
+		u32 b[7];
+	} u;
+
+	u32 *data_in = io_buff;
+	u32 *data_out = io_buff;
+	int ret = 0;
+	int max_len;
+	int i;
+
+	memset(u.b, 0, sizeof(u));
+
+	if (!dev->mst_dump)
+		return -ENODEV;
+
+	if (!dev->mst_dump->vsec_addr)
+		return -ENODEV;
+
+	if (io_buff_dw_sz > MLX5_ICMD_ACCESS_REG_DATA_DW_SZ)
+		return -EINVAL;
+
+	u.mailbox_in.constant_1_2 =  cpu_to_be16(0x1 << 11 | 0x4);
+	u.mailbox_in.register_id = cpu_to_be16(reg_id);
+	u.mailbox_in.method = method;
+	u.mailbox_in.constant_3 = 0x1;
+	u.mailbox_in.len = cpu_to_be16(0x3 << 11 | 0x3);
+
+	for (i = 0; i < io_buff_dw_sz; i++)
+		u.mailbox_in.reg_data[i] = *data_in++;
+
+	ret = mlx5_pciconf_cap9_sem(dev, LOCK);
+	if (ret)
+		goto out;
+
+	ret = mlx5_pciconf_set_addr_space(dev, MLX5_ICMD_SPACE_DOMAIN);
+	if (ret)
+		goto unlock;
+
+	ret = mlx5_icmd_get_max_mailbox_sz(dev, &max_len);
+	if (ret)
+		goto unlock;
+
+	if (unlikely(max_len < sizeof(struct mlx5_icmd_access_reg_input_bits)))
+		return -EINVAL;
+
+	/* Send access_register cmd */
+	ret = mlx5_icmd_send(dev, MLX5_ICMD_ACCESS_REG, u.b, sizeof(u) / 4);
+	if (ret)
+		goto unlock;
+
+	if (u.mailbox_out.status ||
+	    u.mailbox_out.register_id != cpu_to_be16(reg_id)) {
+		ret = u.mailbox_out.status;
+		goto unlock;
+	}
+
+	/* Copy the output, length field takes 10 bits and unit is dword */
+	if (method == MLX5_ICMD_QUERY)
+		memcpy(data_out, u.mailbox_out.reg_data,
+		       ((cpu_to_be16(u.mailbox_out.len) & 0x7FF) - 1) * 4);
+
+unlock:
+	mlx5_pciconf_cap9_sem(dev, UNLOCK);
+out:
+	return ret;
 }
 

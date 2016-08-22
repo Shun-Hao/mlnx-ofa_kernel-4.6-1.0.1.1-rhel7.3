@@ -187,6 +187,8 @@ int mlx5_modify_port_cong_params(struct mlx5_core_dev *mdev,
 int mlx5_set_port_fcs(struct mlx5_core_dev *mdev, u8 enable);
 void mlx5_query_port_fcs(struct mlx5_core_dev *mdev, bool *supported,
 			 bool *enabled);
+
+int mlx5_query_module_num(struct mlx5_core_dev *dev, int *module_num);
 int mlx5_query_module_eeprom(struct mlx5_core_dev *dev,
 			     u16 offset, u16 size, u8 *data);
 

@@ -1421,6 +1421,8 @@ struct mlx5_diag_dump {
 	u32	flag;
 	u32	num_blocks;
 	u32	total_length;
+	u32	module_no;
+	u32	module_status;
 	char	dump[0];
 } __packed;
 

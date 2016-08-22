@@ -93,6 +93,66 @@ enum {
 	MLX5_DRIVER_SYND = 0xbadd00de,
 };
 
+enum mlx5_icmd_conf_address {
+	MLX5_ICMD_CTRL		= 0x0,      /* RW */
+	MLX5_ICMD_MAILBOX_SZ	= 0x1000,   /* RO */
+	MLX5_ICMD_SYNDROME	= 0x1008,   /* RO */
+	MLX5_ICMD_MAILBOX	= 0x100000, /* RW */
+};
+
+enum mlx5_icmd_ctrl_opcode {
+	MLX5_ICMD_ACCESS_REG	= 0x9001,
+};
+
+enum mlx5_icmd_access_reg_id {
+	MLX5_ICMD_MCION		= 0x9052,
+};
+
+enum mlx5_icmd_access_reg_method {
+	MLX5_ICMD_QUERY		= 0x1,
+	MLX5_ICMD_WRITE		= 0x2,
+};
+
+enum {
+	MLX5_ICMD_ACCESS_REG_DATA_DW_SZ = 0x2,
+};
+
+struct mlx5_icmd_ctrl_bits {
+	u16 opcode;
+	u8  status;
+	u8  busy;
+} __packed;
+
+struct mlx5_icmd_access_reg_input_bits {
+	u16 constant_1_2;
+	u8  reserved_0[0x2];
+	u16 register_id;
+	u8  method;
+	u8  constant_3;
+	u8  reserved_1[0x8];
+	u16 len;
+	u8  reserved_2[0x2];
+	u32 reg_data[MLX5_ICMD_ACCESS_REG_DATA_DW_SZ];
+} __packed;
+
+struct mlx5_icmd_access_reg_output_bits {
+	u8  reserved_0[0x2];
+	u8  status;
+	u8  reserved_1[0x1];
+	u16 register_id;
+	u8  reserved_2[0xA];
+	u16 len;
+	u8  reserved_3[0x2];
+	u32 reg_data[MLX5_ICMD_ACCESS_REG_DATA_DW_SZ];
+} __packed;
+
+struct mlx5_mcion_reg {
+	u8  reserved_0[0x1];
+	u8  module;
+	u8  reserved_1[0x5];
+	u8  module_status;
+} __packed;
+
 int mlx5_query_hca_caps(struct mlx5_core_dev *dev);
 int mlx5_query_board_id(struct mlx5_core_dev *dev);
 int mlx5_cmd_init_hca(struct mlx5_core_dev *dev, uint32_t *sw_owner_id);
@@ -203,6 +263,12 @@ int mlx5_mst_capture(struct mlx5_core_dev *dev);
 u32 mlx5_mst_dump(struct mlx5_core_dev *dev, void *buff, u32 buff_sz);
 void mlx5_mst_free_capture(struct mlx5_core_dev *dev);
 void mlx5_mst_dump_cleanup(struct mlx5_core_dev *dev);
+
+int mlx5_icmd_access_register(struct mlx5_core_dev *dev,
+			      int reg_id,
+			      int method,
+			      void *io_buff,
+			      u32 io_buff_dw_sz);
 
 void mlx5e_init(void);
 void mlx5e_cleanup(void);

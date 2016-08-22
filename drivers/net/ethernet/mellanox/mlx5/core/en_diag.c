@@ -73,10 +73,10 @@ static int dump_rq_info(struct mlx5e_rq *rq, void *buffer)
 	rqd->wq_type = MLX5_DIAG_RQ;
 	rqd->wqn = rq->rqn;
 	rqd->ci = 0;
-	rqd->pi = rq->wq.cur_sz;
-	rqd->wqe_stride = rq->wq.log_stride;
-	rqd->size = rq->wq.sz_m1 + 1;
-	rqd->wqe_num = ((rq->wq.sz_m1 + 1) << rq->wq.log_stride);
+	rqd->pi = rq->wqe.wq.cur_sz;
+	rqd->wqe_stride = rq->wqe.wq.fbc.log_stride;
+	rqd->size = rq->wqe.wq.fbc.sz_m1 + 1;
+	rqd->wqe_num = ((rq->wqe.wq.fbc.sz_m1 + 1) << rq->wqe.wq.fbc.log_stride);
 	rqd->group_id = rq->channel->ix;
 
 	return sizeof(*rqd);
@@ -90,9 +90,9 @@ static int dump_sq_info(struct mlx5e_txqsq *sq, void *buffer)
 	sqd->wqn = sq->sqn;
 	sqd->ci = sq->cc;
 	sqd->pi = sq->pc;
-	sqd->wqe_stride = sq->wq.log_stride;
-	sqd->size = sq->wq.sz_m1 + 1;
-	sqd->wqe_num = ((sq->wq.sz_m1 + 1) << sq->wq.log_stride);
+	sqd->wqe_stride = sq->wq.fbc.log_stride;
+	sqd->size = sq->wq.fbc.sz_m1 + 1;
+	sqd->wqe_num = ((sq->wq.fbc.sz_m1 + 1) << sq->wq.fbc.log_stride);
 	sqd->group_id = sq->channel->ix;
 
 	return sizeof(*sqd);
@@ -105,10 +105,10 @@ static int dump_cq_info(struct mlx5e_cq *cq, void *buffer)
 
 	cqd->wq_type = MLX5_DIAG_CQ;
 	cqd->wqn = cq->mcq.cqn;
-	cqd->ci = wq->cc & wq->sz_m1;
+	cqd->ci = wq->cc & wq->fbc.sz_m1;
 	cqd->pi = 0;
-	cqd->wqe_stride = wq->log_stride;
-	cqd->size = wq->sz_m1 + 1;
+	cqd->wqe_stride = wq->fbc.log_stride;
+	cqd->size = wq->fbc.sz_m1 + 1;
 	cqd->wqe_num = cqd->size;
 	cqd->group_id = cq->channel->ix;
 
@@ -246,11 +246,27 @@ int mlx5e_get_dump_data(struct net_device *netdev, struct ethtool_dump *dump,
 	struct mlx5e_priv *priv = netdev_priv(netdev);
 	struct mlx5_diag_dump *dump_hdr = buffer;
 	struct mlx5_diag_blk *dump_blk;
+	struct mlx5_mcion_reg mcion = {};
+	int module_num;
+	int err;
 
+	err = mlx5_query_module_num(priv->mdev, &module_num);
+
+	if (err)
+		return err;
+
+	mcion.module = module_num;
 	dump_hdr->version = MLX5_DIAG_DUMP_VERSION;
 	dump_hdr->flag = 0;
 	dump_hdr->num_blocks = 0;
 	dump_hdr->total_length = 0;
+	mlx5_icmd_access_register(priv->mdev,
+				  MLX5_ICMD_MCION,
+				  MLX5_ICMD_QUERY,
+				  &mcion,
+				  sizeof(mcion) / 4);
+	dump_hdr->module_no = mcion.module;
+	dump_hdr->module_status = mcion.module_status;
 
 	/* Dump driver version */
 	dump_blk = DIAG_GET_NEXT_BLK(dump_hdr);
