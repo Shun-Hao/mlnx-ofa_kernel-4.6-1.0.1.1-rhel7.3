@@ -171,6 +171,7 @@ static void dump_dev_cap_flags2(struct mlx4_dev *dev, u64 flags)
 		[37] = "sl to vl mapping table change event support",
 		[38] = "user MAC support",
 		[39] = "Report driver version to FW support",
+		[40] = "Disable E-Switch loopback support",
 	};
 	int i;
 
@@ -1029,6 +1030,8 @@ int mlx4_QUERY_DEV_CAP(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_ROCE_V1_V2;
 	if (dev_cap->bmme_flags & MLX4_FLAG_PORT_REMAP)
 		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_PORT_REMAP;
+	if (dev_cap->bmme_flags & MLX4_FLAG_ESW_LOOPBACK_DISABLED)
+		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_ESW_LOOPBACK_DISABLED;
 	MLX4_GET(field, outbox, QUERY_DEV_CAP_CONFIG_DEV_OFFSET);
 	if (field & 0x20)
 		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_CONFIG_DEV;
