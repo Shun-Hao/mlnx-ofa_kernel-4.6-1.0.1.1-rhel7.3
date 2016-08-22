@@ -1407,6 +1407,8 @@ int mlx4_SET_PORT_BEACON(struct mlx4_dev *dev, u8 port, u16 time);
 int mlx4_SET_PORT_fcs_check(struct mlx4_dev *dev, u8 port,
 			    u8 ignore_fcs_value);
 int mlx4_SET_PORT_VXLAN(struct mlx4_dev *dev, u8 port, u8 steering, int enable);
+int mlx4_SET_PORT_disable_mc_loopback(struct mlx4_dev *dev, u8 port,
+				      bool disable_mc_loopback);
 int set_phv_bit(struct mlx4_dev *dev, u8 port, int new_val);
 int get_phv_bit(struct mlx4_dev *dev, u8 port, int *phv);
 int mlx4_get_is_vlan_offload_disabled(struct mlx4_dev *dev, u8 port,

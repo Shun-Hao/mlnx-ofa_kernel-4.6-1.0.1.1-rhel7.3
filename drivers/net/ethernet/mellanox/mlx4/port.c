@@ -59,6 +59,8 @@
 #define MLX4_FLAG_V_PPTX_MASK			BIT(2)
 #define MLX4_IGNORE_FCS_MASK			0x1
 #define MLX4_TC_MAX_NUMBER			8
+#define MLX4_FLAG2_V_DISABLE_MC_LOOPBACK_MASK	BIT(2)
+#define MLX4_DISABLE_MC_LOOPBACK_MASK		0x6
 
 static void mlx4_inc_port_macs(struct mlx4_dev *mdev, int port)
 {
@@ -1718,6 +1720,34 @@ int mlx4_SET_PORT_qpn_calc(struct mlx4_dev *dev, u8 port, u32 base_qpn,
 	return err;
 }
 EXPORT_SYMBOL(mlx4_SET_PORT_qpn_calc);
+
+int mlx4_SET_PORT_disable_mc_loopback(struct mlx4_dev *dev, u8 port,
+				      bool disable_mc_loopback)
+{
+	struct mlx4_cmd_mailbox *mailbox;
+	struct mlx4_set_port_general_context *context;
+	u32 in_mod;
+	int err;
+
+	mailbox = mlx4_alloc_cmd_mailbox(dev);
+	if (IS_ERR(mailbox))
+		return PTR_ERR(mailbox);
+
+	context = mailbox->buf;
+	context->flags2 |= MLX4_FLAG2_V_DISABLE_MC_LOOPBACK_MASK;
+	if (disable_mc_loopback)
+		context->roce_mode |=  MLX4_DISABLE_MC_LOOPBACK_MASK;
+	else
+		context->roce_mode &= ~MLX4_DISABLE_MC_LOOPBACK_MASK;
+
+	in_mod = MLX4_SET_PORT_GENERAL << 8 | port;
+	err = mlx4_cmd(dev, mailbox->dma, in_mod, 1, MLX4_CMD_SET_PORT,
+		       MLX4_CMD_TIME_CLASS_B, MLX4_CMD_NATIVE);
+
+	mlx4_free_cmd_mailbox(dev, mailbox);
+	return err;
+}
+EXPORT_SYMBOL(mlx4_SET_PORT_disable_mc_loopback);
 
 int mlx4_SET_PORT_user_mtu(struct mlx4_dev *dev, u8 port, u16 user_mtu)
 {
