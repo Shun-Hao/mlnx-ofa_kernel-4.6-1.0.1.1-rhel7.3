@@ -110,6 +110,7 @@ static const char mlx4_en_priv_flags[][ETH_GSTRING_LEN] = {
 	"mlx4_flow_steering_ipv4",
 	"mlx4_flow_steering_tcp",
 	"mlx4_flow_steering_udp",
+	"disable_mc_loopback",
 };
 
 static const char main_strings[][ETH_GSTRING_LEN] = {
@@ -1925,6 +1926,8 @@ static int mlx4_en_set_priv_flags(struct net_device *dev, u32 flags)
 	bool qcn_disable_new = !!(flags & MLX4_EN_PRIV_FLAGS_DISABLE_32_14_4_E);
 	bool qcn_disable_old = !!(priv->pflags & MLX4_EN_PRIV_FLAGS_DISABLE_32_14_4_E);
 #endif
+	bool ld_new = !!(flags & MLX4_EN_PRIV_FLAGS_DISABLE_MC_LOOPBACK);
+	bool ld_old = !!(priv->pflags & MLX4_EN_PRIV_FLAGS_DISABLE_MC_LOOPBACK);
 	int i;
 	int ret = 0;
 
@@ -1954,6 +1957,29 @@ static int mlx4_en_set_priv_flags(struct net_device *dev, u32 flags)
 			qcn_disable_new ? "ON" : "OFF");
 	}
 #endif
+
+	if (ld_new != ld_old) {
+		if (!(mdev->dev->caps.flags2 &
+		      MLX4_DEV_CAP_FLAG2_ESW_LOOPBACK_DISABLED))
+			return -EOPNOTSUPP;
+
+		ret = mlx4_SET_PORT_disable_mc_loopback(mdev->dev,
+							priv->port,
+							ld_new);
+		if (ret) {
+			en_err(priv, "Failed to %s multicast loopback\n",
+			       ld_new ? "disable" : "enable");
+			return ret;
+		}
+
+		if (ld_new)
+			priv->pflags |= MLX4_EN_PRIV_FLAGS_DISABLE_MC_LOOPBACK;
+		else
+			priv->pflags &= ~MLX4_EN_PRIV_FLAGS_DISABLE_MC_LOOPBACK;
+
+		en_info(priv, "Multicast loopback disable is %s\n",
+			ld_new ? "ON" : "OFF");
+	}
 	if (bf_enabled_new != bf_enabled_old) {
 		int t;
 
