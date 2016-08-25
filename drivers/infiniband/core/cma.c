@@ -2767,22 +2767,19 @@ static int cma_resolve_iw_route(struct rdma_id_private *id_priv)
 	return 0;
 }
 
-static int iboe_tos_to_sl(struct net_device *ndev, int tos)
+static u8 iboe_tos_to_sl(struct net_device *ndev, u8 tos)
 {
 	int prio;
 	struct net_device *dev;
 
 	prio = rt_tos2priority(tos);
 	dev = is_vlan_dev(ndev) ? vlan_dev_real_dev(ndev) : ndev;
-	if (dev->num_tc)
-		return netdev_get_prio_tc_map(dev, prio);
 
-#if IS_ENABLED(CONFIG_VLAN_8021Q)
 	if (is_vlan_dev(ndev))
 		return (vlan_dev_get_egress_qos_mask(ndev, prio) &
 			VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
-#endif
-	return 0;
+
+	return netdev_get_prio_tc_map(dev, prio);
 }
 
 static int cma_resolve_iboe_route(struct rdma_id_private *id_priv)
