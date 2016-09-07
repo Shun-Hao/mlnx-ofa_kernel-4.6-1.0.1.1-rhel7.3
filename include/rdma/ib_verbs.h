@@ -2284,6 +2284,14 @@ struct ib_device {
 
 	struct iw_cm_verbs	     *iwcm;
 
+	/* EXP APIs will be added below to minimize conflicts via upstream rebase */
+	unsigned long		   (*exp_get_unmapped_area)(struct file *file,
+							    unsigned long addr,
+							    unsigned long len,
+							    unsigned long pgoff,
+							    unsigned long flags);
+
+
 	/**
 	 * alloc_hw_stats - Allocate a struct rdma_hw_stats and fill in the
 	 *   driver initialized data.  The struct is kfree()'ed by the sysfs

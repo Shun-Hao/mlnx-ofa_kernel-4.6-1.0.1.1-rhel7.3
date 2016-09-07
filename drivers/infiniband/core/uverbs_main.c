@@ -53,6 +53,7 @@
 #include <rdma/uverbs_std_types.h>
 
 #include "uverbs.h"
+#include "uverbs_exp.h"
 #include "core_priv.h"
 #include "rdma_core.h"
 
@@ -1160,6 +1161,7 @@ static const struct file_operations uverbs_mmap_fops = {
 	.llseek	 = no_llseek,
 	.unlocked_ioctl = ib_uverbs_ioctl,
 	.compat_ioctl = ib_uverbs_ioctl,
+	.get_unmapped_area = ib_uverbs_exp_get_unmapped_area,
 };
 
 static struct ib_client uverbs_client = {
