@@ -21,7 +21,7 @@ ib_core-y :=			packer.o ud_header.o verbs.o cq.o rw.o sysfs.o \
 				nldev.o restrack.o 
 
 ib_core-$(CONFIG_SECURITY_INFINIBAND) += security.o
-ib_core-$(CONFIG_INFINIBAND_USER_MEM) += umem.o 
+ib_core-$(CONFIG_INFINIBAND_USER_MEM) += umem.o cmem.o
 ib_core-$(CONFIG_INFINIBAND_ON_DEMAND_PAGING) += umem_odp.o
 ib_core-$(CONFIG_CGROUP_RDMA) += cgroup.o
 
