@@ -2,8 +2,6 @@
 #define IB_VERBS_EXP_H
 
 
-struct ib_cq;
-
 enum ib_cq_cap_flags {
 	IB_CQ_IGNORE_OVERRUN           = (1 << 0)
 };
@@ -14,6 +12,20 @@ struct ib_cq_attr {
 		u16     cq_period;
 	} moderation;
 	u32     cq_cap_flags;
+};
+
+struct ib_exp_qp_init_attr {
+	void                  (*event_handler)(struct ib_event *, void *);
+	void		       *qp_context;
+	struct ib_cq	       *send_cq;
+	struct ib_cq	       *recv_cq;
+	struct ib_srq	       *srq;
+	struct ib_xrcd	       *xrcd;     /* XRC TGT QPs only */
+	struct ib_qp_cap	cap;
+	enum ib_sig_type	sq_sig_type;
+	enum ib_qp_type		qp_type;
+	enum ib_qp_create_flags	create_flags;
+	u8			port_num;
 };
 
 /**

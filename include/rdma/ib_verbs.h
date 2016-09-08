@@ -75,6 +75,7 @@ extern struct workqueue_struct *ib_wq;
 extern struct workqueue_struct *ib_comp_wq;
 extern struct workqueue_struct *ib_comp_unbound_wq;
 struct ib_cq_attr;
+struct ib_exp_qp_init_attr;
 
 union ib_gid {
 	u8	raw[16];
@@ -2287,6 +2288,9 @@ struct ib_device {
 	struct iw_cm_verbs	     *iwcm;
 
 	/* EXP APIs will be added below to minimize conflicts via upstream rebase */
+	struct ib_qp *		(*exp_create_qp)(struct ib_pd *pd,
+						 struct ib_exp_qp_init_attr *qp_init_attr,
+						 struct ib_udata *udata);
 	int			(*exp_modify_cq)(struct ib_cq *cq, struct ib_cq_attr *cq_attr,
 						 int cq_attr_mask);
 	unsigned long		   (*exp_get_unmapped_area)(struct file *file,
