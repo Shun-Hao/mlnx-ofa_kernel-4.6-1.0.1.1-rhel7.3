@@ -47,6 +47,7 @@
 #include <rdma/ib_umem.h>
 #include <rdma/ib_user_verbs.h>
 #include <rdma/uverbs_std_types.h>
+#include <rdma/ib_user_verbs_exp.h>
 
 #define UVERBS_MODULE_NAME ib_uverbs
 #include <rdma/uverbs_named_ioctl.h>
