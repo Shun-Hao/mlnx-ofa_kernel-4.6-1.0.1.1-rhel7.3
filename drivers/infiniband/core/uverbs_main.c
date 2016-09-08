@@ -648,35 +648,49 @@ err_put_refs:
 }
 
 static bool verify_command_mask(struct ib_uverbs_file *ufile, u32 command,
-				bool extended)
+				bool extended, bool exp_cmd)
 {
-	if (!extended)
+	if (!extended && !exp_cmd)
 		return ufile->uverbs_cmd_mask & BIT_ULL(command);
+	if (exp_cmd)
+		return ufile->uverbs_exp_cmd_mask & BIT_ULL(command);
 
 	return ufile->uverbs_ex_cmd_mask & BIT_ULL(command);
 }
 
-static bool verify_command_idx(u32 command, bool extended)
+static bool verify_command_idx(u32 command, bool extended, bool exp_cmd)
 {
 	if (extended)
 		return command < ARRAY_SIZE(uverbs_ex_cmd_table) &&
 		       uverbs_ex_cmd_table[command];
+	 if (exp_cmd)
+		return command < ARRAY_SIZE(uverbs_exp_cmd_table) &&
+		    uverbs_exp_cmd_table[command];
 
 	return command < ARRAY_SIZE(uverbs_cmd_table) &&
 	       uverbs_cmd_table[command];
 }
 
 static ssize_t process_hdr(struct ib_uverbs_cmd_hdr *hdr,
-			   u32 *command, bool *extended)
+			   u32 *command, bool *extended,
+			   bool *exp_cmd)
 {
+	u32 flags = (hdr->command &
+	         IB_USER_VERBS_CMD_FLAGS_MASK) >> IB_USER_VERBS_CMD_FLAGS_SHIFT;
+
+
 	if (hdr->command & ~(u32)(IB_USER_VERBS_CMD_FLAG_EXTENDED |
 				   IB_USER_VERBS_CMD_COMMAND_MASK))
 		return -EINVAL;
 
 	*command = hdr->command & IB_USER_VERBS_CMD_COMMAND_MASK;
 	*extended = hdr->command & IB_USER_VERBS_CMD_FLAG_EXTENDED;
+	*exp_cmd = !flags && ((*command) >= IB_USER_VERBS_EXP_CMD_FIRST);
 
-	if (!verify_command_idx(*command, *extended))
+	if (*exp_cmd)
+	    *command = hdr->command - IB_USER_VERBS_EXP_CMD_FIRST;
+
+	if (!verify_command_idx(*command, *extended, *exp_cmd))
 		return -EOPNOTSUPP;
 
 	return 0;
@@ -724,6 +738,7 @@ static ssize_t ib_uverbs_write(struct file *filp, const char __user *buf,
 	struct ib_uverbs_file *file = filp->private_data;
 	struct ib_uverbs_ex_cmd_hdr ex_hdr;
 	struct ib_uverbs_cmd_hdr hdr;
+	bool exp_cmd;
 	bool extended;
 	int srcu_key;
 	u32 command;
@@ -741,37 +756,44 @@ static ssize_t ib_uverbs_write(struct file *filp, const char __user *buf,
 	if (copy_from_user(&hdr, buf, sizeof(hdr)))
 		return -EFAULT;
 
-	ret = process_hdr(&hdr, &command, &extended);
+	ret = process_hdr(&hdr, &command, &extended, &exp_cmd);
 	if (ret)
 		return ret;
 
-	if (extended) {
+	if (extended || exp_cmd) {
 		if (count < (sizeof(hdr) + sizeof(ex_hdr)))
 			return -EINVAL;
 		if (copy_from_user(&ex_hdr, buf + sizeof(hdr), sizeof(ex_hdr)))
 			return -EFAULT;
 	}
 
-	ret = verify_hdr(&hdr, &ex_hdr, count, extended);
+	ret = verify_hdr(&hdr, &ex_hdr, count, extended | exp_cmd);
 	if (ret)
 		return ret;
 
 	srcu_key = srcu_read_lock(&file->device->disassociate_srcu);
 
-	if (!verify_command_mask(file, command, extended)) {
+	if (!verify_command_mask(file, command, extended, exp_cmd)) {
 		ret = -EOPNOTSUPP;
 		goto out;
 	}
 
 	buf += sizeof(hdr);
 
-	if (!extended) {
+	if (!extended && !exp_cmd) {
 		ret = uverbs_cmd_table[command](file, buf,
 						hdr.in_words * 4,
 						hdr.out_words * 4);
 	} else {
 		struct ib_udata ucore;
 		struct ib_udata uhw;
+		uverbs_ex_cmd *cmd_tbl;
+
+		if (exp_cmd) {
+		    cmd_tbl = uverbs_exp_cmd_table;
+		} else {
+		    cmd_tbl = uverbs_ex_cmd_table;
+		}
 
 		buf += sizeof(ex_hdr);
 
@@ -785,7 +807,7 @@ static ssize_t ib_uverbs_write(struct file *filp, const char __user *buf,
 					ex_hdr.provider_in_words * 8,
 					ex_hdr.provider_out_words * 8);
 
-		ret = uverbs_ex_cmd_table[command](file, &ucore, &uhw);
+		ret = cmd_tbl[command](file, &ucore, &uhw);
 		ret = (ret) ? : count;
 	}
 

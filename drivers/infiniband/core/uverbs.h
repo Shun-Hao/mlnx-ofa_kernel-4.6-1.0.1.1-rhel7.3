@@ -163,6 +163,7 @@ struct ib_uverbs_file {
 
 	u64 uverbs_cmd_mask;
 	u64 uverbs_ex_cmd_mask;
+	u64 uverbs_exp_cmd_mask;
 
 	struct idr		idr;
 	/* spinlock protects write access to idr */
