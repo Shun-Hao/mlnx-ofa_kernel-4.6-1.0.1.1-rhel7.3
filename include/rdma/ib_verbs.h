@@ -74,6 +74,7 @@ struct ib_umem_odp;
 extern struct workqueue_struct *ib_wq;
 extern struct workqueue_struct *ib_comp_wq;
 extern struct workqueue_struct *ib_comp_unbound_wq;
+struct ib_cq_attr;
 
 union ib_gid {
 	u8	raw[16];
@@ -318,6 +319,7 @@ struct ib_cq_init_attr {
 
 enum ib_cq_attr_mask {
 	IB_CQ_MODERATE = 1 << 0,
+	IB_CQ_CAP_FLAGS = 1 << 1,
 };
 
 struct ib_cq_caps {
@@ -2285,6 +2287,8 @@ struct ib_device {
 	struct iw_cm_verbs	     *iwcm;
 
 	/* EXP APIs will be added below to minimize conflicts via upstream rebase */
+	int			(*exp_modify_cq)(struct ib_cq *cq, struct ib_cq_attr *cq_attr,
+						 int cq_attr_mask);
 	unsigned long		   (*exp_get_unmapped_area)(struct file *file,
 							    unsigned long addr,
 							    unsigned long len,
@@ -4250,4 +4254,5 @@ rdma_set_device_sysfs_group(struct ib_device *dev,
 	dev->groups[1] = group;
 }
 
+#include <rdma/ib_verbs_exp.h>
 #endif /* IB_VERBS_H */
