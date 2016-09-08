@@ -42,3 +42,19 @@ int mlx4_ib_exp_contig_mmap(struct ib_ucontext *context, struct vm_area_struct *
 	return 0;
 }
 
+int mlx4_ib_exp_query_device(struct ib_device *ibdev,
+			     struct ib_exp_device_attr *props,
+			     struct ib_udata *uhw)
+{
+	int ret;
+
+	ret = mlx4_ib_query_device(ibdev, &props->base, uhw);
+	if (ret)
+		return ret;
+
+	props->exp_comp_mask = 0;
+	props->device_cap_flags2 = 0;
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_CAP_FLAGS2;
+
+	return 0;
+}

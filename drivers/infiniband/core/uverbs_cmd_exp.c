@@ -287,7 +287,7 @@ int ib_uverbs_exp_modify_cq(struct ib_uverbs_file *file, struct ib_device *ib_de
 }
 
 int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
-				struct ib_device *ib_dev,
+			       struct ib_device *ib_dev,
 			       struct ib_udata *ucore, struct ib_udata *uhw)
 {
 	struct ib_uverbs_exp_query_device_resp *resp;

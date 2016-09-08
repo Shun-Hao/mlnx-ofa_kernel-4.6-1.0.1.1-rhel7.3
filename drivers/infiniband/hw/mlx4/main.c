@@ -419,7 +419,7 @@ int mlx4_ib_gid_index_to_real_index(struct mlx4_ib_dev *ibdev,
 #define field_avail(type, fld, sz) (offsetof(type, fld) + \
 				    sizeof(((type *)0)->fld) <= (sz))
 
-static int mlx4_ib_query_device(struct ib_device *ibdev,
+int mlx4_ib_query_device(struct ib_device *ibdev,
 				struct ib_device_attr *props,
 				struct ib_udata *uhw)
 {
@@ -2599,7 +2599,8 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
 
 	ibdev->ib_dev.uverbs_exp_cmd_mask =
 		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_QP)	|
-		(1ull << IB_USER_VERBS_EXP_CMD_MODIFY_CQ);
+		(1ull << IB_USER_VERBS_EXP_CMD_MODIFY_CQ)	|
+		(1ull << IB_USER_VERBS_EXP_CMD_QUERY_DEVICE);
 
 	ibdev->ib_dev.query_device	= mlx4_ib_query_device;
 	ibdev->ib_dev.query_port	= mlx4_ib_query_port;
@@ -2640,6 +2641,7 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
 	/* Add EXP verbs here to minimize conflicts via rebase */
 	ibdev->ib_dev.exp_modify_cq	= mlx4_ib_exp_modify_cq;
 	ibdev->ib_dev.exp_create_qp	= mlx4_ib_exp_create_qp;
+	ibdev->ib_dev.exp_query_device	= mlx4_ib_exp_query_device;
 	ibdev->ib_dev.rereg_user_mr	= mlx4_ib_rereg_user_mr;
 	ibdev->ib_dev.dereg_mr		= mlx4_ib_dereg_mr;
 	ibdev->ib_dev.alloc_mr		= mlx4_ib_alloc_mr;

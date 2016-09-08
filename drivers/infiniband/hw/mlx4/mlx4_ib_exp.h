@@ -39,4 +39,7 @@ struct ib_qp *mlx4_ib_exp_create_qp(struct ib_pd *pd,
 				    struct ib_udata *udata);
 void mlx4_ib_set_exp_qp_flags(struct mlx4_ib_qp *qp, struct ib_qp_init_attr *init_attr);
 void mlx4_ib_set_exp_attr_flags(struct mlx4_ib_qp *qp, struct ib_qp_init_attr *init_attr);
+int mlx4_ib_exp_query_device(struct ib_device *ibdev,
+			     struct ib_exp_device_attr *props,
+			     struct ib_udata *uhw);
 #endif
