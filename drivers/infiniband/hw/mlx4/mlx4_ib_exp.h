@@ -7,6 +7,9 @@
 #include <rdma/ib_cmem.h>
 #include <linux/mlx4/device.h>
 
+struct mlx4_ib_qp;
+struct ib_qp_init_attr;
+
 #define MLX4_IB_EXP_MMAP_CMD_MASK 0xFF
 #define MLX4_IB_EXP_MMAP_CMD_BITS 8
 
@@ -31,4 +34,9 @@ static inline int is_exp_contig_command(unsigned long  command)
 }
 
 int mlx4_ib_exp_modify_cq(struct ib_cq *cq, struct ib_cq_attr *cq_attr, int cq_attr_mask);
+struct ib_qp *mlx4_ib_exp_create_qp(struct ib_pd *pd,
+				    struct ib_exp_qp_init_attr *init_attr,
+				    struct ib_udata *udata);
+void mlx4_ib_set_exp_qp_flags(struct mlx4_ib_qp *qp, struct ib_qp_init_attr *init_attr);
+void mlx4_ib_set_exp_attr_flags(struct mlx4_ib_qp *qp, struct ib_qp_init_attr *init_attr);
 #endif

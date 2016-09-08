@@ -960,6 +960,8 @@ static int create_qp_common(struct mlx4_ib_dev *dev, struct ib_pd *pd,
 			goto err;
 		}
 
+		mlx4_ib_set_exp_qp_flags(qp, init_attr);
+
 		if (src == MLX4_IB_RWQ_SRC) {
 			if (ucmd.wq.comp_mask || ucmd.wq.reserved[0] ||
 			    ucmd.wq.reserved[1] || ucmd.wq.reserved[2]) {
@@ -1445,7 +1447,8 @@ static struct ib_qp *_mlx4_ib_create_qp(struct ib_pd *pd,
 {
 	struct mlx4_ib_qp *qp = NULL;
 	int err;
-	int sup_u_create_flags = MLX4_IB_QP_BLOCK_MULTICAST_LOOPBACK;
+	int sup_u_create_flags = MLX4_IB_QP_BLOCK_MULTICAST_LOOPBACK | MLX4_IB_QP_CROSS_CHANNEL |
+			            MLX4_IB_QP_MANAGED_SEND | MLX4_IB_QP_MANAGED_RECV;
 	u16 xrcdn = 0;
 
 	if (init_attr->rwq_ind_tbl)
@@ -1456,6 +1459,9 @@ static struct ib_qp *_mlx4_ib_create_qp(struct ib_pd *pd,
 	 * and only for kernel UD QPs.
 	 */
 	if (init_attr->create_flags & ~(MLX4_IB_QP_LSO |
+					MLX4_IB_QP_CROSS_CHANNEL |
+					MLX4_IB_QP_MANAGED_SEND |
+					MLX4_IB_QP_MANAGED_RECV |
 					MLX4_IB_QP_BLOCK_MULTICAST_LOOPBACK |
 					MLX4_IB_SRIOV_TUNNEL_QP |
 					MLX4_IB_SRIOV_SQP |
@@ -1472,15 +1478,21 @@ static struct ib_qp *_mlx4_ib_create_qp(struct ib_pd *pd,
 		if (udata && init_attr->create_flags & ~(sup_u_create_flags))
 			return ERR_PTR(-EINVAL);
 
-		if ((init_attr->create_flags & ~(MLX4_IB_SRIOV_SQP |
-						 MLX4_IB_QP_CREATE_ROCE_V2_GSI  |
-						 MLX4_IB_QP_BLOCK_MULTICAST_LOOPBACK) &&
-		     init_attr->qp_type != IB_QPT_UD) ||
-		    (init_attr->create_flags & MLX4_IB_SRIOV_SQP &&
-		     init_attr->qp_type > IB_QPT_GSI) ||
-		    (init_attr->create_flags & MLX4_IB_QP_CREATE_ROCE_V2_GSI &&
-		     init_attr->qp_type != IB_QPT_GSI))
-			return ERR_PTR(-EINVAL);
+		if (init_attr->create_flags &
+		    ~(IB_QP_CREATE_CROSS_CHANNEL |
+		      IB_QP_CREATE_MANAGED_SEND |
+		      IB_QP_CREATE_MANAGED_RECV)) {
+
+			if ((init_attr->create_flags & ~(MLX4_IB_SRIOV_SQP |
+							 MLX4_IB_QP_CREATE_ROCE_V2_GSI  |
+							 MLX4_IB_QP_BLOCK_MULTICAST_LOOPBACK) &&
+			     init_attr->qp_type != IB_QPT_UD) ||
+			    (init_attr->create_flags & MLX4_IB_SRIOV_SQP &&
+			     init_attr->qp_type > IB_QPT_GSI) ||
+			    (init_attr->create_flags & MLX4_IB_QP_CREATE_ROCE_V2_GSI &&
+			     init_attr->qp_type != IB_QPT_GSI))
+				return ERR_PTR(-EINVAL);
+		}
 	}
 
 	switch (init_attr->qp_type) {
@@ -2329,6 +2341,15 @@ static int __mlx4_ib_modify_qp(void *src, enum mlx4_ib_source_type src_type,
 	if (attr_mask & (IB_QP_ACCESS_FLAGS | IB_QP_MAX_DEST_RD_ATOMIC)) {
 		context->params2 |= to_mlx4_access_flags(qp, attr, attr_mask);
 		optpar |= MLX4_QP_OPTPAR_RWE | MLX4_QP_OPTPAR_RRE | MLX4_QP_OPTPAR_RAE;
+	}
+
+	if (cur_state == IB_QPS_RESET && new_state == IB_QPS_INIT) {
+		context->params2 |= (qp->flags & MLX4_IB_QP_CROSS_CHANNEL ?
+			cpu_to_be32(MLX4_QP_BIT_COLL_MASTER) : 0);
+		context->params2 |= (qp->flags & MLX4_IB_QP_MANAGED_SEND ?
+			cpu_to_be32(MLX4_QP_BIT_COLL_MASTER | MLX4_QP_BIT_COLL_SYNC_SQ) : 0);
+		context->params2 |= (qp->flags & MLX4_IB_QP_MANAGED_RECV ?
+			cpu_to_be32(MLX4_QP_BIT_COLL_MASTER | MLX4_QP_BIT_COLL_SYNC_RQ) : 0);
 	}
 
 	if (ibsrq)
@@ -4029,6 +4050,7 @@ done:
 		qp->sq_signal_bits == cpu_to_be32(MLX4_WQE_CTRL_CQ_UPDATE) ?
 		IB_SIGNAL_ALL_WR : IB_SIGNAL_REQ_WR;
 
+	mlx4_ib_set_exp_attr_flags(qp, qp_init_attr);
 out:
 	mutex_unlock(&qp->mutex);
 	return err;
