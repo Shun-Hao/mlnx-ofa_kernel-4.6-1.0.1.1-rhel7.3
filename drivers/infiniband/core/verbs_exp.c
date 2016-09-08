@@ -50,3 +50,11 @@ int ib_exp_modify_cq(struct ib_cq *cq,
 		cq->device->exp_modify_cq(cq, cq_attr, cq_attr_mask) : -ENOSYS;
 }
 EXPORT_SYMBOL(ib_exp_modify_cq);
+
+int ib_exp_query_device(struct ib_device *device,
+			struct ib_exp_device_attr *device_attr,
+			struct ib_udata *uhw)
+{
+	return device->exp_query_device(device, device_attr, uhw);
+}
+EXPORT_SYMBOL(ib_exp_query_device);

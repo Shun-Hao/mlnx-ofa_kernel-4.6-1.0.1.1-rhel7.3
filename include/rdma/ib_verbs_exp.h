@@ -28,6 +28,22 @@ struct ib_exp_qp_init_attr {
 	u8			port_num;
 };
 
+enum ib_exp_device_attr_comp_mask {
+	IB_EXP_DEVICE_ATTR_CAP_FLAGS2		= 1ULL << 3,
+};
+
+enum ib_exp_device_cap_flags2 {
+	IB_EXP_DEVICE_CROSS_CHANNEL	= 1 << 28, /* Comapt with user exp area */
+	IB_EXP_DEVICE_MASK =	IB_DEVICE_CROSS_CHANNEL,
+};
+
+struct ib_exp_device_attr {
+	struct ib_device_attr	base;
+	/* Use IB_EXP_DEVICE_ATTR_... for exp_comp_mask */
+	uint32_t		exp_comp_mask;
+	uint64_t		device_cap_flags2;
+};
+
 /**
  * ib_exp_modify_cq - Modifies the attributes for the specified CQ and then
  *   transitions the CQ to the given state.
@@ -39,5 +55,8 @@ struct ib_exp_qp_init_attr {
 int ib_exp_modify_cq(struct ib_cq *cq,
 		     struct ib_cq_attr *cq_attr,
 		     int cq_attr_mask);
+int ib_exp_query_device(struct ib_device *device,
+			struct ib_exp_device_attr *device_attr,
+			struct ib_udata *uhw);
 
 #endif
