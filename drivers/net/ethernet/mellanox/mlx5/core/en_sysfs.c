@@ -40,33 +40,40 @@
 #define MLX5E_100MBPS_TO_KBPS 100000
 #define set_kobj_mode(mdev) mlx5_core_is_pf(mdev) ? S_IWUSR | S_IRUGO : S_IRUGO
 
-static ssize_t mlx5e_show_skprio2up(struct device *device,
-				    struct device_attribute *attr,
-				    char *buf)
+static ssize_t mlx5e_show_tc_num(struct device *device,
+				 struct device_attribute *attr,
+				 char *buf)
 {
 	struct mlx5e_priv *priv = netdev_priv(to_net_dev(device));
 	struct net_device *netdev = priv->netdev;
 	int len = 0;
-	int i;
 
-	for (i = 0; i < MLX5E_SKPRIOS_NUM; i++)
-		len += sprintf(buf + len,  "%d ",
-			       netdev_get_prio_tc_map(netdev, i));
-	len += sprintf(buf + len, "\n");
+	len += sprintf(buf + len,  "%d\n", netdev_get_num_tc(netdev));
 
 	return len;
 }
 
-static ssize_t mlx5e_store_skprio2up(struct device *device,
-				     struct device_attribute *attr,
-				     const char *buf, size_t count)
+static ssize_t mlx5e_store_tc_num(struct device *device,
+				  struct device_attribute *attr,
+				  const char *buf, size_t count)
 {
 	struct mlx5e_priv *priv = netdev_priv(to_net_dev(device));
 	struct net_device *netdev = priv->netdev;
-	struct tc_mqprio_qopt mqprio = {.num_tc = MLX5E_MAX_NUM_TC};
+	struct tc_mqprio_qopt mqprio = { 0 };
+	int tc_num;
+	int err = 0;
+
+	err = sscanf(buf, "%d", &tc_num);
+
+	if (err != 1)
+		return -EINVAL;
+
+	if (tc_num != MLX5E_MAX_NUM_TC && tc_num != MLX5E_MIN_NUM_TC)
+		return -EINVAL;
 
 	rtnl_lock();
-	netdev_set_num_tc(netdev, MLX5E_MAX_NUM_TC);
+	netdev_set_num_tc(netdev, tc_num);
+	mqprio.num_tc = tc_num;
 	mlx5e_setup_tc_mqprio(netdev, &mqprio);
 	rtnl_unlock();
 	return count;
@@ -179,8 +186,8 @@ out:
 
 static DEVICE_ATTR(maxrate, S_IRUGO | S_IWUSR,
 		   mlx5e_show_maxrate, mlx5e_store_maxrate);
-static DEVICE_ATTR(skprio2up, S_IRUGO | S_IWUSR,
-		   mlx5e_show_skprio2up, mlx5e_store_skprio2up);
+static DEVICE_ATTR(tc_num, S_IRUGO | S_IWUSR,
+		   mlx5e_show_tc_num, mlx5e_store_tc_num);
 
 static ssize_t mlx5e_show_lro_timeout(struct device *device,
 				      struct device_attribute *attr,
@@ -528,7 +535,7 @@ static struct attribute *mlx5e_debug_group_attrs[] = {
 };
 
 static struct attribute *mlx5e_qos_attrs[] = {
-	&dev_attr_skprio2up.attr,
+	&dev_attr_tc_num.attr,
 	&dev_attr_maxrate.attr,
 	NULL,
 };
