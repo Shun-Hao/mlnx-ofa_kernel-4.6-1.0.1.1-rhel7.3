@@ -68,11 +68,7 @@ static ssize_t mlx5e_store_tc_num(struct device *device,
 	if (err != 1)
 		return -EINVAL;
 
-	if (tc_num != MLX5E_MAX_NUM_TC && tc_num != MLX5E_MIN_NUM_TC)
-		return -EINVAL;
-
 	rtnl_lock();
-	netdev_set_num_tc(netdev, tc_num);
 	mqprio.num_tc = tc_num;
 	mlx5e_setup_tc_mqprio(netdev, &mqprio);
 	rtnl_unlock();
