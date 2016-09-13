@@ -215,7 +215,6 @@ struct to_fifo {
 	spinlock_t lists_lock;
 	struct timer_list timer;
 	struct work_struct work;
-	u32 fifo_size;
 	u32 num_items;
 	int stop_enqueue;
 	struct workqueue_struct *workq;
@@ -225,6 +224,10 @@ struct to_fifo {
 struct sa_cc_data {
 	spinlock_t lock;
 	unsigned long outstanding;
+	unsigned long queue_size;
+	unsigned long time_sa_mad;
+	unsigned long max_outstanding;
+	struct kobject kobj;
 	struct to_fifo  *tf;
 };
 

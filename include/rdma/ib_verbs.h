@@ -2299,6 +2299,8 @@ struct ib_device {
 
 	struct iw_cm_verbs	     *iwcm;
 
+	struct kobject		      *mad_sa_cc_kobj;
+
 	/* EXP APIs will be added below to minimize conflicts via upstream rebase */
 	int                     (*exp_ioctl)(struct ib_ucontext *context, unsigned int cmd,
 					     unsigned long arg);

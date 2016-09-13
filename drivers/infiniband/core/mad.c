@@ -45,6 +45,7 @@
 #include <linux/slab.h>
 #include <linux/module.h>
 #include <linux/security.h>
+#include <linux/sysfs.h>
 #include <rdma/ib_cache.h>
 
 #include "mad_priv.h"
@@ -82,9 +83,17 @@ enum {
  * SA congestion control params
  */
 enum {
-	MAX_OUTSTANDING_SA_MADS = 10,
-	MIN_TIME_FOR_SA_MAD_SEND_MS = 20,
-	MAX_SA_MADS = 10000
+	SA_CC_DEFAULT_OUTSTANDING_SA_MADS = 16,
+	SA_CC_MIN_OUTSTANDING_SA_MADS = 1,
+	SA_CC_MAX_OUTSTANDING_SA_MADS = 1 << 20,
+
+	SA_CC_DEFAULT_MAD_TIME_MS = 20,
+	SA_CC_MIN_MAD_TIME_MS = 1,
+	SA_CC_MAX_MAD_TIME_MS = 10000,
+
+	SA_CC_DEFAULT_QUEUE_SIZE = 1 << 16,
+	SA_CC_MIN_QUEUE_SIZE = 16,
+	SA_CC_MAX_QUEUE_SIZE = 1 << 20,
 };
 
 /* Port list lock */
@@ -213,11 +222,10 @@ static void timeout_handler_task(struct work_struct *work)
 
 /**
  * tf_create - creates new timeout-fifo object
- * @fifo_size: Maximum fifo size
  *
  * Allocate and initialize new timeout-fifo object
  */
-static struct to_fifo *tf_create(u32 fifo_size)
+static struct to_fifo *tf_create(void)
 {
 	struct to_fifo *tf;
 
@@ -234,7 +242,6 @@ static struct to_fifo *tf_create(u32 fifo_size)
 		timer_setup(&tf->timer, activate_timeout_handler_task, 0);
 		INIT_WORK(&tf->work, timeout_handler_task);
 		tf->timer.expires = jiffies;
-		tf->fifo_size = fifo_size;
 		tf->stop_enqueue = 0;
 		tf->num_items = 0;
 	}
@@ -252,8 +259,10 @@ static struct to_fifo *tf_create(u32 fifo_size)
  *
  * Returns 0 on success and negative on failure.
  */
-static int tf_enqueue(struct to_fifo *tf, struct tf_entry *item, u32 timeout_ms)
+static int tf_enqueue(struct sa_cc_data *cc_obj, struct tf_entry *item,
+		      u32 timeout_ms)
 {
+	struct to_fifo *tf = cc_obj->tf;
 	struct tf_entry *tmp;
 	struct list_head *list_item;
 	unsigned long flags;
@@ -261,7 +270,7 @@ static int tf_enqueue(struct to_fifo *tf, struct tf_entry *item, u32 timeout_ms)
 	item->exp_time = jiffies + msecs_to_jiffies(timeout_ms);
 
 	spin_lock_irqsave(&tf->lists_lock, flags);
-	if (tf->num_items >= tf->fifo_size || tf->stop_enqueue) {
+	if (tf->num_items >= cc_obj->queue_size || tf->stop_enqueue) {
 		spin_unlock_irqrestore(&tf->lists_lock, flags);
 		return -EBUSY;
 	}
@@ -502,7 +511,7 @@ static void sa_cc_mad_done(struct sa_cc_data *cc_obj)
 		}
 		spin_unlock_irqrestore(&cc_obj->lock, flags);
 		mad_send_wr = tfe_to_mad(tfe);
-		time_left_ms += MIN_TIME_FOR_SA_MAD_SEND_MS;
+		time_left_ms += cc_obj->time_sa_mad;
 		if (time_left_ms > mad_send_wr->send_buf.timeout_ms) {
 			retries = time_left_ms /
 				mad_send_wr->send_buf.timeout_ms - 1;
@@ -533,7 +542,7 @@ static int sa_cc_mad_send(struct ib_mad_send_wr_private *mad_send_wr)
 
 	cc_obj = get_cc_obj(mad_send_wr);
 	spin_lock_irqsave(&cc_obj->lock, flags);
-	if (cc_obj->outstanding < MAX_OUTSTANDING_SA_MADS) {
+	if (cc_obj->outstanding < cc_obj->max_outstanding) {
 		cc_obj->outstanding++;
 		spin_unlock_irqrestore(&cc_obj->lock, flags);
 		ret = send_sa_cc_mad(mad_send_wr,
@@ -545,11 +554,11 @@ static int sa_cc_mad_send(struct ib_mad_send_wr_private *mad_send_wr)
 	} else {
 		int qtime = (mad_send_wr->send_buf.timeout_ms *
 			     (mad_send_wr->retries_left + 1))
-			- MIN_TIME_FOR_SA_MAD_SEND_MS;
+			- cc_obj->time_sa_mad;
 
 		if (qtime < 0)
 			qtime = 0;
-		ret = tf_enqueue(cc_obj->tf, &mad_send_wr->tf_list, (u32)qtime);
+		ret = tf_enqueue(cc_obj, &mad_send_wr->tf_list, (u32)qtime);
 
 		spin_unlock_irqrestore(&cc_obj->lock, flags);
 	}
@@ -557,17 +566,36 @@ static int sa_cc_mad_send(struct ib_mad_send_wr_private *mad_send_wr)
 	return ret;
 }
 
+static int init_sa_cc_sysfs(struct ib_device *device);
+static void cleanup_sa_cc_sysfs(struct ib_device *device);
+static int init_sa_cc_sysfs_ports(struct sa_cc_data *cc_obj);
+static void cleanup_sa_cc_sysfs_ports(struct sa_cc_data *cc_obj);
+
 /*
  * Initialize SA congestion control.
  */
 static int sa_cc_init(struct sa_cc_data *cc_obj)
 {
+	int err;
+
+	err = init_sa_cc_sysfs_ports(cc_obj);
+	if (err)
+		return err;
 	spin_lock_init(&cc_obj->lock);
+	cc_obj->queue_size = SA_CC_DEFAULT_QUEUE_SIZE;
+	cc_obj->time_sa_mad = SA_CC_DEFAULT_MAD_TIME_MS;
+	cc_obj->max_outstanding = SA_CC_DEFAULT_OUTSTANDING_SA_MADS;
 	cc_obj->outstanding = 0;
-	cc_obj->tf = tf_create(MAX_SA_MADS);
-	if (!cc_obj->tf)
-		return -ENOMEM;
+	cc_obj->tf = tf_create();
+	if (!cc_obj->tf) {
+		err = -ENOMEM;
+		goto sysfs_cleanup;
+	}
 	return 0;
+
+sysfs_cleanup:
+	cleanup_sa_cc_sysfs_ports(cc_obj);
+	return err;
 }
 
 /*
@@ -585,13 +613,14 @@ static void cancel_sa_cc_mads(struct ib_mad_agent_private *mad_agent_priv)
 static int modify_sa_cc_mad(struct ib_mad_agent_private *mad_agent_priv,
 			    struct ib_mad_send_buf *send_buf, u32 timeout_ms)
 {
+	struct sa_cc_data *cc_obj = &mad_agent_priv->qp_info->port_priv->sa_cc;
 	int ret;
 	int qtime = 0;
 
-	if (timeout_ms > MIN_TIME_FOR_SA_MAD_SEND_MS)
-		qtime = timeout_ms - MIN_TIME_FOR_SA_MAD_SEND_MS;
+	if (timeout_ms > cc_obj->time_sa_mad)
+		qtime = timeout_ms - cc_obj->time_sa_mad;
 
-	ret = tf_modify_item(mad_agent_priv->qp_info->port_priv->sa_cc.tf,
+	ret = tf_modify_item(cc_obj->tf,
 			     mad_agent_priv, send_buf, (u32)qtime);
 	return ret;
 }
@@ -607,6 +636,7 @@ static void sa_cc_destroy(struct sa_cc_data *cc_obj)
 	mad_send_wc.status = IB_WC_WR_FLUSH_ERR;
 	mad_send_wc.vendor_err = 0;
 
+	cleanup_sa_cc_sysfs_ports(cc_obj);
 	tf_stop_enqueue(cc_obj->tf);
 	tfe = tf_dequeue(cc_obj->tf, &time_left_ms);
 	while (tfe) {
@@ -3889,6 +3919,11 @@ static void ib_mad_init_device(struct ib_device *device)
 {
 	int start, i;
 
+	if (init_sa_cc_sysfs(device)) {
+		dev_err(&device->dev, "Couldn't open mad congestion control sysfs\n");
+		return;
+	}
+
 	start = rdma_start_port(device);
 
 	for (i = start; i <= rdma_end_port(device); i++) {
@@ -3922,6 +3957,8 @@ error:
 		if (ib_mad_port_close(device, i))
 			dev_err(&device->dev, "Couldn't close port %d\n", i);
 	}
+
+	cleanup_sa_cc_sysfs(device);
 }
 
 static void ib_mad_remove_device(struct ib_device *device, void *client_data)
@@ -3938,6 +3975,182 @@ static void ib_mad_remove_device(struct ib_device *device, void *client_data)
 		if (ib_mad_port_close(device, i))
 			dev_err(&device->dev, "Couldn't close port %d\n", i);
 	}
+
+	cleanup_sa_cc_sysfs(device);
+}
+
+struct sa_cc_attribute {
+	struct attribute attr;
+	ssize_t (*show)(struct sa_cc_data *, char *buf);
+	ssize_t (*store)(struct sa_cc_data *, const char *buf, size_t count);
+};
+
+static ssize_t max_outstanding_store(struct sa_cc_data *cc_obj,
+				     const char *buf, size_t count)
+{
+	unsigned long var;
+
+	if (kstrtol(buf, 0, &var))
+		return -EINVAL;
+
+	if (var < SA_CC_MIN_OUTSTANDING_SA_MADS ||
+	    var > SA_CC_MAX_OUTSTANDING_SA_MADS)
+		return -EINVAL;
+
+	cc_obj->max_outstanding = var;
+
+	return count;
+}
+
+static ssize_t max_outstanding_show(struct sa_cc_data *cc_obj,
+				    char *buf)
+{
+	return sprintf(buf, "%lu\n", cc_obj->max_outstanding);
+}
+
+static ssize_t time_sa_mad_store(struct sa_cc_data *cc_obj, const char *buf,
+				 size_t count)
+{
+	unsigned long var;
+
+	if (kstrtol(buf, 0, &var))
+		return -EINVAL;
+
+	if (var < SA_CC_MIN_MAD_TIME_MS ||
+	    var > SA_CC_MAX_MAD_TIME_MS)
+		return -EINVAL;
+
+	cc_obj->time_sa_mad = var;
+
+	return count;
+}
+
+static ssize_t time_sa_mad_show(struct sa_cc_data *cc_obj,
+				char *buf)
+{
+	return sprintf(buf, "%lu\n", cc_obj->time_sa_mad);
+}
+
+static ssize_t queue_size_store(struct sa_cc_data *cc_obj, const char *buf,
+				size_t count)
+{
+	unsigned long var;
+
+	if (kstrtol(buf, 0, &var))
+		return -EINVAL;
+
+	if (var < SA_CC_MIN_QUEUE_SIZE ||
+	    var > SA_CC_MAX_QUEUE_SIZE)
+		return -EINVAL;
+
+	cc_obj->queue_size = var;
+
+	return count;
+}
+
+static ssize_t queue_size_show(struct sa_cc_data *cc_obj,
+			       char *buf)
+{
+	return sprintf(buf, "%lu\n", cc_obj->queue_size);
+}
+
+static ssize_t sa_cc_attr_store(struct kobject *kobj, struct attribute *attr,
+				const char *buf, size_t size)
+{
+	struct sa_cc_attribute *sa = container_of(attr,
+						  struct sa_cc_attribute,
+						  attr);
+	struct sa_cc_data *cc_obj = container_of(kobj, struct sa_cc_data,
+						 kobj);
+
+	if (!sa->store)
+		return -EIO;
+
+	return sa->store(cc_obj, buf, size);
+}
+
+static ssize_t sa_cc_attr_show(struct kobject *kobj,
+			       struct attribute *attr, char *buf)
+{
+	struct sa_cc_attribute *sa = container_of(attr,
+						  struct sa_cc_attribute,
+						  attr);
+	struct sa_cc_data *cc_obj = container_of(kobj, struct sa_cc_data,
+						 kobj);
+
+	if (!sa->show)
+		return -EIO;
+
+	return sa->show(cc_obj, buf);
+}
+
+static const struct sysfs_ops sa_cc_sysfs_ops = {
+	.show = sa_cc_attr_show,
+	.store = sa_cc_attr_store,
+};
+
+#define SA_CC_ATTR(_name) struct sa_cc_attribute sa_cc_attr_##_name = \
+	__ATTR(_name, 0644, _name##_show, _name##_store)
+
+static SA_CC_ATTR(queue_size);
+static SA_CC_ATTR(time_sa_mad);
+static SA_CC_ATTR(max_outstanding);
+
+static struct attribute *sa_cc_default_attrs[] = {
+	&sa_cc_attr_queue_size.attr,
+	&sa_cc_attr_time_sa_mad.attr,
+	&sa_cc_attr_max_outstanding.attr,
+	NULL
+};
+
+static struct kobj_type sa_cc_type = {
+	.sysfs_ops = &sa_cc_sysfs_ops,
+	.default_attrs = sa_cc_default_attrs
+};
+
+static void cleanup_sa_cc_sysfs_ports(struct sa_cc_data *cc_obj)
+{
+	kobject_put(&cc_obj->kobj);
+}
+
+static int init_sa_cc_sysfs_ports(struct sa_cc_data *cc_obj)
+{
+	struct ib_mad_port_private *port_priv;
+	int err;
+
+	port_priv = container_of(cc_obj, struct ib_mad_port_private, sa_cc);
+	err = kobject_init_and_add(&cc_obj->kobj,
+				   &sa_cc_type,
+				   port_priv->device->mad_sa_cc_kobj,
+				   "%d", port_priv->port_num);
+	if (err) {
+		pr_err("failed to register mad_sa_cc sysfs object for port %d\n",
+		       port_priv->port_num);
+		return -ENOMEM;
+	}
+	return 0;
+}
+
+static void cleanup_sa_cc_sysfs(struct ib_device *device)
+{
+	if (device->mad_sa_cc_kobj) {
+		kobject_put(device->mad_sa_cc_kobj);
+		device->mad_sa_cc_kobj = NULL;
+	}
+}
+
+static int init_sa_cc_sysfs(struct ib_device *device)
+{
+	struct device *dev = &device->dev;
+
+	device->mad_sa_cc_kobj = kobject_create_and_add("mad_sa_cc",
+							&dev->kobj);
+	if (!device->mad_sa_cc_kobj) {
+		pr_err("failed to register mad_sa_cc sysfs object\n");
+		return -ENOMEM;
+	}
+
+	return 0;
 }
 
 static struct ib_client mad_client = {
