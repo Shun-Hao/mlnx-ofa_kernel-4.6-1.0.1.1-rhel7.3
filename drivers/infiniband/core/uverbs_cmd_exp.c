@@ -193,6 +193,9 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file, struct ib_device *ib_de
 		attr->qpg_type = qpg->qpg_type;
 	}
 
+	if (cmd_exp->comp_mask & IB_UVERBS_EXP_CREATE_QP_INL_RECV)
+		attr->max_inl_recv = cmd_exp->max_inl_recv;
+
 	obj->uevent.events_reported     = 0;
 	INIT_LIST_HEAD(&obj->uevent.event_list);
 	INIT_LIST_HEAD(&obj->mcast_list);
@@ -240,6 +243,11 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file, struct ib_device *ib_de
 	resp_exp.max_send_sge    = attr->cap.max_send_sge;
 	resp_exp.max_recv_wr     = attr->cap.max_recv_wr;
 	resp_exp.max_send_wr     = attr->cap.max_send_wr;
+
+	if (cmd_exp->comp_mask & IB_UVERBS_EXP_CREATE_QP_INL_RECV) {
+		resp_exp.comp_mask |= IB_UVERBS_EXP_CREATE_QP_RESP_INL_RECV;
+		resp_exp.max_inl_recv = attr->max_inl_recv;
+	}
 
 	ret = ib_copy_to_udata(ucore, &resp_exp, sizeof(resp_exp));
 	if (ret)
@@ -379,6 +387,11 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_RSS_TBL_SZ) {
 		resp->max_rss_tbl_sz = exp_attr->max_rss_tbl_sz;
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_RSS_TBL_SZ;
+	}
+
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_INLINE_RECV_SZ) {
+		resp->inline_recv_sz = exp_attr->inline_recv_sz;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_INLINE_RECV_SZ;
 	}
 
 	ret = ib_copy_to_udata(ucore, resp, min_t(size_t, sizeof(*resp), ucore->outlen));

@@ -73,6 +73,7 @@ enum ib_uverbs_exp_create_qp_flags {
 
 enum ib_uverbs_exp_create_qp_comp_mask {
 	IB_UVERBS_EXP_CREATE_QP_CAP_FLAGS          = (1ULL << 0),
+	IB_UVERBS_EXP_CREATE_QP_INL_RECV           = (1ULL << 1),
 	IB_UVERBS_EXP_CREATE_QP_QPG		= (1ULL << 2),
 };
 
@@ -110,10 +111,14 @@ struct ib_uverbs_exp_create_qp {
 	__u8  is_srq;
 	__u8  reserved;
 	__u64 qp_cap_flags;
-	__u32 reserved_max_inl_recv;
+	__u32 max_inl_recv;
 	__u32 reserved1;
 	struct ib_uverbs_qpg qpg;
 	__u64 driver_data[0];
+};
+
+enum ib_uverbs_exp_create_qp_resp_comp_mask {
+	IB_UVERBS_EXP_CREATE_QP_RESP_INL_RECV	= (1ULL << 0),
 };
 
 struct ib_uverbs_exp_create_qp_resp {
@@ -125,7 +130,7 @@ struct ib_uverbs_exp_create_qp_resp {
 	__u32 max_send_sge;
 	__u32 max_recv_sge;
 	__u32 max_inline_data;
-	__u32 reserved;
+	__u32 max_inl_recv;
 };
 
 enum ib_uverbs_exp_modify_cq_comp_mask {
@@ -156,7 +161,7 @@ struct ib_uverbs_exp_query_device_resp {
 	__u64					device_cap_flags2;
 	__u32					reserved;
 	__u32					reserved2;
-	__u32					reserved3;
+	__u32					inline_recv_sz;
 	__u32					max_rss_tbl_sz;
 };
 
