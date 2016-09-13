@@ -1360,8 +1360,8 @@ static void init_mad(struct ib_sa_query *query, struct ib_mad_agent *agent)
 	spin_unlock_irqrestore(&tid_lock, flags);
 }
 
-static int send_mad(struct ib_sa_query *query, unsigned long timeout_ms,
-		    gfp_t gfp_mask)
+static int send_mad(struct ib_sa_query *query, unsigned long timeout_ms, 
+		    int retries, gfp_t gfp_mask)
 {
 	bool preload = gfpflags_allow_blocking(gfp_mask);
 	unsigned long flags;
@@ -1380,6 +1380,7 @@ static int send_mad(struct ib_sa_query *query, unsigned long timeout_ms,
 		return id;
 
 	query->mad_buf->timeout_ms  = timeout_ms;
+	query->mad_buf->retries = retries;
 	query->mad_buf->context[0] = query;
 	query->id = id;
 
@@ -1530,6 +1531,7 @@ static void ib_sa_path_rec_release(struct ib_sa_query *sa_query)
  * @rec:Path Record to send in query
  * @comp_mask:component mask to send in query
  * @timeout_ms:time to wait for response
+ * @retries:retries to send for response
  * @gfp_mask:GFP mask to use for internal allocations
  * @callback:function called when query completes, times out or is
  * canceled
@@ -1551,7 +1553,7 @@ int ib_sa_path_rec_get(struct ib_sa_client *client,
 		       struct ib_device *device, u8 port_num,
 		       struct sa_path_rec *rec,
 		       ib_sa_comp_mask comp_mask,
-		       unsigned long timeout_ms, gfp_t gfp_mask,
+		       unsigned long timeout_ms, int retries, gfp_t gfp_mask,
 		       void (*callback)(int status,
 					struct sa_path_rec *resp,
 					void *context),
@@ -1634,7 +1636,7 @@ int ib_sa_path_rec_get(struct ib_sa_client *client,
 	query->sa_query.mad_buf->context[1] = (query->conv_pr) ?
 						query->conv_pr : rec;
 
-	ret = send_mad(&query->sa_query, timeout_ms, gfp_mask);
+	ret = send_mad(&query->sa_query, timeout_ms, retries, gfp_mask);
 	if (ret < 0)
 		goto err3;
 
@@ -1683,6 +1685,7 @@ static void ib_sa_service_rec_release(struct ib_sa_query *sa_query)
  * @rec:Service Record to send in request
  * @comp_mask:component mask to send in request
  * @timeout_ms:time to wait for response
+ * @retries:retries to send for response
  * @gfp_mask:GFP mask to use for internal allocations
  * @callback:function called when request completes, times out or is
  * canceled
@@ -1705,8 +1708,8 @@ int ib_sa_service_rec_query(struct ib_sa_client *client,
 			    struct ib_device *device, u8 port_num, u8 method,
 			    struct ib_sa_service_rec *rec,
 			    ib_sa_comp_mask comp_mask,
-			    unsigned long timeout_ms, gfp_t gfp_mask,
-			    void (*callback)(int status,
+			    unsigned long timeout_ms, int retries, 
+			    gfp_t gfp_mask, void (*callback)(int status,
 					     struct ib_sa_service_rec *resp,
 					     void *context),
 			    void *context,
@@ -1758,7 +1761,7 @@ int ib_sa_service_rec_query(struct ib_sa_client *client,
 
 	*sa_query = &query->sa_query;
 
-	ret = send_mad(&query->sa_query, timeout_ms, gfp_mask);
+	ret = send_mad(&query->sa_query, timeout_ms, retries, gfp_mask);
 	if (ret < 0)
 		goto err2;
 
@@ -1802,7 +1805,7 @@ int ib_sa_mcmember_rec_query(struct ib_sa_client *client,
 			     u8 method,
 			     struct ib_sa_mcmember_rec *rec,
 			     ib_sa_comp_mask comp_mask,
-			     unsigned long timeout_ms, gfp_t gfp_mask,
+			     unsigned long timeout_ms,int retries, gfp_t gfp_mask,
 			     void (*callback)(int status,
 					      struct ib_sa_mcmember_rec *resp,
 					      void *context),
@@ -1850,7 +1853,7 @@ int ib_sa_mcmember_rec_query(struct ib_sa_client *client,
 
 	*sa_query = &query->sa_query;
 
-	ret = send_mad(&query->sa_query, timeout_ms, gfp_mask);
+	ret = send_mad(&query->sa_query, timeout_ms, retries, gfp_mask);
 	if (ret < 0)
 		goto err2;
 
@@ -1893,7 +1896,7 @@ int ib_sa_guid_info_rec_query(struct ib_sa_client *client,
 			      struct ib_device *device, u8 port_num,
 			      struct ib_sa_guidinfo_rec *rec,
 			      ib_sa_comp_mask comp_mask, u8 method,
-			      unsigned long timeout_ms, gfp_t gfp_mask,
+			      unsigned long timeout_ms, int retries, gfp_t gfp_mask,
 			      void (*callback)(int status,
 					       struct ib_sa_guidinfo_rec *resp,
 					       void *context),
@@ -1948,7 +1951,7 @@ int ib_sa_guid_info_rec_query(struct ib_sa_client *client,
 
 	*sa_query = &query->sa_query;
 
-	ret = send_mad(&query->sa_query, timeout_ms, gfp_mask);
+	ret = send_mad(&query->sa_query, timeout_ms, retries, gfp_mask);
 	if (ret < 0)
 		goto err2;
 
@@ -2061,6 +2064,7 @@ static void ib_sa_classport_info_rec_release(struct ib_sa_query *sa_query)
 
 static int ib_sa_classport_info_rec_query(struct ib_sa_port *port,
 					  unsigned long timeout_ms,
+					  int retries,
 					  void (*callback)(void *context),
 					  void *context,
 					  struct ib_sa_query **sa_query)
@@ -2098,7 +2102,7 @@ static int ib_sa_classport_info_rec_query(struct ib_sa_port *port,
 	mad->sa_hdr.comp_mask	 = 0;
 	*sa_query = &query->sa_query;
 
-	ret = send_mad(&query->sa_query, timeout_ms, gfp_mask);
+	ret = send_mad(&query->sa_query, timeout_ms, retries, gfp_mask);
 	if (ret < 0)
 		goto err_free_mad;
 
@@ -2137,7 +2141,7 @@ static void update_ib_cpi(struct work_struct *work)
 
 	init_completion(&cb_context->done);
 
-	ret = ib_sa_classport_info_rec_query(port, 3000,
+	ret = ib_sa_classport_info_rec_query(port, 3000, 0,
 					     ib_classportinfo_cb, cb_context,
 					     &cb_context->sa_query);
 	if (ret < 0)

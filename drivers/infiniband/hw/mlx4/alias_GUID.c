@@ -544,7 +544,7 @@ static int set_guid_rec(struct ib_device *ibdev,
 	callback_context->query_id =
 		ib_sa_guid_info_rec_query(dev->sriov.alias_guid.sa_client,
 					  ibdev, port, &guid_info_rec,
-					  comp_mask, rec->method, 1000,
+					  comp_mask, rec->method, 1000, 0,
 					  GFP_KERNEL, aliasguid_query_handler,
 					  callback_context,
 					  &callback_context->sa_query);

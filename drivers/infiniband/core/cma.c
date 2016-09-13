@@ -69,7 +69,7 @@ MODULE_DESCRIPTION("Generic RDMA CM Agent");
 MODULE_LICENSE("Dual BSD/GPL");
 
 #define CMA_CM_RESPONSE_TIMEOUT 20
-#define CMA_QUERY_CLASSPORT_INFO_TIMEOUT 3000
+#define CMA_QUERY_CLASSPORT_INFO_TIMEOUT 1000
 #define CMA_MAX_CM_RETRIES 15
 #define CMA_CM_MRA_SETTING (IB_CM_MRA_FLAG_DELAY | 24)
 #define CMA_IBOE_PACKET_LIFETIME 18
@@ -2556,7 +2556,7 @@ static int cma_query_ib_route(struct rdma_id_private *id_priv,
 
 	id_priv->query_id = ib_sa_path_rec_get(&sa_client, id_priv->id.device,
 					       id_priv->id.port_num, &path_rec,
-					       comp_mask, timeout_ms,
+					       comp_mask, timeout_ms, 0,
 					       GFP_KERNEL, cma_query_handler,
 					       work, &id_priv->query);
 

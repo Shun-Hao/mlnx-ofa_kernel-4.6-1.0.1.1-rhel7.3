@@ -760,7 +760,7 @@ static int srp_ib_lookup_path(struct srp_rdma_ch *ch)
 					       IB_SA_PATH_REC_SGID	 |
 					       IB_SA_PATH_REC_NUMB_PATH	 |
 					       IB_SA_PATH_REC_PKEY,
-					       SRP_PATH_REC_TIMEOUT_MS,
+					       SRP_PATH_REC_TIMEOUT_MS, 0,
 					       GFP_KERNEL,
 					       srp_path_rec_completion,
 					       ch, &ch->ib_cm.path_query);

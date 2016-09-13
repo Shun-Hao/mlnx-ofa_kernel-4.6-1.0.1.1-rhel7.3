@@ -912,7 +912,7 @@ static int path_rec_start(struct net_device *dev,
 				   IB_SA_PATH_REC_NUMB_PATH	|
 				   IB_SA_PATH_REC_TRAFFIC_CLASS |
 				   IB_SA_PATH_REC_PKEY,
-				   1000, GFP_ATOMIC,
+				   1000, 0, GFP_ATOMIC,
 				   path_rec_completion,
 				   path, &path->query);
 	if (path->query_id < 0) {
