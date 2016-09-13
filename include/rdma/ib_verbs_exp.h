@@ -37,12 +37,14 @@ struct ib_exp_qp_init_attr {
 		struct ib_qp *qpg_parent; /* see qpg_type */
 		struct ib_qpg_init_attrib parent_attrib;
 	};
+	u32			max_inl_recv;
 };
 
 enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_WITH_TIMESTAMP_MASK = 1ULL << 1,
 	IB_EXP_DEVICE_ATTR_WITH_HCA_CORE_CLOCK = 1ULL << 2,
 	IB_EXP_DEVICE_ATTR_CAP_FLAGS2		= 1ULL << 3,
+	IB_EXP_DEVICE_ATTR_INLINE_RECV_SZ	= 1ULL << 6,
 	IB_EXP_DEVICE_ATTR_RSS_TBL_SZ		= 1ULL << 7,
 };
 
@@ -59,6 +61,7 @@ struct ib_exp_device_attr {
 	/* Use IB_EXP_DEVICE_ATTR_... for exp_comp_mask */
 	uint32_t		exp_comp_mask;
 	uint64_t		device_cap_flags2;
+	uint32_t		inline_recv_sz;
 	uint32_t		max_rss_tbl_sz;
 };
 
