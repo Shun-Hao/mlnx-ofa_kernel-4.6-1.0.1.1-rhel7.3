@@ -499,7 +499,7 @@ static void free_proxy_bufs(struct ib_device *dev, struct mlx4_ib_qp *qp)
 	kfree(qp->sqp_proxy_rcv);
 }
 
-static int qp_has_rq(struct ib_qp_init_attr *attr)
+int qp_has_rq(struct ib_qp_init_attr *attr)
 {
 	if (attr->qp_type == IB_QPT_XRC_INI || attr->qp_type == IB_QPT_XRC_TGT)
 		return 0;
@@ -2108,7 +2108,7 @@ static int __mlx4_ib_modify_qp(void *src, enum mlx4_ib_source_type src_type,
 		}
 	}
 
-	if (qp->inl_recv_sz)
+	if (qp->inl_recv_sz || qp->max_inlr_data)
 		context->param3 |= cpu_to_be32(1 << 25);
 
 	if (qp->flags & MLX4_IB_QP_SCATTER_FCS)

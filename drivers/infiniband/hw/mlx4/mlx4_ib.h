@@ -347,6 +347,8 @@ struct mlx4_ib_qp {
 	struct mlx4_roce_smac_vlan_info pri;
 	struct mlx4_roce_smac_vlan_info alt;
 	u64			reg_id;
+	/* Experimental data */
+	int			max_inlr_data;
 	struct list_head	qps_list;
 	struct list_head	cq_recv_list;
 	struct list_head	cq_send_list;

@@ -4,6 +4,7 @@
 #include <linux/errno.h>
 #include <linux/netdevice.h>
 #include <linux/inetdevice.h>
+#include <linux/mlx4/qp.h>
 
 #include "mlx4_ib.h"
 
@@ -53,7 +54,8 @@ int mlx4_ib_exp_query_device(struct ib_device *ibdev,
 	if (ret)
 		return ret;
 
-	props->exp_comp_mask = 0;
+	props->exp_comp_mask = IB_EXP_DEVICE_ATTR_INLINE_RECV_SZ;
+	props->inline_recv_sz = dev->dev->caps.max_rq_sg * sizeof(struct mlx4_wqe_data_seg);
 	props->device_cap_flags2 = 0;
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_CAP_FLAGS2;
 

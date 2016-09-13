@@ -11,6 +11,7 @@
 struct mlx4_ib_qp;
 struct ib_qp_init_attr;
 struct mlx4_qp_context;
+int qp_has_rq(struct ib_qp_init_attr *attr);
 
 /****************************************/
 /* ioctl codes */

@@ -70,6 +70,31 @@ struct ib_qp *mlx4_ib_exp_create_qp(struct ib_pd *pd,
 {
 	struct ib_qp *qp;
 	struct ib_device *device;
+	int use_inlr;
+	int rwqe_size;
+	struct mlx4_ib_dev *dev;
+	struct mlx4_ib_qp *mqp;
+
+	if (init_attr->max_inl_recv && !udata)
+		return ERR_PTR(-EINVAL);
+
+	use_inlr = qp_has_rq((struct ib_qp_init_attr *)init_attr) &&
+		   init_attr->max_inl_recv && pd;
+
+	if (use_inlr) {
+		rwqe_size = roundup_pow_of_two(max(1U, init_attr->cap.max_recv_sge)) *
+					       sizeof(struct mlx4_wqe_data_seg);
+		if (rwqe_size < init_attr->max_inl_recv) {
+			dev = to_mdev(pd->device);
+			init_attr->max_inl_recv = min(init_attr->max_inl_recv,
+						      (u32)(dev->dev->caps.max_rq_sg *
+						      sizeof(struct mlx4_wqe_data_seg)));
+			init_attr->cap.max_recv_sge = roundup_pow_of_two(init_attr->max_inl_recv) /
+						      sizeof(struct mlx4_wqe_data_seg);
+		}
+	} else {
+		init_attr->max_inl_recv = 0;
+	}
 
 	device = pd ? pd->device : init_attr->xrcd->device;
 	if ((init_attr->create_flags &
@@ -84,6 +109,15 @@ struct ib_qp *mlx4_ib_exp_create_qp(struct ib_pd *pd,
 	}
 
 	qp = mlx4_ib_create_qp(pd, (struct ib_qp_init_attr *)init_attr, udata, 1);
+
+	if (IS_ERR(qp))
+		return qp;
+
+	if (use_inlr) {
+		mqp = to_mqp(qp);
+		mqp->max_inlr_data = 1 << mqp->rq.wqe_shift;
+		init_attr->max_inl_recv = mqp->max_inlr_data;
+	}
 
 	return qp;
 }
