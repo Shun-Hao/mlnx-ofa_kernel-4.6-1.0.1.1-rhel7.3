@@ -626,6 +626,59 @@ static int handle_hca_cap_atomic(struct mlx5_core_dev *dev)
 	return err;
 }
 
+#define MLX5_CAP_ODP_MAX(mdev, cap) \
+	MLX5_GET(odp_cap, (mdev)->caps.hca_max[MLX5_CAP_ODP], cap)
+
+#define MLX5_CAP_ODP_INACTIVE(...) \
+	(MLX5_CAP_ODP_MAX(__VA_ARGS__) && !MLX5_CAP_ODP(__VA_ARGS__))
+
+static int handle_hca_cap_odp(struct mlx5_core_dev *dev)
+{
+	int set_sz = MLX5_ST_SZ_BYTES(set_hca_cap_in);
+	void *set_hca_cap;
+	void *set_ctx;
+	int err;
+
+	if (!MLX5_CAP_GEN(dev, pg))
+		return 0;
+
+	err = mlx5_core_get_caps(dev, MLX5_CAP_ODP);
+	if (err)
+		return err;
+
+	set_ctx = kzalloc(set_sz, GFP_KERNEL);
+	if (!set_ctx)
+		return -ENOMEM;
+
+	set_hca_cap = MLX5_ADDR_OF(set_hca_cap_in, set_ctx, capability);
+
+	memcpy(set_hca_cap, dev->caps.hca_cur[MLX5_CAP_ODP],
+	       MLX5_ST_SZ_BYTES(odp_cap));
+
+	/* On old hardware (e.g Connect-IB) SET_HCA_CAP with OP_MOD_ODP
+	 * will cause error. Call it only if there is difference
+	 * between max and cur caps */
+	if (MLX5_CAP_ODP_INACTIVE(dev, dc_odp_caps.send) ||
+	    MLX5_CAP_ODP_INACTIVE(dev, dc_odp_caps.write) ||
+	    MLX5_CAP_ODP_INACTIVE(dev, dc_odp_caps.atomic) ||
+	    MLX5_CAP_ODP_INACTIVE(dev, dc_odp_caps.srq_receive)) {
+		memcpy(MLX5_ADDR_OF(odp_cap, set_hca_cap, dc_odp_caps),
+		       MLX5_ADDR_OF(odp_cap,
+				    dev->caps.hca_max[MLX5_CAP_ODP],
+				    dc_odp_caps),
+		       MLX5_ST_SZ_BYTES(odp_per_transport_service_cap));
+
+		err = set_caps(dev, set_ctx, set_sz,
+			       MLX5_SET_HCA_CAP_OP_MOD_ODP);
+
+		if (err)
+			dev_notice(&dev->pdev->dev, "SET_HCA_CAP ODP not supported\n");
+	}
+
+	kfree(set_ctx);
+	return 0;
+}
+
 static int handle_hca_cap(struct mlx5_core_dev *dev)
 {
 	void *set_ctx = NULL;
@@ -1330,6 +1383,12 @@ static int mlx5_load_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
 	err = handle_hca_cap_atomic(dev);
 	if (err) {
 		dev_err(&pdev->dev, "handle_hca_cap_atomic failed\n");
+		goto reclaim_boot_pages;
+	}
+
+	err = handle_hca_cap_odp(dev);
+	if (err) {
+		dev_err(&pdev->dev, "handle_hca_cap_odp failed\n");
 		goto reclaim_boot_pages;
 	}
 

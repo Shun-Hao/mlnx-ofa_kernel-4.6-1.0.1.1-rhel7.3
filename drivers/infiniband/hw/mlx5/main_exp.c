@@ -49,6 +49,7 @@ static void copy_odp_exp_caps(struct ib_exp_odp_caps *exp_caps,
 	exp_caps->per_transport_caps.rc_odp_caps = caps->per_transport_caps.rc_odp_caps;
 	exp_caps->per_transport_caps.uc_odp_caps = caps->per_transport_caps.uc_odp_caps;
 	exp_caps->per_transport_caps.ud_odp_caps = caps->per_transport_caps.ud_odp_caps;
+	exp_caps->per_transport_caps.dc_odp_caps = caps->per_transport_caps.dc_odp_caps;
 }
 #endif
 

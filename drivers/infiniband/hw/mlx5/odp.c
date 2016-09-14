@@ -320,6 +320,21 @@ void mlx5_ib_internal_fill_odp_caps(struct mlx5_ib_dev *dev)
 	if (MLX5_CAP_ODP(dev->mdev, rc_odp_caps.atomic))
 		caps->per_transport_caps.rc_odp_caps |= IB_ODP_SUPPORT_ATOMIC;
 
+	if (MLX5_CAP_ODP(dev->mdev, dc_odp_caps.send))
+		caps->per_transport_caps.dc_odp_caps |= IB_ODP_SUPPORT_SEND;
+
+	if (MLX5_CAP_ODP(dev->mdev, dc_odp_caps.receive))
+		caps->per_transport_caps.dc_odp_caps |= IB_ODP_SUPPORT_RECV;
+
+	if (MLX5_CAP_ODP(dev->mdev, dc_odp_caps.write))
+		caps->per_transport_caps.dc_odp_caps |= IB_ODP_SUPPORT_WRITE;
+
+	if (MLX5_CAP_ODP(dev->mdev, dc_odp_caps.read))
+		caps->per_transport_caps.dc_odp_caps |= IB_ODP_SUPPORT_READ;
+
+	if (MLX5_CAP_ODP(dev->mdev, dc_odp_caps.atomic))
+		caps->per_transport_caps.dc_odp_caps |= IB_ODP_SUPPORT_ATOMIC;
+
 	if (MLX5_CAP_GEN(dev->mdev, fixed_buffer_size) &&
 	    MLX5_CAP_GEN(dev->mdev, null_mkey) &&
 	    MLX5_CAP_GEN(dev->mdev, umr_extended_translation_offset))
@@ -897,7 +912,33 @@ static int pagefault_data_segments(struct mlx5_ib_dev *dev,
 	return ret < 0 ? ret : npages;
 }
 
-static const u32 mlx5_ib_odp_opcode_cap[] = {
+static int ext_atomic_handler(struct mlx5_ib_dev *dev,
+			      struct mlx5_wqe_ctrl_seg *ctrl,
+			      void **wqe, int op)
+{
+	int opmod = be32_to_cpu(ctrl->opmod_idx_opcode) >>
+		    MLX5_WQE_CTRL_OPMOD_SHIFT;
+	int log_arg_sz;
+	int num_fields = op == MLX5_OPCODE_ATOMIC_MASKED_FA ? 2 : 4;
+
+	if ((opmod & ~MLX5_WQE_CTRL_OPMOD_OP_LEN) !=
+	    MLX5_WQE_CTRL_OPMOD_EXT_ATOMIC) {
+		mlx5_ib_err(dev, "Got extended atomic WQE with invalid opmod %x\n",
+			    opmod);
+		return -EFAULT;
+	}
+
+	log_arg_sz = opmod & MLX5_WQE_CTRL_OPMOD_OP_LEN;
+
+	if (log_arg_sz == MLX5_WQE_CTRL_OPMOD_OP_PTR)
+		return 0;
+
+	*wqe += ALIGN(num_fields << (log_arg_sz + 2), 16);
+
+	return 0;
+}
+
+static const uint32_t mlx5_ib_odp_opcode_cap[] = {
 	[MLX5_OPCODE_SEND]	       = IB_ODP_SUPPORT_SEND,
 	[MLX5_OPCODE_SEND_IMM]	       = IB_ODP_SUPPORT_SEND,
 	[MLX5_OPCODE_SEND_INVAL]       = IB_ODP_SUPPORT_SEND,
@@ -906,6 +947,8 @@ static const u32 mlx5_ib_odp_opcode_cap[] = {
 	[MLX5_OPCODE_RDMA_READ]	       = IB_ODP_SUPPORT_READ,
 	[MLX5_OPCODE_ATOMIC_CS]	       = IB_ODP_SUPPORT_ATOMIC,
 	[MLX5_OPCODE_ATOMIC_FA]	       = IB_ODP_SUPPORT_ATOMIC,
+	[MLX5_OPCODE_ATOMIC_MASKED_CS] = IB_ODP_SUPPORT_ATOMIC,
+	[MLX5_OPCODE_ATOMIC_MASKED_FA] = IB_ODP_SUPPORT_ATOMIC,
 };
 
 /*
@@ -970,6 +1013,9 @@ static int mlx5_ib_mr_initiator_pfault_handler(
 	case IB_QPT_RC:
 		transport_caps = dev->odp_caps.per_transport_caps.rc_odp_caps;
 		break;
+	case IB_EXP_QPT_DC_INI:
+		transport_caps = dev->odp_caps.per_transport_caps.dc_odp_caps;
+		break;
 	case IB_QPT_UD:
 		transport_caps = dev->odp_caps.per_transport_caps.ud_odp_caps;
 		break;
@@ -1005,6 +1051,10 @@ static int mlx5_ib_mr_initiator_pfault_handler(
 		*wqe += sizeof(struct mlx5_wqe_raddr_seg);
 		*wqe += sizeof(struct mlx5_wqe_atomic_seg);
 		break;
+	case MLX5_OPCODE_ATOMIC_MASKED_CS:
+	case MLX5_OPCODE_ATOMIC_MASKED_FA:
+		*wqe += sizeof(struct mlx5_wqe_raddr_seg);
+		return ext_atomic_handler(dev, ctrl, wqe, opcode);
 	}
 
 	return 0;
