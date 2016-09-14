@@ -45,6 +45,7 @@
 #include <linux/mlx5/vport.h>
 #include <linux/mlx5/transobj.h>
 #include <linux/mlx5/fs.h>
+#include <linux/mlx5/fs.h>
 #include <linux/rhashtable.h>
 #include <net/switchdev.h>
 #include <net/xdp.h>

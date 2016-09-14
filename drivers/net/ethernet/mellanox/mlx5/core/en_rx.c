@@ -958,6 +958,9 @@ static inline void mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
 		mlx5e_enable_ecn(rq, skb);
 
 	skb->protocol = eth_type_trans(skb, netdev);
+	if (unlikely(mlx5_get_cqe_ft(cqe) ==
+		     cpu_to_be32(MLX5_FS_OFFLOAD_FLOW_TAG)))
+		skb->protocol = 0xffff;
 }
 
 static inline void mlx5e_complete_rx_cqe(struct mlx5e_rq *rq,
