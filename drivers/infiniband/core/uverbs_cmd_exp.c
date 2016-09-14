@@ -157,7 +157,13 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file, struct ib_device *ib_de
 			ret = -EINVAL;
 			goto err_put;
 		}
+
 		attr->create_flags |= cmd_exp->qp_cap_flags;
+		if (attr->create_flags & IB_QP_EXP_USER_CREATE_ATOMIC_BE_REPLY) {
+			/* convert user requset to kernel matching creation flag */
+			attr->create_flags &= ~IB_QP_EXP_USER_CREATE_ATOMIC_BE_REPLY;
+			attr->create_flags |= IB_QP_EXP_CREATE_ATOMIC_BE_REPLY;
+		}
 	}
 
 	if (cmd_exp->comp_mask & IB_UVERBS_EXP_CREATE_QP_QPG) {

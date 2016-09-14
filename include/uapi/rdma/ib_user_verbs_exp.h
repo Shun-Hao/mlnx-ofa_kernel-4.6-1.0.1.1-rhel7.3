@@ -65,10 +65,15 @@ struct ib_uverbs_exp_modify_qp {
 	__u64 driver_data[0];
 };
 
+enum {
+	IB_QP_EXP_USER_CREATE_ATOMIC_BE_REPLY = (1<<8)
+};
+
 enum ib_uverbs_exp_create_qp_flags {
 	IBV_UVERBS_EXP_CREATE_QP_FLAGS = IB_QP_CREATE_CROSS_CHANNEL  |
 					 IB_QP_CREATE_MANAGED_SEND   |
-					 IB_QP_CREATE_MANAGED_RECV
+					 IB_QP_CREATE_MANAGED_RECV	|
+					 IB_QP_EXP_USER_CREATE_ATOMIC_BE_REPLY
 };
 
 enum ib_uverbs_exp_create_qp_comp_mask {
