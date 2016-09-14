@@ -261,7 +261,8 @@ enum ib_signature_guard_cap {
 enum ib_atomic_cap {
 	IB_ATOMIC_NONE,
 	IB_ATOMIC_HCA,
-	IB_ATOMIC_GLOB
+	IB_ATOMIC_GLOB,
+	IB_ATOMIC_HCA_REPLY_BE	= 0x40 /* HOST is LE and atomic reply is BE */
 };
 
 enum ib_odp_general_cap_bits {
@@ -1135,6 +1136,8 @@ enum ib_qp_create_flags {
 	IB_QP_CREATE_CVLAN_STRIPPING		= 1 << 9,
 	IB_QP_CREATE_SOURCE_QPN			= 1 << 10,
 	IB_QP_CREATE_PCI_WRITE_END_PADDING	= 1 << 11,
+	/* EXP stuff */
+	IB_QP_EXP_CREATE_ATOMIC_BE_REPLY	= 1 << 15,
 	/* reserve bits 26-31 for low level drivers' internal use */
 	IB_QP_CREATE_RESERVED_START		= 1 << 26,
 	IB_QP_CREATE_RESERVED_END		= 1 << 31,
