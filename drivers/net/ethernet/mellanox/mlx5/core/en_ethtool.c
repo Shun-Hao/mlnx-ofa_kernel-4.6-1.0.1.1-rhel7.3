@@ -141,6 +141,7 @@ static const char mlx5e_priv_flags[][ETH_GSTRING_LEN] = {
 	"rx_cqe_compress",
 	"rx_striding_rq",
 	"rx_no_csum_complete",
+	"sniffer",
 };
 
 int mlx5e_ethtool_get_sset_count(struct mlx5e_priv *priv, int sset)
@@ -1513,6 +1514,15 @@ static int mlx5e_get_module_eeprom(struct net_device *netdev,
 
 typedef int (*mlx5e_pflag_handler)(struct net_device *netdev, bool enable);
 
+static int set_pflag_sniffer(struct net_device *netdev, bool enable)
+{
+	struct mlx5e_priv *priv = netdev_priv(netdev);
+
+	if (enable)
+		return mlx5e_sniffer_start(priv);
+	return mlx5e_sniffer_stop(priv);
+}
+
 static int set_pflag_cqe_based_moder(struct net_device *netdev, bool enable,
 				     bool is_rx_cq)
 {
@@ -1732,6 +1742,12 @@ static int mlx5e_set_priv_flags(struct net_device *netdev, u32 pflags)
 	err = mlx5e_handle_pflag(netdev, pflags,
 				 MLX5E_PFLAG_RX_NO_CSUM_COMPLETE,
 				 set_pflag_rx_no_csum_complete);
+	if (err)
+		goto out;
+
+	err = mlx5e_handle_pflag(netdev, pflags,
+				 MLX5E_PFLAG_SNIFFER,
+				 set_pflag_sniffer);
 
 out:
 	mutex_unlock(&priv->state_lock);

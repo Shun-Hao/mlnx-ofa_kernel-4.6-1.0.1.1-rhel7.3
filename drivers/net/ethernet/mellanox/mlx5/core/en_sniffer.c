@@ -627,6 +627,11 @@ int mlx5e_sniffer_start(struct mlx5e_priv *priv)
 	struct mlx5e_sniffer *sniffer;
 	int err;
 
+	if (!test_bit(MLX5E_STATE_OPENED, &priv->state)) {
+		netdev_err(priv->netdev, "Device is already closed\n");
+		return -EPERM;
+	}
+
 	sniffer = kzalloc(sizeof(*sniffer), GFP_KERNEL);
 	if (!sniffer)
 		return -ENOMEM;

@@ -228,6 +228,7 @@ enum mlx5e_priv_flag {
 	MLX5E_PFLAG_RX_CQE_COMPRESS = (1 << 2),
 	MLX5E_PFLAG_RX_STRIDING_RQ = (1 << 3),
 	MLX5E_PFLAG_RX_NO_CSUM_COMPLETE = (1 << 4),
+	MLX5E_PFLAG_SNIFFER = (1 << 5),
 };
 
 #define MLX5E_SET_PFLAG(params, pflag, enable)			\
