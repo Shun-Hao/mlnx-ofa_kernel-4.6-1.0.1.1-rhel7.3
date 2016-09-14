@@ -33,6 +33,17 @@
 #include "mlx4_ib.h"
 #include <linux/mlx4/qp.h>
 
+static inline int is_little_endian(void)
+{
+#if defined(__LITTLE_ENDIAN)
+	return 1;
+#elif defined(__BIG_ENDIAN)
+	return 0;
+#else
+#error Host endianness not defined
+#endif
+}
+
 void mlx4_ib_set_exp_attr_flags(struct mlx4_ib_qp *qp, struct ib_qp_init_attr *init_attr)
 {
 	if (qp->flags & MLX4_IB_QP_CROSS_CHANNEL)
@@ -74,6 +85,11 @@ struct ib_qp *mlx4_ib_exp_create_qp(struct ib_pd *pd,
 	int rwqe_size;
 	struct mlx4_ib_dev *dev;
 	struct mlx4_ib_qp *mqp;
+
+	if ((init_attr->create_flags & IB_QP_EXP_CREATE_ATOMIC_BE_REPLY) &&
+	     is_little_endian())
+		return ERR_PTR(-EINVAL);
+
 
 	if (init_attr->max_inl_recv && !udata)
 		return ERR_PTR(-EINVAL);
