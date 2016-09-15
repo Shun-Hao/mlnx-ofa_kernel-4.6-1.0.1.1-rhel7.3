@@ -5801,7 +5801,8 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 		(1ull << IB_USER_VERBS_EX_CMD_MODIFY_CQ);
 
 	dev->ib_dev.uverbs_exp_cmd_mask =
-		(1ull << IB_USER_VERBS_EXP_CMD_MODIFY_CQ);
+		(1ull << IB_USER_VERBS_EXP_CMD_MODIFY_CQ)	|
+		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_QP);
 
 	dev->ib_dev.query_device	= mlx5_ib_query_device;
 	dev->ib_dev.get_link_layer	= mlx5_ib_port_link_layer;
@@ -5836,6 +5837,7 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 	dev->ib_dev.modify_cq		= mlx5_ib_modify_cq;
 	/* Add EXP verbs here to minimize conflicts via rebase */
 	dev->ib_dev.exp_modify_cq	= mlx5_ib_exp_modify_cq;
+	dev->ib_dev.exp_create_qp	= mlx5_ib_exp_create_qp;
 	dev->ib_dev.resize_cq		= mlx5_ib_resize_cq;
 	dev->ib_dev.destroy_cq		= mlx5_ib_destroy_cq;
 	dev->ib_dev.poll_cq		= mlx5_ib_poll_cq;

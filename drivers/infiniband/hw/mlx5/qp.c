@@ -38,10 +38,49 @@
 #include "mlx5_ib.h"
 #include "ib_rep.h"
 #include "cmd.h"
+#include "user_exp.h"
 
 /* not supported currently */
 static int wq_signature;
+static int get_user_data(struct mlx5_ib_dev *dev, struct ib_pd *pd,
+			 struct ib_udata *udata, int is_exp,
+			 struct mlx5_exp_ib_create_qp *ucmd, int *uidx)
+{
+	int ucmd_size;
+	int err;
 
+	memset(ucmd, 0, sizeof(*ucmd));
+	if (is_exp) {
+		ucmd_size = sizeof(*ucmd);
+	} else {
+		ucmd_size = sizeof(struct mlx5_ib_create_qp);
+		if (ucmd_size > offsetof(struct mlx5_exp_ib_create_qp, size_of_prefix)) {
+			mlx5_ib_dbg(dev, "mlx5_ib_create_qp is too big to fit as prefix of mlx5_exp_ib_create_qp\n");
+			return -EINVAL;
+		}
+	}
+	err = ib_copy_from_udata(ucmd, udata, ucmd_size);
+	if (err) {
+		mlx5_ib_dbg(dev, "copy failed\n");
+		return -EFAULT;
+	}
+	if ((is_exp) &&
+	    ((ucmd->size_of_prefix > sizeof(struct mlx5_ib_create_qp)) ||
+	     (ucmd->exp.comp_mask >= MLX5_EXP_CREATE_QP_MASK_RESERVED))) {
+		mlx5_ib_dbg(dev, "Unrecognized driver data\n");
+		return -EINVAL;
+	}
+
+	if (is_exp)
+		err = get_qp_exp_user_index(to_mucontext(pd->uobject->context),
+					    ucmd, udata->inlen, uidx);
+	else
+		err = get_qp_user_index(to_mucontext(pd->uobject->context),
+					(struct mlx5_ib_create_qp *)ucmd,
+					udata->inlen, uidx);
+	return err;
+}
+ 
 enum {
 	MLX5_IB_ACK_REQ_FREQ	= 8,
 };
@@ -790,12 +829,6 @@ static int create_user_qp(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 	__be64 *pas;
 	void *qpc;
 	int err;
-
-	err = ib_copy_from_udata(&ucmd, udata, sizeof(ucmd));
-	if (err) {
-		mlx5_ib_dbg(dev, "copy failed\n");
-		return err;
-	}
 
 	context = to_mucontext(pd->uobject->context);
 	if (ucmd.flags & MLX5_QP_FLAG_BFREG_INDEX) {
@@ -1706,7 +1739,7 @@ static void configure_responder_scat_cqe(struct ib_qp_init_attr *init_attr,
 
 static void configure_requester_scat_cqe(struct mlx5_ib_dev *dev,
 					 struct ib_qp_init_attr *init_attr,
-					 struct mlx5_ib_create_qp *ucmd,
+					 struct mlx5_exp_ib_create_qp *ucmd,
 					 void *qpc)
 {
 	enum ib_qp_type qpt = init_attr->qp_type;
@@ -1787,7 +1820,7 @@ static inline bool check_flags_mask(uint64_t input, uint64_t supported)
 
 static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 			    struct ib_qp_init_attr *init_attr,
-			    struct ib_udata *udata, struct mlx5_ib_qp *qp)
+			    struct ib_udata *udata, struct mlx5_ib_qp *qp, int is_exp)
 {
 	struct mlx5_ib_resources *devr = &dev->devr;
 	int inlen = MLX5_ST_SZ_BYTES(create_qp_in);
@@ -1797,7 +1830,8 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 	struct mlx5_ib_cq *recv_cq;
 	unsigned long flags;
 	u32 uidx = MLX5_IB_DEFAULT_UIDX;
-	struct mlx5_ib_create_qp ucmd;
+	struct mlx5_ib_create_qp *pucmd = NULL;
+	struct mlx5_exp_ib_create_qp ucmd;
 	struct mlx5_ib_qp_base *base;
 	int mlx5_st;
 	void *qpc;
@@ -1877,10 +1911,9 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 	}
 
 	if (pd && pd->uobject) {
-		if (ib_copy_from_udata(&ucmd, udata, sizeof(ucmd))) {
-			mlx5_ib_dbg(dev, "copy failed\n");
-			return -EFAULT;
-		}
+		err = get_user_data(dev, pd, udata, is_exp, &ucmd, &uidx);
+		if (err)
+			return err;
 
 		if (!check_flags_mask(ucmd.flags,
 				      MLX5_QP_FLAG_SIGNATURE |
@@ -1892,11 +1925,7 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 					      MLX5_QP_FLAG_ALLOW_SCATTER_CQE))
 			return -EINVAL;
 
-		err = get_qp_user_index(to_mucontext(pd->uobject->context),
-					&ucmd, udata->inlen, &uidx);
-		if (err)
-			return err;
-
+		pucmd = (struct mlx5_ib_create_qp *)&ucmd;
 		qp->wq_sig = !!(ucmd.flags & MLX5_QP_FLAG_SIGNATURE);
 		if (MLX5_CAP_GEN(dev->mdev, sctr_data_cqe))
 			qp->scat_cqe = !!(ucmd.flags & MLX5_QP_FLAG_SCATTER_CQE);
@@ -1948,7 +1977,7 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 
 	qp->has_rq = qp_has_rq(init_attr);
 	err = set_rq_size(dev, &init_attr->cap, qp->has_rq,
-			  qp, (pd && pd->uobject) ? &ucmd : NULL);
+			  qp, (pd && pd->uobject) ? pucmd : NULL);
 	if (err) {
 		mlx5_ib_dbg(dev, "err %d\n", err);
 		return err;
@@ -2108,7 +2137,7 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 
 	if (init_attr->qp_type == IB_QPT_RAW_PACKET ||
 	    qp->flags & MLX5_IB_QP_UNDERLAY) {
-		qp->raw_packet_qp.sq.ubuffer.buf_addr = ucmd.sq_buf_addr;
+		qp->raw_packet_qp.sq.ubuffer.buf_addr = pucmd->sq_buf_addr;
 		raw_packet_qp_copy_info(qp, &qp->raw_packet_qp);
 		err = create_raw_packet_qp(dev, qp, in, inlen, pd, udata,
 					   &resp);
@@ -2450,9 +2479,10 @@ static int set_mlx_qp_type(struct mlx5_ib_dev *dev,
 	return 0;
 }
 
-struct ib_qp *mlx5_ib_create_qp(struct ib_pd *pd,
-				struct ib_qp_init_attr *verbs_init_attr,
-				struct ib_udata *udata)
+struct ib_qp *_mlx5_ib_create_qp(struct ib_pd *pd,
+				 struct ib_qp_init_attr *verbs_init_attr,
+				 struct ib_udata *udata,
+				 int is_exp)
 {
 	struct mlx5_ib_dev *dev;
 	struct mlx5_ib_qp *qp;
@@ -2530,7 +2560,7 @@ struct ib_qp *mlx5_ib_create_qp(struct ib_pd *pd,
 		if (!qp)
 			return ERR_PTR(-ENOMEM);
 
-		err = create_qp_common(dev, pd, init_attr, udata, qp);
+		err = create_qp_common(dev, pd, init_attr, udata, qp, is_exp);
 		if (err) {
 			mlx5_ib_dbg(dev, "create_qp_common failed\n");
 			kfree(qp);
@@ -2570,6 +2600,13 @@ struct ib_qp *mlx5_ib_create_qp(struct ib_pd *pd,
 		qp->qp_sub_type = init_attr->qp_type;
 
 	return &qp->ibqp;
+}
+
+struct ib_qp *mlx5_ib_create_qp(struct ib_pd *pd,
+				struct ib_qp_init_attr *init_attr,
+				struct ib_udata *udata)
+{
+	return _mlx5_ib_create_qp(pd, init_attr, udata, 0);
 }
 
 static int mlx5_ib_destroy_dct(struct mlx5_ib_qp *mqp)
