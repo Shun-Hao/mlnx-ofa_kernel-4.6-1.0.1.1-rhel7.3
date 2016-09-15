@@ -1,6 +1,7 @@
 #ifndef IB_VERBS_EXP_H
 #define IB_VERBS_EXP_H
 
+#include <rdma/ib_verbs.h>
 
 enum ib_cq_cap_flags {
 	IB_CQ_IGNORE_OVERRUN           = (1 << 0)
