@@ -33,6 +33,7 @@
 #ifndef _MLX5_FS_CORE_
 #define _MLX5_FS_CORE_
 
+#include "fs_debugfs.h"
 #include <linux/refcount.h>
 #include <linux/mlx5/fs.h>
 #include <linux/rhashtable.h>
@@ -82,8 +83,9 @@ enum fs_fte_status {
 struct mlx5_flow_steering {
 	struct mlx5_core_dev *dev;
 	struct kmem_cache               *fgs_cache;
-	struct kmem_cache               *ftes_cache;
+	struct kmem_cache		*ftes_cache;
 	struct mlx5_flow_root_namespace *root_ns;
+	struct dentry			*debugfs;
 	struct mlx5_flow_root_namespace *fdb_root_ns;
 	struct mlx5_flow_namespace	**fdb_sub_ns;
 	struct mlx5_flow_root_namespace **esw_egress_root_ns;
@@ -106,6 +108,9 @@ struct fs_node {
 	void			(*del_hw_func)(struct fs_node *);
 	void			(*del_sw_func)(struct fs_node *);
 	atomic_t		version;
+	/* debugfs */
+	struct fs_debugfs_node	debugfs;
+	const char		*name;
 };
 
 struct mlx5_flow_rule {
@@ -123,6 +128,7 @@ struct mlx5_flow_rule {
 	struct list_head			clients_data;
 	/* Protect clients data list */
 	struct mutex				clients_lock;
+	struct fs_debugfs_dst			debugfs;
 };
 
 /* Type of children is mlx5_flow_group */
@@ -145,6 +151,7 @@ struct mlx5_flow_table {
 	struct list_head		fwd_rules;
 	u32				flags;
 	struct rhltable			fgs_hash;
+	struct fs_debugfs_ft		debugfs;
 };
 
 struct mlx5_fc_cache {
@@ -197,6 +204,7 @@ struct fs_fte {
 	enum fs_fte_status		status;
 	struct mlx5_fc			*counter;
 	struct rhash_head		hash;
+	struct fs_debugfs_fte		debugfs;
 };
 
 /* Type of children is mlx5_flow_table/namespace */
@@ -206,6 +214,7 @@ struct fs_prio {
 	unsigned int			start_level;
 	unsigned int			prio;
 	unsigned int			num_ft;
+	struct fs_debugfs_prio		debugfs;
 };
 
 /* Type of children is fs_prio */
@@ -218,6 +227,7 @@ struct mlx5_flow_namespace {
 	 * namespace's rules.
 	 */
 	struct  rw_semaphore		ns_rw_sem;
+	struct	fs_debugfs_ns		debugfs;
 };
 
 struct mlx5_flow_group_mask {
@@ -235,6 +245,7 @@ struct mlx5_flow_group {
 	u32				id;
 	struct rhashtable		ftes_hash;
 	struct rhlist_head		hash;
+	struct fs_debugfs_fg		debugfs;
 };
 
 struct mlx5_flow_root_namespace {
