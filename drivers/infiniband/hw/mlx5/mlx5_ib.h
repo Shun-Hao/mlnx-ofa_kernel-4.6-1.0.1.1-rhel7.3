@@ -1026,6 +1026,9 @@ to_mflow_act(struct ib_flow_action *ibact)
 	return container_of(ibact, struct mlx5_ib_flow_action, ib_action);
 }
 
+int mlx5_ib_query_device(struct ib_device *ibdev,
+			 struct ib_device_attr *props,
+			 struct ib_udata *uhw);
 int mlx5_ib_db_map_user(struct mlx5_ib_ucontext *context, unsigned long virt,
 			struct mlx5_db *db);
 void mlx5_ib_db_unmap_user(struct mlx5_ib_ucontext *context, struct mlx5_db *db);
