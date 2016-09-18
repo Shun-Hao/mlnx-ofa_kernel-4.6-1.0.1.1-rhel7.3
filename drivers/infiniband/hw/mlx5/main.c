@@ -2145,6 +2145,10 @@ static int mlx5_ib_mmap(struct ib_ucontext *ibcontext, struct vm_area_struct *vm
 	unsigned long command;
 	phys_addr_t pfn;
 
+
+	if (is_exp_contig_command(command))
+		return mlx5_ib_exp_contig_mmap(ibcontext, vma, command);
+
 	command = get_command(vma->vm_pgoff);
 	switch (command) {
 	case MLX5_IB_MMAP_WC_PAGE:
@@ -2152,9 +2156,6 @@ static int mlx5_ib_mmap(struct ib_ucontext *ibcontext, struct vm_area_struct *vm
 	case MLX5_IB_MMAP_REGULAR_PAGE:
 	case MLX5_IB_MMAP_ALLOC_WC:
 		return uar_mmap(dev, command, vma, context);
-
-	case MLX5_IB_MMAP_GET_CONTIGUOUS_PAGES:
-		return -ENOSYS;
 
 	case MLX5_IB_MMAP_CORE_CLOCK:
 		if (vma->vm_end - vma->vm_start != PAGE_SIZE)
