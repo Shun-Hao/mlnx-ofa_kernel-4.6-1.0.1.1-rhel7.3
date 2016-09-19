@@ -45,5 +45,9 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 	props->exp_comp_mask = 0;
 	props->device_cap_flags2 = 0;
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_CAP_FLAGS2;
+
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_WITH_TIMESTAMP_MASK |
+		IB_EXP_DEVICE_ATTR_WITH_HCA_CORE_CLOCK;
+
 	return 0;
 }
