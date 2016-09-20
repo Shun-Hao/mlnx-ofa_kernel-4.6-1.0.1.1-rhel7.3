@@ -1942,7 +1942,10 @@ static phys_addr_t uar_index2pfn(struct mlx5_ib_dev *dev,
 
 static int get_command(unsigned long offset)
 {
-	return (offset >> MLX5_IB_MMAP_CMD_SHIFT) & MLX5_IB_MMAP_CMD_MASK;
+	int cmd = (offset >> MLX5_IB_MMAP_CMD_SHIFT) & MLX5_IB_MMAP_CMD_MASK;
+
+	return (cmd == MLX5_IB_EXP_MMAP_CORE_CLOCK) ? MLX5_IB_MMAP_CORE_CLOCK :
+		cmd;
 }
 
 static int get_arg(unsigned long offset)

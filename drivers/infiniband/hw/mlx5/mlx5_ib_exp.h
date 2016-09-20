@@ -8,4 +8,8 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			     struct ib_exp_device_attr *props,
 			     struct ib_udata *uhw);
 
+enum mlx5_ib_exp_mmap_cmd {
+	MLX5_IB_EXP_MMAP_CORE_CLOCK = 0xFB,
+};
+
 #endif
