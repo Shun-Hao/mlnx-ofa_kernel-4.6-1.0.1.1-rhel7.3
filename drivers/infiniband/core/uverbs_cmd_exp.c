@@ -421,6 +421,106 @@ static u32 create_cq_exp_flags_to_ex_flags(__u64 create_flags)
 	}
 }
 
+#define KEEP_ACCESS_FLAGS (IB_ACCESS_LOCAL_WRITE | IB_ACCESS_REMOTE_WRITE | \
+			   IB_ACCESS_REMOTE_READ | IB_ACCESS_REMOTE_ATOMIC | \
+			   IB_ACCESS_MW_BIND | IB_ZERO_BASED | \
+			   IB_ACCESS_ON_DEMAND)
+static int translate_exp_access_flags(u64 exp_access_flags)
+{
+	int access_flags = exp_access_flags & KEEP_ACCESS_FLAGS;
+
+	return access_flags;
+}
+
+int ib_uverbs_exp_reg_mr(struct ib_uverbs_file *file, struct ib_device *ib_dev,
+			 struct ib_udata *ucore, struct ib_udata *uhw)
+{
+	struct ib_uverbs_exp_reg_mr cmd;
+	struct ib_uverbs_exp_reg_mr_resp resp;
+	struct ib_uobject *uobj;
+	struct ib_pd      *pd;
+	struct ib_mr      *mr;
+	int access_flags;
+	int                ret;
+	const int min_cmd_size = offsetof(typeof(cmd), comp_mask) +
+					  sizeof(cmd.comp_mask);
+
+	if (ucore->inlen < min_cmd_size) {
+		pr_debug("%s: command input length too short\n", __func__);
+		return -EINVAL;
+	}
+
+	ret = ib_copy_from_udata(&cmd, ucore, sizeof(cmd));
+	if (ret)
+		return ret;
+
+	if (cmd.comp_mask >= IB_UVERBS_EXP_REG_MR_EX_RESERVED) {
+		pr_debug("%s: invalid bit in command comp_mask field\n",
+			 __func__);
+		return -EINVAL;
+	}
+
+	if ((cmd.start & ~PAGE_MASK) != (cmd.hca_va & ~PAGE_MASK)) {
+		pr_debug("%s: HCA virtual address doesn't match host address\n",
+			 __func__);
+		return -EINVAL;
+	}
+
+	access_flags = translate_exp_access_flags(cmd.exp_access_flags);
+
+	ret = ib_check_mr_access(access_flags);
+	if (ret)
+		return ret;
+
+	uobj  = uobj_alloc(UVERBS_OBJECT_MR, file, &ib_dev);
+	if (IS_ERR(uobj))
+		return PTR_ERR(uobj);
+
+	pd = uobj_get_obj_read(pd, UVERBS_OBJECT_PD, cmd.pd_handle, file);
+	if (!pd) {
+		pr_debug("ib_uverbs_reg_mr: invalid PD\n");
+		ret = -EINVAL;
+		goto err_free;
+	}
+
+	mr = pd->device->reg_user_mr(pd, cmd.start, cmd.length, cmd.hca_va,
+					 access_flags, uhw);
+	if (IS_ERR(mr)) {
+		ret = PTR_ERR(mr);
+		goto err_put;
+	}
+
+	mr->device  = pd->device;
+	mr->pd      = pd;
+	mr->uobject = uobj;
+	atomic_inc(&pd->usecnt);
+
+	uobj->object = mr;
+
+	memset(&resp, 0, sizeof(resp));
+	resp.lkey      = mr->lkey;
+	resp.rkey      = mr->rkey;
+	resp.mr_handle = uobj->id;
+
+	ret = ib_copy_to_udata(ucore, &resp, sizeof(resp));
+	if (ret)
+		goto err_copy;
+
+	uobj_put_obj_read(pd);
+
+	return uobj_alloc_commit(uobj, 0);
+
+err_copy:
+	ib_dereg_mr(mr);
+
+err_put:
+	uobj_put_obj_read(pd);
+
+err_free:
+	uobj_alloc_abort(uobj);
+	return ret;
+}
+
 int ib_uverbs_exp_create_cq(struct ib_uverbs_file *file, struct ib_device *ib_dev,
 			    struct ib_udata *ucore, struct ib_udata *uhw)
 {
