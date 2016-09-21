@@ -1656,12 +1656,18 @@ static void set_exp_data(struct mlx5_ib_dev *dev,
 {
 	resp->exp_data.comp_mask = MLX5_EXP_ALLOC_CTX_RESP_MASK_CQE_VERSION |
 		MLX5_EXP_ALLOC_CTX_RESP_MASK_CQE_COMP_MAX_NUM |
-		MLX5_EXP_ALLOC_CTX_RESP_MASK_HCA_CORE_CLOCK_OFFSET;
+		MLX5_EXP_ALLOC_CTX_RESP_MASK_HCA_CORE_CLOCK_OFFSET |
+		MLX5_EXP_ALLOC_CTX_RESP_MASK_MAX_DESC_SZ_SQ_DC |
+		MLX5_EXP_ALLOC_CTX_RESP_MASK_ATOMIC_ARG_SIZES_DC;
+
 	resp->exp_data.cqe_version = MLX5_CAP_GEN(dev->mdev, cqe_version);
 	resp->exp_data.cqe_comp_max_num = MLX5_CAP_GEN(dev->mdev,
 						      cqe_compression_max_num);
 	resp->exp_data.hca_core_clock_offset =
 		offsetof(struct mlx5_init_seg, internal_timer_h) % PAGE_SIZE;
+
+	resp->exp_data.max_desc_sz_sq_dc = MLX5_CAP_GEN(dev->mdev, max_wqe_sz_sq_dc);
+	resp->exp_data.atomic_arg_sizes_dc = MLX5_CAP_ATOMIC(dev->mdev, atomic_size_dc);
 }
 
 static struct ib_ucontext *mlx5_ib_alloc_ucontext(struct ib_device *ibdev,

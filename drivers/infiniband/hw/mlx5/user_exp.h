@@ -70,9 +70,11 @@ struct mlx5_exp_ib_create_cq {
 };
 
 enum mlx5_exp_ib_alloc_ucontext_data_resp_mask {
-	MLX5_EXP_ALLOC_CTX_RESP_MASK_CQE_COMP_MAX_NUM	= 1 << 0,
-	MLX5_EXP_ALLOC_CTX_RESP_MASK_CQE_VERSION	= 1 << 1,
+	MLX5_EXP_ALLOC_CTX_RESP_MASK_CQE_COMP_MAX_NUM		= 1 << 0,
+	MLX5_EXP_ALLOC_CTX_RESP_MASK_CQE_VERSION		= 1 << 1,
 	MLX5_EXP_ALLOC_CTX_RESP_MASK_HCA_CORE_CLOCK_OFFSET	= 1 << 4,
+	MLX5_EXP_ALLOC_CTX_RESP_MASK_MAX_DESC_SZ_SQ_DC		= 1 << 5,
+	MLX5_EXP_ALLOC_CTX_RESP_MASK_ATOMIC_ARG_SIZES_DC	= 1 << 6,
 };
 
 struct mlx5_exp_ib_alloc_ucontext_data_resp {
@@ -82,6 +84,8 @@ struct mlx5_exp_ib_alloc_ucontext_data_resp {
 	__u8	reserved1;
 	__u32	reserved2; /* Reserved for rroce udp ports */
 	__u32	hca_core_clock_offset;
+	__u32	max_desc_sz_sq_dc;
+	__u32	atomic_arg_sizes_dc;
 };
 
 struct mlx5_exp_ib_alloc_ucontext_resp {
