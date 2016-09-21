@@ -64,4 +64,6 @@ static inline int is_exp_contig_command(unsigned long command)
 int mlx5_ib_exp_contig_mmap(struct ib_ucontext *ibcontext,
 			    struct vm_area_struct *vma,
 			    unsigned long  command);
+struct ib_mr *mlx5_ib_phys_addr(struct ib_pd *pd, u64 length, u64 virt_addr,
+				int access_flags);
 #endif

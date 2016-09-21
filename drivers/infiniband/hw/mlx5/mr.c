@@ -1189,6 +1189,9 @@ struct ib_mr *mlx5_ib_reg_user_mr(struct ib_pd *pd, u64 start, u64 length,
 	if (!IS_ENABLED(CONFIG_INFINIBAND_USER_MEM))
 		return ERR_PTR(-EOPNOTSUPP);
 
+	if (access_flags & IB_EXP_ACCESS_PHYSICAL_ADDR)
+		return mlx5_ib_phys_addr(pd, length, virt_addr, access_flags);
+
 	mlx5_ib_dbg(dev, "start 0x%llx, virt_addr 0x%llx, length 0x%llx, access_flags 0x%x\n",
 		    start, virt_addr, length, access_flags);
 
