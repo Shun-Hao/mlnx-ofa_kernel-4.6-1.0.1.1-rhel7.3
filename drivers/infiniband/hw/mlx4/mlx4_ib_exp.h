@@ -101,4 +101,6 @@ void mlx4_ib_modify_qp_rss(struct mlx4_ib_dev *dev, struct mlx4_ib_qp *qp,
 int mlx4_ib_set_qp_user_uar(struct ib_pd *pd, struct mlx4_ib_qp *qp,
 			  struct ib_udata *udata,
 			  int is_exp);
+struct ib_mr *mlx4_ib_phys_addr(struct ib_pd *pd, u64 length, u64 virt_addr,
+				int access_flags);
 #endif

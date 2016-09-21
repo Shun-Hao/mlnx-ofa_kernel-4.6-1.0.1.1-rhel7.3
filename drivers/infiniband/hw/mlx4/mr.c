@@ -411,6 +411,9 @@ struct ib_mr *mlx4_ib_reg_user_mr(struct ib_pd *pd, u64 start, u64 length,
 	int err;
 	int n;
 
+	if (access_flags & IB_EXP_ACCESS_PHYSICAL_ADDR)
+		return mlx4_ib_phys_addr(pd, length, virt_addr, access_flags);
+
 	mr = kzalloc(sizeof(*mr), GFP_KERNEL);
 	if (!mr)
 		return ERR_PTR(-ENOMEM);
