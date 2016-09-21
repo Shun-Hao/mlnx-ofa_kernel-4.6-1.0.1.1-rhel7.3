@@ -441,6 +441,9 @@ static int translate_exp_access_flags(u64 exp_access_flags)
 {
 	int access_flags = exp_access_flags & KEEP_ACCESS_FLAGS;
 
+	if (exp_access_flags & IB_UVERBS_EXP_ACCESS_PHYSICAL_ADDR)
+		access_flags |= IB_EXP_ACCESS_PHYSICAL_ADDR;
+
 	return access_flags;
 }
 

@@ -3934,6 +3934,28 @@ int ib_dealloc_xrcd(struct ib_xrcd *xrcd);
 static inline int ib_check_mr_access(int flags)
 {
 	/*
+	 * Using a physical address memory region is allowed only when:
+	 * - Application is capable of writing to physical memory
+	 * - With access flags: local write, remote write/read/atomic
+	 */
+	if (flags & IB_EXP_ACCESS_PHYSICAL_ADDR) {
+#ifdef CONFIG_INFINIBAND_PA_MR
+		if (!capable(CAP_SYS_RAWIO))
+			return -EPERM;
+
+		if (flags ^ (flags & (IB_ACCESS_LOCAL_WRITE  |
+				      IB_ACCESS_REMOTE_WRITE |
+				      IB_ACCESS_REMOTE_READ  |
+				      IB_ACCESS_REMOTE_ATOMIC |
+				      IB_EXP_ACCESS_PHYSICAL_ADDR)))
+			return -EINVAL;
+#else
+		pr_debug("Physical address MR not supported, recompile with: --with-pa-mr\n");
+		return -EINVAL;
+#endif /* CONFIG_INFINIBAND_PA_MR */
+	}
+
+	/*
 	 * Local write permission is required if remote write or
 	 * remote atomic permission is also requested.
 	 */
