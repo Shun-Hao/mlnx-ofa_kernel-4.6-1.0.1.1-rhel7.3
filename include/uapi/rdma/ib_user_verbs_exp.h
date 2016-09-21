@@ -3,6 +3,12 @@
 
 #include <rdma/ib_verbs_exp.h>
 
+enum ibv_exp_start_values {
+	IBV_EXP_START_ENUM      = 0x40,
+	IBV_EXP_START_FLAG_LOC  = 0x20,
+	IBV_EXP_START_FLAG      = (1ULL << IBV_EXP_START_FLAG_LOC),
+};
+
 enum {
 	IB_USER_VERBS_EXP_CMD_FIRST = 64
 };
@@ -194,6 +200,10 @@ struct ib_uverbs_exp_create_cq {
 	__u32 reserved;
 	__u64 create_flags;
 	__u64 driver_data[0];
+};
+
+enum ib_uverbs_exp_access_flags {
+	IB_UVERBS_EXP_ACCESS_PHYSICAL_ADDR = (IBV_EXP_START_FLAG << 16),
 };
 
 enum ib_uverbs_exp_reg_mr_ex_comp_mask {
