@@ -2145,11 +2145,10 @@ static int mlx5_ib_mmap(struct ib_ucontext *ibcontext, struct vm_area_struct *vm
 	unsigned long command;
 	phys_addr_t pfn;
 
-
+	command = get_command(vma->vm_pgoff);
 	if (is_exp_contig_command(command))
 		return mlx5_ib_exp_contig_mmap(ibcontext, vma, command);
 
-	command = get_command(vma->vm_pgoff);
 	switch (command) {
 	case MLX5_IB_MMAP_WC_PAGE:
 	case MLX5_IB_MMAP_NC_PAGE:

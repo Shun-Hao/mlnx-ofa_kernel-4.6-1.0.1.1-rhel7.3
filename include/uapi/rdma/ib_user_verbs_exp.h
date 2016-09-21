@@ -172,6 +172,11 @@ struct ib_uverbs_exp_query_device_resp {
 	__u64					atomic_arg_sizes;
 	__u32					max_fa_bit_boudary;
 	__u32					log_max_atomic_inline_arg;
+	__u8					reserved_umr[16];
+	__u8					reserved_odp[32];
+	__u32					reserved3;
+	__u32					max_ctx_res_domain;
+
 
 };
 

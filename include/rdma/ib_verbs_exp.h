@@ -48,6 +48,7 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_INLINE_RECV_SZ	= 1ULL << 6,
 	IB_EXP_DEVICE_ATTR_RSS_TBL_SZ		= 1ULL << 7,
 	IB_EXP_DEVICE_ATTR_EXT_ATOMIC_ARGS	= 1ULL << 8,
+	IB_EXP_DEVICE_ATTR_MAX_CTX_RES_DOMAIN	= 1ULL << 12,
 };
 
 enum ib_exp_device_cap_flags2 {
@@ -74,6 +75,7 @@ struct ib_exp_device_attr {
 	u64                     atomic_arg_sizes;
 	u32                     max_fa_bit_boudary;
 	u32                     log_max_atomic_inline_arg;
+	uint32_t		max_ctx_res_domain;
 };
 
 /**

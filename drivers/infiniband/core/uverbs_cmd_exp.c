@@ -407,6 +407,11 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		resp->log_max_atomic_inline_arg = exp_attr->log_max_atomic_inline_arg;
 	}
 
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_MAX_CTX_RES_DOMAIN) {
+		resp->max_ctx_res_domain = exp_attr->max_ctx_res_domain;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_MAX_CTX_RES_DOMAIN;
+	}
+
 	ret = ib_copy_to_udata(ucore, resp, min_t(size_t, sizeof(*resp), ucore->outlen));
 out:
 	kfree(exp_attr);
