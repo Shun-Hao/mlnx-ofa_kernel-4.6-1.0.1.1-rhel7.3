@@ -1115,6 +1115,8 @@ static struct ib_ucontext *mlx4_ib_alloc_ucontext(struct ib_device *ibdev,
 
 	INIT_LIST_HEAD(&context->db_page_list);
 	mutex_init(&context->db_page_mutex);
+	INIT_LIST_HEAD(&context->user_uar_list);
+	mutex_init(&context->user_uar_mutex);
 
 	INIT_LIST_HEAD(&context->wqn_ranges_list);
 	mutex_init(&context->wqn_ranges_mutex);
@@ -1136,8 +1138,15 @@ static struct ib_ucontext *mlx4_ib_alloc_ucontext(struct ib_device *ibdev,
 static int mlx4_ib_dealloc_ucontext(struct ib_ucontext *ibcontext)
 {
 	struct mlx4_ib_ucontext *context = to_mucontext(ibcontext);
+	struct mlx4_ib_user_uar *uar, *tmp;
 
 	mlx4_uar_free(to_mdev(ibcontext->device)->dev, &context->uar);
+	list_for_each_entry_safe(uar, tmp, &context->user_uar_list, list) {
+		list_del(&uar->list);
+		mlx4_uar_free(to_mdev(ibcontext->device)->dev, &uar->uar);
+		kfree(uar);
+	}
+
 	kfree(context);
 
 	return 0;
@@ -1190,7 +1199,13 @@ static int mlx4_ib_mmap(struct ib_ucontext *context, struct vm_area_struct *vma)
 	}
 
 	default:
-		return -EINVAL;
+		if (command == MLX4_IB_EXP_MMAP_EXT_UAR_PAGE) {
+			return mlx4_ib_exp_uar_mmap(context, vma, command);
+		} else if (command == MLX4_IB_EXP_MMAP_EXT_BLUE_FLAME_PAGE) {
+			return mlx4_ib_exp_bf_mmap(context, vma, command);
+		} else {
+			return -EINVAL;
+		}
 	}
 }
 

@@ -105,3 +105,83 @@ int mlx4_ib_exp_ioctl(struct ib_ucontext *context, unsigned int cmd,
 	return ret;
 }
 
+int mlx4_ib_exp_uar_mmap(struct ib_ucontext *context, struct vm_area_struct *vma,
+			    unsigned long  command)
+{
+	struct mlx4_ib_user_uar *uar;
+	unsigned long  parm = vma->vm_pgoff >> MLX4_IB_EXP_MMAP_CMD_BITS;
+	struct mlx4_ib_ucontext *mucontext = to_mucontext(context);
+	struct mlx4_ib_dev *dev = to_mdev(context->device);
+	int err;
+
+	if (vma->vm_end - vma->vm_start != PAGE_SIZE)
+		return -EINVAL;
+
+	if (parm >= MLX4_IB_MAX_CTX_UARS)
+		return -EINVAL;
+
+	/* We prevent double mmaping on same context */
+	list_for_each_entry(uar, &mucontext->user_uar_list, list)
+		if (uar->user_idx == parm) {
+			return -EINVAL;
+		}
+
+	uar = kzalloc(sizeof(*uar), GFP_KERNEL);
+	uar->user_idx = parm;
+
+	err = mlx4_uar_alloc(dev->dev, &uar->uar);
+	if (err) {
+		kfree(uar);
+		return -ENOMEM;
+	}
+
+	rdma_user_mmap_io(context, vma,
+				uar->uar.pfn, PAGE_SIZE,
+				pgprot_noncached(vma->vm_page_prot), NULL);
+        //We need it as in use in find_user_uar func
+	(&uar->hw_bar_info[HW_BAR_DB])->vma = vma;
+	
+	mutex_lock(&mucontext->user_uar_mutex);
+	list_add(&uar->list, &mucontext->user_uar_list);
+	mutex_unlock(&mucontext->user_uar_mutex);
+	return 0;
+}
+
+int mlx4_ib_exp_bf_mmap(struct ib_ucontext *context, struct vm_area_struct *vma,
+			    unsigned long  command)
+{
+	struct mlx4_ib_user_uar *uar;
+	unsigned long  parm = vma->vm_pgoff >> MLX4_IB_EXP_MMAP_CMD_BITS;
+	struct mlx4_ib_ucontext *mucontext = to_mucontext(context);
+	struct mlx4_ib_dev *dev = to_mdev(context->device);
+
+	if (vma->vm_end - vma->vm_start != PAGE_SIZE)
+		return -EINVAL;
+
+	if (parm >= MLX4_IB_MAX_CTX_UARS)
+		return -EINVAL;
+
+	/*
+	 * BlueFlame pages are affiliated with the UAR pages by their
+	 * indexes. A QP can only use a BlueFlame page with the index
+	 * equal to the QP UAR. Therefore BF may be mapped to user
+	 * only after the related UAR is already mapped to the user.
+	 */
+	uar = NULL;
+	list_for_each_entry(uar, &mucontext->user_uar_list, list)
+		if (uar->user_idx == parm)
+			break;
+	if (!uar || uar->user_idx != parm)
+		return -EINVAL;
+	
+	/* We prevent double mmaping on same context */
+	if (uar->hw_bar_info[HW_BAR_BF].vma)
+		return -EINVAL;
+
+	rdma_user_mmap_io(context, vma, 
+				uar->uar.pfn + dev->dev->caps.num_uars, PAGE_SIZE, 
+				pgprot_noncached(vma->vm_page_prot), NULL);
+	(&uar->hw_bar_info[HW_BAR_BF])->vma = vma;
+
+	return 0;
+}

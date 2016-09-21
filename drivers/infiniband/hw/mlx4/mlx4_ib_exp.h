@@ -21,6 +21,13 @@ int qp_has_rq(struct ib_qp_init_attr *attr);
 
 #define MLX4_IB_EXP_MMAP_CMD_MASK 0xFF
 #define MLX4_IB_EXP_MMAP_CMD_BITS 8
+/*
+ * Set MLX4_IB_MAX_CTX_UARS to 256 each UAR related to 8 BFs.
+ * This provides maximum of 256 * 8 = 2048 BFs.
+ * To gain performance we may need BF per core which means we can support
+ * up to 2048 cores with dedicated BF per context.
+ */
+#define MLX4_IB_MAX_CTX_UARS 256
 
 enum mlx4_ib_exp_mmap_cmd {
 	MLX4_IB_EXP_MMAP_GET_CONTIGUOUS_PAGES = 2,
@@ -28,6 +35,8 @@ enum mlx4_ib_exp_mmap_cmd {
 	/* Use EXP mmap commands until it is pushed to upstream */
 	MLX4_IB_EXP_MMAP_GET_CONTIGUOUS_PAGES_CPU_NUMA	= 0xFC,
 	MLX4_IB_EXP_MMAP_GET_CONTIGUOUS_PAGES_DEV_NUMA	= 0xFD,
+	MLX4_IB_EXP_MMAP_EXT_UAR_PAGE			= 0xFE,
+	MLX4_IB_EXP_MMAP_EXT_BLUE_FLAME_PAGE		= 0xFF,
 };
 
 struct mlx4_ib_qpg_data {
@@ -46,6 +55,11 @@ struct mlx4_ib_qpg_data {
 
 int mlx4_ib_exp_contig_mmap(struct ib_ucontext *context, struct vm_area_struct *vma,
 			    unsigned long  command);
+int mlx4_ib_exp_uar_mmap(struct ib_ucontext *context, struct vm_area_struct *vma,
+			    unsigned long  command);
+int mlx4_ib_exp_bf_mmap(struct ib_ucontext *context, struct vm_area_struct *vma,
+			    unsigned long  command);
+
 static inline int is_exp_contig_command(unsigned long  command)
 {
 	if (command == MLX4_IB_EXP_MMAP_GET_CONTIGUOUS_PAGES ||
