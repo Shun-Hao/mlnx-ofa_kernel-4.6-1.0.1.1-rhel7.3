@@ -7,6 +7,7 @@
 #include <rdma/ib_cmem.h>
 #include <linux/mlx4/device.h>
 #include <linux/mlx4/qp.h>
+#include "user_exp.h"
 
 struct mlx4_ib_qp;
 struct ib_qp_init_attr;
@@ -97,4 +98,7 @@ struct ib_qp *mlx4_ib_create_qp_wrp(struct ib_pd *pd,
 				    struct ib_udata *udata);
 void mlx4_ib_modify_qp_rss(struct mlx4_ib_dev *dev, struct mlx4_ib_qp *qp,
 			   struct mlx4_qp_context *context);
+int mlx4_ib_set_qp_user_uar(struct ib_pd *pd, struct mlx4_ib_qp *qp,
+			  struct ib_udata *udata,
+			  int is_exp);
 #endif

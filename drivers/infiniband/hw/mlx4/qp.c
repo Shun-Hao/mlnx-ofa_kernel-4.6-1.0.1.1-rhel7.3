@@ -1041,6 +1041,11 @@ static int create_qp_common(struct mlx4_ib_dev *dev, struct ib_pd *pd,
 				goto err_mtt;
 		}
 		qp->mqp.usage = MLX4_RES_USAGE_USER_VERBS;
+
+		err = mlx4_ib_set_qp_user_uar(pd, qp, udata, is_exp);
+		if (err)
+			goto err_mtt;
+
 	} else {
 		err = set_rq_size(dev, &init_attr->cap, !!pd->uobject,
 				  qp_has_rq(init_attr), qp, 0);
@@ -2157,8 +2162,7 @@ static int __mlx4_ib_modify_qp(void *src, enum mlx4_ib_source_type src_type,
 	if (ibuobject)
 		context->usr_page = cpu_to_be32(
 			mlx4_to_hw_uar_index(dev->dev,
-					     to_mucontext(ibuobject->context)
-					     ->uar.index));
+					     qp->uar->index));
 	else
 		context->usr_page = cpu_to_be32(
 			mlx4_to_hw_uar_index(dev->dev, dev->priv_uar.index));

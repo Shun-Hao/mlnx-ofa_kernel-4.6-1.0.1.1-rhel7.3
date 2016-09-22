@@ -525,3 +525,51 @@ void mlx4_ib_modify_qp_rss(struct mlx4_ib_dev *dev, struct mlx4_ib_qp *qp,
 		       sizeof(rss_context->rss_key));
 	}
 }
+
+static struct mlx4_uar *find_user_uar(struct mlx4_ib_ucontext *uctx, unsigned long uar_virt_add)
+{
+	struct mlx4_ib_user_uar *uar;
+
+	mutex_lock(&uctx->user_uar_mutex);
+	list_for_each_entry(uar, &uctx->user_uar_list, list)
+		if (uar->hw_bar_info[HW_BAR_DB].vma &&
+		    uar->hw_bar_info[HW_BAR_DB].vma->vm_start == uar_virt_add) {
+			mutex_unlock(&uctx->user_uar_mutex);
+			return &uar->uar;
+		}
+	mutex_unlock(&uctx->user_uar_mutex);
+
+	return NULL;
+}
+
+int mlx4_ib_set_qp_user_uar(struct ib_pd *pd, struct mlx4_ib_qp *qp,
+			    struct ib_udata *udata,
+			    int is_exp)
+{
+	struct mlx4_exp_ib_create_qp ucmd = {};
+
+	if (!is_exp)
+		goto end;
+
+	if (udata->inlen > offsetof(struct mlx4_exp_ib_create_qp, uar_virt_add)) {
+
+		if (ib_copy_from_udata(&ucmd, udata, sizeof(ucmd)))
+			return -EFAULT;
+
+		if (!ucmd.uar_virt_add)
+			goto end;
+
+		qp->uar = find_user_uar(to_mucontext(pd->uobject->context),
+			   (unsigned long)ucmd.uar_virt_add);
+		if (!qp->uar) {
+			pr_debug("failed to find user UAR with virt address 0x%llx", ucmd.uar_virt_add);
+			return -EINVAL;
+		}
+
+		return 0;
+	}
+
+end:
+	qp->uar = &to_mucontext(pd->uobject->context)->uar;
+	return 0;
+}

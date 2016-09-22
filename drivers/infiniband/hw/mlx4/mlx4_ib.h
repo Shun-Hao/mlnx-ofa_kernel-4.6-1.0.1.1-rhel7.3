@@ -369,6 +369,7 @@ struct mlx4_ib_qp {
 	/* Number of RSS QP parents that uses this WQ */
 	u32			rss_usecnt;
 	struct mlx4_ib_rss	*rss_ctx;
+	struct mlx4_uar		*uar;
 };
 
 struct mlx4_ib_srq {
