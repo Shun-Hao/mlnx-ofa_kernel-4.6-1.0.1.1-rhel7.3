@@ -2935,6 +2935,9 @@ static void mlx4_enable_msi_x(struct mlx4_dev *dev)
 
 		if (msi_x > 1)
 			nreq = min_t(int, nreq, msi_x);
+#ifdef CONFIG_PPC
+		nreq = min_t(int, nreq, PPC_MAX_MSIX);
+#endif
 
 		entries = kcalloc(nreq, sizeof(*entries), GFP_KERNEL);
 		if (!entries)
