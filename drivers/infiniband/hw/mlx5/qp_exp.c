@@ -69,43 +69,11 @@ struct ib_qp *mlx5_ib_exp_create_qp(struct ib_pd *pd,
 				  udata, 1);
 }
 
-static u32 atomic_mode_dct(struct mlx5_ib_dev *dev)
+static void mlx5_ib_dct_event(struct mlx5_core_qp *qp, int type)
 {
-	unsigned long mask;
-	unsigned long tmp;
-
-	mask = MLX5_CAP_ATOMIC(dev->mdev, atomic_size_qp) &
-	       MLX5_CAP_ATOMIC(dev->mdev, atomic_size_dc);
-
-	tmp = find_last_bit(&mask, BITS_PER_LONG);
-	if (tmp < 2)
-		return MLX5_ATOMIC_MODE_DCT_NONE;
-
-	if (tmp == 2)
-		return MLX5_ATOMIC_MODE_DCT_CX;
-
-	return tmp << MLX5_ATOMIC_MODE_DCT_OFF;
-}
-
-static u32 ib_to_dct_access(struct mlx5_ib_dev *dev, u32 ib_flags)
-{
-	u32 flags = 0;
-
-	if (ib_flags & IB_ACCESS_REMOTE_READ)
-		flags |= MLX5_DCT_BIT_RRE;
-	if (ib_flags & IB_ACCESS_REMOTE_WRITE)
-		flags |= (MLX5_DCT_BIT_RWE | MLX5_DCT_BIT_RRE);
-	if (ib_flags & IB_ACCESS_REMOTE_ATOMIC) {
-		flags |= (MLX5_DCT_BIT_RAE | MLX5_DCT_BIT_RWE | MLX5_DCT_BIT_RRE);
-		flags |= atomic_mode_dct(dev);
-	}
-
-	return flags;
-}
-
-static void mlx5_ib_dct_event(struct mlx5_core_dct *dct, enum mlx5_event type)
-{
-	struct ib_dct *ibdct = &to_mibdct(dct)->ibdct;
+	struct mlx5_ib_dct *mdct = (struct mlx5_ib_dct *)qp;
+	struct mlx5_ib_dc_target *dc_target = mdct->dc_target;
+	struct ib_dct *ibdct = &dc_target->ibdct;
 	struct ib_event event;
 
 	if (ibdct->event_handler) {
@@ -123,7 +91,7 @@ static void mlx5_ib_dct_event(struct mlx5_core_dct *dct, enum mlx5_event type)
 			break;
 		default:
 			pr_warn("mlx5_ib: Unexpected event type %d on DCT %06x\n",
-				type, dct->dctn);
+				type, ibdct->dct_num);
 			return;
 		}
 
@@ -131,29 +99,124 @@ static void mlx5_ib_dct_event(struct mlx5_core_dct *dct, enum mlx5_event type)
 	}
 }
 
-struct ib_dct *mlx5_ib_create_dct(struct ib_pd *pd,
-				  struct ib_dct_init_attr *attr,
-				  struct ib_udata *udata)
+static struct mlx5_ib_qp *dct_create_qp(struct ib_pd *pd,
+                                   struct ib_dct_init_attr *attr,
+                                   u32 uidx)
 {
-	u32 *in;
-	int inlen = MLX5_ST_SZ_BYTES(create_dct_in);
+       struct ib_qp_init_attr qp_attr;
+       struct ib_qp *qp;
+       struct mlx5_ib_qp *mqp;
+       void *dctc;
+       struct mlx5_ib_dev *dev = to_mdev(pd->device);
+
+       /* TODO: re-add OOO
+       if (!pd->uobject &&
+           dev->ooo.enabled &&
+           MLX5_CAP_GEN(dev->mdev, multipath_dc_qp))
+              attr->create_flags |= IB_EXP_DCT_OOO_RW_DATA_PLACEMENT;
+       if ((attr->create_flags & IB_EXP_DCT_OOO_RW_DATA_PLACEMENT) &&
+           !MLX5_CAP_GEN(dev->mdev, multipath_dc_qp))
+              return ERR_PTR(-EINVAL);
+
+       if ((attr->srq && attr->srq->srq_type == IB_EXP_SRQT_TAG_MATCHING) &&
+           !MLX5_CAP_GEN(dev->mdev, rndv_offload_dc))
+              return ERR_PTR(-EINVAL);
+	*/
+
+       qp_attr.srq = attr->srq;
+       qp_attr.recv_cq = attr->cq;
+
+       qp = mlx5_ib_create_dct(pd, &qp_attr, NULL);
+
+       if (IS_ERR(qp))
+              return ERR_PTR(PTR_ERR(qp));
+
+       mqp = to_mqp(qp);
+       dctc = MLX5_ADDR_OF(create_dct_in, mqp->dct.in, dct_context_entry);
+       MLX5_SET64(dctc, dctc, dc_access_key , attr->dc_key);
+       MLX5_SET(dctc, dctc, counter_set_id, dev->port[attr->port - 1].cnts.set_id);
+       MLX5_SET(dctc, dctc, user_index, uidx);
+       if (attr->inline_size) {
+	       int cqe_sz = mlx5_ib_get_cqe_size(attr->cq);
+
+	       if (cqe_sz == 128) {
+		       MLX5_SET(dctc, dctc, cs_res, MLX5_DCT_CS_RES_64);
+		       attr->inline_size = 64;
+	       } else {
+		       attr->inline_size = 0;
+	       }
+       }
+	
+       /* TODO: re-add OOO
+       if (attr->create_flags & IB_EXP_DCT_OOO_RW_DATA_PLACEMENT)
+	       MLX5_SET(dctc, dctc, multipath, 1);
+       if (attr->srq && attr->srq->srq_type == IB_EXP_SRQT_TAG_MATCHING)
+              MLX5_SET(dctc, dctc, offload_type, MLX5_DCTC_OFFLOAD_TYPE_RNDV);
+	*/
+
+       return mqp;
+}
+
+static int dct_modify_qp_INIT(struct mlx5_ib_qp *mqp, struct ib_dct_init_attr *attr)
+{
+       struct ib_qp_attr qp_attr;
+       int attr_mask = IB_QP_ACCESS_FLAGS |
+                     IB_QP_PKEY_INDEX |
+                     IB_QP_PORT |
+                     IB_QP_STATE;
+       struct ib_qp *qp = &mqp->ibqp;
+       int err;
+
+       qp_attr.qp_state = IB_QPS_INIT;
+       qp_attr.qp_access_flags = attr->access_flags;
+       qp_attr.port_num = attr->port;
+       qp_attr.pkey_index = attr->pkey_index;
+
+       err = mlx5_ib_modify_dct(qp, &qp_attr, attr_mask, NULL);
+       return err;
+}
+
+static int dct_modify_qp_RTR(struct mlx5_ib_qp *mqp, struct ib_dct_init_attr *attr)
+{
+	struct ib_qp_attr qp_attr;
+	int attr_mask = IB_QP_MIN_RNR_TIMER |
+		IB_QP_AV |
+		IB_QP_PATH_MTU |
+		IB_QP_STATE;
+	struct ib_qp *qp = &mqp->ibqp;
+	int err;
+
+	qp_attr.qp_state = IB_QPS_RTR;
+	qp_attr.ah_attr.grh.flow_label = attr->flow_label;
+	qp_attr.path_mtu = attr->mtu;
+	qp_attr.ah_attr.grh.sgid_index = attr->gid_index;
+	qp_attr.ah_attr.grh.hop_limit = attr->hop_limit;
+	qp_attr.ah_attr.grh.traffic_class = attr->tclass;
+
+	err = mlx5_ib_modify_dct(qp, &qp_attr, attr_mask, NULL);
+	return err;
+}
+
+struct ib_dct *mlx5_ib_create_dc_target(struct ib_pd *pd,
+                               struct ib_dct_init_attr *attr,
+                                      struct ib_udata *udata)
+{
 	struct mlx5_ib_create_dct ucmd;
 	struct mlx5_ib_dev *dev = to_mdev(pd->device);
-	struct mlx5_ib_dct *dct;
-	void *dctc;
-	int cqe_sz;
+	struct mlx5_ib_dc_target *dct;
 	int err;
-	u32 flags = 0;
 	u32 uidx = 0;
-	u32 cqn;
+
+	if (!rdma_is_port_valid(&dev->ib_dev, attr->port))
+		return ERR_PTR(-EINVAL);
 
 	if (pd && pd->uobject) {
 		if (ib_copy_from_udata(&ucmd, udata, sizeof(ucmd))) {
-			mlx5_ib_err(dev, "copy failed\n");
+			mlx5_ib_err(dev, "ib_copy_from_udata failed\n");
 			return ERR_PTR(-EFAULT);
 		}
 
-		if (udata->inlen)
+		if (udata->inlen && MLX5_CAP_GEN(dev->mdev, cqe_version))
 			uidx = ucmd.uidx;
 		else
 			uidx = 0xffffff;
@@ -164,83 +227,40 @@ struct ib_dct *mlx5_ib_create_dct(struct ib_pd *pd,
 	dct = kzalloc(sizeof(*dct), GFP_KERNEL);
 	if (!dct)
 		return ERR_PTR(-ENOMEM);
-
-	in = kzalloc(inlen, GFP_KERNEL);
-	if (!in) {
-		err = -ENOMEM;
-		goto err_alloc;
+	dct->qp = dct_create_qp(pd, attr, uidx);
+	if (IS_ERR(dct->qp)) {
+		err = PTR_ERR(dct->qp);
+		goto err_free;
 	}
-
-	dctc = MLX5_ADDR_OF(create_dct_in, in, dct_context_entry);
-	cqn = to_mcq(attr->cq)->mcq.cqn;
-	if (cqn & 0xff000000) {
-		mlx5_ib_warn(dev, "invalid cqn 0x%x\n", cqn);
-		err = -EINVAL;
-		goto err_alloc;
-	}
-
-	MLX5_SET(dctc, dctc, cqn, cqn);
-
-	flags = ib_to_dct_access(dev, attr->access_flags);
-	if (flags & MLX5_DCT_BIT_RRE)
-		MLX5_SET(dctc, dctc, rre, 1);
-	if (flags & MLX5_DCT_BIT_RWE)
-		MLX5_SET(dctc, dctc, rwe, 1);
-	if (flags & MLX5_DCT_BIT_RAE)
-		MLX5_SET(dctc, dctc, rae, 1);
-
-	if (attr->inline_size) {
-		cqe_sz = mlx5_ib_get_cqe_size(dev, attr->cq);
-		if (cqe_sz == 128) {
-			MLX5_SET(dctc, dctc, cs_res, MLX5_DCT_CS_RES_64);
-			attr->inline_size = 64;
-		} else {
-			attr->inline_size = 0;
-		}
-	}
-
-	MLX5_SET(dctc, dctc, min_rnr_nak , attr->min_rnr_timer);
-	MLX5_SET(dctc, dctc, srqn_xrqn , to_msrq(attr->srq)->msrq.srqn);
-	MLX5_SET(dctc, dctc, pd , to_mpd(pd)->pdn);
-	MLX5_SET(dctc, dctc, tclass, attr->tclass);
-	MLX5_SET(dctc, dctc, flow_label , attr->flow_label);
-	MLX5_SET64(dctc, dctc, dc_access_key , attr->dc_key);
-	MLX5_SET(dctc, dctc, mtu , attr->mtu);
-	MLX5_SET(dctc, dctc, port , attr->port);
-	MLX5_SET(dctc, dctc, pkey_index , attr->pkey_index);
-	MLX5_SET(dctc, dctc, my_addr_index , attr->gid_index);
-	MLX5_SET(dctc, dctc, hop_limit , attr->hop_limit);
-
-	if (MLX5_CAP_GEN(dev->mdev, cqe_version)) {
-		/* 0xffffff means we ask to work with cqe version 0 */
-		MLX5_SET(dctc, dctc, user_index, uidx);
-	}
-
-	err = mlx5_core_create_dct(dev->mdev, &dct->mdct, in);
+	dct->qp->ibqp.device = pd->device;
+	err = dct_modify_qp_INIT(dct->qp, attr);
 	if (err)
-		goto err_alloc;
+		goto err_destroy;
 
-	dct->ibdct.dct_num = dct->mdct.dctn;
-	dct->mdct.event = mlx5_ib_dct_event;
-	kfree(in);
+	err = dct_modify_qp_RTR(dct->qp, attr);
+	if (err)
+		goto err_destroy;
+
+	dct->ibdct.dct_num = dct->qp->dct.mdct.mqp.qpn;
+	dct->qp->dct.dc_target = dct;
+	dct->qp->dct.mdct.mqp.event = mlx5_ib_dct_event;
+
 	return &dct->ibdct;
-
-err_alloc:
-	kfree(in);
-	kfree(dct);
-	return ERR_PTR(err);
+err_destroy:
+	mlx5_ib_destroy_dct(dct->qp);
+err_free:
+        kfree(dct);
+        return ERR_PTR(err);
 }
 
-int mlx5_ib_destroy_dct(struct ib_dct *dct)
+int mlx5_ib_destroy_dc_target(struct ib_dct *dct)
 {
-	struct mlx5_ib_dev *dev = to_mdev(dct->device);
-	struct mlx5_ib_dct *mdct = to_mdct(dct);
+	struct mlx5_ib_dc_target *mdct = to_mdct(dct);
 	int err;
 
-	err = mlx5_core_destroy_dct(dev->mdev, &mdct->mdct);
-	if (!err)
-		kfree(mdct);
-
+	err = mlx5_ib_destroy_qp(&mdct->qp->ibqp);
+	kfree(mdct);
+	
 	return err;
 }
 
@@ -258,10 +278,10 @@ int dct_to_ib_access(u32 dc_flags)
 	return flags;
 }
 
-int mlx5_ib_query_dct(struct ib_dct *dct, struct ib_dct_attr *attr)
+int mlx5_ib_query_dc_target(struct ib_dct *dct, struct ib_dct_attr *attr)
 {
 	struct mlx5_ib_dev *dev = to_mdev(dct->device);
-	struct mlx5_ib_dct *mdct = to_mdct(dct);
+	struct mlx5_ib_dc_target *mdct = to_mdct(dct);
 	u32 dc_flags = 0;
 	u32 *out;
 	int outlen = MLX5_ST_SZ_BYTES(query_dct_out);
@@ -272,7 +292,7 @@ int mlx5_ib_query_dct(struct ib_dct *dct, struct ib_dct_attr *attr)
 	if (!out)
 		return -ENOMEM;
 
-	err = mlx5_core_dct_query(dev->mdev, &mdct->mdct, out, outlen);
+	err = mlx5_core_dct_query(dev->mdev, &mdct->qp->dct.mdct, out, outlen);
 	if (err)
 		goto out;
 
@@ -304,10 +324,10 @@ out:
 	return err;
 }
 
-int mlx5_ib_arm_dct(struct ib_dct *dct, struct ib_udata *udata)
+int mlx5_ib_arm_dc_target(struct ib_dct *dct, struct ib_udata *udata)
 {
 	struct mlx5_ib_dev *dev = to_mdev(dct->device);
-	struct mlx5_ib_dct *mdct = to_mdct(dct);
+	struct mlx5_ib_dc_target *mdct = to_mdct(dct);
 	struct mlx5_ib_arm_dct ucmd;
 	struct mlx5_ib_arm_dct_resp resp;
 	int err;
@@ -321,7 +341,7 @@ int mlx5_ib_arm_dct(struct ib_dct *dct, struct ib_udata *udata)
 	if (ucmd.reserved0 || ucmd.reserved1)
 		return -EINVAL;
 
-	err = mlx5_core_arm_dct(dev->mdev, &mdct->mdct);
+	err = mlx5_core_arm_dct(dev->mdev, &mdct->qp->dct.mdct);
 	if (err)
 		goto out;
 

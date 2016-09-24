@@ -3,6 +3,9 @@
 
 #include <linux/mlx5/device.h>
 
+void mlx5_init_dct_table(struct mlx5_core_dev *dev);
+void mlx5_cleanup_dct_table(struct mlx5_core_dev *dev);
+
 enum {
 	MLX5_DCT_BIT_RRE		= 1 << 19,
 	MLX5_DCT_BIT_RWE		= 1 << 18,
@@ -47,6 +50,4 @@ int mlx5_core_destroy_dct(struct mlx5_core_dev *dev,
 */
 int mlx5_debug_dct_add(struct mlx5_core_dev *dev, struct mlx5_core_dct *dct);
 void mlx5_debug_dct_remove(struct mlx5_core_dev *dev, struct mlx5_core_dct *dct);
-
-
 #endif

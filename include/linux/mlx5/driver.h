@@ -683,6 +683,10 @@ struct mlx5_priv {
 	struct dentry	       *cmdif_debugfs;
 	/* end: qp staff */
 
+	/* start: dct stuff */
+	struct dentry	       *dct_debugfs;
+	/* end: dct stuff */
+
 	/* start: mkey staff */
 	struct mlx5_mkey_table	mkey_table;
 	/* end: mkey staff */
@@ -1152,6 +1156,8 @@ int mlx5_core_detach_mcg(struct mlx5_core_dev *dev, union ib_gid *mgid, u32 qpn)
 
 int mlx5_qp_debugfs_init(struct mlx5_core_dev *dev);
 void mlx5_qp_debugfs_cleanup(struct mlx5_core_dev *dev);
+int mlx5_dct_debugfs_init(struct mlx5_core_dev *dev);
+void mlx5_dct_debugfs_cleanup(struct mlx5_core_dev *dev);
 int mlx5_core_access_reg(struct mlx5_core_dev *dev, void *data_in,
 			 int size_in, void *data_out, int size_out,
 			 u16 reg_num, int arg, int write);

@@ -386,6 +386,7 @@ struct mlx5_bf {
 
 struct mlx5_ib_dct {
 	struct mlx5_core_dct    mdct;
+	struct mlx5_ib_dc_target *dc_target;
 	u32                     *in;
 };
 
@@ -1266,6 +1267,12 @@ struct mlx5_core_dev *mlx5_ib_get_native_port_mdev(struct mlx5_ib_dev *dev,
 void mlx5_ib_put_native_port_mdev(struct mlx5_ib_dev *dev,
 				  u8 port_num);
 
+struct ib_qp *mlx5_ib_create_dct(struct ib_pd *pd,
+				 struct ib_qp_init_attr *attr,
+				 struct mlx5_ib_create_qp *ucmd);
+int mlx5_ib_destroy_dct(struct mlx5_ib_qp *qp);
+int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
+		       int attr_mask, struct ib_udata *udata);
 #if IS_ENABLED(CONFIG_INFINIBAND_USER_ACCESS)
 int mlx5_ib_devx_create(struct mlx5_ib_dev *dev);
 void mlx5_ib_devx_destroy(struct mlx5_ib_dev *dev, u16 uid);

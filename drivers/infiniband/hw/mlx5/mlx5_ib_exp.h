@@ -37,28 +37,22 @@ enum {
 	MLX5_DCT_CS_RES_64	= 2,
 };
 
-struct mlx5_ib_dct_target {
+struct mlx5_ib_dc_target {
 	struct ib_dct		ibdct;
-	struct mlx5_core_dct	mdct;
 	struct mlx5_ib_qp    *qp;
 };
 
-static inline struct mlx5_ib_dct *to_mibdct(struct mlx5_core_dct *mdct)
+static inline struct mlx5_ib_dc_target *to_mdct(struct ib_dct *ibdct)
 {
-	return container_of(mdct, struct mlx5_ib_dct, mdct);
+	return container_of(ibdct, struct mlx5_ib_dc_target, ibdct);
 }
 
-static inline struct mlx5_ib_dct *to_mdct(struct ib_dct *ibdct)
-{
-	return container_of(ibdct, struct mlx5_ib_dct, ibdct);
-}
-
-struct ib_dct *mlx5_ib_create_dct(struct ib_pd *pd,
+struct ib_dct *mlx5_ib_create_dc_target(struct ib_pd *pd,
 				  struct ib_dct_init_attr *attr,
 				  struct ib_udata *udata);
-int mlx5_ib_destroy_dct(struct ib_dct *dct);
-int mlx5_ib_query_dct(struct ib_dct *dct, struct ib_dct_attr *attr);
-int mlx5_ib_arm_dct(struct ib_dct *dct, struct ib_udata *udata);
+int mlx5_ib_destroy_dc_target(struct ib_dct *dct);
+int mlx5_ib_query_dc_target(struct ib_dct *dct, struct ib_dct_attr *attr);
+int mlx5_ib_arm_dc_target(struct ib_dct *dct, struct ib_udata *udata);
 
 int mlx5_ib_exp_modify_cq(struct ib_cq *cq, struct ib_cq_attr *cq_attr,
 			  int cq_attr_mask);

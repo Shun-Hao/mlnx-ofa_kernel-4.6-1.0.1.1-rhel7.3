@@ -666,7 +666,7 @@ static int to_mlx5_st(enum ib_qp_type type)
 	case IB_QPT_RAW_IPV6:		return MLX5_QP_ST_RAW_IPV6;
 	case IB_QPT_RAW_PACKET:
 	case IB_QPT_RAW_ETHERTYPE:	return MLX5_QP_ST_RAW_ETHERTYPE;
-	case IB_EXP_QPT_DC_INI:		return MLX5_QP_ST_DC;
+	case IB_EXP_QPT_DC_INI:		return MLX5_QP_ST_DCI;
 	case IB_QPT_MAX:
 	default:		return -EINVAL;
 	}
@@ -2412,7 +2412,7 @@ static const char *ib_qp_type_str(enum ib_qp_type type)
 	}
 }
 
-static struct ib_qp *mlx5_ib_create_dct(struct ib_pd *pd,
+struct ib_qp *mlx5_ib_create_dct(struct ib_pd *pd,
 					struct ib_qp_init_attr *attr,
 					struct mlx5_ib_create_qp *ucmd)
 {
@@ -2449,8 +2449,8 @@ static struct ib_qp *mlx5_ib_create_dct(struct ib_pd *pd,
 	MLX5_SET(dctc, dctc, cqn, to_mcq(attr->recv_cq)->mcq.cqn);
 
 	if (ucmd) {
-		mlx5_set64(dctc, dctc, dc_access_key, ucmd->access_key);
-		mlx5_set(dctc, dctc, user_index, uidx);
+		MLX5_SET64(dctc, dctc, dc_access_key, ucmd->access_key);
+		MLX5_SET(dctc, dctc, user_index, uidx);
 	}
 
 	if (ucmd->flags & MLX5_QP_FLAG_SCATTER_CQE)
@@ -2633,7 +2633,7 @@ struct ib_qp *mlx5_ib_create_qp(struct ib_pd *pd,
 	return _mlx5_ib_create_qp(pd, init_attr, udata, 0);
 }
 
-static int mlx5_ib_destroy_dct(struct mlx5_ib_qp *mqp)
+int mlx5_ib_destroy_dct(struct mlx5_ib_qp *mqp)
 {
 	struct mlx5_ib_dev *dev = to_mdev(mqp->ibqp.device);
 
@@ -2882,7 +2882,7 @@ static enum mlx5_qp_optpar opt_mask[MLX5_QP_NUM_STATE][MLX5_QP_NUM_STATE][MLX5_Q
 			[MLX5_QP_ST_UD] = MLX5_QP_OPTPAR_PKEY_INDEX	|
 					  MLX5_QP_OPTPAR_Q_KEY		|
 					  MLX5_QP_OPTPAR_PRI_PORT,
-			[MLX5_QP_ST_DC] = MLX5_QP_OPTPAR_PRI_PORT	|
+			[MLX5_QP_ST_DCI] = MLX5_QP_OPTPAR_PRI_PORT	|
 					  MLX5_QP_OPTPAR_DC_KEY		|
 					  MLX5_QP_OPTPAR_PKEY_INDEX	|
 					  MLX5_QP_OPTPAR_RAE,
@@ -2905,7 +2905,7 @@ static enum mlx5_qp_optpar opt_mask[MLX5_QP_NUM_STATE][MLX5_QP_NUM_STATE][MLX5_Q
 					  MLX5_QP_OPTPAR_RAE            |
 					  MLX5_QP_OPTPAR_RWE            |
 					  MLX5_QP_OPTPAR_PKEY_INDEX,
-			[MLX5_QP_ST_DC] = MLX5_QP_OPTPAR_PKEY_INDEX	|
+			[MLX5_QP_ST_DCI]= MLX5_QP_OPTPAR_PKEY_INDEX	|
 					  MLX5_QP_OPTPAR_RAE		|
 					  MLX5_QP_OPTPAR_DC_KEY,
 		},
@@ -2922,7 +2922,7 @@ static enum mlx5_qp_optpar opt_mask[MLX5_QP_NUM_STATE][MLX5_QP_NUM_STATE][MLX5_Q
 					  MLX5_QP_OPTPAR_RWE		|
 					  MLX5_QP_OPTPAR_PM_STATE,
 			[MLX5_QP_ST_UD] = MLX5_QP_OPTPAR_Q_KEY,
-			[MLX5_QP_ST_DC] = MLX5_QP_OPTPAR_DC_KEY		|
+			[MLX5_QP_ST_DCI] = MLX5_QP_OPTPAR_DC_KEY		|
 					  MLX5_QP_OPTPAR_PM_STATE	|
 					  MLX5_QP_OPTPAR_RAE,
 		},
@@ -2941,7 +2941,7 @@ static enum mlx5_qp_optpar opt_mask[MLX5_QP_NUM_STATE][MLX5_QP_NUM_STATE][MLX5_Q
 			[MLX5_QP_ST_UD] = MLX5_QP_OPTPAR_Q_KEY		|
 					  MLX5_QP_OPTPAR_SRQN		|
 					  MLX5_QP_OPTPAR_CQN_RCV,
-			[MLX5_QP_ST_DC] = MLX5_QP_OPTPAR_DC_KEY		|
+			[MLX5_QP_ST_DCI]= MLX5_QP_OPTPAR_DC_KEY		|
 					  MLX5_QP_OPTPAR_PM_STATE	|
 					  MLX5_QP_OPTPAR_RAE,
 		},
@@ -2955,7 +2955,7 @@ static enum mlx5_qp_optpar opt_mask[MLX5_QP_NUM_STATE][MLX5_QP_NUM_STATE][MLX5_Q
 					   MLX5_QP_OPTPAR_RWE		|
 					   MLX5_QP_OPTPAR_RAE		|
 					   MLX5_QP_OPTPAR_RRE,
-			[MLX5_QP_ST_DC]  = MLX5_QP_OPTPAR_DC_KEY	|
+			[MLX5_QP_ST_DCI] = MLX5_QP_OPTPAR_DC_KEY	|
 					   MLX5_QP_OPTPAR_RAE,
 
 		},
@@ -3652,7 +3652,7 @@ static u32 atomic_mode_dct(struct mlx5_ib_dev *dev)
  *			   mtu, gid_index and hop_limit
  * Other transitions and attributes are illegal
  */
-static int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
+int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 			      int attr_mask, struct ib_udata *udata)
 {
 	struct mlx5_ib_qp *qp = to_mqp(ibqp);
