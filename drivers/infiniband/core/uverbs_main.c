@@ -142,6 +142,10 @@ static int (*uverbs_exp_cmd_table[])(struct ib_uverbs_file *file,
 	[IB_USER_VERBS_EXP_CMD_QUERY_DEVICE]	= ib_uverbs_exp_query_device,
 	[IB_USER_VERBS_EXP_CMD_CREATE_CQ]	= ib_uverbs_exp_create_cq,
 	[IB_USER_VERBS_EXP_CMD_REG_MR]		= ib_uverbs_exp_reg_mr,
+	[IB_USER_VERBS_EXP_CMD_CREATE_DCT]	= ib_uverbs_exp_create_dct,
+	[IB_USER_VERBS_EXP_CMD_DESTROY_DCT]	= ib_uverbs_exp_destroy_dct,
+	[IB_USER_VERBS_EXP_CMD_QUERY_DCT]	= ib_uverbs_exp_query_dct,
+	[IB_USER_VERBS_EXP_CMD_ARM_DCT]		= ib_uverbs_exp_arm_dct,
 };
 
 static void ib_uverbs_add_one(struct ib_device *device);
@@ -510,10 +514,10 @@ void ib_uverbs_comp_handler(struct ib_cq *cq, void *cq_context)
 	kill_fasync(&ev_queue->async_queue, SIGIO, POLL_IN);
 }
 
-static void ib_uverbs_async_handler(struct ib_uverbs_file *file,
-				    __u64 element, __u64 event,
-				    struct list_head *obj_list,
-				    u32 *counter)
+void ib_uverbs_async_handler(struct ib_uverbs_file *file,
+			     __u64 element, __u64 event,
+			     struct list_head *obj_list,
+			     u32 *counter)
 {
 	struct ib_uverbs_event *entry;
 	unsigned long flags;

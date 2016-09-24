@@ -43,6 +43,7 @@
 #include <linux/sched.h>
 
 #include "uverbs.h"
+#include "uverbs_exp.h"
 #include "core_priv.h"
 
 int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
@@ -377,6 +378,21 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_WITH_HCA_CORE_CLOCK;
 	}
 
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_DC_REQ_RD) {
+		resp->dc_rd_req = exp_attr->dc_rd_req;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_DC_REQ_RD;
+	}
+
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_DC_RES_RD) {
+		resp->dc_rd_res = exp_attr->dc_rd_res;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_DC_RES_RD;
+	}
+
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_MAX_DCT) {
+		resp->max_dct = exp_attr->max_dct;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_MAX_DCT;
+	}
+
 	/* Handle experimental attr fields */
 	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_CAP_FLAGS2 ||
 	    exp_attr->base.device_cap_flags & IB_EXP_DEVICE_MASK) {
@@ -663,4 +679,254 @@ out:
 	kfree(attr);
 
 	return ret;
+}
+
+int ib_uverbs_exp_create_dct(struct ib_uverbs_file *file,
+			     struct ib_udata *ucore, struct ib_udata *uhw)
+{
+	int out_len			= ucore->outlen + uhw->outlen;
+	struct ib_uverbs_create_dct	 *cmd;
+	struct ib_uverbs_create_dct_resp resp;
+	struct ib_udct_object		*obj;
+	struct ib_dct			*dct;
+	int                             ret;
+	struct ib_dct_init_attr		*attr;
+	struct ib_pd			*pd = NULL;
+	struct ib_cq			*cq = NULL;
+	struct ib_srq			*srq = NULL;
+	struct ib_device *ib_dev;
+
+	if (out_len < sizeof(resp))
+		return -ENOSPC;
+
+	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
+	attr = kzalloc(sizeof(*attr), GFP_KERNEL);
+	if (!attr || !cmd) {
+		ret = -ENOMEM;
+		goto err_cmd_attr;
+	}
+
+	ret = ib_copy_from_udata(cmd, ucore, sizeof(*cmd));
+	if (ret)
+		goto err_cmd_attr;
+
+	obj  = (struct ib_udct_object *)uobj_alloc(UVERBS_OBJECT_DCT, file, &ib_dev);
+	if (IS_ERR(obj))
+		return PTR_ERR(obj);
+
+	pd = uobj_get_obj_read(pd, UVERBS_OBJECT_PD, cmd->pd_handle, file);
+	if (!pd) {
+		ret = -EINVAL;
+		goto err_pd;
+	}
+
+	cq = uobj_get_obj_read(cq, UVERBS_OBJECT_CQ, cmd->cq_handle, file);
+	if (!cq) {
+		ret = -EINVAL;
+		goto err_put;
+	}
+
+	srq = uobj_get_obj_read(srq, UVERBS_OBJECT_SRQ, cmd->srq_handle, file);
+	if (!srq) {
+		ret = -EINVAL;
+		goto err_put;
+	}
+
+	if (cmd->create_flags & ~IB_DCT_CREATE_FLAGS_MASK) {
+		ret = -EINVAL;
+		goto err_put;
+	}
+
+	attr->cq = cq;
+	attr->access_flags = cmd->access_flags;
+	attr->min_rnr_timer = cmd->min_rnr_timer;
+	attr->srq = srq;
+	attr->tclass = cmd->tclass;
+	attr->flow_label = cmd->flow_label;
+	attr->dc_key = cmd->dc_key;
+	attr->mtu = cmd->mtu;
+	attr->port = cmd->port;
+	attr->pkey_index = cmd->pkey_index;
+	attr->gid_index = cmd->gid_index;
+	attr->hop_limit = cmd->hop_limit;
+	attr->create_flags = cmd->create_flags;
+	attr->inline_size = cmd->inline_size;
+	attr->event_handler = ib_uverbs_dct_event_handler;
+	attr->dct_context   = file;
+
+	obj->uevent.events_reported = 0;
+	INIT_LIST_HEAD(&obj->uevent.event_list);
+	dct = ib_exp_create_dct(pd, attr, uhw);
+	if (IS_ERR(dct)) {
+		ret = PTR_ERR(dct);
+		goto err_put;
+	}
+
+	dct->device        = file->device->ib_dev;
+	dct->uobject       = &obj->uevent.uobject;
+	dct->event_handler = attr->event_handler;
+	dct->dct_context   = attr->dct_context;
+
+	obj->uevent.uobject.object = dct;
+
+	memset(&resp, 0, sizeof(resp));
+	resp.dct_handle = obj->uevent.uobject.id;
+	resp.dctn = dct->dct_num;
+	resp.inline_size = attr->inline_size;
+
+	ret = ib_copy_to_udata(ucore, &resp, sizeof(resp));
+	if (ret)
+		goto err_copy;
+
+	uobj_put_obj_read(srq);
+	uobj_put_obj_read(cq);
+	uobj_put_obj_read(pd);
+
+	kfree(attr);
+	kfree(cmd);
+
+	return uobj_alloc_commit(&obj->uevent.uobject, 0);
+
+err_copy:
+	ib_exp_destroy_dct(dct);
+
+err_put:
+	if (srq)
+		uobj_put_obj_read(srq);
+
+	if (cq)
+		uobj_put_obj_read(cq);
+
+	uobj_put_obj_read(pd);
+
+err_pd:
+	uobj_alloc_abort(&obj->uevent.uobject);
+
+err_cmd_attr:
+	kfree(attr);
+	kfree(cmd);
+	return ret;
+}
+
+int ib_uverbs_exp_destroy_dct(struct ib_uverbs_file *file,
+			      struct ib_udata *ucore, struct ib_udata *uhw)
+{
+	int out_len				= ucore->outlen + uhw->outlen;
+	struct ib_uverbs_destroy_dct		cmd;
+	struct ib_uverbs_destroy_dct_resp	resp;
+	struct ib_uobject		       *uobj;
+	struct ib_udct_object		       *obj;
+	int					ret;
+
+	if (out_len < sizeof(resp))
+		return -ENOSPC;
+
+	ret = ib_copy_from_udata(&cmd, ucore, sizeof(cmd));
+	if (ret)
+		return ret;
+
+	uobj = uobj_get_destroy(UVERBS_OBJECT_DCT, cmd.dct_handle, file);
+	if (IS_ERR(uobj))
+		return PTR_ERR(uobj);
+
+	obj = container_of(uobj, struct ib_udct_object, uevent.uobject);
+
+	resp.events_reported = obj->uevent.events_reported;
+	uobj_put_destroy(uobj);
+
+	ret = ib_copy_to_udata(ucore, &resp, sizeof(resp));
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
+int ib_uverbs_exp_arm_dct(struct ib_uverbs_file *file,
+			  struct ib_udata *ucore, struct ib_udata *uhw)
+{
+	int out_len			= ucore->outlen + uhw->outlen;
+	struct ib_uverbs_arm_dct	cmd;
+	struct ib_uverbs_arm_dct_resp	resp;
+	struct ib_dct		       *dct;
+	int				err;
+
+	if (out_len < sizeof(resp))
+		return -ENOSPC;
+
+	err = ib_copy_from_udata(&cmd, ucore, sizeof(cmd));
+	if (err)
+		return err;
+
+	dct = uobj_get_obj_read(dct, UVERBS_OBJECT_DCT, cmd.dct_handle, file);
+	if (!dct)
+		return -EINVAL;
+
+	err = dct->device->exp_arm_dct(dct, uhw);
+	uobj_put_obj_read(dct);
+	if (err)
+		return err;
+
+	memset(&resp, 0, sizeof(resp));
+	err = ib_copy_to_udata(ucore, &resp, sizeof(resp));
+
+	return err;
+}
+
+int ib_uverbs_exp_query_dct(struct ib_uverbs_file *file,
+			    struct ib_udata *ucore, struct ib_udata *uhw)
+{
+	int out_len			= ucore->outlen + uhw->outlen;
+	struct ib_uverbs_query_dct	cmd;
+	struct ib_uverbs_query_dct_resp	resp;
+	struct ib_dct		       *dct;
+	struct ib_dct_attr	       *attr;
+	int				err;
+
+	if (out_len < sizeof(resp))
+		return -ENOSPC;
+
+	err = ib_copy_from_udata(&cmd, ucore, sizeof(cmd));
+	if (err)
+		return err;
+
+	attr = kmalloc(sizeof(*attr), GFP_KERNEL);
+	if (!attr) {
+		err = -ENOMEM;
+		goto out;
+	}
+
+	dct = uobj_get_obj_read(dct, UVERBS_OBJECT_DCT, cmd.dct_handle, file);
+	if (!dct) {
+		err = -EINVAL;
+		goto out;
+	}
+
+	err = ib_exp_query_dct(dct, attr);
+
+	uobj_put_obj_read(dct);
+
+	if (err)
+		goto out;
+
+	memset(&resp, 0, sizeof(resp));
+
+	resp.dc_key = attr->dc_key;
+	resp.access_flags = attr->access_flags;
+	resp.flow_label = attr->flow_label;
+	resp.key_violations = attr->key_violations;
+	resp.port = attr->port;
+	resp.min_rnr_timer = attr->min_rnr_timer;
+	resp.tclass = attr->tclass;
+	resp.mtu = attr->mtu;
+	resp.pkey_index = attr->pkey_index;
+	resp.gid_index = attr->gid_index;
+	resp.hop_limit = attr->hop_limit;
+	resp.state = attr->state;
+
+	err = ib_copy_to_udata(ucore, &resp, sizeof(resp));
+
+out:
+	kfree(attr);
+
+	return err;
 }

@@ -78,6 +78,8 @@ extern struct workqueue_struct *ib_comp_unbound_wq;
 struct ib_cq_attr;
 struct ib_exp_qp_init_attr;
 struct ib_exp_device_attr;
+struct ib_dct_attr;
+struct ib_dct_init_attr;
 
 union ib_gid {
 	u8	raw[16];
@@ -649,6 +651,12 @@ enum ib_event_type {
 	IB_EVENT_CLIENT_REREGISTER,
 	IB_EVENT_GID_CHANGE,
 	IB_EVENT_WQ_FATAL,
+	/* New experimental events start here leaving enough
+	 * room for 14 events which should be enough.
+	 */
+	IB_EXP_EVENT_DCT_KEY_VIOLATION = 32,
+	IB_EXP_EVENT_DCT_ACCESS_ERR,
+	IB_EXP_EVENT_DCT_REQ_ERR,
 };
 
 const char *__attribute_const__ ib_event_msg(enum ib_event_type event);
@@ -659,6 +667,7 @@ struct ib_event {
 		struct ib_cq	*cq;
 		struct ib_qp	*qp;
 		struct ib_srq	*srq;
+		struct ib_dct	*dct;
 		struct ib_wq	*wq;
 		u8		port_num;
 	} element;
@@ -2322,6 +2331,12 @@ struct ib_device {
 						 struct ib_udata *udata);
 	int			(*exp_modify_cq)(struct ib_cq *cq, struct ib_cq_attr *cq_attr,
 						 int cq_attr_mask);
+	struct ib_dct *		(*exp_create_dct)(struct ib_pd *pd,
+						  struct ib_dct_init_attr *attr,
+						  struct ib_udata *udata);
+	int			(*exp_destroy_dct)(struct ib_dct *dct);
+	int			(*exp_query_dct)(struct ib_dct *dct, struct ib_dct_attr *attr);
+	int			(*exp_arm_dct)(struct ib_dct *dct, struct ib_udata *udata);
 	unsigned long		   (*exp_get_unmapped_area)(struct file *file,
 							    unsigned long addr,
 							    unsigned long len,

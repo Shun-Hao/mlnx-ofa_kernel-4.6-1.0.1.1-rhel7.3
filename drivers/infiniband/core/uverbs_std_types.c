@@ -38,6 +38,7 @@
 #include <rdma/restrack.h>
 #include "rdma_core.h"
 #include "uverbs.h"
+#include "uverbs_exp.h"
 
 static int uverbs_free_ah(struct ib_uobject *uobject,
 			  enum rdma_remove_reason why)
@@ -278,7 +279,8 @@ DECLARE_UVERBS_OBJECT_TREE(uverbs_default_objects,
 			   &UVERBS_OBJECT(UVERBS_OBJECT_XRCD),
 			   &UVERBS_OBJECT(UVERBS_OBJECT_FLOW_ACTION),
 			   &UVERBS_OBJECT(UVERBS_OBJECT_DM),
-			   &UVERBS_OBJECT(UVERBS_OBJECT_COUNTERS));
+			   &UVERBS_OBJECT(UVERBS_OBJECT_COUNTERS),
+			   &UVERBS_OBJECT(UVERBS_OBJECT_DCT));
 
 const struct uverbs_object_tree_def *uverbs_default_get_objects(void)
 {

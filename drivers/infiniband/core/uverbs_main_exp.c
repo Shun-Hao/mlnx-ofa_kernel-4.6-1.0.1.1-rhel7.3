@@ -13,6 +13,9 @@
 #include <linux/uaccess.h>
 
 #include "uverbs.h"
+#include "uverbs_exp.h"
+
+DEFINE_IDR(ib_uverbs_dct_idr);
 
 unsigned long ib_uverbs_exp_get_unmapped_area(struct file *filp,
 					      unsigned long addr,

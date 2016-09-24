@@ -19,6 +19,10 @@ enum {
 	IB_USER_VERBS_EXP_CMD_MODIFY_QP,
 	IB_USER_VERBS_EXP_CMD_CREATE_CQ = 3,
 	IB_USER_VERBS_EXP_CMD_QUERY_DEVICE = 4,
+	IB_USER_VERBS_EXP_CMD_CREATE_DCT,
+	IB_USER_VERBS_EXP_CMD_DESTROY_DCT,
+	IB_USER_VERBS_EXP_CMD_QUERY_DCT,
+	IB_USER_VERBS_EXP_CMD_ARM_DCT,
 	IB_USER_VERBS_EXP_CMD_REG_MR = 11,
 };
 
@@ -173,8 +177,8 @@ struct ib_uverbs_exp_query_device_resp {
 	__u64					timestamp_mask;
 	__u64					hca_core_clock;
 	__u64					device_cap_flags2;
-	__u32					reserved;
-	__u32					reserved2;
+	__u32					dc_rd_req;
+	__u32					dc_rd_res;
 	__u32					inline_recv_sz;
 	__u32					max_rss_tbl_sz;
 	__u64					atomic_arg_sizes;
@@ -182,7 +186,7 @@ struct ib_uverbs_exp_query_device_resp {
 	__u32					log_max_atomic_inline_arg;
 	__u8					reserved_umr[16];
 	__u8					reserved_odp[32];
-	__u32					reserved3;
+	__u32					max_dct;
 	__u32					max_ctx_res_domain;
 
 
@@ -229,4 +233,81 @@ struct ib_uverbs_exp_reg_mr_resp {
 	__u32 reserved;
 	__u64 comp_mask;
 };
+
+struct ib_uverbs_create_dct {
+	__u64	comp_mask;
+	__u64	user_handle;
+	__u32	pd_handle;
+	__u32	cq_handle;
+	__u32	srq_handle;
+	__u32	access_flags;
+	__u64	dc_key;
+	__u32	flow_label;
+	__u8	min_rnr_timer;
+	__u8	tclass;
+	__u8	port;
+	__u8	pkey_index;
+	__u8	gid_index;
+	__u8	hop_limit;
+	__u8	mtu;
+	__u8	rsvd0;
+	__u32	create_flags;
+	__u32	inline_size;
+	__u32	rsvd1;
+	__u64	driver_data[0];
+};
+
+struct ib_uverbs_create_dct_resp {
+	__u32 dct_handle;
+	__u32 dctn;
+	__u32 inline_size;
+	__u32 rsvd;
+};
+
+struct ib_uverbs_destroy_dct {
+	__u64 comp_mask;
+	__u32 dct_handle;
+	__u32 reserved;
+};
+
+struct ib_uverbs_destroy_dct_resp {
+	__u32	events_reported;
+	__u32	reserved;
+};
+
+struct ib_uverbs_query_dct {
+	__u64	comp_mask;
+	__u32	dct_handle;
+	__u32	reserved;
+	__u64	driver_data[0];
+};
+
+struct ib_uverbs_query_dct_resp {
+	__u64	dc_key;
+	__u32	access_flags;
+	__u32	flow_label;
+	__u32	key_violations;
+	__u8	port;
+	__u8	min_rnr_timer;
+	__u8	tclass;
+	__u8	mtu;
+	__u8	pkey_index;
+	__u8	gid_index;
+	__u8	hop_limit;
+	__u8	state;
+	__u32	rsvd;
+	__u64	driver_data[0];
+};
+
+struct ib_uverbs_arm_dct {
+	__u64	comp_mask;
+	__u32	dct_handle;
+	__u32	reserved;
+	__u64	driver_data[0];
+};
+
+struct ib_uverbs_arm_dct_resp {
+	__u64	driver_data[0];
+};
+
 #endif

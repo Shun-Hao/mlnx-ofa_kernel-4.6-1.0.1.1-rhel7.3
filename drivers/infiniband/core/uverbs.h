@@ -52,6 +52,11 @@
 #define UVERBS_MODULE_NAME ib_uverbs
 #include <rdma/uverbs_named_ioctl.h>
 
+struct uverbs_lock_class {
+	struct lock_class_key	key;
+	char			name[16];
+};
+
 static inline void
 ib_uverbs_init_udata(struct ib_udata *udata,
 		     const void __user *ibuf,
@@ -300,6 +305,7 @@ extern const struct uverbs_object_def UVERBS_OBJECT(UVERBS_OBJECT_XRCD);
 extern const struct uverbs_object_def UVERBS_OBJECT(UVERBS_OBJECT_FLOW_ACTION);
 extern const struct uverbs_object_def UVERBS_OBJECT(UVERBS_OBJECT_DM);
 extern const struct uverbs_object_def UVERBS_OBJECT(UVERBS_OBJECT_COUNTERS);
+extern const struct uverbs_object_def UVERBS_OBJECT(UVERBS_OBJECT_DCT);
 
 #define IB_UVERBS_DECLARE_CMD(name)					\
 	ssize_t ib_uverbs_##name(struct ib_uverbs_file *file,		\

@@ -42,6 +42,70 @@
 
 #include "core_priv.h"
 
+struct ib_dct *ib_exp_create_dct(struct ib_pd *pd, struct ib_dct_init_attr *attr,
+				 struct ib_udata *udata)
+{
+	struct ib_dct *dct;
+
+	if (!pd->device->exp_create_dct)
+		return ERR_PTR(-ENOSYS);
+
+	dct = pd->device->exp_create_dct(pd, attr, udata);
+	if (!IS_ERR(dct)) {
+		dct->pd = pd;
+		dct->srq = attr->srq;
+		dct->cq = attr->cq;
+		atomic_inc(&dct->srq->usecnt);
+		atomic_inc(&dct->cq->usecnt);
+		atomic_inc(&dct->pd->usecnt);
+	}
+
+	return dct;
+}
+EXPORT_SYMBOL(ib_exp_create_dct);
+
+int ib_exp_destroy_dct(struct ib_dct *dct)
+{
+	struct ib_srq *srq;
+	struct ib_cq *cq;
+	struct ib_pd *pd;
+	int err;
+
+	if (!dct->device->exp_destroy_dct)
+		return -ENOSYS;
+
+	srq = dct->srq;
+	cq = dct->cq;
+	pd = dct->pd;
+	err = dct->device->exp_destroy_dct(dct);
+	if (!err) {
+		atomic_dec(&srq->usecnt);
+		atomic_dec(&cq->usecnt);
+		atomic_dec(&pd->usecnt);
+	}
+
+	return err;
+}
+EXPORT_SYMBOL(ib_exp_destroy_dct);
+
+int ib_exp_query_dct(struct ib_dct *dct, struct ib_dct_attr *attr)
+{
+	if (!dct->device->exp_query_dct)
+		return -ENOSYS;
+
+	return dct->device->exp_query_dct(dct, attr);
+}
+EXPORT_SYMBOL(ib_exp_query_dct);
+
+int ib_exp_arm_dct(struct ib_dct *dct)
+{
+	if (!dct->device->exp_arm_dct)
+		return -ENOSYS;
+
+	return dct->device->exp_arm_dct(dct, NULL);
+}
+EXPORT_SYMBOL(ib_exp_arm_dct);
+
 int ib_exp_modify_cq(struct ib_cq *cq,
 		 struct ib_cq_attr *cq_attr,
 		 int cq_attr_mask)

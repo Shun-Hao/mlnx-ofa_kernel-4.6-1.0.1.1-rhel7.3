@@ -56,6 +56,7 @@ enum uverbs_default_objects {
 	UVERBS_OBJECT_FLOW_ACTION,
 	UVERBS_OBJECT_DM,
 	UVERBS_OBJECT_COUNTERS,
+	UVERBS_OBJECT_DCT /* ext - kernel only, must be added at the end of upstream objects*/
 };
 
 enum {
