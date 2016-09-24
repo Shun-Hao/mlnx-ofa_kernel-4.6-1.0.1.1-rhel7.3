@@ -5831,6 +5831,17 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 		(1ull << IB_USER_VERBS_EXP_CMD_REG_MR)		|
 		(1ull << IB_USER_VERBS_EXP_CMD_MODIFY_QP);
 
+	if (MLX5_CAP_GEN(mdev, dct)) {
+		dev->ib_dev.exp_create_dct = mlx5_ib_create_dct;
+		dev->ib_dev.exp_destroy_dct = mlx5_ib_destroy_dct;
+		dev->ib_dev.exp_query_dct = mlx5_ib_query_dct;
+		dev->ib_dev.exp_arm_dct = mlx5_ib_arm_dct;
+		dev->ib_dev.uverbs_exp_cmd_mask |=
+			(1ull << IB_USER_VERBS_EXP_CMD_CREATE_DCT)	|
+			(1ull << IB_USER_VERBS_EXP_CMD_DESTROY_DCT)	|
+			(1ull << IB_USER_VERBS_EXP_CMD_QUERY_DCT)	|
+			(1ull << IB_USER_VERBS_EXP_CMD_ARM_DCT);
+	}
 	dev->ib_dev.query_device	= mlx5_ib_query_device;
 	dev->ib_dev.get_link_layer	= mlx5_ib_port_link_layer;
 	dev->ib_dev.query_gid		= mlx5_ib_query_gid;

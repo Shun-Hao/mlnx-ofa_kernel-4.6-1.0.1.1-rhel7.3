@@ -3,6 +3,12 @@
 
 #include <linux/mlx5/device.h>
 
+enum {
+	MLX5_DCT_BIT_RRE		= 1 << 19,
+	MLX5_DCT_BIT_RWE		= 1 << 18,
+	MLX5_DCT_BIT_RAE		= 1 << 17,
+};
+
 struct mlx5_dct_context {
 	u8			state;
 	u8			rsvd0[7];
@@ -28,7 +34,7 @@ struct mlx5_dct_context {
 };
 /*
 int mlx5_core_dct_query(struct mlx5_core_dev *dev, struct mlx5_core_dct *dct,
-			u32 *out);
+			u32 *out, int outlen);
 */
 int mlx5_core_arm_dct(struct mlx5_core_dev *dev, struct mlx5_core_dct *dct);
 

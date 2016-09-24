@@ -129,7 +129,7 @@ void mlx5_cleanup_dct_table(struct mlx5_core_dev *dev)
 EXPORT_SYMBOL_GPL(mlx5_core_destroy_dct);
 
 int mlx5_core_dct_query(struct mlx5_core_dev *dev, struct mlx5_core_dct *dct,
-			u32 *out)
+			u32 *out, int outlen)
 {
 	u32 in[MLX5_ST_SZ_DW(query_dct_in)] = {0};
 
@@ -137,7 +137,7 @@ int mlx5_core_dct_query(struct mlx5_core_dev *dev, struct mlx5_core_dct *dct,
 	MLX5_SET(query_dct_in, in, dctn, dct->dctn);
 
 	return mlx5_cmd_exec(dev, (void *)&in, sizeof(in),
-			     (void *)out, sizeof(*out));
+			     (void *)out, outlen);
 mlx5_dct_debugfs_cleanup(dev);
 */
 

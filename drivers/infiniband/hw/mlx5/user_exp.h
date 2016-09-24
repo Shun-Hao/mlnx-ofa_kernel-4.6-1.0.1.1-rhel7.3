@@ -149,6 +149,21 @@ struct mlx5_exp_ib_create_qp {
 	struct mlx5_exp_ib_create_qp_data exp;
 };
 
+struct mlx5_ib_create_dct {
+	__u32   uidx;
+	__u32   reserved;
+};
+
+struct mlx5_ib_arm_dct {
+	__u64	reserved0;
+	__u64	reserved1;
+};
+
+struct mlx5_ib_arm_dct_resp {
+	__u64	reserved0;
+	__u64	reserved1;
+};
+
 static inline int get_qp_exp_user_index(struct mlx5_ib_ucontext *ucontext,
 					struct mlx5_exp_ib_create_qp *ucmd,
 					int inlen,

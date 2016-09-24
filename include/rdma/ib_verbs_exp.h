@@ -55,6 +55,7 @@ enum ib_exp_device_attr_comp_mask {
 };
 
 enum ib_exp_device_cap_flags2 {
+	IB_EXP_DEVICE_DC_TRANSPORT	= 1 << 0,
 	IB_EXP_DEVICE_QPG		= 1 << 1,
 	IB_EXP_DEVICE_UD_RSS		= 1 << 2,
 	IB_EXP_DEVICE_UD_TSS		= 1 << 3,

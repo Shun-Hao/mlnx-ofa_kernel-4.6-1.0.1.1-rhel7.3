@@ -2424,11 +2424,13 @@ static struct ib_qp *mlx5_ib_create_dct(struct ib_pd *pd,
 	if (!attr->srq || !attr->recv_cq)
 		return ERR_PTR(-EINVAL);
 
-	err = get_qp_user_index(to_mucontext(pd->uobject->context),
+	if (ucmd) {
+		err = get_qp_user_index(to_mucontext(pd->uobject->context),
 				ucmd, sizeof(*ucmd), &uidx);
-	if (err)
-		return ERR_PTR(err);
 
+		if (err)
+			return ERR_PTR(err);
+	}
 	qp = kzalloc(sizeof(*qp), GFP_KERNEL);
 	if (!qp)
 		return ERR_PTR(-ENOMEM);
@@ -2445,8 +2447,11 @@ static struct ib_qp *mlx5_ib_create_dct(struct ib_pd *pd,
 	MLX5_SET(dctc, dctc, pd, to_mpd(pd)->pdn);
 	MLX5_SET(dctc, dctc, srqn_xrqn, to_msrq(attr->srq)->msrq.srqn);
 	MLX5_SET(dctc, dctc, cqn, to_mcq(attr->recv_cq)->mcq.cqn);
-	MLX5_SET64(dctc, dctc, dc_access_key, ucmd->access_key);
-	MLX5_SET(dctc, dctc, user_index, uidx);
+
+	if (ucmd) {
+		mlx5_set64(dctc, dctc, dc_access_key, ucmd->access_key);
+		mlx5_set(dctc, dctc, user_index, uidx);
+	}
 
 	if (ucmd->flags & MLX5_QP_FLAG_SCATTER_CQE)
 		configure_responder_scat_cqe(attr, dctc);
@@ -3680,11 +3685,6 @@ static int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 		if (attr->qp_access_flags & IB_ACCESS_REMOTE_WRITE)
 			MLX5_SET(dctc, dctc, rwe, 1);
 		if (attr->qp_access_flags & IB_ACCESS_REMOTE_ATOMIC) {
-			int atomic_mode;
-
-			atomic_mode = get_atomic_mode(dev, MLX5_IB_QPT_DCT);
-			if (atomic_mode < 0)
-				return -EOPNOTSUPP;
 
 			MLX5_SET(dctc, dctc, atomic_mode, atomic_mode_dct(dev));
 			MLX5_SET(dctc, dctc, rae, 1);
@@ -3697,8 +3697,13 @@ static int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 		struct mlx5_ib_modify_qp_resp resp = {};
 		u32 min_resp_len = offsetof(typeof(resp), dctn) +
 				   sizeof(resp.dctn);
+		u8 tclass = attr->ah_attr.grh.traffic_class;
+		u8 port = MLX5_GET(dctc, dctc, port);
 
-		if (udata->outlen < min_resp_len)
+		if (mlx5_lag_is_active(dev->mdev))
+			port = 1;
+
+		if (udata && udata->outlen < min_resp_len)
 			return -EINVAL;
 		resp.response_length = min_resp_len;
 
@@ -3706,7 +3711,12 @@ static int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 		if (!is_valid_mask(attr_mask, required, 0))
 			return -EINVAL;
 		MLX5_SET(dctc, dctc, min_rnr_nak, attr->min_rnr_timer);
-		MLX5_SET(dctc, dctc, tclass, attr->ah_attr.grh.traffic_class);
+		/* Talat Need to enable it when we add "Add TCLASS complex matching
+		 * rules"
+		if (dev->tcd[port - 1].val >= 0)
+			tclass = dev->tcd[port - 1].val;
+		*/
+		MLX5_SET(dctc, dctc, tclass, tclass);
 		MLX5_SET(dctc, dctc, flow_label, attr->ah_attr.grh.flow_label);
 		MLX5_SET(dctc, dctc, mtu, attr->path_mtu);
 		MLX5_SET(dctc, dctc, my_addr_index, attr->ah_attr.grh.sgid_index);
@@ -3716,11 +3726,13 @@ static int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 					   MLX5_ST_SZ_BYTES(create_dct_in));
 		if (err)
 			return err;
-		resp.dctn = qp->dct.mdct.mqp.qpn;
-		err = ib_copy_to_udata(udata, &resp, resp.response_length);
-		if (err) {
-			mlx5_core_destroy_dct(dev->mdev, &qp->dct.mdct);
-			return err;
+		if (udata) {
+			resp.dctn = qp->dct.mdct.mqp.qpn;
+			err = ib_copy_to_udata(udata, &resp, resp.response_length);
+			if (err) {
+				mlx5_core_destroy_dct(dev->mdev, &qp->dct.mdct);
+				return err;
+			}
 		}
 	} else {
 		mlx5_ib_warn(dev, "Modify DCT: Invalid transition from %d to %d\n", cur_state, new_state);
