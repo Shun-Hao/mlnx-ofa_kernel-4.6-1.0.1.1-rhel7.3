@@ -3572,6 +3572,37 @@ static bool modify_dci_qp_is_ok(enum ib_qp_state cur_state, enum ib_qp_state new
 	return false;
 }
 
+static u32 atomic_mode_dct(struct mlx5_ib_dev *dev)
+{
+	unsigned long mask;
+	unsigned long tmp;
+
+	mask = MLX5_CAP_ATOMIC(dev->mdev, atomic_size_dc);
+	tmp = find_last_bit(&mask, BITS_PER_LONG);
+
+	switch (tmp) {
+	case 0:
+	case 1:
+		return MLX5_ATOMIC_MODE_DCT_NONE;
+	case 2:
+		return MLX5_ATOMIC_MODE_DCT_CX;
+	case 3:
+		return MLX5_ATOMIC_MODE_DCT_8B;
+	case 4:
+		return MLX5_ATOMIC_MODE_DCT_16B;
+	case 5:
+		return MLX5_ATOMIC_MODE_DCT_32B;
+	case 6:
+		return MLX5_ATOMIC_MODE_DCT_64B;
+	case 7:
+		return MLX5_ATOMIC_MODE_DCT_128B;
+	case 8:
+		return MLX5_ATOMIC_MODE_DCT_256B;
+	default:
+		return tmp;
+	}
+}
+
 /* mlx5_ib_modify_dct: modify a DCT QP
  * valid transitions are:
  * RESET to INIT: must set access_flags, pkey_index and port
@@ -3618,7 +3649,7 @@ static int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 			if (atomic_mode < 0)
 				return -EOPNOTSUPP;
 
-			MLX5_SET(dctc, dctc, atomic_mode, atomic_mode);
+			MLX5_SET(dctc, dctc, atomic_mode, atomic_mode_dct(dev));
 			MLX5_SET(dctc, dctc, rae, 1);
 		}
 		MLX5_SET(dctc, dctc, pkey_index, attr->pkey_index);

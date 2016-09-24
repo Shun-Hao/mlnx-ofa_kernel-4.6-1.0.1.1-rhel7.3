@@ -172,6 +172,10 @@ static const char *eqe_type_str(u8 type)
 		return "MLX5_EVENT_TYPE_GENERAL_EVENT";
 	case MLX5_EVENT_TYPE_DEVICE_TRACER:
 		return "MLX5_EVENT_TYPE_DEVICE_TRACER";
+	case MLX5_EVENT_TYPE_DCT_DRAINED:
+		return "MLX5_EVENT_TYPE_DCT_DRAINED";
+	case MLX5_EVENT_TYPE_DCT_KEY_VIOLATION:
+		return "MLX5_EVENT_TYPE_DCT_KEY_VIOLATION";
 	default:
 		return "Unrecognized event";
 	}
@@ -488,6 +492,7 @@ static irqreturn_t mlx5_eq_int(int irq, void *eq_ptr)
 			mlx5_eq_cq_completion(eq, cqn);
 			break;
 		case MLX5_EVENT_TYPE_DCT_DRAINED:
+		case MLX5_EVENT_TYPE_DCT_KEY_VIOLATION:
 			rsn = be32_to_cpu(eqe->data.dct.dctn) & 0xffffff;
 			rsn |= (MLX5_RES_DCT << MLX5_USER_INDEX_LEN);
 			mlx5_rsc_event(dev, rsn, eqe->type);
@@ -876,7 +881,8 @@ int mlx5_start_eqs(struct mlx5_core_dev *dev)
 	mlx5_cmd_use_events(dev);
 
 	err = mlx5_create_map_eq(dev, &table->async_eq, MLX5_EQ_VEC_ASYNC,
-				 MLX5_NUM_ASYNC_EQE, async_event_mask,
+				 MLX5_NUM_ASYNC_EQE,
+				 dev->async_events_mask | async_event_mask,
 				 "mlx5_async_eq", MLX5_EQ_TYPE_ASYNC);
 	if (err) {
 		mlx5_core_warn(dev, "failed to create async EQ %d\n", err);

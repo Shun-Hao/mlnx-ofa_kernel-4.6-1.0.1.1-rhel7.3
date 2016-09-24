@@ -43,6 +43,7 @@
 #include <linux/mlx5/driver.h>
 #include <linux/mlx5/cq.h>
 #include <linux/mlx5/qp.h>
+#include <linux/mlx5/qp_exp.h>
 #include <linux/mlx5/srq.h>
 #include <linux/debugfs.h>
 #include <linux/kmod.h>
@@ -91,13 +92,17 @@ static struct mlx5_profile profile[] = {
 		.mask           = 0,
 	},
 	[1] = {
-		.mask		= MLX5_PROF_MASK_QP_SIZE,
+		.mask		= MLX5_PROF_MASK_QP_SIZE |
+				  MLX5_PROF_MASK_DCT,
 		.log_max_qp	= 12,
+		.dct_enable	= 1,
 	},
 	[2] = {
-		.mask		= MLX5_PROF_MASK_QP_SIZE |
-				  MLX5_PROF_MASK_MR_CACHE,
+		.mask		= MLX5_PROF_MASK_QP_SIZE  |
+				  MLX5_PROF_MASK_MR_CACHE |
+				  MLX5_PROF_MASK_DCT,
 		.log_max_qp	= 18,
+		.dct_enable	= 1,
 		.mr_cache[0]	= {
 			.size	= 500,
 			.limit	= 250
@@ -544,6 +549,18 @@ static int handle_hca_cap(struct mlx5_core_dev *dev)
 
 	/* disable cmdif checksum */
 	MLX5_SET(cmd_hca_cap, set_hca_cap, cmdif_checksum, 0);
+
+	if (prof->mask & MLX5_PROF_MASK_DCT) {
+		if (prof->dct_enable) {
+			if (MLX5_CAP_GEN_MAX(dev, dct)) {
+				MLX5_SET(cmd_hca_cap, set_hca_cap, dct, 1);
+				dev->async_events_mask |= (1ull << MLX5_EVENT_TYPE_DCT_DRAINED) |
+					(1ull << MLX5_EVENT_TYPE_DCT_KEY_VIOLATION);
+			}
+		} else {
+			MLX5_SET(cmd_hca_cap, set_hca_cap, dct, 0);
+		}
+	}
 
 	/* Enable 4K UAR only when HCA supports it and page size is bigger
 	 * than 4K.

@@ -96,6 +96,18 @@ enum {
 	MLX5_MAX_IRQ_NAME	= 32
 };
 
+ enum mlx5_dct_atomic_mode {
+	MLX5_ATOMIC_MODE_DCT_NONE	= 0,
+	MLX5_ATOMIC_MODE_DCT_IB_COMP	= 1,
+	MLX5_ATOMIC_MODE_DCT_CX		= 2,
+	MLX5_ATOMIC_MODE_DCT_8B		= 3,
+	MLX5_ATOMIC_MODE_DCT_16B	= 4,
+	MLX5_ATOMIC_MODE_DCT_32B	= 5,
+	MLX5_ATOMIC_MODE_DCT_64B	= 6,
+	MLX5_ATOMIC_MODE_DCT_128B	= 7,
+	MLX5_ATOMIC_MODE_DCT_256B	= 8,
+ };
+
 enum {
 	MLX5_ATOMIC_MODE_OFFSET = 16,
 	MLX5_ATOMIC_MODE_IB_COMP = 1,
@@ -182,6 +194,7 @@ enum dbg_rsc_type {
 	MLX5_DBG_RSC_QP,
 	MLX5_DBG_RSC_EQ,
 	MLX5_DBG_RSC_CQ,
+	MLX5_DBG_RSC_DCT,
 };
 
 enum port_state_policy {
@@ -461,6 +474,7 @@ struct mlx5_core_rsc_common {
 	enum mlx5_res_type	res;
 	atomic_t		refcount;
 	struct completion	free;
+	u64			async_events_mask;
 };
 
 struct mlx5_core_srq {
@@ -849,6 +863,7 @@ struct mlx5_core_dev {
 	struct mlx5_priv	priv;
 	struct mlx5_profile	*profile;
 	atomic_t		num_qps;
+	u64			async_events_mask;
 	u32			issi;
 	struct mlx5e_resources  mlx5e_res;
 	struct mlx5_vxlan       *vxlan;
@@ -877,6 +892,15 @@ struct mlx5_db {
 	dma_addr_t		dma;
 	int			index;
 };
+
+//struct mlx5_core_dct {
+//	struct mlx5_core_rsc_common	common; /* must be first */
+//	void (*event)(struct mlx5_core_dct *, enum mlx5_event);
+//	int			dctn;
+//	struct completion	drained;
+//	struct mlx5_rsc_debug	*dbg;
+//	int			pid;
+//};
 
 enum {
 	MLX5_COMP_EQ_SIZE = 1024,
@@ -1118,7 +1142,7 @@ void mlx5_unregister_debugfs(void);
 
 void mlx5_fill_page_array(struct mlx5_frag_buf *buf, __be64 *pas);
 void mlx5_fill_page_frag_array(struct mlx5_frag_buf *frag_buf, __be64 *pas);
-void mlx5_rsc_event(struct mlx5_core_dev *dev, u32 rsn, int event_type);
+int mlx5_rsc_event(struct mlx5_core_dev *dev, u32 rsn, int event_type);
 void mlx5_srq_event(struct mlx5_core_dev *dev, u32 srqn, int event_type);
 struct mlx5_core_srq *mlx5_core_get_srq(struct mlx5_core_dev *dev, u32 srqn);
 int mlx5_vector2eqn(struct mlx5_core_dev *dev, int vector, int *eqn,
@@ -1193,6 +1217,7 @@ static inline u8 mlx5_mkey_variant(u32 mkey)
 enum {
 	MLX5_PROF_MASK_QP_SIZE		= (u64)1 << 0,
 	MLX5_PROF_MASK_MR_CACHE		= (u64)1 << 1,
+	MLX5_PROF_MASK_DCT		= (u64)1 << 2,
 };
 
 enum {
@@ -1251,6 +1276,7 @@ int mlx5_rdma_rn_get_params(struct mlx5_core_dev *mdev,
 struct mlx5_profile {
 	u64	mask;
 	u8	log_max_qp;
+	int	dct_enable;
 	struct {
 		int	size;
 		int	limit;

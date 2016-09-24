@@ -36,7 +36,7 @@
 #include <linux/mlx5/qp.h>
 #include <linux/mlx5/driver.h>
 #include <linux/mlx5/transobj.h>
-
+#include <linux/mlx5/qp_exp.h>
 #include "mlx5_core.h"
 
 static struct mlx5_core_rsc_common *mlx5_get_rsc(struct mlx5_core_dev *dev,
@@ -78,7 +78,9 @@ static u64 qp_allowed_event_types(void)
 	       BIT(MLX5_EVENT_TYPE_WQ_CATAS_ERROR) |
 	       BIT(MLX5_EVENT_TYPE_PATH_MIG_FAILED) |
 	       BIT(MLX5_EVENT_TYPE_WQ_INVAL_REQ_ERROR) |
-	       BIT(MLX5_EVENT_TYPE_WQ_ACCESS_ERROR);
+	       BIT(MLX5_EVENT_TYPE_WQ_ACCESS_ERROR) |
+	       BIT(MLX5_EVENT_TYPE_DCT_DRAINED) |
+	       BIT(MLX5_EVENT_TYPE_DCT_KEY_VIOLATION);
 
 	return mask;
 }
@@ -100,7 +102,14 @@ static u64 sq_allowed_event_types(void)
 
 static u64 dct_allowed_event_types(void)
 {
-	return BIT(MLX5_EVENT_TYPE_DCT_DRAINED);
+	u64 mask;
+
+	mask =  BIT(MLX5_EVENT_TYPE_DCT_DRAINED) |
+		BIT(MLX5_EVENT_TYPE_WQ_ACCESS_ERROR) |
+		BIT(MLX5_EVENT_TYPE_DCT_KEY_VIOLATION) |
+		BIT(MLX5_EVENT_TYPE_WQ_INVAL_REQ_ERROR);
+
+	return mask;
 }
 
 static bool is_event_type_allowed(int rsc_type, int event_type)
@@ -120,19 +129,19 @@ static bool is_event_type_allowed(int rsc_type, int event_type)
 	}
 }
 
-void mlx5_rsc_event(struct mlx5_core_dev *dev, u32 rsn, int event_type)
+int mlx5_rsc_event(struct mlx5_core_dev *dev, u32 rsn, int event_type)
 {
 	struct mlx5_core_rsc_common *common = mlx5_get_rsc(dev, rsn);
 	struct mlx5_core_dct *dct;
 	struct mlx5_core_qp *qp;
 
 	if (!common)
-		return;
+		return -1;
 
 	if (!is_event_type_allowed((rsn >> MLX5_USER_INDEX_LEN), event_type)) {
 		mlx5_core_warn(dev, "event 0x%.2x is not allowed on resource 0x%.8x\n",
 			       event_type, rsn);
-		return;
+		return -1;
 	}
 
 	switch (common->res) {
@@ -146,12 +155,15 @@ void mlx5_rsc_event(struct mlx5_core_dev *dev, u32 rsn, int event_type)
 		dct = (struct mlx5_core_dct *)common;
 		if (event_type == MLX5_EVENT_TYPE_DCT_DRAINED)
 			complete(&dct->drained);
+		else
+			dct->mqp.event(&dct->mqp, event_type);
 		break;
 	default:
 		mlx5_core_warn(dev, "invalid resource type for 0x%x\n", rsn);
 	}
 
 	mlx5_core_put_rsc(common);
+	return 0;
 }
 
 static int create_resource_common(struct mlx5_core_dev *dev,
