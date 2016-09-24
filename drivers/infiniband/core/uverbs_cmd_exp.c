@@ -636,6 +636,7 @@ int ib_uverbs_exp_modify_qp(struct ib_uverbs_file *file, struct ib_device *ib_de
 	attr->rnr_retry           = cmd.rnr_retry;
 	attr->alt_port_num        = cmd.alt_port_num;
 	attr->alt_timeout         = cmd.alt_timeout;
+	attr->dct_key             = cmd.dct_key;
 
 	copy_ah_attr_from_uverbs(qp->device, &attr->ah_attr, &cmd.dest);
 	copy_ah_attr_from_uverbs(qp->device, &attr->alt_ah_attr,

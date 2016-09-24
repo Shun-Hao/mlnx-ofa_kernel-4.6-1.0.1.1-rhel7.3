@@ -32,8 +32,10 @@ enum ib_uverbs_exp_modify_qp_comp_mask {
  */
 enum ibv_exp_qp_attr_mask {
 	IBV_EXP_QP_GROUP_RSS	= IB_QP_GROUP_RSS,
+	IBV_EXP_QP_DC_KEY	= IB_QP_DC_KEY,
 	IBV_EXP_QP_FLOW_ENTROPY = IB_QP_FLOW_ENTROPY,
-	IBV_EXP_QP_ATTR_MASK	= IB_QP_GROUP_RSS | IB_QP_FLOW_ENTROPY,
+	IBV_EXP_QP_ATTR_MASK	= IB_QP_GROUP_RSS | IB_QP_FLOW_ENTROPY |
+	                          IB_QP_DC_KEY,
 	IBV_EXP_QP_ATTR_FIRST = IB_QP_GROUP_RSS,
 	IBV_EXP_ATTR_MASK_SHIFT = 0x06,
 };
@@ -66,7 +68,7 @@ struct ib_uverbs_exp_modify_qp {
 	__u8  alt_port_num;
 	__u8  alt_timeout;
 	__u8  reserved[6];
-	__u64 reserved1;
+	__u64 dct_key;
 	__u32 exp_attr_mask;
 	__u32 flow_entropy;
 	__u64 driver_data[0];

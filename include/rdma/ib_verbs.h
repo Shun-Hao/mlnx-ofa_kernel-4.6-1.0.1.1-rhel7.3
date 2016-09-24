@@ -1105,6 +1105,7 @@ enum ib_qp_type {
 	IB_QPT_RAW_PACKET = 8,
 	IB_QPT_XRC_INI = 9,
 	IB_QPT_XRC_TGT,
+	IB_EXP_QPT_DC_INI = 32,
 	IB_QPT_MAX,
 	IB_QPT_DRIVER = 0xFF,
 	/* Reserve a range for qp types internal to the low level driver.
@@ -1242,6 +1243,7 @@ enum ib_qp_attr_mask {
 
 	/* EXP stuff with shift of 0x06 to support both user and kernel masks */
 	IB_QP_GROUP_RSS		= (1<<27),
+	IB_QP_DC_KEY		= (1<<28),
 	IB_QP_FLOW_ENTROPY	= (1<<29)
 };
 
@@ -1292,6 +1294,7 @@ struct ib_qp_attr {
 	u8			rnr_retry;
 	u8			alt_port_num;
 	u8			alt_timeout;
+	u64			dct_key;
 	u32			rate_limit;
 	u32			flow_entropy;
 };
