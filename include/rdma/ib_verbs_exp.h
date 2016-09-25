@@ -41,6 +41,13 @@ struct ib_exp_qp_init_attr {
 	u32			max_inl_recv;
 };
 
+struct ib_exp_masked_atomic_caps {
+	u32 max_fa_bit_boudary;
+	u32 log_max_atomic_inline_arg;
+	u64 masked_log_atomic_arg_sizes;
+	u64 masked_log_atomic_arg_sizes_network_endianness;
+};
+
 enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_WITH_TIMESTAMP_MASK = 1ULL << 1,
 	IB_EXP_DEVICE_ATTR_WITH_HCA_CORE_CLOCK = 1ULL << 2,
@@ -52,6 +59,7 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_EXT_ATOMIC_ARGS	= 1ULL << 8,
 	IB_EXP_DEVICE_ATTR_MAX_DCT		= 1ULL << 11,
 	IB_EXP_DEVICE_ATTR_MAX_CTX_RES_DOMAIN	= 1ULL << 12,
+	IB_EXP_DEVICE_ATTR_EXT_MASKED_ATOMICS	= 1ULL << 19,
 };
 
 enum ib_exp_device_cap_flags2 {
@@ -60,6 +68,7 @@ enum ib_exp_device_cap_flags2 {
 	IB_EXP_DEVICE_UD_RSS		= 1 << 2,
 	IB_EXP_DEVICE_UD_TSS		= 1 << 3,
 	IB_EXP_DEVICE_EXT_ATOMICS	= 1 << 4,
+	IB_EXP_DEVICE_EXT_MASKED_ATOMICS	= 1 << 14,
 	IB_EXP_DEVICE_CROSS_CHANNEL	= 1 << 28, /* Comapt with user exp area */
 	IB_EXP_DEVICE_MASK =	IB_DEVICE_CROSS_CHANNEL,
 };
@@ -83,6 +92,7 @@ struct ib_exp_device_attr {
 	u32                     max_fa_bit_boudary;
 	u32                     log_max_atomic_inline_arg;
 	uint32_t		max_ctx_res_domain;
+	struct ib_exp_masked_atomic_caps masked_atomic_caps;
 };
 
 enum {
