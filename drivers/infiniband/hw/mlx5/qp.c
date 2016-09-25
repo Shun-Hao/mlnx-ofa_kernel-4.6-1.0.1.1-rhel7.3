@@ -413,6 +413,12 @@ static int get_send_sge(struct ib_qp_init_attr *attr, int wqe_size)
 			   sizeof(struct mlx5_wqe_ctrl_seg) -
 			   sizeof(struct mlx5_wqe_raddr_seg)) /
 			sizeof(struct mlx5_wqe_data_seg);
+	else if (attr->qp_type == IB_EXP_QPT_DC_INI)
+		max_sge = (min_t(int, wqe_size, 512) -
+			   sizeof(struct mlx5_wqe_ctrl_seg) -
+			   sizeof(struct mlx5_wqe_datagram_seg) -
+			   sizeof(struct mlx5_wqe_raddr_seg)) /
+			sizeof(struct mlx5_wqe_data_seg);
 	else if (attr->qp_type == IB_QPT_XRC_INI)
 		max_sge = (min_t(int, wqe_size, 512) -
 			   sizeof(struct mlx5_wqe_ctrl_seg) -
@@ -660,6 +666,7 @@ static int to_mlx5_st(enum ib_qp_type type)
 	case IB_QPT_RAW_IPV6:		return MLX5_QP_ST_RAW_IPV6;
 	case IB_QPT_RAW_PACKET:
 	case IB_QPT_RAW_ETHERTYPE:	return MLX5_QP_ST_RAW_ETHERTYPE;
+	case IB_EXP_QPT_DC_INI:		return MLX5_QP_ST_DC;
 	case IB_QPT_MAX:
 	default:		return -EINVAL;
 	}
@@ -1074,9 +1081,10 @@ static void destroy_qp_kernel(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp)
 
 static u32 get_rx_type(struct mlx5_ib_qp *qp, struct ib_qp_init_attr *attr)
 {
-	if (attr->srq || (attr->qp_type == IB_QPT_XRC_TGT) ||
-	    (attr->qp_type == MLX5_IB_QPT_DCI) ||
-	    (attr->qp_type == IB_QPT_XRC_INI))
+	enum ib_qp_type qt = attr->qp_type;
+	if (attr->srq || (qt == IB_QPT_XRC_TGT) ||
+	    (qt == MLX5_IB_QPT_DCI) ||
+	    (qt == IB_QPT_XRC_INI) || (qt == IB_EXP_QPT_DC_INI))
 		return MLX5_SRQ_RQ;
 	else if (!qp->has_rq)
 		return MLX5_ZERO_LEN_RQ;
@@ -1837,6 +1845,7 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 	void *qpc;
 	u32 *in;
 	int err;
+	int st;
 
 	mutex_init(&qp->mutex);
 	spin_lock_init(&qp->sq.lock);
@@ -2032,6 +2041,12 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 
 	qpc = MLX5_ADDR_OF(create_qp_in, in, qpc);
 
+	st = to_mlx5_st(init_attr->qp_type);
+	if (st < 0) {
+		mlx5_ib_warn(dev, "invalid service type\n");
+		err = st;
+		goto err_create;
+	}
 	MLX5_SET(qpc, qpc, st, mlx5_st);
 	MLX5_SET(qpc, qpc, pm_state, MLX5_QP_PM_MIGRATED);
 
@@ -2556,6 +2571,7 @@ struct ib_qp *_mlx5_ib_create_qp(struct ib_pd *pd,
 	case IB_QPT_UC:
 	case IB_QPT_UD:
 	case IB_QPT_SMI:
+	case IB_EXP_QPT_DC_INI:
 	case MLX5_IB_QPT_HW_GSI:
 	case MLX5_IB_QPT_REG_UMR:
 	case MLX5_IB_QPT_DCI:
@@ -2861,6 +2877,10 @@ static enum mlx5_qp_optpar opt_mask[MLX5_QP_NUM_STATE][MLX5_QP_NUM_STATE][MLX5_Q
 			[MLX5_QP_ST_UD] = MLX5_QP_OPTPAR_PKEY_INDEX	|
 					  MLX5_QP_OPTPAR_Q_KEY		|
 					  MLX5_QP_OPTPAR_PRI_PORT,
+			[MLX5_QP_ST_DC] = MLX5_QP_OPTPAR_PRI_PORT	|
+					  MLX5_QP_OPTPAR_DC_KEY		|
+					  MLX5_QP_OPTPAR_PKEY_INDEX	|
+					  MLX5_QP_OPTPAR_RAE,
 		},
 		[MLX5_QP_STATE_RTR] = {
 			[MLX5_QP_ST_RC] = MLX5_QP_OPTPAR_ALT_ADDR_PATH  |
@@ -2880,6 +2900,9 @@ static enum mlx5_qp_optpar opt_mask[MLX5_QP_NUM_STATE][MLX5_QP_NUM_STATE][MLX5_Q
 					  MLX5_QP_OPTPAR_RAE            |
 					  MLX5_QP_OPTPAR_RWE            |
 					  MLX5_QP_OPTPAR_PKEY_INDEX,
+			[MLX5_QP_ST_DC] = MLX5_QP_OPTPAR_PKEY_INDEX	|
+					  MLX5_QP_OPTPAR_RAE		|
+					  MLX5_QP_OPTPAR_DC_KEY,
 		},
 	},
 	[MLX5_QP_STATE_RTR] = {
@@ -2894,6 +2917,9 @@ static enum mlx5_qp_optpar opt_mask[MLX5_QP_NUM_STATE][MLX5_QP_NUM_STATE][MLX5_Q
 					  MLX5_QP_OPTPAR_RWE		|
 					  MLX5_QP_OPTPAR_PM_STATE,
 			[MLX5_QP_ST_UD] = MLX5_QP_OPTPAR_Q_KEY,
+			[MLX5_QP_ST_DC] = MLX5_QP_OPTPAR_DC_KEY		|
+					  MLX5_QP_OPTPAR_PM_STATE	|
+					  MLX5_QP_OPTPAR_RAE,
 		},
 	},
 	[MLX5_QP_STATE_RTS] = {
@@ -2910,6 +2936,9 @@ static enum mlx5_qp_optpar opt_mask[MLX5_QP_NUM_STATE][MLX5_QP_NUM_STATE][MLX5_Q
 			[MLX5_QP_ST_UD] = MLX5_QP_OPTPAR_Q_KEY		|
 					  MLX5_QP_OPTPAR_SRQN		|
 					  MLX5_QP_OPTPAR_CQN_RCV,
+			[MLX5_QP_ST_DC] = MLX5_QP_OPTPAR_DC_KEY		|
+					  MLX5_QP_OPTPAR_PM_STATE	|
+					  MLX5_QP_OPTPAR_RAE,
 		},
 	},
 	[MLX5_QP_STATE_SQER] = {
@@ -2921,6 +2950,9 @@ static enum mlx5_qp_optpar opt_mask[MLX5_QP_NUM_STATE][MLX5_QP_NUM_STATE][MLX5_Q
 					   MLX5_QP_OPTPAR_RWE		|
 					   MLX5_QP_OPTPAR_RAE		|
 					   MLX5_QP_OPTPAR_RRE,
+			[MLX5_QP_ST_DC]  = MLX5_QP_OPTPAR_DC_KEY	|
+					   MLX5_QP_OPTPAR_RAE,
+
 		},
 	},
 };
@@ -3327,6 +3359,9 @@ static int __mlx5_ib_modify_qp(struct ib_qp *ibqp,
 	if (attr_mask & IB_QP_DEST_QPN)
 		context->log_pg_sz_remote_qpn = cpu_to_be32(attr->dest_qp_num);
 
+	if (attr_mask & IB_QP_DC_KEY)
+		context->dc_access_key = cpu_to_be64(attr->dct_key);
+
 	if (attr_mask & IB_QP_PKEY_INDEX)
 		context->pri_path.pkey_index = cpu_to_be16(attr->pkey_index);
 
@@ -3517,8 +3552,10 @@ static int __mlx5_ib_modify_qp(struct ib_qp *ibqp,
 		qp->sq.tail = 0;
 		qp->sq.cur_post = 0;
 		qp->sq.last_poll = 0;
-		qp->db.db[MLX5_RCV_DBR] = 0;
-		qp->db.db[MLX5_SND_DBR] = 0;
+		if (qp->db.db) {
+			qp->db.db[MLX5_RCV_DBR] = 0;
+			qp->db.db[MLX5_SND_DBR] = 0;
+		}
 	}
 
 out:
