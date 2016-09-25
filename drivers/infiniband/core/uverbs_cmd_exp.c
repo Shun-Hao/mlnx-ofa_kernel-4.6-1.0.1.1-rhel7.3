@@ -428,6 +428,22 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_MAX_CTX_RES_DOMAIN;
 	}
 
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_EXT_MASKED_ATOMICS) {
+		struct ib_uverbs_exp_masked_atomic_caps *resp_atom;
+		struct ib_exp_masked_atomic_caps *atom_caps;
+
+		resp_atom = &resp->masked_atomic_caps;
+		atom_caps = &exp_attr->masked_atomic_caps;
+		resp_atom->masked_log_atomic_arg_sizes =
+			atom_caps->masked_log_atomic_arg_sizes;
+		resp_atom->masked_log_atomic_arg_sizes_network_endianness =
+			atom_caps->masked_log_atomic_arg_sizes_network_endianness;
+		resp_atom->max_fa_bit_boudary = exp_attr->max_fa_bit_boudary;
+		resp_atom->log_max_atomic_inline_arg =
+			exp_attr->log_max_atomic_inline_arg;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_EXT_MASKED_ATOMICS;
+	}
+
 	ret = ib_copy_to_udata(ucore, resp, min_t(size_t, sizeof(*resp), ucore->outlen));
 out:
 	kfree(exp_attr);

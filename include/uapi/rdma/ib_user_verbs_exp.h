@@ -112,6 +112,13 @@ struct ib_uverbs_qpg {
 	__u32 reserved2;
 };
 
+struct ib_uverbs_exp_masked_atomic_caps {
+	__u32  max_fa_bit_boudary;
+	__u32  log_max_atomic_inline_arg;
+	__u64  masked_log_atomic_arg_sizes;
+	__u64  masked_log_atomic_arg_sizes_network_endianness;
+};
+
 struct ib_uverbs_exp_create_qp {
 	__u64 comp_mask;
 	__u64 user_handle;
@@ -188,6 +195,8 @@ struct ib_uverbs_exp_query_device_resp {
 	__u8					reserved_odp[32];
 	__u32					max_dct;
 	__u32					max_ctx_res_domain;
+	__u8					reserved4[64];
+	struct ib_uverbs_exp_masked_atomic_caps masked_atomic_caps;
 
 
 };
