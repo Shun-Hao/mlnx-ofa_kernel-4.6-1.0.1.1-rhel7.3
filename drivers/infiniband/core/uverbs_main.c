@@ -133,6 +133,17 @@ static int (*uverbs_ex_cmd_table[])(struct ib_uverbs_file *file,
 	[IB_USER_VERBS_EX_CMD_MODIFY_CQ]        = ib_uverbs_ex_modify_cq,
 };
 
+static int (*uverbs_exp_cmd_table[])(struct ib_uverbs_file *file,
+				     struct ib_udata *ucore,
+				     struct ib_udata *uhw) = {
+	[IB_USER_VERBS_EXP_CMD_CREATE_QP]	= ib_uverbs_exp_create_qp,
+	[IB_USER_VERBS_EXP_CMD_MODIFY_CQ]	= ib_uverbs_exp_modify_cq,
+	[IB_USER_VERBS_EXP_CMD_MODIFY_QP]	= ib_uverbs_exp_modify_qp,
+	[IB_USER_VERBS_EXP_CMD_QUERY_DEVICE]	= ib_uverbs_exp_query_device,
+	[IB_USER_VERBS_EXP_CMD_CREATE_CQ]	= ib_uverbs_exp_create_cq,
+	[IB_USER_VERBS_EXP_CMD_REG_MR]		= ib_uverbs_exp_reg_mr,
+};
+
 static void ib_uverbs_add_one(struct ib_device *device);
 static void ib_uverbs_remove_one(struct ib_device *device, void *client_data);
 
@@ -1132,6 +1143,7 @@ static int ib_uverbs_open(struct inode *inode, struct file *filp)
 
 	file->uverbs_cmd_mask = ib_dev->uverbs_cmd_mask;
 	file->uverbs_ex_cmd_mask = ib_dev->uverbs_ex_cmd_mask;
+	file->uverbs_exp_cmd_mask = ib_dev->uverbs_exp_cmd_mask;
 
 	setup_ufile_idr_uobject(file);
 

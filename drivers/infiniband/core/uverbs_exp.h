@@ -28,15 +28,6 @@ IB_UVERBS_DECLARE_EXP_CMD(create_cq);
 IB_UVERBS_DECLARE_EXP_CMD(modify_qp);
 IB_UVERBS_DECLARE_EXP_CMD(reg_mr);
 
-uverbs_ex_cmd uverbs_exp_cmd_table[] = {
-	[IB_USER_VERBS_EXP_CMD_CREATE_QP]	= ib_uverbs_exp_create_qp,
-	[IB_USER_VERBS_EXP_CMD_MODIFY_CQ]	= ib_uverbs_exp_modify_cq,
-	[IB_USER_VERBS_EXP_CMD_MODIFY_QP]	= ib_uverbs_exp_modify_qp,
-	[IB_USER_VERBS_EXP_CMD_QUERY_DEVICE]	= ib_uverbs_exp_query_device,
-	[IB_USER_VERBS_EXP_CMD_CREATE_CQ]	= ib_uverbs_exp_create_cq,
-	[IB_USER_VERBS_EXP_CMD_REG_MR]		= ib_uverbs_exp_reg_mr,
-};
-
 unsigned long ib_uverbs_exp_get_unmapped_area(struct file *filp,
 					      unsigned long addr,
 					      unsigned long len, unsigned long pgoff,
