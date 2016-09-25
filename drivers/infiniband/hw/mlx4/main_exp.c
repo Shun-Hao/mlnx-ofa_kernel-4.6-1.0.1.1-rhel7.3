@@ -49,11 +49,13 @@ int mlx4_ib_exp_query_device(struct ib_device *ibdev,
 {
 	int ret;
 	struct mlx4_ib_dev *dev = to_mdev(ibdev);
+	struct ib_exp_masked_atomic_caps *atom_caps;
 
 	ret = mlx4_ib_query_device(ibdev, &props->base, uhw);
 	if (ret)
 		return ret;
 
+	atom_caps = &props->masked_atomic_caps;
 	props->exp_comp_mask = IB_EXP_DEVICE_ATTR_INLINE_RECV_SZ;
 	props->inline_recv_sz = dev->dev->caps.max_rq_sg * sizeof(struct mlx4_wqe_data_seg);
 	props->device_cap_flags2 = 0;
@@ -78,6 +80,20 @@ int mlx4_ib_exp_query_device(struct ib_device *ibdev,
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_MAX_CTX_RES_DOMAIN;
 	props->max_ctx_res_domain = MLX4_IB_MAX_CTX_UARS * dev->dev->caps.bf_regs_per_page;
 
+	/* Report masked atomic properties - new API */
+	atom_caps->masked_log_atomic_arg_sizes = props->atomic_arg_sizes;
+	/* Requestor's response in ConnectX-3 is in host endianness. */
+#if !defined(__LITTLE_ENDIAN)
+	atom_caps->masked_log_atomic_arg_sizes_network_endianness =
+			props->atomic_arg_sizes;
+#else
+	atom_caps->masked_log_atomic_arg_sizes_network_endianness = 0;
+#endif
+
+	atom_caps->max_fa_bit_boudary = props->max_fa_bit_boudary;
+	atom_caps->log_max_atomic_inline_arg = props->log_max_atomic_inline_arg;
+	props->device_cap_flags2 |= IB_EXP_DEVICE_EXT_MASKED_ATOMICS;
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_EXT_MASKED_ATOMICS;
 
 	return 0;
 }
