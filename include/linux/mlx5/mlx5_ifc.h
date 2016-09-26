@@ -140,6 +140,7 @@ enum {
 	MLX5_CMD_OP_DRAIN_DCT                     = 0x712,
 	MLX5_CMD_OP_QUERY_DCT                     = 0x713,
 	MLX5_CMD_OP_ARM_DCT_FOR_KEY_VIOLATION     = 0x714,
+	MLX5_CMD_OP_SET_DC_CNAK_TRACE             = 0x715,
 	MLX5_CMD_OP_CREATE_XRQ                    = 0x717,
 	MLX5_CMD_OP_DESTROY_XRQ                   = 0x718,
 	MLX5_CMD_OP_QUERY_XRQ                     = 0x719,
@@ -1009,7 +1010,8 @@ struct mlx5_ifc_cmd_hca_cap_bits {
 	u8         umr_indirect_mkey_disabled[0x1];
 	u8         umr_fence[0x2];
 	u8         dc_req_scat_data_cqe[0x1];
-	u8         reserved_at_20d[0x2];
+	u8         reserved_at_20d[0x1];
+	u8         dc_cnak_trace[0x1];
 	u8         drain_sigerr[0x1];
 	u8         cmdif_checksum[0x2];
 	u8         sigerr_cqe[0x1];
@@ -9231,6 +9233,30 @@ struct mlx5_ifc_dealloc_memic_out_bits {
 	u8         syndrome[0x20];
 
 	u8         reserved_at_40[0x40];
+};
+
+struct mlx5_ifc_set_dc_cnak_trace_out_bits {
+	u8         status[0x8];
+	u8         reserved_0[0x18];
+
+	u8         syndrome[0x20];
+
+	u8         reserved_1[0x40];
+};
+
+struct mlx5_ifc_set_dc_cnak_trace_in_bits {
+	u8         opcode[0x10];
+	u8         reserved_0[0x10];
+
+	u8         reserved_1[0x10];
+	u8         op_mod[0x10];
+
+	u8         enable[0x1];
+	u8         reserved_2[0x1f];
+
+	u8         reserved_3[0x160];
+
+	struct mlx5_ifc_cmd_pas_bits pas;
 };
 
 struct mlx5_ifc_general_obj_in_cmd_hdr_bits {
