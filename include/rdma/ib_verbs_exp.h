@@ -59,6 +59,7 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_EXT_ATOMIC_ARGS	= 1ULL << 8,
 	IB_EXP_DEVICE_ATTR_MAX_DCT		= 1ULL << 11,
 	IB_EXP_DEVICE_ATTR_MAX_CTX_RES_DOMAIN	= 1ULL << 12,
+	IB_EXP_DEVICE_ATTR_MAX_DEVICE_CTX	= 1ULL << 15,
 	IB_EXP_DEVICE_ATTR_EXT_MASKED_ATOMICS	= 1ULL << 19,
 };
 
@@ -93,6 +94,7 @@ struct ib_exp_device_attr {
 	u32                     log_max_atomic_inline_arg;
 	uint32_t		max_ctx_res_domain;
 	struct ib_exp_masked_atomic_caps masked_atomic_caps;
+	uint32_t		max_device_ctx;
 };
 
 enum {
