@@ -63,6 +63,11 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		props->dc_rd_res = 0;
 		props->max_dct = 0;
 	}
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_INLINE_RECV_SZ;
+	if (MLX5_CAP_GEN(dev->mdev, sctr_data_cqe))
+		props->inline_recv_sz = MLX5_MAX_INLINE_RECEIVE_SIZE;
+	else
+		props->inline_recv_sz = 0;
 
 	return 0;
 }
