@@ -33,8 +33,16 @@
 #ifndef MLX5_IB_EXP_H
 #define MLX5_IB_EXP_H
 
+struct mlx5_ib_dev;
 enum {
 	MLX5_DCT_CS_RES_64	= 2,
+};
+
+struct mlx5_dc_tracer {
+	struct page	*pg;
+	dma_addr_t	dma;
+	int		size;
+	int		order;
 };
 
 struct mlx5_ib_dc_target {
@@ -87,4 +95,9 @@ int mlx5_ib_exp_contig_mmap(struct ib_ucontext *ibcontext,
 			    unsigned long  command);
 struct ib_mr *mlx5_ib_phys_addr(struct ib_pd *pd, u64 length, u64 virt_addr,
 				int access_flags);
+int mlx5_ib_mmap_dc_info_page(struct mlx5_ib_dev *dev,
+			      struct vm_area_struct *vma);
+void mlx5_ib_disable_dc_tracer(struct mlx5_ib_dev *dev);
+void mlx5_ib_enable_dc_tracer(struct mlx5_ib_dev *dev);
+
 #endif

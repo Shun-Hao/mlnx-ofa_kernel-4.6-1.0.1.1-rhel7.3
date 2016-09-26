@@ -2156,6 +2156,8 @@ static int mlx5_ib_mmap(struct ib_ucontext *ibcontext, struct vm_area_struct *vm
 		return mlx5_ib_exp_contig_mmap(ibcontext, vma, command);
 
 	switch (command) {
+	case MLX5_IB_MMAP_MAP_DC_INFO_PAGE:
+		return mlx5_ib_mmap_dc_info_page(dev, vma);
 	case MLX5_IB_MMAP_WC_PAGE:
 	case MLX5_IB_MMAP_NC_PAGE:
 	case MLX5_IB_MMAP_REGULAR_PAGE:
@@ -6201,6 +6203,22 @@ static void mlx5_ib_stage_delay_drop_cleanup(struct mlx5_ib_dev *dev)
 	cancel_delay_drop(dev);
 }
 
+static int mlx5_ib_stage_dc_tracer_init(struct mlx5_ib_dev *dev)
+{
+	if (MLX5_CAP_GEN(dev->mdev, port_type) ==
+			MLX5_CAP_PORT_TYPE_IB)
+		mlx5_ib_enable_dc_tracer(dev);
+
+	return 0;
+}
+
+static void mlx5_ib_stage_dc_tracer_cleanup(struct mlx5_ib_dev *dev)
+{
+	if (MLX5_CAP_GEN(dev->mdev, port_type) ==
+			MLX5_CAP_PORT_TYPE_IB)
+		mlx5_ib_disable_dc_tracer(dev);
+}
+
 static int mlx5_ib_stage_rep_reg_init(struct mlx5_ib_dev *dev)
 {
 	mlx5_ib_register_vport_reps(dev);
@@ -6308,6 +6326,9 @@ static const struct mlx5_ib_profile pf_profile = {
 	STAGE_CREATE(MLX5_IB_STAGE_DELAY_DROP,
 		     mlx5_ib_stage_delay_drop_init,
 		     mlx5_ib_stage_delay_drop_cleanup),
+	STAGE_CREATE(MLX5_IB_STAGE_DC_TRACER,
+		     mlx5_ib_stage_dc_tracer_init,
+		     mlx5_ib_stage_dc_tracer_cleanup),
 };
 
 static const struct mlx5_ib_profile nic_rep_profile = {

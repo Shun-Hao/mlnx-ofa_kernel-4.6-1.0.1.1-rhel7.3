@@ -796,6 +796,7 @@ enum mlx5_ib_stages {
 	MLX5_IB_STAGE_IB_REG,
 	MLX5_IB_STAGE_POST_IB_REG_UMR,
 	MLX5_IB_STAGE_DELAY_DROP,
+	MLX5_IB_STAGE_DC_TRACER,
 	MLX5_IB_STAGE_CLASS_ATTR,
 	MLX5_IB_STAGE_REP_REG,
 	MLX5_IB_STAGE_MAX,
@@ -924,6 +925,7 @@ struct mlx5_ib_dev {
 	/* protect resources needed as part of reset flow */
 	spinlock_t		reset_flow_resource_lock;
 	struct list_head	qp_list;
+	struct mlx5_dc_tracer	dctr;
 	/* Array with num_ports elements */
 	struct mlx5_ib_port	*port;
 	struct mlx5_sq_bfreg	bfreg;
