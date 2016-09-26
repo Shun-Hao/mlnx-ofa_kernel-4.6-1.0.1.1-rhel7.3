@@ -80,6 +80,7 @@ struct mlx5_dc_data {
 	struct mlx5_ib_dev	*dev;
 	int			port;
 	int			initialized;
+	struct kobject		kobj;
 	unsigned long		connects;
 	unsigned long		cnaks;
 	unsigned long		discards;

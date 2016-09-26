@@ -545,6 +545,116 @@ static void free_dc_tx_buf(struct mlx5_dc_data *dcd)
 	free_dc_buf(dcd, 0);
 }
 
+struct dc_attribute {
+	struct attribute attr;
+	ssize_t (*show)(struct mlx5_dc_data *, struct dc_attribute *, char *buf);
+	ssize_t (*store)(struct mlx5_dc_data *, struct dc_attribute *,
+			 const char *buf, size_t count);
+};
+
+#define DC_ATTR(_name, _mode, _show, _store) \
+struct dc_attribute dc_attr_##_name = __ATTR(_name, _mode, _show, _store)
+
+static ssize_t rx_connect_show(struct mlx5_dc_data *dcd,
+			       struct dc_attribute *unused,
+			       char *buf)
+{
+	unsigned long num;
+
+	num = dcd->connects;
+
+	return sprintf(buf, "%lu\n", num);
+}
+
+static ssize_t tx_cnak_show(struct mlx5_dc_data *dcd,
+			    struct dc_attribute *unused,
+			    char *buf)
+{
+	unsigned long num;
+
+	num = dcd->cnaks;
+
+	return sprintf(buf, "%lu\n", num);
+}
+
+static ssize_t tx_discard_show(struct mlx5_dc_data *dcd,
+			       struct dc_attribute *unused,
+			       char *buf)
+{
+	unsigned long num;
+
+	num = dcd->discards;
+
+	return sprintf(buf, "%lu\n", num);
+}
+
+#define DC_ATTR_RO(_name) \
+struct dc_attribute dc_attr_##_name = __ATTR_RO(_name)
+
+static DC_ATTR_RO(rx_connect);
+static DC_ATTR_RO(tx_cnak);
+static DC_ATTR_RO(tx_discard);
+
+static struct attribute *dc_attrs[] = {
+	&dc_attr_rx_connect.attr,
+	&dc_attr_tx_cnak.attr,
+	&dc_attr_tx_discard.attr,
+	NULL
+};
+
+static ssize_t dc_attr_show(struct kobject *kobj,
+			    struct attribute *attr, char *buf)
+{
+	struct dc_attribute *dc_attr = container_of(attr, struct dc_attribute, attr);
+	struct mlx5_dc_data *d = container_of(kobj, struct mlx5_dc_data, kobj);
+
+	if (!dc_attr->show)
+		return -EIO;
+
+	return dc_attr->show(d, dc_attr, buf);
+}
+
+static const struct sysfs_ops dc_sysfs_ops = {
+	.show = dc_attr_show
+};
+
+static struct kobj_type dc_type = {
+	.sysfs_ops     = &dc_sysfs_ops,
+	.default_attrs = dc_attrs
+};
+
+static int init_sysfs(struct mlx5_ib_dev *dev)
+{
+	struct device *device = &dev->ib_dev.dev;
+
+	dev->dc_kobj = kobject_create_and_add("dct", &device->kobj);
+	if (!dev->dc_kobj) {
+		mlx5_ib_err(dev, "failed to register DCT sysfs object\n");
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
+static void cleanup_sysfs(struct mlx5_ib_dev *dev)
+{
+	if (dev->dc_kobj) {
+		kobject_put(dev->dc_kobj);
+		dev->dc_kobj = NULL;
+	}
+}
+
+static int init_port_sysfs(struct mlx5_dc_data *dcd)
+{
+	return kobject_init_and_add(&dcd->kobj, &dc_type, dcd->dev->dc_kobj,
+				    "%d", dcd->port);
+}
+
+static void cleanup_port_sysfs(struct mlx5_dc_data *dcd)
+{
+	kobject_put(&dcd->kobj);
+}
+
 static int init_driver_cnak(struct mlx5_ib_dev *dev, int port)
 {
 	int ncqe = 1 << MLX5_CAP_GEN(dev->mdev, log_max_qp_sz);
@@ -656,6 +766,12 @@ static int init_driver_cnak(struct mlx5_ib_dev *dev, int port)
 			goto error7;
 	}
 
+	err = init_port_sysfs(dcd);
+	if (err) {
+		mlx5_ib_warn(dev, "failed to initialize DC cnak sysfs\n");
+		goto error7;
+	}
+
 	dcd->initialized = 1;
 	return 0;
 
@@ -685,6 +801,8 @@ static void cleanup_driver_cnak(struct mlx5_ib_dev *dev, int port)
 	if (!dcd->initialized)
 		return;
 
+	cleanup_port_sysfs(dcd);
+
 	if (ib_destroy_qp(dcd->dcqp))
 		mlx5_ib_warn(dev, "destroy qp failed\n");
 
@@ -705,13 +823,15 @@ int mlx5_ib_init_dc_improvements(struct mlx5_ib_dev *dev)
 	int port;
 	int err;
 
-	if (!mlx5_core_is_pf(dev->mdev))
-		return 0;
-
-	if (!(MLX5_CAP_GEN(dev->mdev, dc_cnak_trace)))
+	if (!mlx5_core_is_pf(dev->mdev) ||
+	    !(MLX5_CAP_GEN(dev->mdev, dc_cnak_trace)))
 		return 0;
 
 	mlx5_ib_enable_dc_tracer(dev);
+
+	err = init_sysfs(dev);
+	if (err)
+		return err;
 
 	if (!MLX5_CAP_GEN(dev->mdev, dc_connect_qp))
 		return 0;
@@ -727,6 +847,7 @@ int mlx5_ib_init_dc_improvements(struct mlx5_ib_dev *dev)
 out:
 	for (port--; port >= 1; port--)
 		cleanup_driver_cnak(dev, port);
+	cleanup_sysfs(dev);
 
 	return err;
 }
@@ -737,6 +858,7 @@ void mlx5_ib_cleanup_dc_improvements(struct mlx5_ib_dev *dev)
 
 	for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++)
 		cleanup_driver_cnak(dev, port);
+	cleanup_sysfs(dev);
 
 	mlx5_ib_disable_dc_tracer(dev);
 }

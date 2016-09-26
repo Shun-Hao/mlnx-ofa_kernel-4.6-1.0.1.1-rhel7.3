@@ -927,6 +927,7 @@ struct mlx5_ib_dev {
 	struct list_head	qp_list;
 	struct mlx5_dc_tracer	dctr;
 	struct mlx5_dc_data	dcd[MLX5_MAX_PORTS];
+	struct kobject		*dc_kobj;
 	/* Array with num_ports elements */
 	struct mlx5_ib_port	*port;
 	struct mlx5_sq_bfreg	bfreg;
