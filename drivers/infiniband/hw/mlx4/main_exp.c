@@ -95,6 +95,11 @@ int mlx4_ib_exp_query_device(struct ib_device *ibdev,
 	props->device_cap_flags2 |= IB_EXP_DEVICE_EXT_MASKED_ATOMICS;
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_EXT_MASKED_ATOMICS;
 
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_MAX_DEVICE_CTX;
+
+	/*mlx4_core uses 1 UAR*/
+	props->max_device_ctx = dev->dev->caps.num_uars - dev->dev->caps.reserved_uars - 1;
+
 	return 0;
 }
 
