@@ -195,7 +195,9 @@ struct ib_uverbs_exp_query_device_resp {
 	__u8					reserved_odp[32];
 	__u32					max_dct;
 	__u32					max_ctx_res_domain;
-	__u8					reserved4[64];
+	__u8					reserved4[28];
+	__u32					max_device_ctx;
+	__u8					reserved5[32];
 	struct ib_uverbs_exp_masked_atomic_caps masked_atomic_caps;
 
 

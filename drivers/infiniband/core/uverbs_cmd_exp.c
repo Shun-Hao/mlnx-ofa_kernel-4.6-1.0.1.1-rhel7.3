@@ -444,6 +444,11 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_EXT_MASKED_ATOMICS;
 	}
 
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_MAX_DEVICE_CTX) {
+		resp->max_device_ctx = exp_attr->max_device_ctx;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_MAX_DEVICE_CTX;
+	}
+
 	ret = ib_copy_to_udata(ucore, resp, min_t(size_t, sizeof(*resp), ucore->outlen));
 out:
 	kfree(exp_attr);
