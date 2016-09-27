@@ -22,7 +22,7 @@ ib_core-y :=			packer.o ud_header.o verbs.o cq.o rw.o sysfs.o verbs_exp.o \
 
 ib_core-$(CONFIG_SECURITY_INFINIBAND) += security.o
 ib_core-$(CONFIG_INFINIBAND_USER_MEM) += umem.o cmem.o
-ib_core-$(CONFIG_INFINIBAND_ON_DEMAND_PAGING) += umem_odp.o
+ib_core-$(CONFIG_INFINIBAND_ON_DEMAND_PAGING) += umem_odp.o umem_odp_exp.o
 ib_core-$(CONFIG_CGROUP_RDMA) += cgroup.o
 
 ib_cm-y :=			cm.o

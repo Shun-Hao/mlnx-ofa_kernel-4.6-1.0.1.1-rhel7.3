@@ -16,4 +16,24 @@ enum ib_exp_access_flags {
 	/* Initial values are non-exp defined as part of  ib_access_flags */
 	IB_EXP_ACCESS_PHYSICAL_ADDR	    = (1 << (16 + IB_EXP_ACCESS_FLAGS_SHIFT)),
 };
+
+struct ib_odp_statistics {
+#ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
+
+	atomic_t num_page_fault_pages;
+
+	atomic_t num_invalidation_pages;
+
+	atomic_t num_invalidations;
+
+	atomic_t invalidations_faults_contentions;
+
+	atomic_t num_page_faults;
+
+	atomic_t num_prefetches_handled;
+
+	atomic_t num_prefetch_pages;
+#endif
+};
+
 #endif

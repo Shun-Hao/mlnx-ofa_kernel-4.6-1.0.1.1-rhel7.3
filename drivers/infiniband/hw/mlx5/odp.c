@@ -574,7 +574,7 @@ next_mr:
 	smp_rmb();
 
 	ret = ib_umem_odp_map_dma_pages(to_ib_umem_odp(mr->umem), io_virt, size,
-					access_mask, current_seq);
+					access_mask, current_seq, 0);
 
 	if (ret < 0)
 		goto out;

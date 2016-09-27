@@ -36,6 +36,7 @@
 #include <rdma/ib_umem.h>
 #include <rdma/ib_verbs.h>
 #include <linux/interval_tree.h>
+#include <rdma/ib_umem_odp_exp.h>
 
 struct umem_odp_node {
 	u64 __subtree_last;
@@ -122,7 +123,8 @@ void ib_umem_odp_release(struct ib_umem_odp *umem_odp);
 
 int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 start_offset,
 			      u64 bcnt, u64 access_mask,
-			      unsigned long current_seq);
+			      unsigned long current_seq,
+			      enum ib_odp_dma_map_flags flags);
 
 void ib_umem_odp_unmap_dma_pages(struct ib_umem_odp *umem_odp, u64 start_offset,
 				 u64 bound);
@@ -155,10 +157,17 @@ static inline int ib_umem_mmu_notifier_retry(struct ib_umem_odp *umem_odp,
 	 * and the ucontext umem_mutex semaphore locked for read).
 	 */
 
-	if (unlikely(umem_odp->notifiers_count))
+	struct ib_umem *umem = &umem_odp->umem;
+	if (unlikely(umem_odp->notifiers_count)) {
+		ib_umem_odp_account_invalidations_fault_contentions(umem->context->device);
 		return 1;
-	if (umem_odp->notifiers_seq != mmu_seq)
+	}
+
+	if (umem_odp->notifiers_seq != mmu_seq) {
+		ib_umem_odp_account_invalidations_fault_contentions(umem->context->device);
 		return 1;
+	}
+
 	return 0;
 }
 

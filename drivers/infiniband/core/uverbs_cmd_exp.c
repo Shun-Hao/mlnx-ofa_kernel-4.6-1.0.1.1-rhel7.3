@@ -611,6 +611,48 @@ err_free:
 	return ret;
 }
 
+#ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
+int ib_uverbs_exp_prefetch_mr(struct ib_uverbs_file *file,
+			      struct ib_udata *ucore,
+			      struct ib_udata *uhw)
+{
+	struct ib_uverbs_exp_prefetch_mr  cmd;
+	struct ib_mr                     *mr;
+	int                               ret = -EINVAL;
+
+	if (ucore->inlen < sizeof(cmd))
+		return -EINVAL;
+
+	ret = ib_copy_from_udata(&cmd, ucore, sizeof(cmd));
+	if (ret)
+		return ret;
+
+	ucore->inbuf += sizeof(cmd);
+	ucore->inlen -= sizeof(cmd);
+
+	if (cmd.comp_mask)
+		return -EINVAL;
+
+	mr = uobj_get_obj_read(mr, UVERBS_OBJECT_MR, cmd.mr_handle, file);
+	if (!mr)
+		return -EINVAL;
+
+	if (!mr->device->exp_prefetch_mr)
+		return -ENOSYS;
+
+	ret = mr->device->exp_prefetch_mr(mr, cmd.start, cmd.length, cmd.flags);
+
+	uobj_put_read(mr->uobject);
+
+	if (ret)
+		return ret;
+
+	ib_umem_odp_account_prefetch_handled(file->device->ib_dev);
+
+	return ret;
+}
+#endif /* CONFIG_INFINIBAND_ON_DEMAND_PAGING */
+
 int ib_uverbs_exp_create_cq(struct ib_uverbs_file *file,
 			    struct ib_udata *ucore, struct ib_udata *uhw)
 {

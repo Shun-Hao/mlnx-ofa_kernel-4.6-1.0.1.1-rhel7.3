@@ -45,6 +45,9 @@
 #include <rdma/ib_umem.h>
 #include <rdma/ib_umem_odp.h>
 
+#include "uverbs.h"
+#include "umem_odp_exp.h"
+
 /*
  * The ib_umem list keeps track of memory regions for which the HW
  * device request to receive notification when the related memory
@@ -87,6 +90,9 @@ static void ib_umem_notifier_start_account(struct ib_umem_odp *umem_odp)
 		 * waiting right now.
 		 */
 		reinit_completion(&umem_odp->notifier_completion);
+
+	atomic_inc(&umem_odp->umem.context->device->odp_statistics.num_invalidations);
+
 	mutex_unlock(&umem_odp->umem_mutex);
 }
 
@@ -506,7 +512,8 @@ static int ib_umem_odp_map_dma_single_page(
 		int page_index,
 		struct page *page,
 		u64 access_mask,
-		unsigned long current_seq)
+		unsigned long current_seq,
+		enum ib_odp_dma_map_flags flags)
 {
 	struct ib_umem *umem = &umem_odp->umem;
 	struct ib_device *dev = umem->context->device;
@@ -536,6 +543,11 @@ static int ib_umem_odp_map_dma_single_page(
 		umem_odp->dma_list[page_index] = dma_addr | access_mask;
 		umem_odp->page_list[page_index] = page;
 		umem->npages++;
+		if (flags & IB_ODP_DMA_MAP_FOR_PREFETCH)
+			atomic_inc(&dev->odp_statistics.num_prefetch_pages);
+		else
+			atomic_inc(&dev->odp_statistics.num_page_fault_pages);
+
 		stored_page = 1;
 	} else if (umem_odp->page_list[page_index] == page) {
 		umem_odp->dma_list[page_index] |= access_mask;
@@ -589,10 +601,15 @@ out:
  * @current_seq: the MMU notifiers sequance value for synchronization with
  *               invalidations. the sequance number is read from
  *               umem_odp->notifiers_seq before calling this function
+ * @odp_flags: IB_ODP_DMA_MAP_FOR_PREEFTCH is used to indicate that the function
+ *	   was called from the prefetch verb. IB_ODP_DMA_MAP_FOR_PAGEFAULT is
+ *	   used to indicate that the function was called from a pagefault
+ *	   handler.
  */
 int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 user_virt,
 			      u64 bcnt, u64 access_mask,
-			      unsigned long current_seq)
+			      unsigned long current_seq,
+			      enum ib_odp_dma_map_flags odp_flags)
 {
 	struct ib_umem *umem = &umem_odp->umem;
 	struct task_struct *owning_process  = NULL;
@@ -673,7 +690,7 @@ int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 user_virt,
 
 			ret = ib_umem_odp_map_dma_single_page(
 					umem_odp, k, local_page_list[j],
-					access_mask, current_seq);
+					access_mask, current_seq, odp_flags);
 			if (ret < 0)
 				break;
 
@@ -751,6 +768,7 @@ void ib_umem_odp_unmap_dma_pages(struct ib_umem_odp *umem_odp, u64 virt,
 				put_page(page);
 			umem_odp->page_list[idx] = NULL;
 			umem_odp->dma_list[idx] = 0;
+			atomic_inc(&dev->odp_statistics.num_invalidation_pages);
 			umem->npages--;
 		}
 	}

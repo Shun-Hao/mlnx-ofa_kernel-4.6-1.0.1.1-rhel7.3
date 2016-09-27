@@ -2337,6 +2337,7 @@ struct ib_device {
 	int			(*exp_destroy_dct)(struct ib_dct *dct);
 	int			(*exp_query_dct)(struct ib_dct *dct, struct ib_dct_attr *attr);
 	int			(*exp_arm_dct)(struct ib_dct *dct, struct ib_udata *udata);
+	struct ib_odp_statistics     odp_statistics;
 	unsigned long		   (*exp_get_unmapped_area)(struct file *file,
 							    unsigned long addr,
 							    unsigned long len,
@@ -2661,6 +2662,7 @@ struct ib_device {
 	 */
 	int (*get_port_immutable)(struct ib_device *, u8, struct ib_port_immutable *);
 	void (*get_dev_fw_str)(struct ib_device *, char *str);
+	int (*exp_prefetch_mr)(struct ib_mr *mr, u64 start, u64 length, u32 flags);
 	const struct cpumask *(*get_vector_affinity)(struct ib_device *ibdev,
 						     int comp_vector);
 

@@ -24,6 +24,7 @@ enum {
 	IB_USER_VERBS_EXP_CMD_QUERY_DCT,
 	IB_USER_VERBS_EXP_CMD_ARM_DCT,
 	IB_USER_VERBS_EXP_CMD_REG_MR = 11,
+	IB_USER_VERBS_EXP_CMD_PREFETCH_MR = 12,
 };
 
 enum ib_uverbs_exp_modify_qp_comp_mask {
@@ -256,6 +257,14 @@ struct ib_uverbs_exp_reg_mr_resp {
 	__u32 rkey;
 	__u32 reserved;
 	__u64 comp_mask;
+};
+
+struct ib_uverbs_exp_prefetch_mr {
+	__u64 comp_mask;
+	__u32 mr_handle;
+	__u32 flags;
+	__u64 start;
+	__u64 length;
 };
 
 struct ib_uverbs_create_dct {
