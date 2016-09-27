@@ -109,7 +109,7 @@ static bool use_umr_mtt_update(struct mlx5_ib_mr *mr, u64 start, u64 length)
 }
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
-static void update_odp_mr(struct mlx5_ib_mr *mr)
+static void update_odp_mr(struct mlx5_ib_mr *mr, struct mlx5_ib_dev *dev)
 {
 	if (mr->umem->is_odp) {
 		/*
@@ -132,6 +132,11 @@ static void update_odp_mr(struct mlx5_ib_mr *mr)
 		 * the invalidation handler.
 		 */
 		smp_wmb();
+		if (dev) {
+			atomic_inc(&dev->odp_stats.num_odp_mrs);
+			atomic_add(ib_umem_num_pages(mr->umem),
+				   &dev->odp_stats.num_odp_mr_pages);
+		}
 	}
 }
 #endif
@@ -1262,7 +1267,7 @@ struct ib_mr *mlx5_ib_reg_user_mr(struct ib_pd *pd, u64 start, u64 length,
 	set_mr_fileds(dev, mr, npages, length, access_flags);
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
-	update_odp_mr(mr);
+	update_odp_mr(mr, dev);
 #endif
 
 	if (!populate_mtts) {
@@ -1431,7 +1436,7 @@ int mlx5_ib_rereg_user_mr(struct ib_mr *ib_mr, int flags, u64 start,
 	set_mr_fileds(dev, mr, npages, len, access_flags);
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
-	update_odp_mr(mr);
+	update_odp_mr(mr, NULL);
 #endif
 	return 0;
 
@@ -1538,6 +1543,10 @@ static void dereg_mr(struct mlx5_ib_dev *dev, struct mlx5_ib_mr *mr)
 						 ib_umem_end(umem));
 		else
 			mlx5_ib_free_implicit_mr(mr);
+		atomic_dec(&dev->odp_stats.num_odp_mrs);
+
+		atomic_sub(ib_umem_num_pages(mr->umem),
+			   &dev->odp_stats.num_odp_mr_pages);
 		/*
 		 * We kill the umem before the MR for ODP,
 		 * so that there will not be any invalidations in

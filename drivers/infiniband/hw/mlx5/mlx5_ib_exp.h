@@ -33,6 +33,8 @@
 #ifndef MLX5_IB_EXP_H
 #define MLX5_IB_EXP_H
 
+#include <rdma/ib_verbs.h>
+
 struct mlx5_ib_dev;
 
 #define MLX5_IB_QPT_SW_CNAK	IB_QPT_RESERVED5
@@ -99,6 +101,22 @@ struct mlx5_ib_dc_target {
 	struct mlx5_ib_qp    *qp;
 };
 
+struct mlx5_ib_exp_odp_stats {
+	/* Debug statistics */
+	struct dentry           *odp_debugfs;
+
+	/* Number of ODP MRs currently in use */
+	atomic_t                num_odp_mrs;
+	/* Total size of ODP MRs in pages */
+	atomic_t                num_odp_mr_pages;
+	/* Number of instances when the MR couldn't be found during page fault
+	 * handling
+	 */
+	atomic_t                num_mrs_not_found;
+	/* Number of instances when the page fault encountered an error */
+	atomic_t                num_failed_resolutions;
+};
+
 static inline struct mlx5_ib_dc_target *to_mdct(struct ib_dct *ibdct)
 {
 	return container_of(ibdct, struct mlx5_ib_dc_target, ibdct);
@@ -153,5 +171,10 @@ void mlx5_ib_set_mlx_seg(struct mlx5_mlx_seg *seg, struct mlx5_mlx_wr *wr);
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 int mlx5_ib_prefetch_mr(struct ib_mr *ibmr, u64 start, u64 length, u32 flags);
+#endif
+
+#ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
+struct mlx5_ib_dev;
+int mlx5_ib_exp_odp_init_one(struct mlx5_ib_dev *ibdev);
 #endif
 #endif

@@ -33,6 +33,7 @@
 #include <rdma/ib_umem.h>
 #include <rdma/ib_umem_odp.h>
 #include <linux/kernel.h>
+#include <linux/debugfs.h>
 
 #include "mlx5_ib.h"
 #include "cmd.h"
@@ -341,6 +342,11 @@ static void mlx5_ib_page_fault_resume(struct mlx5_ib_dev *dev,
 	if (ret)
 		mlx5_ib_err(dev, "Failed to resolve the page fault on WQ 0x%x\n",
 			    wq_num);
+	if (likely(!error))
+		ib_umem_odp_account_fault_handled(&dev->ib_dev);
+	else
+		atomic_inc(&dev->odp_stats.num_failed_resolutions);
+
 }
 
 static struct mlx5_ib_mr *implicit_mr_alloc(struct ib_pd *pd,
@@ -691,6 +697,7 @@ next_mr:
 	mmkey = __mlx5_mr_lookup(dev->mdev, mlx5_base_mkey(key));
 	if (!mmkey || mmkey->key != key) {
 		mlx5_ib_dbg(dev, "failed to find mkey %x\n", key);
+		atomic_inc(&dev->odp_stats.num_mrs_not_found);
 		ret = -EFAULT;
 		goto srcu_unlock;
 	}
@@ -1248,6 +1255,10 @@ int mlx5_ib_odp_init_one(struct mlx5_ib_dev *dev)
 {
 	int ret;
 
+	ret = mlx5_ib_exp_odp_init_one(dev);
+	if (ret)
+		goto out_srcu;
+
 	if (dev->odp_caps.general_caps & IB_ODP_SUPPORT_IMPLICIT) {
 		ret = mlx5_cmd_null_mkey(dev->mdev, &dev->null_mkey);
 		if (ret) {
@@ -1257,6 +1268,9 @@ int mlx5_ib_odp_init_one(struct mlx5_ib_dev *dev)
 	}
 
 	return 0;
+out_srcu:
+	cleanup_srcu_struct(&dev->mr_srcu);
+	return ret;
 }
 
 int mlx5_ib_odp_init(void)

@@ -32,6 +32,7 @@
 
 #include <rdma/ib_umem.h>
 #include <rdma/ib_umem_odp.h>
+#include <linux/debugfs.h>
 
 #include "mlx5_ib.h"
 #include "odp_exp.h"
@@ -144,4 +145,44 @@ int mlx5_ib_prefetch_mr(struct ib_mr *ibmr, u64 start, u64 length, u32 flags)
 srcu_unlock:
 	srcu_read_unlock(&dev->mr_srcu, srcu_key);
 	return ret;
+}
+
+int mlx5_ib_exp_odp_init_one(struct mlx5_ib_dev *ibdev)
+{
+	struct dentry *dbgfs_entry;
+
+	ibdev->odp_stats.odp_debugfs = debugfs_create_dir("odp_stats",
+						ibdev->mdev->priv.dbg_root);
+	if (!ibdev->odp_stats.odp_debugfs)
+		return -ENOMEM;
+
+	dbgfs_entry = debugfs_create_atomic_t("num_odp_mrs", 0400,
+					      ibdev->odp_stats.odp_debugfs,
+					      &ibdev->odp_stats.num_odp_mrs);
+	if (!dbgfs_entry)
+		goto out_debugfs;
+
+	dbgfs_entry = debugfs_create_atomic_t("num_odp_mr_pages", 0400,
+					      ibdev->odp_stats.odp_debugfs,
+					      &ibdev->odp_stats.num_odp_mr_pages);
+	if (!dbgfs_entry)
+		goto out_debugfs;
+
+	dbgfs_entry = debugfs_create_atomic_t("num_mrs_not_found", 0400,
+					      ibdev->odp_stats.odp_debugfs,
+					      &ibdev->odp_stats.num_mrs_not_found);
+	if (!dbgfs_entry)
+		goto out_debugfs;
+
+	dbgfs_entry = debugfs_create_atomic_t("num_failed_resolutions", 0400,
+					      ibdev->odp_stats.odp_debugfs,
+					      &ibdev->odp_stats.num_failed_resolutions);
+	if (!dbgfs_entry)
+		goto out_debugfs;
+
+	return 0;
+out_debugfs:
+	debugfs_remove_recursive(ibdev->odp_stats.odp_debugfs);
+
+	return -ENOMEM;
 }

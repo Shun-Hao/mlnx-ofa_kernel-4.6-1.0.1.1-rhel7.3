@@ -35,5 +35,7 @@
 
 #define PREFETCH_MR_MAX_RETRIES (3)
 
+int mlx5_ib_exp_odp_init_one(struct mlx5_ib_dev *ibdev);
+
 int mlx5_ib_prefetch_mr(struct ib_mr *ibmr, u64 start, u64 length, u32 flags);
 #endif
