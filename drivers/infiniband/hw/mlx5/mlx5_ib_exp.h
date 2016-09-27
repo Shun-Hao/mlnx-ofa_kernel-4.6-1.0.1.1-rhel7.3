@@ -151,4 +151,7 @@ void mlx5_ib_cleanup_dc_improvements(struct mlx5_ib_dev *dev);
 
 void mlx5_ib_set_mlx_seg(struct mlx5_mlx_seg *seg, struct mlx5_mlx_wr *wr);
 
+#ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
+int mlx5_ib_prefetch_mr(struct ib_mr *ibmr, u64 start, u64 length, u32 flags);
+#endif
 #endif

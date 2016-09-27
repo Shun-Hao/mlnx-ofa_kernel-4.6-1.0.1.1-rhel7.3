@@ -5840,6 +5840,11 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 		(1ull << IB_USER_VERBS_EXP_CMD_REG_MR)		|
 		(1ull << IB_USER_VERBS_EXP_CMD_MODIFY_QP);
 
+#ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
+	dev->ib_dev.uverbs_exp_cmd_mask |=
+		(1ull << IB_USER_VERBS_EXP_CMD_PREFETCH_MR);
+#endif
+
 	if (MLX5_CAP_GEN(mdev, dct)) {
 		dev->ib_dev.exp_create_dct = mlx5_ib_create_dc_target;
 		dev->ib_dev.exp_destroy_dct = mlx5_ib_destroy_dc_target;
@@ -5914,6 +5919,10 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 	}
 
 	dev->ib_dev.disassociate_ucontext = mlx5_ib_disassociate_ucontext;
+
+#ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
+	dev->ib_dev.exp_prefetch_mr	= mlx5_ib_prefetch_mr;
+#endif
 
 	dev->umr_fence = mlx5_get_umr_fence(MLX5_CAP_GEN(mdev, umr_fence));
 
