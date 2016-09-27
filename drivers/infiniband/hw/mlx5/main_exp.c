@@ -33,6 +33,17 @@
 #include <linux/highmem.h>
 #include "mlx5_ib.h"
 
+#ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
+static void copy_odp_exp_caps(struct ib_exp_odp_caps *exp_caps,
+			      struct ib_odp_caps *caps)
+{
+	exp_caps->general_odp_caps = caps->general_caps;
+	exp_caps->per_transport_caps.rc_odp_caps = caps->per_transport_caps.rc_odp_caps;
+	exp_caps->per_transport_caps.uc_odp_caps = caps->per_transport_caps.uc_odp_caps;
+	exp_caps->per_transport_caps.ud_odp_caps = caps->per_transport_caps.ud_odp_caps;
+}
+#endif
+
 int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			     struct ib_exp_device_attr *props,
 			     struct ib_udata *uhw)
@@ -48,6 +59,11 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 	props->device_cap_flags2 = 0;
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_CAP_FLAGS2;
 
+#ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_ODP;
+	props->device_cap_flags2 |= IB_EXP_DEVICE_ODP;
+	copy_odp_exp_caps(&props->odp_caps, &to_mdev(ibdev)->odp_caps);
+#endif
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_WITH_TIMESTAMP_MASK |
 		IB_EXP_DEVICE_ATTR_WITH_HCA_CORE_CLOCK;
 
