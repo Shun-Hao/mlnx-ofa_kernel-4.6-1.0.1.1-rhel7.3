@@ -3736,7 +3736,7 @@ int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 		if (!is_valid_mask(attr_mask, required, 0))
 			return -EINVAL;
 		MLX5_SET(dctc, dctc, min_rnr_nak, attr->min_rnr_timer);
-		/* Talat Need to enable it when we add "Add TCLASS complex matching
+		* Talat Need to enable it when we add "Add TCLASS complex matching
 		 * rules"
 		if (dev->tcd[port - 1].val >= 0)
 			tclass = dev->tcd[port - 1].val;
