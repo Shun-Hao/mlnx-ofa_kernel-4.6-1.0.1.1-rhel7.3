@@ -45,6 +45,7 @@
 #include "rdma_core.h"
 
 #include "uverbs.h"
+#include "uverbs_exp.h"
 #include "core_priv.h"
 
 static struct ib_uverbs_completion_event_file *

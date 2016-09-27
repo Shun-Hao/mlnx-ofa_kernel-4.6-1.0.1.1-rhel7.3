@@ -495,6 +495,8 @@ static int translate_exp_access_flags(u64 exp_access_flags)
 {
 	int access_flags = exp_access_flags & KEEP_ACCESS_FLAGS;
 
+	if (exp_access_flags & IB_UVERBS_EXP_ACCESS_ON_DEMAND)
+		access_flags |= IB_ACCESS_ON_DEMAND;
 	if (exp_access_flags & IB_UVERBS_EXP_ACCESS_PHYSICAL_ADDR)
 		access_flags |= IB_EXP_ACCESS_PHYSICAL_ADDR;
 
@@ -551,6 +553,24 @@ int ib_uverbs_exp_reg_mr(struct ib_uverbs_file *file,
 		pr_debug("ib_uverbs_reg_mr: invalid PD\n");
 		ret = -EINVAL;
 		goto err_free;
+	}
+
+	if (cmd.exp_access_flags & IB_UVERBS_EXP_ACCESS_ON_DEMAND) {
+#ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
+		struct ib_exp_device_attr exp_attr;
+
+		ret = ib_exp_query_device(pd->device, &exp_attr, uhw);
+		if (ret || !(exp_attr.device_cap_flags2 &
+			     IB_EXP_DEVICE_ODP)) {
+			pr_debug("ib_uverbs_reg_mr: ODP requested on device without ODP support\n");
+			ret = -EINVAL;
+			goto err_put;
+		}
+#else
+		pr_debug("ib_uverbs_reg_mr: ODP requested but the RDMA subsystem was compiled without ODP support\n");
+		ret = -EINVAL;
+		goto err_put;
+#endif
 	}
 
 	mr = pd->device->reg_user_mr(pd, cmd.start, cmd.length, cmd.hca_va,
