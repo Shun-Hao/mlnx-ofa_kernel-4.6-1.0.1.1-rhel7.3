@@ -353,3 +353,11 @@ int mlx5_ib_arm_dc_target(struct ib_dct *dct, struct ib_udata *udata)
 out:
 	return err;
 }
+
+void mlx5_ib_set_mlx_seg(struct mlx5_mlx_seg *seg, struct mlx5_mlx_wr *wr)
+{
+	memset(seg, 0, sizeof(*seg));
+	seg->stat_rate_sl = wr->sl & 0xf;
+	seg->dlid = cpu_to_be16(wr->dlid);
+	seg->flags = wr->icrc ? 8 : 0;
+}

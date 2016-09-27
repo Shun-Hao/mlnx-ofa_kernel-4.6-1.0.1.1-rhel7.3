@@ -375,6 +375,11 @@ static int sq_overhead(struct ib_qp_init_attr *attr)
 			sizeof(struct mlx5_mkey_seg);
 		break;
 
+	case MLX5_IB_QPT_SW_CNAK:
+		size += sizeof(struct mlx5_wqe_ctrl_seg) +
+			sizeof(struct mlx5_mlx_seg);
+		break;
+
 	default:
 		return -EINVAL;
 	}
@@ -658,6 +663,7 @@ static int to_mlx5_st(enum ib_qp_type type)
 	case IB_QPT_UC:			return MLX5_QP_ST_UC;
 	case IB_QPT_UD:			return MLX5_QP_ST_UD;
 	case MLX5_IB_QPT_REG_UMR:	return MLX5_QP_ST_REG_UMR;
+	case MLX5_IB_QPT_SW_CNAK:	return MLX5_QP_ST_SW_CNAK;
 	case IB_QPT_XRC_INI:
 	case IB_QPT_XRC_TGT:		return MLX5_QP_ST_XRC;
 	case IB_QPT_SMI:		return MLX5_QP_ST_QP0;
@@ -1847,6 +1853,12 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 	int err;
 	int st;
 
+	if (udata && (init_attr->qp_type == MLX5_IB_QPT_REG_UMR ||
+		      init_attr->qp_type == MLX5_IB_QPT_SW_CNAK)) {
+		mlx5_ib_warn(dev, "required QP type is supported only for kernel consumers\n");
+		return -ENOSYS;
+	}
+
 	mutex_init(&qp->mutex);
 	spin_lock_init(&qp->sq.lock);
 	spin_lock_init(&qp->rq.lock);
@@ -2288,6 +2300,7 @@ static void get_cqs(enum ib_qp_type qp_type,
 	case IB_QPT_UD:
 	case IB_QPT_RAW_IPV6:
 	case IB_QPT_RAW_ETHERTYPE:
+	case MLX5_IB_QPT_SW_CNAK:
 	case IB_QPT_RAW_PACKET:
 		*send_cq = ib_send_cq ? to_mcq(ib_send_cq) : NULL;
 		*recv_cq = ib_recv_cq ? to_mcq(ib_recv_cq) : NULL;
@@ -2404,6 +2417,8 @@ static const char *ib_qp_type_str(enum ib_qp_type type)
 		return "IB_QPT_RAW_PACKET";
 	case MLX5_IB_QPT_REG_UMR:
 		return "MLX5_IB_QPT_REG_UMR";
+	case MLX5_IB_QPT_SW_CNAK:
+		return "MLX5_QP_ST_SW_CNAK";
 	case IB_QPT_DRIVER:
 		return "IB_QPT_DRIVER";
 	case IB_QPT_MAX:
@@ -2579,6 +2594,7 @@ struct ib_qp *_mlx5_ib_create_qp(struct ib_pd *pd,
 	case IB_EXP_QPT_DC_INI:
 	case MLX5_IB_QPT_HW_GSI:
 	case MLX5_IB_QPT_REG_UMR:
+	case MLX5_IB_QPT_SW_CNAK:
 	case MLX5_IB_QPT_DCI:
 		qp = kzalloc(sizeof(*qp), GFP_KERNEL);
 		if (!qp)
@@ -3745,6 +3761,15 @@ int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 	return err;
 }
 
+static int ignored_ts_check(enum ib_qp_type qp_type)
+{
+	if (qp_type == MLX5_IB_QPT_REG_UMR ||
+	    qp_type == MLX5_IB_QPT_SW_CNAK)
+		return 1;
+
+	return 0;
+}
+
 int mlx5_ib_modify_qp(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 		      int attr_mask, struct ib_udata *udata)
 {
@@ -3809,8 +3834,7 @@ int mlx5_ib_modify_qp(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 				    attr_mask);
 			goto out;
 		}
-	} else if (qp_type != MLX5_IB_QPT_REG_UMR &&
-		   qp_type != MLX5_IB_QPT_DCI &&
+	} else if (!ignored_ts_check(qp_type) &&
 		   !ib_modify_qp_is_ok(cur_state, new_state, qp_type,
 				       attr_mask)) {
 		mlx5_ib_dbg(dev, "invalid QP state transition from %d to %d, qp_type %d, attr_mask 0x%x\n",
@@ -4948,6 +4972,14 @@ static int _mlx5_ib_post_send(struct ib_qp *ibqp, const struct ib_send_wr *wr,
 			set_datagram_seg(seg, wr);
 			seg += sizeof(struct mlx5_wqe_datagram_seg);
 			size += sizeof(struct mlx5_wqe_datagram_seg) / 16;
+			if (unlikely((seg == qend)))
+				seg = mlx5_get_send_wqe(qp, 0);
+			break;
+		case MLX5_IB_QPT_SW_CNAK:
+			mlx5_ib_set_mlx_seg(seg,
+					    &((struct mlx5_send_wr *)wr)->sel.mlx);
+			seg += sizeof(struct mlx5_mlx_seg);
+			size += sizeof(struct mlx5_mlx_seg) / 16;
 			if (unlikely((seg == qend)))
 				seg = mlx5_get_send_wqe(qp, 0);
 			break;

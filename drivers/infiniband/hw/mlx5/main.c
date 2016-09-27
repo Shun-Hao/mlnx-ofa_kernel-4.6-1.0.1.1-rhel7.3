@@ -6206,8 +6206,10 @@ static void mlx5_ib_stage_delay_drop_cleanup(struct mlx5_ib_dev *dev)
 static int mlx5_ib_stage_dc_tracer_init(struct mlx5_ib_dev *dev)
 {
 	if (MLX5_CAP_GEN(dev->mdev, port_type) ==
-			MLX5_CAP_PORT_TYPE_IB)
-		mlx5_ib_enable_dc_tracer(dev);
+	    MLX5_CAP_PORT_TYPE_IB) {
+		if (mlx5_ib_init_dc_improvements(dev))
+			mlx5_ib_dbg(dev, "init_dc_improvements - continuing\n");
+	}
 
 	return 0;
 }
@@ -6216,7 +6218,7 @@ static void mlx5_ib_stage_dc_tracer_cleanup(struct mlx5_ib_dev *dev)
 {
 	if (MLX5_CAP_GEN(dev->mdev, port_type) ==
 			MLX5_CAP_PORT_TYPE_IB)
-		mlx5_ib_disable_dc_tracer(dev);
+		mlx5_ib_cleanup_dc_improvements(dev);
 }
 
 static int mlx5_ib_stage_rep_reg_init(struct mlx5_ib_dev *dev)
