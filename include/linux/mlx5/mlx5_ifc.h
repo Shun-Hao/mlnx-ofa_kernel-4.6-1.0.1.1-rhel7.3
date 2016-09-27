@@ -1010,7 +1010,7 @@ struct mlx5_ifc_cmd_hca_cap_bits {
 	u8         umr_indirect_mkey_disabled[0x1];
 	u8         umr_fence[0x2];
 	u8         dc_req_scat_data_cqe[0x1];
-	u8         reserved_at_20d[0x1];
+	u8         dc_connect_qp[0x1];
 	u8         dc_cnak_trace[0x1];
 	u8         drain_sigerr[0x1];
 	u8         cmdif_checksum[0x2];
@@ -9257,6 +9257,65 @@ struct mlx5_ifc_set_dc_cnak_trace_in_bits {
 	u8         reserved_3[0x160];
 
 	struct mlx5_ifc_cmd_pas_bits pas;
+};
+
+struct mlx5_ifc_grh_bits {
+	u8	ip_version[4];
+	u8	traffic_class[8];
+	u8	flow_label[20];
+	u8	payload_length[16];
+	u8	next_header[8];
+	u8	hop_limit[8];
+	u8	sgid[128];
+	u8	dgid[128];
+};
+
+struct mlx5_ifc_bth_bits {
+	u8	opcode[8];
+	u8	se[1];
+	u8	migreq[1];
+	u8	pad_count[2];
+	u8	tver[4];
+	u8	p_key[16];
+	u8	reserved8[8];
+	u8	dest_qp[24];
+	u8	ack_req[1];
+	u8	reserved7[7];
+	u8	psn[24];
+};
+
+struct mlx5_ifc_aeth_bits {
+	u8	syndrome[8];
+	u8	msn[24];
+};
+
+struct mlx5_ifc_dceth_bits {
+	u8	reserved0[8];
+	u8	session_id[24];
+	u8	reserved1[8];
+	u8	dci_dct[24];
+};
+
+struct mlx5_ifc_dcceth_bits {
+	u8	reserved0[3];
+	u8	reconnect[1];
+	u8	rsl[4];
+	u8	next_to_be_sent_psn[24];
+	u8	reserved1_31_0[32];
+	u8	dct_access_key_63_32[32];
+	u8	dct_access_key_31_0[32];
+};
+
+struct mlx5_ifc_lrh_bits {
+	u8	vl[4];
+	u8	lver[4];
+	u8	sl[4];
+	u8	reserved2[2];
+	u8	lnh[2];
+	u8	dlid[16];
+	u8	reserved5[5];
+	u8	pkt_len[11];
+	u8	slid[16];
 };
 
 struct mlx5_ifc_general_obj_in_cmd_hdr_bits {
