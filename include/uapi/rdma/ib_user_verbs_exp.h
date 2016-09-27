@@ -178,6 +178,18 @@ struct ib_uverbs_exp_query_device {
 	__u64 driver_data[0];
 };
 
+struct ib_uverbs_exp_odp_caps {
+	__u64   general_odp_caps;
+	struct {
+		__u32   rc_odp_caps;
+		__u32   uc_odp_caps;
+		__u32   ud_odp_caps;
+		__u32   dc_odp_caps;
+		__u32   xrc_odp_caps;
+		__u32   raw_eth_odp_caps;
+	} per_transport_caps;
+};
+
 struct ib_uverbs_exp_query_device_resp {
 	__u64					comp_mask;
 	struct ib_uverbs_query_device_resp	base;
@@ -192,7 +204,7 @@ struct ib_uverbs_exp_query_device_resp {
 	__u32					max_fa_bit_boudary;
 	__u32					log_max_atomic_inline_arg;
 	__u8					reserved_umr[16];
-	__u8					reserved_odp[32];
+	struct ib_uverbs_exp_odp_caps		odp_caps;
 	__u32					max_dct;
 	__u32					max_ctx_res_domain;
 	__u8					reserved4[28];

@@ -411,6 +411,23 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_RSS_TBL_SZ;
 	}
 
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_ODP) {
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_ODP;
+		resp->odp_caps.general_odp_caps = exp_attr->odp_caps.general_odp_caps;
+		resp->odp_caps.per_transport_caps.rc_odp_caps =
+			exp_attr->odp_caps.per_transport_caps.rc_odp_caps;
+		resp->odp_caps.per_transport_caps.uc_odp_caps =
+			exp_attr->odp_caps.per_transport_caps.uc_odp_caps;
+		resp->odp_caps.per_transport_caps.ud_odp_caps =
+			exp_attr->odp_caps.per_transport_caps.ud_odp_caps;
+		resp->odp_caps.per_transport_caps.dc_odp_caps =
+			exp_attr->odp_caps.per_transport_caps.dc_odp_caps;
+		resp->odp_caps.per_transport_caps.xrc_odp_caps =
+			exp_attr->odp_caps.per_transport_caps.xrc_odp_caps;
+		resp->odp_caps.per_transport_caps.raw_eth_odp_caps =
+			exp_attr->odp_caps.per_transport_caps.raw_eth_odp_caps;
+	}
+
 	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_INLINE_RECV_SZ) {
 		resp->inline_recv_sz = exp_attr->inline_recv_sz;
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_INLINE_RECV_SZ;
