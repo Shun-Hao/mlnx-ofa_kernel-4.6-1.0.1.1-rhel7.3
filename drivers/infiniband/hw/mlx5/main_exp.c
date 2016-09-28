@@ -48,6 +48,10 @@ enum {
 	MLX5_ATOMIC_SIZE_QP_8BYTES = 1 << 3,
 };
 
+enum {
+	MLX5_STANDARD_ATOMIC_SIZE = 0x8,
+};
+
 void mlx5_ib_config_atomic_responder(struct mlx5_ib_dev *dev,
 				     struct ib_exp_device_attr *props)
 {
@@ -95,6 +99,20 @@ void mlx5_ib_get_atomic_caps(struct mlx5_ib_dev *dev,
 		props->atomic_cap = IB_ATOMIC_NONE;
 	}
 
+	tmp = MLX5_ATOMIC_OPS_EXTENDED_CMP_SWAP | MLX5_ATOMIC_OPS_EXTENDED_FETCH_ADD;
+	if (((atomic_operations & tmp) == tmp) &&
+	    (atomic_size_qp & MLX5_ATOMIC_SIZE_QP_8BYTES)) {
+		if (atomic_req_8B_endianness_mode) {
+			props->masked_atomic_cap = IB_ATOMIC_HCA;
+		} else {
+			if (exp)
+				props->masked_atomic_cap = IB_ATOMIC_HCA_REPLY_BE;
+			else
+				props->masked_atomic_cap = IB_ATOMIC_NONE;
+		}
+	} else {
+		props->masked_atomic_cap = IB_ATOMIC_NONE;
+	}
 }
 
 static void ext_atomic_caps(struct mlx5_ib_dev *dev,
@@ -103,12 +121,22 @@ static void ext_atomic_caps(struct mlx5_ib_dev *dev,
 	int tmp;
 	unsigned long last;
 	unsigned long arg;
+	struct ib_exp_masked_atomic_caps *atom_caps =
+		&props->masked_atomic_caps;
 
+	/* Legacy extended atomic fields */
 	props->max_fa_bit_boudary = 0;
 	props->log_max_atomic_inline_arg = 0;
+	/* New extended atomic fields */
+	atom_caps->max_fa_bit_boudary = 0;
+	atom_caps->log_max_atomic_inline_arg = 0;
+	atom_caps->masked_log_atomic_arg_sizes = 0;
+	atom_caps->masked_log_atomic_arg_sizes_network_endianness = 0;
 
 	tmp = MLX5_ATOMIC_OPS_CMP_SWAP		|
-	      MLX5_ATOMIC_OPS_FETCH_ADD;
+	      MLX5_ATOMIC_OPS_FETCH_ADD		|
+	      MLX5_ATOMIC_OPS_EXTENDED_CMP_SWAP |
+	      MLX5_ATOMIC_OPS_EXTENDED_FETCH_ADD;
 
 	if ((MLX5_CAP_ATOMIC(dev->mdev, atomic_operations) & tmp) != tmp)
 		return;
@@ -123,7 +151,23 @@ static void ext_atomic_caps(struct mlx5_ib_dev *dev,
 	else
 		props->log_max_atomic_inline_arg = 6;
 
-	props->device_cap_flags2 |= IB_EXP_DEVICE_EXT_ATOMICS;
+	atom_caps->masked_log_atomic_arg_sizes = props->atomic_arg_sizes;
+	if (!mlx5_host_is_le() ||
+	    props->base.atomic_cap == IB_ATOMIC_HCA_REPLY_BE)
+		atom_caps->masked_log_atomic_arg_sizes_network_endianness =
+			props->atomic_arg_sizes;
+	else if (props->base.atomic_cap == IB_ATOMIC_HCA)
+		atom_caps->masked_log_atomic_arg_sizes_network_endianness =
+			atom_caps->masked_log_atomic_arg_sizes &
+			~MLX5_STANDARD_ATOMIC_SIZE;
+
+	if (props->base.atomic_cap == IB_ATOMIC_HCA && mlx5_host_is_le())
+		props->atomic_arg_sizes &= MLX5_STANDARD_ATOMIC_SIZE;
+	atom_caps->max_fa_bit_boudary = props->max_fa_bit_boudary;
+	atom_caps->log_max_atomic_inline_arg = props->log_max_atomic_inline_arg;
+
+	props->device_cap_flags2 |= IB_EXP_DEVICE_EXT_ATOMICS |
+				    IB_EXP_DEVICE_EXT_MASKED_ATOMICS;
 }
 
 int mlx5_ib_exp_query_device(struct ib_device *ibdev,
@@ -171,7 +215,8 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 
 	mlx5_ib_get_atomic_caps(dev, &props->base, 1);
 	ext_atomic_caps(dev, props);
-	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_EXT_ATOMIC_ARGS;
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_EXT_ATOMIC_ARGS |
+		IB_EXP_DEVICE_ATTR_EXT_MASKED_ATOMICS;
 
 	return 0;
 }

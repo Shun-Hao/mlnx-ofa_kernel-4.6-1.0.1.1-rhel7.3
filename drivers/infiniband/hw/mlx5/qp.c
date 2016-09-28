@@ -3721,6 +3721,8 @@ int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 		u32 min_resp_len = offsetof(typeof(resp), dctn) +
 				   sizeof(resp.dctn);
 		u8 tclass = attr->ah_attr.grh.traffic_class;
+		/* Talat Need to enable it when we add "Add TCLASS complex matching
+		 * rules"
 		u8 port = MLX5_GET(dctc, dctc, port);
 
 		if (mlx5_lag_is_active(dev->mdev))
