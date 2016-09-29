@@ -218,6 +218,13 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_EXT_ATOMIC_ARGS |
 		IB_EXP_DEVICE_ATTR_EXT_MASKED_ATOMICS;
 
+	props->device_cap_flags2 |= IB_EXP_DEVICE_UMR;
+	props->umr_caps.max_reg_descriptors = 1 << MLX5_CAP_GEN(dev->mdev, log_max_klm_list_size);
+	props->umr_caps.max_send_wqe_inline_klms = 20;
+	props->umr_caps.max_umr_recursion_depth = MLX5_CAP_GEN(dev->mdev, max_indirection);
+	props->umr_caps.max_umr_stride_dimenson = 1;
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_UMR;
+
 	return 0;
 }
 
