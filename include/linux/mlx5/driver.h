@@ -294,6 +294,11 @@ struct cmd_msg_cache {
 	struct list_head	head;
 	unsigned int		max_inbox_size;
 	unsigned int		num_ent;
+	struct kobject		kobj;
+	unsigned		miss;
+	unsigned		total_commands;
+	unsigned		free;
+	struct mlx5_core_dev	*dev;
 };
 
 enum {
@@ -341,6 +346,8 @@ struct mlx5_cmd {
 	struct dma_pool *pool;
 	struct mlx5_cmd_debug dbg;
 	struct cmd_msg_cache cache[MLX5_NUM_COMMAND_CACHES];
+	struct kobject			*ko;
+	atomic_t			real_miss;
 	int checksum_disabled;
 	struct mlx5_cmd_stats stats[MLX5_CMD_OP_MAX];
 };
