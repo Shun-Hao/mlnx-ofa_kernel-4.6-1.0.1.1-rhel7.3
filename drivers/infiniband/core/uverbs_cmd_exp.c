@@ -412,6 +412,14 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_RSS_TBL_SZ;
 	}
 
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_UMR) {
+		resp->umr_caps.max_reg_descriptors = exp_attr->umr_caps.max_reg_descriptors;
+		resp->umr_caps.max_send_wqe_inline_klms = exp_attr->umr_caps.max_send_wqe_inline_klms;
+		resp->umr_caps.max_umr_recursion_depth = exp_attr->umr_caps.max_umr_recursion_depth;
+		resp->umr_caps.max_umr_stride_dimenson = exp_attr->umr_caps.max_umr_stride_dimenson;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_UMR;
+	}
+
 	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_ODP) {
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_ODP;
 		resp->odp_caps.general_odp_caps = exp_attr->odp_caps.general_odp_caps;

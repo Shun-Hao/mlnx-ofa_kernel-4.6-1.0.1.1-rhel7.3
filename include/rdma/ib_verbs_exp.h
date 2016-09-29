@@ -3,6 +3,13 @@
 
 #include <rdma/ib_verbs.h>
 
+struct ib_exp_umr_caps {
+	u32                max_reg_descriptors;
+	u32                max_send_wqe_inline_klms;
+	u32                max_umr_recursion_depth;
+	u32                max_umr_stride_dimenson;
+};
+
 struct ib_exp_odp_caps {
 	uint64_t	general_odp_caps;
 	struct {
@@ -69,6 +76,7 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_INLINE_RECV_SZ	= 1ULL << 6,
 	IB_EXP_DEVICE_ATTR_RSS_TBL_SZ		= 1ULL << 7,
 	IB_EXP_DEVICE_ATTR_EXT_ATOMIC_ARGS	= 1ULL << 8,
+	IB_EXP_DEVICE_ATTR_UMR                  = 1ULL << 9,
 	IB_EXP_DEVICE_ATTR_ODP			= 1ULL << 10,
 	IB_EXP_DEVICE_ATTR_MAX_DCT		= 1ULL << 11,
 	IB_EXP_DEVICE_ATTR_MAX_CTX_RES_DOMAIN	= 1ULL << 12,
@@ -82,6 +90,7 @@ enum ib_exp_device_cap_flags2 {
 	IB_EXP_DEVICE_UD_RSS		= 1 << 2,
 	IB_EXP_DEVICE_UD_TSS		= 1 << 3,
 	IB_EXP_DEVICE_EXT_ATOMICS	= 1 << 4,
+	IB_EXP_DEVICE_UMR		= 1 << 6,
 	IB_EXP_DEVICE_ODP               = 1 << 7,
 	IB_EXP_DEVICE_EXT_MASKED_ATOMICS	= 1 << 14,
 	IB_EXP_DEVICE_CROSS_CHANNEL	= 1 << 28, /* Comapt with user exp area */
@@ -106,6 +115,7 @@ struct ib_exp_device_attr {
 	u64                     atomic_arg_sizes;
 	u32                     max_fa_bit_boudary;
 	u32                     log_max_atomic_inline_arg;
+	struct ib_exp_umr_caps  umr_caps;
 	struct ib_exp_odp_caps	odp_caps;
 	uint32_t		max_ctx_res_domain;
 	struct ib_exp_masked_atomic_caps masked_atomic_caps;

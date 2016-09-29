@@ -179,6 +179,13 @@ struct ib_uverbs_exp_query_device {
 	__u64 driver_data[0];
 };
 
+struct ib_uverbs_exp_umr_caps {
+	__u32                                   max_reg_descriptors;
+	__u32                                   max_send_wqe_inline_klms;
+	__u32                                   max_umr_recursion_depth;
+	__u32                                   max_umr_stride_dimenson;
+};
+
 struct ib_uverbs_exp_odp_caps {
 	__u64   general_odp_caps;
 	struct {
@@ -204,7 +211,7 @@ struct ib_uverbs_exp_query_device_resp {
 	__u64					atomic_arg_sizes;
 	__u32					max_fa_bit_boudary;
 	__u32					log_max_atomic_inline_arg;
-	__u8					reserved_umr[16];
+	struct ib_uverbs_exp_umr_caps		umr_caps;
 	struct ib_uverbs_exp_odp_caps		odp_caps;
 	__u32					max_dct;
 	__u32					max_ctx_res_domain;
