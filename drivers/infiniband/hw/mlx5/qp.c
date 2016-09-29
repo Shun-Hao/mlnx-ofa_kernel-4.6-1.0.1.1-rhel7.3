@@ -2167,7 +2167,16 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 
 	if (init_attr->qp_type == IB_QPT_RAW_PACKET ||
 	    qp->flags & MLX5_IB_QP_UNDERLAY) {
-		qp->raw_packet_qp.sq.ubuffer.buf_addr = pucmd->sq_buf_addr;
+		if (is_exp) {
+			if (ucmd.exp.comp_mask & MLX5_EXP_CREATE_QP_MASK_SQ_BUFF_ADD) {
+				qp->raw_packet_qp.sq.ubuffer.buf_addr = ucmd.exp.sq_buf_addr;
+			} else {
+				mlx5_ib_warn(dev, "Raw Ethernet QP needs SQ buff address\n");
+				return -EINVAL;
+			}
+		} else {
+			qp->raw_packet_qp.sq.ubuffer.buf_addr = pucmd->sq_buf_addr;
+		} 
 		raw_packet_qp_copy_info(qp, &qp->raw_packet_qp);
 		err = create_raw_packet_qp(dev, qp, in, inlen, pd, udata,
 					   &resp);
