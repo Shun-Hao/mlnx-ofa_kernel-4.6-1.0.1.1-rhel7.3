@@ -2946,6 +2946,17 @@ int ib_uverbs_kern_spec_to_ib_spec_filter(enum ib_flow_spec_type type,
 		return -EINVAL;
 
 	switch (ib_spec->type & ~IB_FLOW_SPEC_INNER) {
+	case IB_FLOW_SPEC_IB:
+		ib_filter_sz = offsetof(struct ib_flow_ib_filter, real_sz);
+		actual_filter_sz = spec_filter_size(kern_spec_mask,
+						    kern_filter_sz,
+						    ib_filter_sz);
+		if (actual_filter_sz <= 0)
+			return -EINVAL;
+		ib_spec->size = sizeof(struct ib_flow_spec_ib);
+		memcpy(&ib_spec->ib.val, kern_spec_val, actual_filter_sz);
+		memcpy(&ib_spec->ib.mask, kern_spec_mask, actual_filter_sz);
+		break;
 	case IB_FLOW_SPEC_ETH:
 		ib_filter_sz = offsetof(struct ib_flow_eth_filter, real_sz);
 		actual_filter_sz = spec_filter_size(kern_spec_mask,
