@@ -148,6 +148,7 @@ static int (*uverbs_exp_cmd_table[])(struct ib_uverbs_file *file,
 	[IB_USER_VERBS_EXP_CMD_DESTROY_DCT]	= ib_uverbs_exp_destroy_dct,
 	[IB_USER_VERBS_EXP_CMD_QUERY_DCT]	= ib_uverbs_exp_query_dct,
 	[IB_USER_VERBS_EXP_CMD_ARM_DCT]		= ib_uverbs_exp_arm_dct,
+	[IB_USER_VERBS_EXP_CMD_CREATE_MR]       = ib_uverbs_exp_create_mr,
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	[IB_USER_VERBS_EXP_CMD_PREFETCH_MR]     = ib_uverbs_exp_prefetch_mr,
 #endif

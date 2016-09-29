@@ -482,6 +482,71 @@ out:
 	return ret;
 }
 
+int ib_uverbs_exp_create_mr(struct ib_uverbs_file *file,
+			    struct ib_udata *ucore,
+			    struct ib_udata *uhw)
+{
+	struct ib_uverbs_exp_create_mr          cmd_exp;
+	struct ib_uverbs_exp_create_mr_resp     resp_exp;
+	struct ib_device *ib_dev;
+	struct ib_pd                            *pd = NULL;
+	struct ib_mr                            *mr = NULL;
+	struct ib_uobject                       *uobj = NULL;
+	int ret;
+
+	if (ucore->outlen + uhw->outlen < sizeof(resp_exp))
+		return -ENOSPC;
+
+	ret = ib_copy_from_udata(&cmd_exp, ucore, sizeof(cmd_exp));
+	if (ret)
+		return ret;
+
+	uobj  = uobj_alloc(UVERBS_OBJECT_MR, file, &ib_dev);
+	if (IS_ERR(uobj))
+		return PTR_ERR(uobj);
+
+	pd = uobj_get_obj_read(pd, UVERBS_OBJECT_PD, cmd_exp.pd_handle, file);
+	if (!pd) {
+		ret = -EINVAL;
+		goto err_free;
+	}
+
+	mr = ib_alloc_mr(pd, cmd_exp.create_flags, cmd_exp.max_reg_descriptors);
+	if (IS_ERR(mr)) {
+		ret = PTR_ERR(mr);
+		goto err_put;
+	}
+
+	mr->device  = pd->device;
+	mr->pd      = pd;
+	mr->uobject = uobj;
+
+	uobj->object = mr;
+
+	memset(&resp_exp, 0, sizeof(resp_exp));
+	resp_exp.lkey = mr->lkey;
+	resp_exp.rkey = mr->rkey;
+	resp_exp.handle = uobj->id;
+
+	ret = ib_copy_to_udata(ucore, &resp_exp, sizeof(resp_exp));
+	if (ret)
+		goto err_copy;
+
+	uobj_put_obj_read(pd);
+
+	return uobj_alloc_commit(uobj, 0);
+
+err_copy:
+	ib_dereg_mr(mr);
+
+err_put:
+	uobj_put_obj_read(pd);
+
+err_free:
+	uobj_alloc_abort(uobj);
+	return ret;
+}
+
 enum ib_uverbs_cq_exp_create_flags {
 	IB_UVERBS_CQ_EXP_TIMESTAMP	= 1 << 1,
 };

@@ -35,6 +35,7 @@ IB_UVERBS_DECLARE_EXP_CMD(create_dct);
 IB_UVERBS_DECLARE_EXP_CMD(destroy_dct);
 IB_UVERBS_DECLARE_EXP_CMD(query_dct);
 IB_UVERBS_DECLARE_EXP_CMD(arm_dct);
+IB_UVERBS_DECLARE_EXP_CMD(create_mr);
 IB_UVERBS_DECLARE_EXP_CMD(prefetch_mr);
 
 unsigned long ib_uverbs_exp_get_unmapped_area(struct file *filp,

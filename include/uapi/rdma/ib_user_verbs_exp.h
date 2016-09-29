@@ -23,6 +23,7 @@ enum {
 	IB_USER_VERBS_EXP_CMD_DESTROY_DCT,
 	IB_USER_VERBS_EXP_CMD_QUERY_DCT,
 	IB_USER_VERBS_EXP_CMD_ARM_DCT,
+	IB_USER_VERBS_EXP_CMD_CREATE_MR,
 	IB_USER_VERBS_EXP_CMD_REG_MR = 11,
 	IB_USER_VERBS_EXP_CMD_PREFETCH_MR = 12,
 };
@@ -236,6 +237,25 @@ struct ib_uverbs_exp_create_cq {
 	__s32 comp_channel;
 	__u32 reserved;
 	__u64 create_flags;
+	__u64 driver_data[0];
+};
+
+struct ib_uverbs_exp_create_mr {
+	__u64 comp_mask;
+	__u32 pd_handle;
+	__u32 max_reg_descriptors;
+	__u64 exp_access_flags;
+	__u32 create_flags;
+	__u32 reserved;
+	__u64 driver_data[0];
+};
+
+struct ib_uverbs_exp_create_mr_resp {
+	__u64 comp_mask;
+	__u32 handle;
+	__u32 lkey;
+	__u32 rkey;
+	__u32 reserved;
 	__u64 driver_data[0];
 };
 
