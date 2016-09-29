@@ -5810,6 +5810,7 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 			(1ull << IB_USER_VERBS_EXP_CMD_QUERY_DCT)	|
 			(1ull << IB_USER_VERBS_EXP_CMD_ARM_DCT);
 	}
+	dev->ib_dev.uverbs_exp_cmd_mask |= (1ull << IB_USER_VERBS_EXP_CMD_CREATE_MR);
 	dev->ib_dev.query_device	= mlx5_ib_query_device;
 	dev->ib_dev.get_link_layer	= mlx5_ib_port_link_layer;
 	dev->ib_dev.query_gid		= mlx5_ib_query_gid;
