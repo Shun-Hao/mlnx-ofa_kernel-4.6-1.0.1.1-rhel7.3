@@ -36,7 +36,10 @@
 #include <rdma/ib_verbs.h>
 
 struct mlx5_ib_dev;
-
+struct mlx5_ib_rwq;
+struct mlx5_ib_create_wq_data;
+struct mlx5_ib_qp;
+#define MLX5_DC_CONNECT_QP_DEPTH 8192
 #define MLX5_IB_QPT_SW_CNAK	IB_QPT_RESERVED5
 
 enum {
@@ -183,5 +186,6 @@ void mlx5_ib_get_atomic_caps(struct mlx5_ib_dev *dev,
 			     int is_exp);
 void mlx5_ib_config_atomic_responder(struct mlx5_ib_dev *dev,
 				     struct ib_exp_device_attr *props);
+u32 mlx5_ib_atomic_mode_qp(struct mlx5_ib_qp *qp);
 
 #endif

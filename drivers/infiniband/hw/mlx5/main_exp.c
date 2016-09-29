@@ -97,6 +97,35 @@ void mlx5_ib_get_atomic_caps(struct mlx5_ib_dev *dev,
 
 }
 
+static void ext_atomic_caps(struct mlx5_ib_dev *dev,
+			    struct ib_exp_device_attr *props)
+{
+	int tmp;
+	unsigned long last;
+	unsigned long arg;
+
+	props->max_fa_bit_boudary = 0;
+	props->log_max_atomic_inline_arg = 0;
+
+	tmp = MLX5_ATOMIC_OPS_CMP_SWAP		|
+	      MLX5_ATOMIC_OPS_FETCH_ADD;
+
+	if ((MLX5_CAP_ATOMIC(dev->mdev, atomic_operations) & tmp) != tmp)
+		return;
+
+	props->atomic_arg_sizes = MLX5_CAP_ATOMIC(dev->mdev, atomic_size_qp) &
+				  MLX5_CAP_ATOMIC(dev->mdev, atomic_size_dc);
+	props->max_fa_bit_boudary = 64;
+	arg = (unsigned long)props->atomic_arg_sizes;
+	last = find_last_bit(&arg, BITS_PER_LONG);
+	if (last < 6)
+		props->log_max_atomic_inline_arg = last;
+	else
+		props->log_max_atomic_inline_arg = 6;
+
+	props->device_cap_flags2 |= IB_EXP_DEVICE_EXT_ATOMICS;
+}
+
 int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			     struct ib_exp_device_attr *props,
 			     struct ib_udata *uhw)
@@ -133,11 +162,16 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		props->dc_rd_res = 0;
 		props->max_dct = 0;
 	}
+
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_INLINE_RECV_SZ;
 	if (MLX5_CAP_GEN(dev->mdev, sctr_data_cqe))
 		props->inline_recv_sz = MLX5_MAX_INLINE_RECEIVE_SIZE;
 	else
 		props->inline_recv_sz = 0;
+
+	mlx5_ib_get_atomic_caps(dev, &props->base, 1);
+	ext_atomic_caps(dev, props);
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_EXT_ATOMIC_ARGS;
 
 	return 0;
 }

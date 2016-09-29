@@ -35,6 +35,26 @@
 #include <linux/mlx5/qp.h>
 #include <linux/mlx5/qp_exp.h>
 
+u32 mlx5_ib_atomic_mode_qp(struct mlx5_ib_qp *qp)
+{
+	unsigned long mask;
+	unsigned long tmp;
+	struct mlx5_ib_dev *dev = to_mdev(qp->ibqp.device);
+
+	mask = (qp->ibqp.qp_type == IB_EXP_QPT_DC_INI) ?
+		MLX5_CAP_ATOMIC(dev->mdev, atomic_size_dc) :
+		MLX5_CAP_ATOMIC(dev->mdev, atomic_size_qp);
+
+	tmp = mask ? __fls(mask) : 0;
+	if (tmp < 2)
+		return MLX5_ATOMIC_MODE_NONE;
+
+	if (tmp == 2)
+		return MLX5_ATOMIC_MODE_CX;
+
+	return tmp << MLX5_ATOMIC_MODE_OFF;
+}
+
 int mlx5_ib_exp_max_inl_recv(struct ib_qp_init_attr *init_attr)
 {
 	return ((struct ib_exp_qp_init_attr *)init_attr)->max_inl_recv;
