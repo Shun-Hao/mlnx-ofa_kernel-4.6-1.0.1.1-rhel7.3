@@ -485,6 +485,17 @@ struct mlx5_odp_caps {
 	char reserved2[0xe4];
 };
 
+static inline int mlx5_host_is_le(void)
+{
+#if defined(__LITTLE_ENDIAN)
+	return 1;
+#elif defined(__BIG_ENDIAN)
+	return 0;
+#else
+#error Host endianness not defined
+#endif
+}
+
 struct mlx5_cmd_layout {
 	u8		type;
 	u8		rsvd0[3];

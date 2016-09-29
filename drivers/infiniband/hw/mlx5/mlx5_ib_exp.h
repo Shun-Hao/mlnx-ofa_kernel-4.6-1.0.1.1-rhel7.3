@@ -177,4 +177,11 @@ int mlx5_ib_prefetch_mr(struct ib_mr *ibmr, u64 start, u64 length, u32 flags);
 struct mlx5_ib_dev;
 int mlx5_ib_exp_odp_init_one(struct mlx5_ib_dev *ibdev);
 #endif
+
+void mlx5_ib_get_atomic_caps(struct mlx5_ib_dev *dev,
+			     struct ib_device_attr *props,
+			     int is_exp);
+void mlx5_ib_config_atomic_responder(struct mlx5_ib_dev *dev,
+				     struct ib_exp_device_attr *props);
+
 #endif

@@ -44,26 +44,38 @@ struct ib_qp *mlx5_ib_exp_create_qp(struct ib_pd *pd,
 				    struct ib_exp_qp_init_attr *init_attr,
 				    struct ib_udata *udata)
 {
-	int use_inlr;
+	if (pd) {
+		struct mlx5_ib_dev *dev;
+		int use_inlr;
 
-	use_inlr = (init_attr->qp_type == IB_QPT_RC ||
-		    init_attr->qp_type == IB_QPT_UC) &&
-		init_attr->max_inl_recv && pd;
+		dev = to_mdev(pd->device);
 
-	if (use_inlr) {
-		int rcqe_sz;
-		int scqe_sz;
+		if ((init_attr->create_flags & IB_QP_EXP_CREATE_ATOMIC_BE_REPLY) &&
+		    (dev->atomic_cap != IB_ATOMIC_HCA_REPLY_BE) &&
+		    mlx5_host_is_le()) {
+			mlx5_ib_dbg(dev, "Create QP with atomic BE REPLY is not supported\n");
+			return ERR_PTR(-EINVAL);
+		}
 
-		rcqe_sz = mlx5_ib_get_cqe_size(init_attr->recv_cq);
-		scqe_sz = mlx5_ib_get_cqe_size(init_attr->send_cq);
+		use_inlr = (init_attr->qp_type == IB_QPT_RC ||
+			    init_attr->qp_type == IB_QPT_UC) &&
+			init_attr->max_inl_recv;
 
-		if (rcqe_sz == 128)
-			init_attr->max_inl_recv = 64;
-		else
-			init_attr->max_inl_recv = 32;
-	} else {
-		init_attr->max_inl_recv = 0;
-	}
+		if (use_inlr) {
+			int rcqe_sz;
+			int scqe_sz;
+
+			rcqe_sz = mlx5_ib_get_cqe_size(init_attr->recv_cq);
+			scqe_sz = mlx5_ib_get_cqe_size(init_attr->send_cq);
+
+			if (rcqe_sz == 128)
+				init_attr->max_inl_recv = 64;
+			else
+				init_attr->max_inl_recv = 32;
+		} else {
+			init_attr->max_inl_recv = 0;
+		} 
+ 	}
 
 	return _mlx5_ib_create_qp(pd, (struct ib_qp_init_attr *)init_attr,
 				  udata, 1);

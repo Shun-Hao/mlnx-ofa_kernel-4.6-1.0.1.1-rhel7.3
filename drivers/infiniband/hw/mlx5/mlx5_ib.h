@@ -911,6 +911,8 @@ struct mlx5_ib_dev {
 	/* Prevents soft lock on massive reg MRs */
 	struct mutex			slow_path_mutex;
 	int				fill_delay;
+	int				enable_atomic_resp;
+	enum ib_atomic_cap		atomic_cap;
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	struct ib_odp_caps	odp_caps;
 	u64			odp_max_size;

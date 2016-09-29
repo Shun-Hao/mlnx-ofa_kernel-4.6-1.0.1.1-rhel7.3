@@ -90,9 +90,6 @@ struct mlx5_ib_event_work {
 	unsigned long		param;
 };
 
-enum {
-	MLX5_ATOMIC_SIZE_QP_8BYTES = 1 << 3,
-};
 
 static struct workqueue_struct *mlx5_ib_event_wq;
 static LIST_HEAD(mlx5_ib_unaffiliated_port_list);
@@ -560,51 +557,6 @@ static int mlx5_get_vport_access_method(struct ib_device *ibdev)
 	return MLX5_VPORT_ACCESS_METHOD_HCA;
 }
 
-static void get_atomic_caps(struct mlx5_ib_dev *dev,
-			    u8 atomic_size_qp,
-			    struct ib_device_attr *props)
-{
-	u8 tmp;
-	u8 atomic_operations = MLX5_CAP_ATOMIC(dev->mdev, atomic_operations);
-	u8 atomic_req_8B_endianness_mode =
-		MLX5_CAP_ATOMIC(dev->mdev, atomic_req_8B_endianness_mode);
-
-	/* Check if HW supports 8 bytes standard atomic operations and capable
-	 * of host endianness respond
-	 */
-	tmp = MLX5_ATOMIC_OPS_CMP_SWAP | MLX5_ATOMIC_OPS_FETCH_ADD;
-	if (((atomic_operations & tmp) == tmp) &&
-	    (atomic_size_qp & MLX5_ATOMIC_SIZE_QP_8BYTES) &&
-	    (atomic_req_8B_endianness_mode)) {
-		props->atomic_cap = IB_ATOMIC_HCA;
-	} else {
-		props->atomic_cap = IB_ATOMIC_NONE;
-	}
-}
-
-static void get_atomic_caps_qp(struct mlx5_ib_dev *dev,
-			       struct ib_device_attr *props)
-{
-	u8 atomic_size_qp = MLX5_CAP_ATOMIC(dev->mdev, atomic_size_qp);
-
-	get_atomic_caps(dev, atomic_size_qp, props);
-}
-
-static void get_atomic_caps_dc(struct mlx5_ib_dev *dev,
-			       struct ib_device_attr *props)
-{
-	u8 atomic_size_qp = MLX5_CAP_ATOMIC(dev->mdev, atomic_size_dc);
-
-	get_atomic_caps(dev, atomic_size_qp, props);
-}
-
-bool mlx5_ib_dc_atomic_is_supported(struct mlx5_ib_dev *dev)
-{
-	struct ib_device_attr props = {};
-
-	get_atomic_caps_dc(dev, &props);
-	return (props.atomic_cap == IB_ATOMIC_HCA) ? true : false;
-}
 static int mlx5_query_system_image_guid(struct ib_device *ibdev,
 					__be64 *sys_image_guid)
 {
@@ -906,8 +858,7 @@ int mlx5_ib_query_device(struct ib_device *ibdev,
 	props->max_srq_sge	   = max_rq_sg - 1;
 	props->max_fast_reg_page_list_len =
 		1 << MLX5_CAP_GEN(mdev, log_max_klm_list_size);
-	get_atomic_caps_qp(dev, props);
-	props->masked_atomic_cap   = IB_ATOMIC_NONE;
+	mlx5_ib_get_atomic_caps(dev, props, 0);
 	props->max_mcast_grp	   = 1 << MLX5_CAP_GEN(mdev, log_max_mcg);
 	props->max_mcast_qp_attach = MLX5_CAP_GEN(mdev, max_qp_mcg);
 	props->max_total_mcast_qp_attach = props->max_mcast_qp_attach *
@@ -4400,7 +4351,7 @@ static void get_ext_port_caps(struct mlx5_ib_dev *dev)
 
 static int get_port_caps(struct mlx5_ib_dev *dev, u8 port)
 {
-	struct ib_device_attr *dprops = NULL;
+	struct ib_exp_device_attr *dprops = NULL;
 	struct ib_port_attr *pprops = NULL;
 	int err = -ENOMEM;
 	struct ib_udata uhw = {.inlen = 0, .outlen = 0};
@@ -4417,11 +4368,13 @@ static int get_port_caps(struct mlx5_ib_dev *dev, u8 port)
 	if (err)
 		goto out;
 
-	err = mlx5_ib_query_device(&dev->ib_dev, dprops, &uhw);
+	err = mlx5_ib_exp_query_device(&dev->ib_dev, dprops, &uhw);
 	if (err) {
 		mlx5_ib_warn(dev, "query_device failed %d\n", err);
 		goto out;
 	}
+
+	mlx5_ib_config_atomic_responder(dev, dprops);
 
 	memset(pprops, 0, sizeof(*pprops));
 	err = mlx5_ib_query_port(&dev->ib_dev, port, pprops);
@@ -4432,11 +4385,11 @@ static int get_port_caps(struct mlx5_ib_dev *dev, u8 port)
 	}
 
 	dev->mdev->port_caps[port - 1].pkey_table_len =
-					dprops->max_pkeys;
+					dprops->base.max_pkeys;
 	dev->mdev->port_caps[port - 1].gid_table_len =
 					pprops->gid_tbl_len;
 	mlx5_ib_dbg(dev, "port %d: pkey_table_len %d, gid_table_len %d\n",
-		    port, dprops->max_pkeys, pprops->gid_tbl_len);
+		    port, dprops->base.max_pkeys, pprops->gid_tbl_len);
 
 out:
 	kfree(pprops);
