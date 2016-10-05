@@ -188,4 +188,6 @@ void mlx5_ib_config_atomic_responder(struct mlx5_ib_dev *dev,
 				     struct ib_exp_device_attr *props);
 u32 mlx5_ib_atomic_mode_qp(struct mlx5_ib_qp *qp);
 
+int mlx5_ib_exp_query_mkey(struct ib_mr *mr, u64 mkey_attr_mask,
+			   struct ib_mkey_attr *mkey_attr);
 #endif

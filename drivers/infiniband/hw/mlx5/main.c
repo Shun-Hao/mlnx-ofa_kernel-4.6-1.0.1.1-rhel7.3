@@ -5793,7 +5793,8 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_CQ)	|
 		(1ull << IB_USER_VERBS_EXP_CMD_REG_MR)		|
 		(1ull << IB_USER_VERBS_EXP_CMD_MODIFY_QP)	|
-		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_FLOW);
+		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_FLOW)	|
+		(1ull << IB_USER_VERBS_EXP_CMD_QUERY_MKEY);
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	dev->ib_dev.uverbs_exp_cmd_mask |=
@@ -5846,6 +5847,7 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 	/* Add EXP verbs here to minimize conflicts via rebase */
 	dev->ib_dev.exp_modify_cq	= mlx5_ib_exp_modify_cq;
 	dev->ib_dev.exp_query_device	= mlx5_ib_exp_query_device;
+	dev->ib_dev.exp_query_mkey      = mlx5_ib_exp_query_mkey;
 	dev->ib_dev.exp_create_qp	= mlx5_ib_exp_create_qp;
 	dev->ib_dev.resize_cq		= mlx5_ib_resize_cq;
 	dev->ib_dev.destroy_cq		= mlx5_ib_destroy_cq;

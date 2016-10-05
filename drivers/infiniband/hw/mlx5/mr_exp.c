@@ -94,3 +94,13 @@ struct ib_mr *mlx5_ib_phys_addr(struct ib_pd *pd, u64 length, u64 virt_addr,
 	return ERR_PTR(-EOPNOTSUPP);
 #endif /* CONFIG_INFINIBAND_PA_MR */
 }
+
+int mlx5_ib_exp_query_mkey(struct ib_mr *mr, u64 mkey_attr_mask,
+			   struct ib_mkey_attr *mkey_attr)
+{
+	struct mlx5_ib_mr *mmr = to_mmr(mr);
+
+	mkey_attr->max_reg_descriptors = mmr->max_descs;
+
+	return 0;
+}
