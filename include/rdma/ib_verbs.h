@@ -80,6 +80,7 @@ struct ib_exp_qp_init_attr;
 struct ib_exp_device_attr;
 struct ib_dct_attr;
 struct ib_dct_init_attr;
+struct ib_mkey_attr;
 
 union ib_gid {
 	u8	raw[16];
@@ -2338,6 +2339,9 @@ struct ib_device {
 	int			(*exp_destroy_dct)(struct ib_dct *dct);
 	int			(*exp_query_dct)(struct ib_dct *dct, struct ib_dct_attr *attr);
 	int			(*exp_arm_dct)(struct ib_dct *dct, struct ib_udata *udata);
+	int			(*exp_query_mkey)(struct ib_mr *mr,
+					  u64 mkey_attr_mask,
+					  struct ib_mkey_attr *mkey_attr);
 	struct ib_odp_statistics     odp_statistics;
 	unsigned long		   (*exp_get_unmapped_area)(struct file *file,
 							    unsigned long addr,

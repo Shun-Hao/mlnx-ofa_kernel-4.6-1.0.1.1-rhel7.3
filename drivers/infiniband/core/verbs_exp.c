@@ -122,3 +122,11 @@ int ib_exp_query_device(struct ib_device *device,
 	return device->exp_query_device(device, device_attr, uhw);
 }
 EXPORT_SYMBOL(ib_exp_query_device);
+
+int ib_exp_query_mkey(struct ib_mr *mr, u64 mkey_attr_mask,
+		  struct ib_mkey_attr *mkey_attr)
+{
+	return mr->device->exp_query_mkey ?
+		mr->device->exp_query_mkey(mr, mkey_attr_mask, mkey_attr) : -ENOSYS;
+}
+EXPORT_SYMBOL(ib_exp_query_mkey);

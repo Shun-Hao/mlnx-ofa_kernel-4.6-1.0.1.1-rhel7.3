@@ -24,6 +24,7 @@ enum {
 	IB_USER_VERBS_EXP_CMD_QUERY_DCT,
 	IB_USER_VERBS_EXP_CMD_ARM_DCT,
 	IB_USER_VERBS_EXP_CMD_CREATE_MR,
+	IB_USER_VERBS_EXP_CMD_QUERY_MKEY,
 	IB_USER_VERBS_EXP_CMD_REG_MR = 11,
 	IB_USER_VERBS_EXP_CMD_PREFETCH_MR = 12,
 	IB_USER_VERBS_EXP_CMD_CREATE_FLOW = 19,
@@ -256,6 +257,22 @@ struct ib_uverbs_exp_create_mr_resp {
 	__u32 handle;
 	__u32 lkey;
 	__u32 rkey;
+	__u32 reserved;
+	__u64 driver_data[0];
+};
+
+struct ib_uverbs_exp_query_mkey {
+	__u64 comp_mask;
+	__u32 handle;
+	__u32 lkey;
+	__u32 rkey;
+	__u32 reserved;
+	__u64 driver_data[0];
+};
+
+struct ib_uverbs_exp_query_mkey_resp {
+	__u64 comp_mask;
+	__u32 max_reg_descriptors;
 	__u32 reserved;
 	__u64 driver_data[0];
 };

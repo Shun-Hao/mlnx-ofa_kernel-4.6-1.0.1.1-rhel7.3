@@ -554,6 +554,42 @@ err_free:
 	return ret;
 }
 
+int ib_uverbs_exp_query_mkey(struct ib_uverbs_file *file,
+			     struct ib_udata *ucore,
+			     struct ib_udata *uhw)
+{
+	struct ib_uverbs_exp_query_mkey cmd_exp;
+	struct ib_uverbs_exp_query_mkey_resp resp_exp;
+	struct ib_mr *mr;
+	struct ib_mkey_attr mkey_attr;
+	int ret;
+
+	memset(&cmd_exp, 0, sizeof(cmd_exp));
+	ret = ib_copy_from_udata(&cmd_exp, ucore, sizeof(cmd_exp));
+	if (ret)
+		return ret;
+
+	mr = uobj_get_obj_read(mr, UVERBS_OBJECT_MR, cmd_exp.handle, file);
+	if (!mr)
+		return -EINVAL;
+
+	ret = ib_exp_query_mkey(mr, 0, &mkey_attr);
+	if (ret)
+		return ret;
+
+	uobj_put_obj_read(mr);
+
+	memset(&resp_exp, 0, sizeof(resp_exp));
+	resp_exp.max_reg_descriptors = mkey_attr.max_reg_descriptors;
+
+	ret = ib_copy_to_udata(ucore, &resp_exp, sizeof(resp_exp));
+	if (ret)
+		return ret;
+
+	return 0;
+}
+EXPORT_SYMBOL(ib_uverbs_exp_query_mkey);
+
 enum ib_uverbs_cq_exp_create_flags {
 	IB_UVERBS_CQ_EXP_TIMESTAMP	= 1 << 1,
 };

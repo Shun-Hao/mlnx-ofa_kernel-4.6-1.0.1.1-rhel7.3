@@ -173,6 +173,15 @@ struct ib_dct {
 };
 
 /**
+ * struct ib_mkey_attr - Memory key attributes
+ *
+ * @max_reg_descriptors: how many mrs we can we register with this mkey
+ */
+struct ib_mkey_attr {
+	u32 max_reg_descriptors;
+};
+
+/**
  * ib_exp_modify_cq - Modifies the attributes for the specified CQ and then
  *   transitions the CQ to the given state.
  * @cq: The CQ to modify.
@@ -193,4 +202,6 @@ struct ib_dct *ib_exp_create_dct(struct ib_pd *pd,
 int ib_exp_destroy_dct(struct ib_dct *dct);
 int ib_exp_query_dct(struct ib_dct *dct, struct ib_dct_attr *attr);
 
+int ib_exp_query_mkey(struct ib_mr *mr, u64 mkey_attr_mask,
+		  struct ib_mkey_attr *mkey_attr);
 #endif
