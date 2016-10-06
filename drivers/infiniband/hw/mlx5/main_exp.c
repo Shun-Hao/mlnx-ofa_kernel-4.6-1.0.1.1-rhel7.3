@@ -347,6 +347,14 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 
 	props->device_cap_flags2 |= IB_EXP_DEVICE_NOP;
 
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_MAX_DEVICE_CTX;
+	/*mlx5_core uses MLX5_NUM_DRIVER_UARS uar pages*/
+	/*For simplicity, assume one to one releation ship between uar pages and context*/
+	props->max_device_ctx =
+		(1 << (MLX5_CAP_GEN(dev->mdev, uar_sz) + 20 - PAGE_SHIFT))
+		/ (MLX5_DEF_TOT_BFREGS / MLX5_NUM_DRIVER_UARS)
+		- MLX5_NUM_DRIVER_UARS;
+
 	return 0;
 }
 

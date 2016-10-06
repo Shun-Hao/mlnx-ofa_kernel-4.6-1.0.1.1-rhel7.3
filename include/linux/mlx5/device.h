@@ -258,6 +258,16 @@ enum {
 };
 
 enum {
+	MLX5_NUM_BFREGS_PER_UAR         = MLX5_NON_FP_BFREGS_PER_UAR,
+	MLX5_DEF_TOT_BFREGS             = 8 * MLX5_NUM_BFREGS_PER_UAR,
+};
+
+enum {
+	MLX5_NUM_DRIVER_UARS	= 4,
+	MLX5_NUM_LOW_LAT_BFREGS	= 4,
+};
+
+enum {
 	MLX5_MKEY_MASK_LEN		= 1ull << 0,
 	MLX5_MKEY_MASK_PAGE_SIZE	= 1ull << 1,
 	MLX5_MKEY_MASK_START_ADDR	= 1ull << 6,
