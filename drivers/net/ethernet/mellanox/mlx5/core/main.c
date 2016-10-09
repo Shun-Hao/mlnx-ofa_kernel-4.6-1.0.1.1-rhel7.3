@@ -750,6 +750,35 @@ struct mlx5_eq *mlx5_eqn2eq(struct mlx5_core_dev *dev, int eqn)
 	return ERR_PTR(-ENOENT);
 }
 
+void mlx5_rename_comp_eq(struct mlx5_core_dev *dev, unsigned int eq_ix,
+			 char *name)
+{
+	struct mlx5_priv *priv = &dev->priv;
+	struct mlx5_eq_table *table = &priv->eq_table;
+	char *dst_name;
+	int irq_ix;
+	int err = 0;
+
+	spin_lock(&table->lock);
+	if (eq_ix >= table->num_comp_vectors) {
+		err = -ENOENT;
+		dev_err(&dev->pdev->dev, "%s: mlx5_rename_comp_eq failed: %d\n",
+			__func__, err);
+		goto unlock;
+	}
+	irq_ix = eq_ix + MLX5_EQ_VEC_COMP_BASE;
+	dst_name = priv->irq_info[irq_ix].name;
+	if (!name) {
+		snprintf(dst_name, MLX5_MAX_IRQ_NAME,
+			 MLX5_DEFAULT_COMP_IRQ_NAME, eq_ix);
+		mlx5_add_pci_to_irq_name(dev, dst_name, dst_name);
+	} else {
+		snprintf(dst_name, MLX5_MAX_IRQ_NAME, "%s-%d", name, eq_ix);
+	}
+unlock:
+	spin_unlock(&table->lock);
+}
+
 static void free_comp_eqs(struct mlx5_core_dev *dev)
 {
 	struct mlx5_eq_table *table = &dev->priv.eq_table;
@@ -803,7 +832,8 @@ static int alloc_comp_eqs(struct mlx5_core_dev *dev)
 		irq_cpu_rmap_add(dev->rmap, pci_irq_vector(dev->pdev,
 				 MLX5_EQ_VEC_COMP_BASE + i));
 #endif
-		snprintf(name, MLX5_MAX_IRQ_NAME, "mlx5_comp%d", i);
+		snprintf(name, MLX5_MAX_IRQ_NAME,
+			 MLX5_DEFAULT_COMP_IRQ_NAME, i);
 		err = mlx5_create_map_eq(dev, eq,
 					 i + MLX5_EQ_VEC_COMP_BASE, nent, 0,
 					 name, MLX5_EQ_TYPE_COMP);

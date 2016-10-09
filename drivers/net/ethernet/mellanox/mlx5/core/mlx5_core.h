@@ -44,6 +44,8 @@
 #define DRIVER_NAME "mlx5_core"
 #define DRIVER_VERSION "5.0-0"
 
+#define MLX5_DEFAULT_COMP_IRQ_NAME "mlx5_comp%d"
+
 extern uint mlx5_core_debug_mask;
 
 #define mlx5_core_dbg(__dev, format, ...)				\
@@ -106,6 +108,10 @@ void mlx5_port_module_event(struct mlx5_core_dev *dev, struct mlx5_eqe *eqe);
 void mlx5_enter_error_state(struct mlx5_core_dev *dev, bool force);
 void mlx5_disable_device(struct mlx5_core_dev *dev);
 void mlx5_recover_device(struct mlx5_core_dev *dev);
+void mlx5_add_pci_to_irq_name(struct mlx5_core_dev *dev, const char *src_name,
+			      char *dest_name);
+void mlx5_rename_comp_eq(struct mlx5_core_dev *dev, unsigned int eq_ix,
+			 char *name);
 int mlx5_sriov_init(struct mlx5_core_dev *dev);
 void mlx5_sriov_cleanup(struct mlx5_core_dev *dev);
 int mlx5_sriov_attach(struct mlx5_core_dev *dev);

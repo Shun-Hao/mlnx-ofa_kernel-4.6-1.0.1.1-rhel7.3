@@ -648,6 +648,13 @@ static void init_eq_buf(struct mlx5_eq *eq)
 	}
 }
 
+void mlx5_add_pci_to_irq_name(struct mlx5_core_dev *dev, const char *src_name,
+			      char *dest_name)
+{
+	snprintf(dest_name, MLX5_MAX_IRQ_NAME, "%s@pci:%s", src_name,
+		 pci_name(dev->pdev));
+}
+
 int mlx5_create_map_eq(struct mlx5_core_dev *dev, struct mlx5_eq *eq, u8 vecidx,
 		       int nent, u64 mask, const char *name,
 		       enum mlx5_eq_type type)
@@ -709,8 +716,7 @@ int mlx5_create_map_eq(struct mlx5_core_dev *dev, struct mlx5_eq *eq, u8 vecidx,
 	if (err)
 		goto err_in;
 
-	snprintf(priv->irq_info[vecidx].name, MLX5_MAX_IRQ_NAME, "%s@pci:%s",
-		 name, pci_name(dev->pdev));
+	mlx5_add_pci_to_irq_name(dev, name, priv->irq_info[vecidx].name);
 
 	eq->eqn = MLX5_GET(create_eq_out, out, eq_number);
 	eq->irqn = pci_irq_vector(dev->pdev, vecidx);
