@@ -893,6 +893,11 @@ static int ib_process_mad(struct ib_device *ibdev, int mad_flags, u8 port_num,
 static void edit_counter(struct mlx4_counter *cnt, void *counters,
 			 __be16 attr_id)
 {
+	struct mlx4_if_stat_basic *basic = &cnt->basic;
+
+	if (cnt->counter_mode != MLX4_IF_CNT_MODE_BASIC)
+		return;
+
 	switch (attr_id) {
 	case IB_PMA_PORT_COUNTERS:
 	{
@@ -900,13 +905,13 @@ static void edit_counter(struct mlx4_counter *cnt, void *counters,
 			(struct ib_pma_portcounters *)counters;
 
 		ASSIGN_32BIT_COUNTER(pma_cnt->port_xmit_data,
-				     (be64_to_cpu(cnt->tx_bytes) >> 2));
+				     (be64_to_cpu(basic->if_tx_octets) >> 2));
 		ASSIGN_32BIT_COUNTER(pma_cnt->port_rcv_data,
-				     (be64_to_cpu(cnt->rx_bytes) >> 2));
+				     (be64_to_cpu(basic->if_rx_octets) >> 2));
 		ASSIGN_32BIT_COUNTER(pma_cnt->port_xmit_packets,
-				     be64_to_cpu(cnt->tx_frames));
+				     be64_to_cpu(basic->if_tx_frames));
 		ASSIGN_32BIT_COUNTER(pma_cnt->port_rcv_packets,
-				     be64_to_cpu(cnt->rx_frames));
+				     be64_to_cpu(basic->if_rx_frames));
 		break;
 	}
 	case IB_PMA_PORT_COUNTERS_EXT:
@@ -914,14 +919,99 @@ static void edit_counter(struct mlx4_counter *cnt, void *counters,
 		struct ib_pma_portcounters_ext *pma_cnt_ext =
 			(struct ib_pma_portcounters_ext *)counters;
 
-		pma_cnt_ext->port_xmit_data =
-			cpu_to_be64(be64_to_cpu(cnt->tx_bytes) >> 2);
-		pma_cnt_ext->port_rcv_data =
-			cpu_to_be64(be64_to_cpu(cnt->rx_bytes) >> 2);
-		pma_cnt_ext->port_xmit_packets = cnt->tx_frames;
-		pma_cnt_ext->port_rcv_packets = cnt->rx_frames;
+		ASSIGN_64BIT_COUNTER(pma_cnt_ext->port_xmit_data,
+				     be64_to_cpu(basic->if_tx_octets) >> 2);
+		ASSIGN_64BIT_COUNTER(pma_cnt_ext->port_rcv_data,
+				     be64_to_cpu(basic->if_rx_octets) >> 2);
+		pma_cnt_ext->port_xmit_packets = basic->if_tx_frames;
+		pma_cnt_ext->port_rcv_packets = basic->if_rx_frames;
 		break;
 	}
+	default:
+		pr_warn("Unsupported attr_id 0x%x\n", attr_id);
+		break;
+	}
+}
+
+static void edit_counter_ext(struct mlx4_counter *cnt, void *counters,
+			     __be16 attr_id)
+{
+	struct mlx4_if_stat_ext *ext = &cnt->ext;
+
+	if (cnt->counter_mode != MLX4_IF_CNT_MODE_EXT)
+		return;
+
+	switch (attr_id) {
+	case IB_PMA_PORT_COUNTERS:
+	{
+		struct ib_pma_portcounters *pma_cnt =
+			(struct ib_pma_portcounters *)counters;
+		ASSIGN_32BIT_COUNTER(pma_cnt->port_xmit_data,
+				     (be64_to_cpu(ext->if_tx_unicast_octets) +
+				      be64_to_cpu(ext->if_tx_multicast_octets) +
+				      be64_to_cpu(ext->if_tx_broadcast_octets) +
+				      be64_to_cpu(ext->if_tx_dropped_octets)) >> 2);
+		ASSIGN_32BIT_COUNTER(pma_cnt->port_rcv_data,
+				     (be64_to_cpu(ext->if_rx_unicast_octets) +
+				      be64_to_cpu(ext->if_rx_multicast_octets) +
+				      be64_to_cpu(ext->if_rx_broadcast_octets) +
+				      be64_to_cpu(ext->if_rx_nobuffer_octets) +
+				      be64_to_cpu(ext->if_rx_error_octets)) >> 2);
+		ASSIGN_32BIT_COUNTER(pma_cnt->port_xmit_packets,
+				     be64_to_cpu(ext->if_tx_unicast_frames) +
+				     be64_to_cpu(ext->if_tx_multicast_frames) +
+				     be64_to_cpu(ext->if_tx_broadcast_frames) +
+				     be64_to_cpu(ext->if_tx_dropped_frames));
+		ASSIGN_32BIT_COUNTER(pma_cnt->port_rcv_packets,
+				     be64_to_cpu(ext->if_rx_unicast_frames) +
+				     be64_to_cpu(ext->if_rx_multicast_frames) +
+				     be64_to_cpu(ext->if_rx_broadcast_frames) +
+				     be64_to_cpu(ext->if_rx_nobuffer_frames) +
+				     be64_to_cpu(ext->if_rx_error_frames));
+		ASSIGN_16BIT_COUNTER(pma_cnt->port_rcv_errors,
+				     be64_to_cpu(ext->if_rx_error_frames));
+		break;
+	}
+	case IB_PMA_PORT_COUNTERS_EXT:
+	{
+		struct ib_pma_portcounters_ext *pma_cnt_ext =
+			(struct ib_pma_portcounters_ext *)counters;
+
+		ASSIGN_64BIT_COUNTER(pma_cnt_ext->port_xmit_data,
+				     (be64_to_cpu(ext->if_tx_unicast_octets) +
+				      be64_to_cpu(ext->if_tx_multicast_octets) +
+				      be64_to_cpu(ext->if_tx_broadcast_octets) +
+				      be64_to_cpu(ext->if_tx_dropped_octets)) >> 2);
+		ASSIGN_64BIT_COUNTER(pma_cnt_ext->port_rcv_data,
+				     (be64_to_cpu(ext->if_rx_unicast_octets) +
+				      be64_to_cpu(ext->if_rx_multicast_octets) +
+				      be64_to_cpu(ext->if_rx_broadcast_octets) +
+				      be64_to_cpu(ext->if_rx_nobuffer_octets) +
+				      be64_to_cpu(ext->if_rx_error_octets)) >> 2);
+		ASSIGN_64BIT_COUNTER(pma_cnt_ext->port_xmit_packets,
+				     be64_to_cpu(ext->if_tx_unicast_frames) +
+				     be64_to_cpu(ext->if_tx_multicast_frames) +
+				     be64_to_cpu(ext->if_tx_broadcast_frames) +
+				     be64_to_cpu(ext->if_tx_dropped_frames));
+		ASSIGN_64BIT_COUNTER(pma_cnt_ext->port_rcv_packets,
+				     be64_to_cpu(ext->if_rx_unicast_frames) +
+				     be64_to_cpu(ext->if_rx_multicast_frames) +
+				     be64_to_cpu(ext->if_rx_broadcast_frames) +
+				     be64_to_cpu(ext->if_rx_nobuffer_frames) +
+				     be64_to_cpu(ext->if_rx_error_frames));
+		pma_cnt_ext->port_unicast_xmit_packets = ext->if_tx_unicast_frames;
+		pma_cnt_ext->port_unicast_rcv_packets = ext->if_rx_unicast_frames;
+		ASSIGN_64BIT_COUNTER(pma_cnt_ext->port_multicast_xmit_packets,
+				     be64_to_cpu(ext->if_tx_multicast_frames) +
+				     be64_to_cpu(ext->if_tx_broadcast_frames));
+		ASSIGN_64BIT_COUNTER(pma_cnt_ext->port_multicast_rcv_packets,
+				     be64_to_cpu(ext->if_tx_multicast_frames) +
+				     be64_to_cpu(ext->if_tx_broadcast_frames));
+		break;
+	}
+	default:
+		pr_warn("Unsupported attr_id 0x%x\n", attr_id);
+		break;
 	}
 }
 
@@ -967,12 +1057,17 @@ static int iboe_process_mad(struct ib_device *ibdev, int mad_flags, u8 port_num,
 	mutex_unlock(&dev->counters_table[port_num - 1].mutex);
 	if (stats_avail) {
 		memset(out_mad->data, 0, sizeof out_mad->data);
+		err = IB_MAD_RESULT_SUCCESS | IB_MAD_RESULT_REPLY;
 		switch (counter_stats.counter_mode & 0xf) {
-		case 0:
+		case MLX4_IF_CNT_MODE_BASIC:
 			edit_counter(&counter_stats,
 				     (void *)(out_mad->data + 40),
 				     in_mad->mad_hdr.attr_id);
-			err = IB_MAD_RESULT_SUCCESS | IB_MAD_RESULT_REPLY;
+			break;
+		case MLX4_IF_CNT_MODE_EXT:
+			edit_counter_ext(&counter_stats,
+					 (void *)(out_mad->data + 40),
+					 in_mad->mad_hdr.attr_id);
 			break;
 		default:
 			err = IB_MAD_RESULT_FAILURE;

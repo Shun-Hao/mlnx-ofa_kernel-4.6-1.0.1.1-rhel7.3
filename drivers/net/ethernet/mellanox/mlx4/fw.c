@@ -114,6 +114,7 @@ static void dump_dev_cap_flags(struct mlx4_dev *dev, u64 flags)
 		[42] = "Multicast VEP steering support",
 		[44] = "Cross-channel (sync_qp) operations support",
 		[48] = "Counters support",
+		[49] = "Extended counters support",
 		[52] = "RSS IP fragments support",
 		[53] = "Port ETS Scheduler support",
 		[55] = "Port link type sensing support",
@@ -802,6 +803,7 @@ int mlx4_QUERY_DEV_CAP(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 #define QUERY_DEV_CAP_RSVD_XRC_OFFSET		0x66
 #define QUERY_DEV_CAP_MAX_XRC_OFFSET		0x67
 #define QUERY_DEV_CAP_MAX_IF_CNT_BASIC_OFFSET	0x68
+#define QUERY_DEV_CAP_MAX_IF_CNT_EXT_OFFSET	0x6c
 #define QUERY_DEV_CAP_PORT_FLOWSTATS_COUNTERS_OFFSET	0x70
 #define QUERY_DEV_CAP_EXT_2_FLAGS_OFFSET	0x70
 #define QUERY_DEV_CAP_FLOW_STEERING_IPOIB_OFFSET	0x74
@@ -1080,7 +1082,10 @@ int mlx4_QUERY_DEV_CAP(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_ETS_CFG;
 	MLX4_GET(dev_cap->max_icm_sz, outbox,
 		 QUERY_DEV_CAP_MAX_ICM_SZ_OFFSET);
-	if (dev_cap->flags & MLX4_DEV_CAP_FLAG_IF_CNT_BASIC)
+	if (dev_cap->flags & MLX4_DEV_CAP_FLAG_IF_CNT_EXT)
+		MLX4_GET(dev_cap->max_counters, outbox,
+			 QUERY_DEV_CAP_MAX_IF_CNT_EXT_OFFSET);
+	else if (dev_cap->flags & MLX4_DEV_CAP_FLAG_IF_CNT_BASIC)
 		MLX4_GET(dev_cap->max_counters, outbox,
 			 QUERY_DEV_CAP_MAX_IF_CNT_BASIC_OFFSET);
 

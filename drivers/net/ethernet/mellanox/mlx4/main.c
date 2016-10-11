@@ -2572,7 +2572,7 @@ static int mlx4_init_counters_table(struct mlx4_dev *dev)
 	struct mlx4_priv *priv = mlx4_priv(dev);
 	int nent_pow2;
 
-	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_IF_CNT_BASIC))
+	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_IF_CNT_ANY))
 		return -ENOENT;
 
 	if (!dev->caps.max_counters)
@@ -2585,9 +2585,24 @@ static int mlx4_init_counters_table(struct mlx4_dev *dev)
 				nent_pow2 - dev->caps.max_counters + 1);
 }
 
+static int mlx4_set_ext_counters_mode(struct mlx4_dev *dev)
+{
+	int err;
+
+	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_IF_CNT_EXT))
+		return 0;
+
+	err = mlx4_cmd(dev, MLX4_IF_CNT_MODE_EXT, 0, 0, MLX4_CMD_SET_IF_STAT,
+		       MLX4_CMD_TIME_CLASS_A, MLX4_CMD_WRAPPED);
+
+	if (mlx4_is_slave(dev))
+		return err == -EINVAL ? 0 : err;
+	return err;
+}
+
 static void mlx4_cleanup_counters_table(struct mlx4_dev *dev)
 {
-	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_IF_CNT_BASIC))
+	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_IF_CNT_ANY))
 		return;
 
 	if (!dev->caps.max_counters)
@@ -2646,7 +2661,7 @@ int __mlx4_counter_alloc(struct mlx4_dev *dev, u32 *idx)
 {
 	struct mlx4_priv *priv = mlx4_priv(dev);
 
-	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_IF_CNT_BASIC))
+	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_IF_CNT_ANY))
 		return -ENOENT;
 
 	*idx = mlx4_bitmap_alloc(&priv->counters_bitmap);
@@ -2698,7 +2713,7 @@ static int __mlx4_clear_if_stat(struct mlx4_dev *dev,
 
 void __mlx4_counter_free(struct mlx4_dev *dev, u32 idx)
 {
-	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_IF_CNT_BASIC))
+	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_IF_CNT_ANY))
 		return;
 
 	if (idx == MLX4_SINK_COUNTER_INDEX(dev))
@@ -2874,6 +2889,12 @@ static int mlx4_setup_hca(struct mlx4_dev *dev)
 			mlx4_err(dev, "Failed to initialize counters table, aborting\n");
 			goto err_qp_table_free;
 		}
+	}
+
+	err = mlx4_set_ext_counters_mode(dev);
+	if (err) {
+		mlx4_err(dev, "Failed to set extended counters, aborting\n");
+		goto err_counters_table_free;
 	}
 
 	err = mlx4_allocate_default_counters(dev);

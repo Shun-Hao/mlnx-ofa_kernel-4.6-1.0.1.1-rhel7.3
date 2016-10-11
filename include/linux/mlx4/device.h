@@ -190,6 +190,7 @@ enum {
 	MLX4_DEV_CAP_FLAG_VEP_MC_STEER	= 1LL << 42,
 	MLX4_DEV_CAP_FLAG_CROSS_CHANNEL	= 1LL << 44,
 	MLX4_DEV_CAP_FLAG_IF_CNT_BASIC	= 1LL << 48,
+	MLX4_DEV_CAP_FLAG_IF_CNT_EXT	= 1LL << 49,
 	MLX4_DEV_CAP_FLAG_RSS_IP_FRAG   = 1LL << 52,
 	MLX4_DEV_CAP_FLAG_SET_ETH_SCHED = 1LL << 53,
 	MLX4_DEV_CAP_FLAG_SENSE_SUPPORT	= 1LL << 55,
@@ -199,6 +200,8 @@ enum {
 	MLX4_DEV_CAP_FLAG_64B_CQE	= 1LL << 62
 };
 
+#define MLX4_DEV_CAP_FLAG_IF_CNT_ANY (MLX4_DEV_CAP_FLAG_IF_CNT_BASIC | \
+				      MLX4_DEV_CAP_FLAG_IF_CNT_EXT)
 enum {
 	MLX4_DEV_CAP_FLAG2_RSS			= 1LL <<  0,
 	MLX4_DEV_CAP_FLAG2_RSS_TOP		= 1LL <<  1,
@@ -848,6 +851,13 @@ union mlx4_ext_av {
 };
 
 /* Counters should be saturate once they reach their maximum value */
+#define ASSIGN_16BIT_COUNTER(counter, value) do {	\
+	if ((value) > U16_MAX)				\
+		counter = cpu_to_be16(U16_MAX);		\
+	else						\
+		counter = cpu_to_be16(value);		\
+} while (0)
+
 #define ASSIGN_32BIT_COUNTER(counter, value) do {	\
 	if ((value) > U32_MAX)				\
 		counter = cpu_to_be32(U32_MAX);		\
@@ -855,15 +865,59 @@ union mlx4_ext_av {
 		counter = cpu_to_be32(value);		\
 } while (0)
 
+#define ASSIGN_64BIT_COUNTER(counter, value) do {	\
+	if ((value) > U64_MAX)				\
+		counter = cpu_to_be64(U64_MAX);		\
+	else						\
+		counter = cpu_to_be64(value);		\
+} while (0)
+
+enum {
+	MLX4_IF_CNT_MODE_BASIC,
+	MLX4_IF_CNT_MODE_EXT,
+};
+
+struct mlx4_if_stat_basic {
+	__be64 if_rx_frames;
+	__be64 if_rx_octets;
+	__be64 if_tx_frames;
+	__be64 if_tx_octets;
+};
+
+struct mlx4_if_stat_ext {
+	__be64 if_rx_unicast_frames;
+	__be64 if_rx_unicast_octets;
+	__be64 if_rx_multicast_frames;
+	__be64 if_rx_multicast_octets;
+	__be64 if_rx_broadcast_frames;
+	__be64 if_rx_broadcast_octets;
+	__be64 if_rx_nobuffer_frames;
+	__be64 if_rx_nobuffer_octets;
+	__be64 if_rx_error_frames;
+	__be64 if_rx_error_octets;
+	__be32 reserved[39];
+	__be64 if_tx_unicast_frames;
+	__be64 if_tx_unicast_octets;
+	__be64 if_tx_multicast_frames;
+	__be64 if_tx_multicast_octets;
+	__be64 if_tx_broadcast_frames;
+	__be64 if_tx_broadcast_octets;
+	__be64 if_tx_dropped_frames;
+	__be64 if_tx_dropped_octets;
+	__be64 if_tx_requested_frames_sent;
+	__be64 if_tx_generated_frames_sent;
+	__be64 if_tx_tso_octets;
+} __packed;
+
 struct mlx4_counter {
 	u8	reserved1[3];
 	u8	counter_mode;
 	__be32	num_ifc;
 	u32	reserved2[2];
-	__be64	rx_frames;
-	__be64	rx_bytes;
-	__be64	tx_frames;
-	__be64	tx_bytes;
+	union {
+		struct mlx4_if_stat_basic basic;
+		struct mlx4_if_stat_ext   ext;
+	};
 };
 
 struct mlx4_quotas {

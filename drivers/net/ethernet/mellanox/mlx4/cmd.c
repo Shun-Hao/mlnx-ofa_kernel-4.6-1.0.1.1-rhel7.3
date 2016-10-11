@@ -3336,19 +3336,44 @@ int mlx4_get_counter_stats(struct mlx4_dev *dev, int counter_index,
 	}
 	tmp_counter = (struct mlx4_counter *)mailbox->buf;
 	counter_stats->counter_mode = tmp_counter->counter_mode;
-	if (counter_stats->counter_mode == 0) {
-		counter_stats->rx_frames =
-			cpu_to_be64(be64_to_cpu(counter_stats->rx_frames) +
-				    be64_to_cpu(tmp_counter->rx_frames));
-		counter_stats->tx_frames =
-			cpu_to_be64(be64_to_cpu(counter_stats->tx_frames) +
-				    be64_to_cpu(tmp_counter->tx_frames));
-		counter_stats->rx_bytes =
-			cpu_to_be64(be64_to_cpu(counter_stats->rx_bytes) +
-				    be64_to_cpu(tmp_counter->rx_bytes));
-		counter_stats->tx_bytes =
-			cpu_to_be64(be64_to_cpu(counter_stats->tx_bytes) +
-				    be64_to_cpu(tmp_counter->tx_bytes));
+
+#define CNT_FIELD_ADD_TMP(field)	\
+		(cnt->field = cpu_to_be64(be64_to_cpu(cnt->field) + \
+					  be64_to_cpu(tmp->field)))
+
+	if (counter_stats->counter_mode == MLX4_IF_CNT_MODE_BASIC) {
+		struct mlx4_if_stat_basic *cnt = &counter_stats->basic;
+		struct mlx4_if_stat_basic *tmp = &tmp_counter->basic;
+
+		CNT_FIELD_ADD_TMP(if_rx_frames);
+		CNT_FIELD_ADD_TMP(if_tx_frames);
+		CNT_FIELD_ADD_TMP(if_rx_octets);
+		CNT_FIELD_ADD_TMP(if_tx_octets);
+	} else if (counter_stats->counter_mode == MLX4_IF_CNT_MODE_EXT) {
+		struct mlx4_if_stat_ext *cnt = &counter_stats->ext;
+		struct mlx4_if_stat_ext *tmp = &tmp_counter->ext;
+
+		CNT_FIELD_ADD_TMP(if_rx_unicast_frames);
+		CNT_FIELD_ADD_TMP(if_rx_unicast_octets);
+		CNT_FIELD_ADD_TMP(if_rx_multicast_frames);
+		CNT_FIELD_ADD_TMP(if_rx_multicast_octets);
+		CNT_FIELD_ADD_TMP(if_rx_broadcast_frames);
+		CNT_FIELD_ADD_TMP(if_rx_broadcast_octets);
+		CNT_FIELD_ADD_TMP(if_rx_nobuffer_frames);
+		CNT_FIELD_ADD_TMP(if_rx_nobuffer_octets);
+		CNT_FIELD_ADD_TMP(if_rx_error_frames);
+		CNT_FIELD_ADD_TMP(if_rx_error_octets);
+		CNT_FIELD_ADD_TMP(if_tx_unicast_frames);
+		CNT_FIELD_ADD_TMP(if_tx_unicast_octets);
+		CNT_FIELD_ADD_TMP(if_tx_multicast_frames);
+		CNT_FIELD_ADD_TMP(if_tx_multicast_octets);
+		CNT_FIELD_ADD_TMP(if_tx_broadcast_frames);
+		CNT_FIELD_ADD_TMP(if_tx_broadcast_octets);
+		CNT_FIELD_ADD_TMP(if_tx_dropped_frames);
+		CNT_FIELD_ADD_TMP(if_tx_dropped_octets);
+		CNT_FIELD_ADD_TMP(if_tx_requested_frames_sent);
+		CNT_FIELD_ADD_TMP(if_tx_generated_frames_sent);
+		CNT_FIELD_ADD_TMP(if_tx_tso_octets);
 	}
 
 if_stat_out:
@@ -3377,14 +3402,42 @@ int mlx4_get_vf_stats(struct mlx4_dev *dev, int port, int vf_idx,
 
 	port = mlx4_slaves_closest_port(dev, slave, port);
 	err = mlx4_calc_vf_counters(dev, slave, port, &tmp_vf_stats);
-	if (!err && tmp_vf_stats.counter_mode == 0) {
-		vf_stats->rx_packets = be64_to_cpu(tmp_vf_stats.rx_frames);
-		vf_stats->tx_packets = be64_to_cpu(tmp_vf_stats.tx_frames);
-		vf_stats->rx_bytes = be64_to_cpu(tmp_vf_stats.rx_bytes);
-		vf_stats->tx_bytes = be64_to_cpu(tmp_vf_stats.tx_bytes);
+	if (err)
+		return err;
+
+	memset(vf_stats, 0, sizeof(*vf_stats));
+
+	if (tmp_vf_stats.counter_mode == MLX4_IF_CNT_MODE_BASIC) {
+		struct mlx4_if_stat_basic *basic = &tmp_vf_stats.basic;
+
+		vf_stats->rx_packets = be64_to_cpu(basic->if_rx_frames);
+		vf_stats->tx_packets = be64_to_cpu(basic->if_tx_frames);
+		vf_stats->rx_bytes = be64_to_cpu(basic->if_rx_octets);
+		vf_stats->tx_bytes = be64_to_cpu(basic->if_tx_octets);
+	} else if (tmp_vf_stats.counter_mode == MLX4_IF_CNT_MODE_EXT) {
+		struct mlx4_if_stat_ext *ext = &tmp_vf_stats.ext;
+
+		vf_stats->rx_packets =
+			be64_to_cpu(ext->if_rx_broadcast_frames) +
+			be64_to_cpu(ext->if_rx_unicast_frames) +
+			be64_to_cpu(ext->if_rx_multicast_frames);
+		vf_stats->tx_packets =
+			be64_to_cpu(ext->if_tx_broadcast_frames) +
+			be64_to_cpu(ext->if_tx_unicast_frames) +
+			be64_to_cpu(ext->if_tx_multicast_frames);
+		vf_stats->rx_bytes =
+			be64_to_cpu(ext->if_rx_broadcast_octets) +
+			be64_to_cpu(ext->if_rx_unicast_octets) +
+			be64_to_cpu(ext->if_rx_multicast_octets);
+		vf_stats->tx_bytes =
+			be64_to_cpu(ext->if_tx_broadcast_octets) +
+			be64_to_cpu(ext->if_tx_unicast_octets) +
+			be64_to_cpu(ext->if_tx_multicast_octets);
+		vf_stats->multicast =
+			be64_to_cpu(ext->if_rx_multicast_frames);
 	}
 
-	return err;
+	return 0;
 }
 EXPORT_SYMBOL_GPL(mlx4_get_vf_stats);
 

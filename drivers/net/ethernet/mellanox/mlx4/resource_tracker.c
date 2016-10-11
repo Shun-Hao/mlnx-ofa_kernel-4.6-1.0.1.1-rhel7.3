@@ -4550,20 +4550,62 @@ enum {
 	BUSY_MAX_RETRIES = 10
 };
 
+static int mlx4_if_stat_ext2basic(struct mlx4_counter *if_cnt)
+{
+	struct mlx4_if_stat_ext   *ext   = &if_cnt->ext;
+	struct mlx4_if_stat_basic *basic = &if_cnt->basic;
+	struct mlx4_if_stat_basic  basic_tmp;
+
+	if (if_cnt->counter_mode != MLX4_IF_CNT_MODE_EXT)
+		return -EINVAL;
+
+	if_cnt->counter_mode = MLX4_IF_CNT_MODE_BASIC;
+
+	basic_tmp.if_rx_frames =
+		ext->if_rx_broadcast_frames +
+		ext->if_rx_multicast_frames +
+		ext->if_rx_unicast_frames;
+	basic_tmp.if_rx_octets =
+		ext->if_rx_broadcast_octets +
+		ext->if_rx_multicast_octets +
+		ext->if_rx_unicast_octets;
+	basic_tmp.if_tx_frames =
+		ext->if_tx_unicast_frames +
+		ext->if_tx_multicast_frames +
+		ext->if_tx_broadcast_frames;
+	basic_tmp.if_tx_octets =
+		ext->if_tx_unicast_octets +
+		ext->if_tx_multicast_octets +
+		ext->if_tx_broadcast_octets;
+
+	*basic = basic_tmp;
+
+	return 0;
+}
+
 int mlx4_QUERY_IF_STAT_wrapper(struct mlx4_dev *dev, int slave,
 			       struct mlx4_vhcr *vhcr,
 			       struct mlx4_cmd_mailbox *inbox,
 			       struct mlx4_cmd_mailbox *outbox,
 			       struct mlx4_cmd_info *cmd)
 {
+	struct mlx4_priv *priv = mlx4_priv(dev);
 	int err;
 	int index = vhcr->in_modifier & 0xffff;
+	u8 slave_mode = priv->mfunc.master.slave_state[slave].counters_mode;
+	u8 master_mode = priv->mfunc.master.
+			 slave_state[mlx4_master_func_num(dev)].counters_mode;
 
 	err = get_res(dev, slave, index, RES_COUNTER, NULL);
 	if (err)
 		return err;
 
 	err = mlx4_DMA_wrapper(dev, slave, vhcr, inbox, outbox, cmd);
+
+	if (slave_mode == MLX4_IF_CNT_MODE_BASIC &&
+	    master_mode == MLX4_IF_CNT_MODE_EXT)
+		mlx4_if_stat_ext2basic(outbox->buf);
+
 	put_res(dev, slave, index, RES_COUNTER);
 	return err;
 }

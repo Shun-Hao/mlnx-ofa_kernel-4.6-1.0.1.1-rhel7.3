@@ -386,11 +386,32 @@ int mlx4_en_DUMP_ETH_STATS(struct mlx4_en_dev *mdev, u8 port, u8 reset)
 	priv->pkstats.tx_prio[8][0] = be64_to_cpu(mlx4_en_stats->TTOT_novlan);
 	priv->pkstats.tx_prio[8][1] = be64_to_cpu(mlx4_en_stats->TOCT_novlan);
 
-	if (tmp_counter_stats.counter_mode == 0) {
-		priv->pf_stats.rx_bytes   = be64_to_cpu(tmp_counter_stats.rx_bytes);
-		priv->pf_stats.tx_bytes   = be64_to_cpu(tmp_counter_stats.tx_bytes);
-		priv->pf_stats.rx_packets = be64_to_cpu(tmp_counter_stats.rx_frames);
-		priv->pf_stats.tx_packets = be64_to_cpu(tmp_counter_stats.tx_frames);
+	if (tmp_counter_stats.counter_mode == MLX4_IF_CNT_MODE_BASIC) {
+		struct mlx4_if_stat_basic *basic = &tmp_counter_stats.basic;
+
+		priv->pf_stats.rx_bytes   = be64_to_cpu(basic->if_rx_octets);
+		priv->pf_stats.tx_bytes   = be64_to_cpu(basic->if_tx_octets);
+		priv->pf_stats.rx_packets = be64_to_cpu(basic->if_rx_frames);
+		priv->pf_stats.tx_packets = be64_to_cpu(basic->if_tx_frames);
+	} else if (tmp_counter_stats.counter_mode == MLX4_IF_CNT_MODE_EXT) {
+		struct mlx4_if_stat_ext *ext = &tmp_counter_stats.ext;
+
+		priv->pf_stats.rx_bytes =
+			be64_to_cpu(ext->if_rx_broadcast_octets) +
+			be64_to_cpu(ext->if_rx_unicast_octets) +
+			be64_to_cpu(ext->if_rx_multicast_octets);
+		priv->pf_stats.tx_bytes =
+			be64_to_cpu(ext->if_tx_broadcast_octets) +
+			be64_to_cpu(ext->if_tx_unicast_octets) +
+			be64_to_cpu(ext->if_tx_multicast_octets);
+		priv->pf_stats.rx_packets =
+			be64_to_cpu(ext->if_rx_broadcast_frames) +
+			be64_to_cpu(ext->if_rx_unicast_frames) +
+			be64_to_cpu(ext->if_rx_multicast_frames);
+		priv->pf_stats.tx_packets =
+			be64_to_cpu(ext->if_tx_broadcast_frames) +
+			be64_to_cpu(ext->if_tx_unicast_frames) +
+			be64_to_cpu(ext->if_tx_multicast_frames);
 	}
 
 	for (i = 0; i < MLX4_NUM_PRIORITIES; i++)	{
