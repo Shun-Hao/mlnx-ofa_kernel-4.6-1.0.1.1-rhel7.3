@@ -2572,7 +2572,7 @@ static int mlx4_init_counters_table(struct mlx4_dev *dev)
 	struct mlx4_priv *priv = mlx4_priv(dev);
 	int nent_pow2;
 
-	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_COUNTERS))
+	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_IF_CNT_BASIC))
 		return -ENOENT;
 
 	if (!dev->caps.max_counters)
@@ -2587,7 +2587,7 @@ static int mlx4_init_counters_table(struct mlx4_dev *dev)
 
 static void mlx4_cleanup_counters_table(struct mlx4_dev *dev)
 {
-	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_COUNTERS))
+	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_IF_CNT_BASIC))
 		return;
 
 	if (!dev->caps.max_counters)
@@ -2646,7 +2646,7 @@ int __mlx4_counter_alloc(struct mlx4_dev *dev, u32 *idx)
 {
 	struct mlx4_priv *priv = mlx4_priv(dev);
 
-	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_COUNTERS))
+	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_IF_CNT_BASIC))
 		return -ENOENT;
 
 	*idx = mlx4_bitmap_alloc(&priv->counters_bitmap);
@@ -2698,7 +2698,7 @@ static int __mlx4_clear_if_stat(struct mlx4_dev *dev,
 
 void __mlx4_counter_free(struct mlx4_dev *dev, u32 idx)
 {
-	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_COUNTERS))
+	if (!(dev->caps.flags & MLX4_DEV_CAP_FLAG_IF_CNT_BASIC))
 		return;
 
 	if (idx == MLX4_SINK_COUNTER_INDEX(dev))

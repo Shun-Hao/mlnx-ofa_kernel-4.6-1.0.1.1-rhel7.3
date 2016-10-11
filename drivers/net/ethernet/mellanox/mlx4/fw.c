@@ -801,7 +801,7 @@ int mlx4_QUERY_DEV_CAP(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 #define QUERY_DEV_CAP_MAX_PD_OFFSET		0x65
 #define QUERY_DEV_CAP_RSVD_XRC_OFFSET		0x66
 #define QUERY_DEV_CAP_MAX_XRC_OFFSET		0x67
-#define QUERY_DEV_CAP_MAX_COUNTERS_OFFSET	0x68
+#define QUERY_DEV_CAP_MAX_IF_CNT_BASIC_OFFSET	0x68
 #define QUERY_DEV_CAP_PORT_FLOWSTATS_COUNTERS_OFFSET	0x70
 #define QUERY_DEV_CAP_EXT_2_FLAGS_OFFSET	0x70
 #define QUERY_DEV_CAP_FLOW_STEERING_IPOIB_OFFSET	0x74
@@ -1080,9 +1080,9 @@ int mlx4_QUERY_DEV_CAP(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_ETS_CFG;
 	MLX4_GET(dev_cap->max_icm_sz, outbox,
 		 QUERY_DEV_CAP_MAX_ICM_SZ_OFFSET);
-	if (dev_cap->flags & MLX4_DEV_CAP_FLAG_COUNTERS)
+	if (dev_cap->flags & MLX4_DEV_CAP_FLAG_IF_CNT_BASIC)
 		MLX4_GET(dev_cap->max_counters, outbox,
-			 QUERY_DEV_CAP_MAX_COUNTERS_OFFSET);
+			 QUERY_DEV_CAP_MAX_IF_CNT_BASIC_OFFSET);
 
 	MLX4_GET(field32, outbox,
 		 QUERY_DEV_CAP_MAD_DEMUX_OFFSET);
@@ -1967,7 +1967,7 @@ int mlx4_INIT_HCA(struct mlx4_dev *dev, struct mlx4_init_hca_param *param)
 		*(inbox + INIT_HCA_FLAGS_OFFSET / 4) |= cpu_to_be32(1 << 7);
 
 	/* enable counters */
-	if (dev->caps.flags & MLX4_DEV_CAP_FLAG_COUNTERS)
+	if (dev->caps.flags & MLX4_DEV_CAP_FLAG_IF_CNT_BASIC)
 		*(inbox + INIT_HCA_FLAGS_OFFSET / 4) |= cpu_to_be32(1 << 4);
 
 	/* Enable RSS spread to fragmented IP packets when supported */
