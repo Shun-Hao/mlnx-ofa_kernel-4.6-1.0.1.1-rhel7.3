@@ -1710,7 +1710,7 @@ int mlx4_en_start_port(struct net_device *dev)
 		err = mlx4_en_set_cq_moder(priv, cq);
 		if (err) {
 			en_err(priv, "Failed setting cq moderation parameters\n");
-			mlx4_en_deactivate_cq(priv, cq);
+			mlx4_en_deactivate_cq(priv, &priv->rx_cq[i]);
 			mlx4_en_free_affinity_hint(priv, i);
 			goto cq_err;
 		}
@@ -1757,7 +1757,7 @@ int mlx4_en_start_port(struct net_device *dev)
 			err = mlx4_en_set_cq_moder(priv, cq);
 			if (err) {
 				en_err(priv, "Failed setting cq moderation parameters\n");
-				mlx4_en_deactivate_cq(priv, cq);
+				mlx4_en_deactivate_cq(priv, &cq);
 				goto tx_err;
 			}
 			en_dbg(DRV, priv,
@@ -1771,7 +1771,7 @@ int mlx4_en_start_port(struct net_device *dev)
 						       i / num_tx_rings_p_up);
 			if (err) {
 				en_err(priv, "Failed allocating Tx ring\n");
-				mlx4_en_deactivate_cq(priv, cq);
+				mlx4_en_deactivate_cq(priv, &cq);
 				goto tx_err;
 			}
 			if (t != TX_XDP) {
@@ -1883,7 +1883,7 @@ tx_err:
 	while (t >= 0) {
 		while (i--) {
 			mlx4_en_deactivate_tx_ring(priv, priv->tx_ring[t][i]);
-			mlx4_en_deactivate_cq(priv, priv->tx_cq[t][i]);
+			mlx4_en_deactivate_cq(priv, &priv->tx_cq[t][i]);
 		}
 		if (!t--)
 			break;
@@ -1896,7 +1896,7 @@ mac_err:
 	mlx4_en_put_qp(priv);
 cq_err:
 	while (rx_index--) {
-		mlx4_en_deactivate_cq(priv, priv->rx_cq[rx_index]);
+		mlx4_en_deactivate_cq(priv, &priv->rx_cq[rx_index]);
 		mlx4_en_free_affinity_hint(priv, rx_index);
 	}
 	for (i = 0; i < priv->rx_ring_num; i++)
@@ -1982,7 +1982,7 @@ void mlx4_en_stop_port(struct net_device *dev, int detach)
 	for (t = 0; t < MLX4_EN_NUM_TX_TYPES; t++) {
 		for (i = 0; i < priv->tx_ring_num[t]; i++) {
 			mlx4_en_deactivate_tx_ring(priv, priv->tx_ring[t][i]);
-			mlx4_en_deactivate_cq(priv, priv->tx_cq[t][i]);
+			mlx4_en_deactivate_cq(priv, &priv->tx_cq[t][i]);
 		}
 	}
 	msleep(10);
@@ -2008,7 +2008,7 @@ void mlx4_en_stop_port(struct net_device *dev, int detach)
 
 		napi_synchronize(&cq->napi);
 		mlx4_en_deactivate_rx_ring(priv, priv->rx_ring[i]);
-		mlx4_en_deactivate_cq(priv, cq);
+		mlx4_en_deactivate_cq(priv, &priv->rx_cq[i]);
 
 		mlx4_en_free_affinity_hint(priv, i);
 	}

@@ -224,28 +224,32 @@ void mlx4_en_destroy_cq(struct mlx4_en_priv *priv, struct mlx4_en_cq **pcq)
 	struct mlx4_en_cq *cq = *pcq;
 
 	mlx4_free_hwq_res(mdev->dev, &cq->wqres, cq->buf_size);
-	if (mlx4_is_eq_vector_valid(mdev->dev, priv->port, cq->vector) &&
-	    cq->type == RX)
-		mlx4_release_eq(priv->mdev->dev,
-				MLX4_EQ_ID_TO_UUID(MLX4_EQ_ID_EN,
-						   priv->port,
-						   pcq - priv->rx_cq),
-				cq->vector);
-	cq->vector = 0;
 	cq->buf_size = 0;
 	cq->buf = NULL;
 	kfree(cq);
 	*pcq = NULL;
 }
 
-void mlx4_en_deactivate_cq(struct mlx4_en_priv *priv, struct mlx4_en_cq *cq)
+void mlx4_en_deactivate_cq(struct mlx4_en_priv *priv, struct mlx4_en_cq **pcq)
 {
+	struct mlx4_en_cq *cq = *pcq;
+
 	if (cq->type != TX_XDP) {
 		napi_disable(&cq->napi);
 		netif_napi_del(&cq->napi);
 	}
 
 	mlx4_cq_free(priv->mdev->dev, &cq->mcq);
+
+	if (mlx4_is_eq_vector_valid(priv->mdev->dev, priv->port, cq->vector) &&
+	    cq->type == RX)
+		mlx4_release_eq(priv->mdev->dev,
+				MLX4_EQ_ID_TO_UUID(MLX4_EQ_ID_EN,
+						   priv->port,
+						   pcq - priv->rx_cq),
+				cq->vector);
+
+	cq->vector = priv->mdev->dev->caps.num_comp_vectors;
 }
 
 /* Set rx cq moderation parameters */
