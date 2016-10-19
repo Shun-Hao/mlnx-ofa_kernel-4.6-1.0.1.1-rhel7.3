@@ -111,6 +111,7 @@ static const char mlx4_en_priv_flags[][ETH_GSTRING_LEN] = {
 	"mlx4_flow_steering_tcp",
 	"mlx4_flow_steering_udp",
 	"disable_mc_loopback",
+	"rx-copy",
 };
 
 static const char main_strings[][ETH_GSTRING_LEN] = {
@@ -2082,6 +2083,8 @@ static int mlx4_en_set_priv_flags(struct net_device *dev, u32 flags)
 	bool bf_enabled_old = !!(priv->pflags & MLX4_EN_PRIV_FLAGS_BLUEFLAME);
 	bool phv_enabled_new = !!(flags & MLX4_EN_PRIV_FLAGS_PHV);
 	bool phv_enabled_old = !!(priv->pflags & MLX4_EN_PRIV_FLAGS_PHV);
+	bool is_enabled_new = !!(flags & MLX4_EN_PRIV_FLAGS_INLINE_SCATTER);
+	bool is_enabled_old = !!(priv->pflags & MLX4_EN_PRIV_FLAGS_INLINE_SCATTER);
 #ifdef CONFIG_MLX4_EN_DCB
 	bool qcn_disable_new = !!(flags & MLX4_EN_PRIV_FLAGS_DISABLE_32_14_4_E);
 	bool qcn_disable_old = !!(priv->pflags & MLX4_EN_PRIV_FLAGS_DISABLE_32_14_4_E);
@@ -2140,6 +2143,23 @@ static int mlx4_en_set_priv_flags(struct net_device *dev, u32 flags)
 		en_info(priv, "Multicast loopback disable is %s\n",
 			ld_new ? "ON" : "OFF");
 	}
+
+	if (is_enabled_new != is_enabled_old) {
+		int val = MAX_INLINE_SCATTER * is_enabled_new;
+
+		ret = mlx4_en_set_inline_scatter_thold(dev, val);
+		if (ret)
+			return ret;
+
+		if (is_enabled_new)
+			priv->pflags |= MLX4_EN_PRIV_FLAGS_INLINE_SCATTER;
+		else
+			priv->pflags &= ~MLX4_EN_PRIV_FLAGS_INLINE_SCATTER;
+
+		en_info(priv, "Inline Scatter %s\n",
+			is_enabled_new ? "Enabled" : "Disabled");
+	}
+
 	if (bf_enabled_new != bf_enabled_old) {
 		int t;
 
