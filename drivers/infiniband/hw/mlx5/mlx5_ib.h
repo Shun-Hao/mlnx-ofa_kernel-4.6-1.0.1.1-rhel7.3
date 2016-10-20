@@ -119,6 +119,10 @@ enum {
 
 struct mlx5_ib_peer_id;
 
+enum {
+	MLX5_IB_MAX_CTX_DYNAMIC_UARS = 256,
+};
+
 struct mlx5_ib_ucontext {
 	struct ib_ucontext	ibucontext;
 	struct list_head	db_page_list;
@@ -127,6 +131,7 @@ struct mlx5_ib_ucontext {
 	 */
 	struct mutex		db_page_mutex;
 	struct mlx5_bfreg_info	bfregi;
+	u32                     dynamic_wc_uar_index[MLX5_IB_MAX_CTX_DYNAMIC_UARS];
 	u8			cqe_version;
 	/* Transport Domain number */
 	u32			tdn;

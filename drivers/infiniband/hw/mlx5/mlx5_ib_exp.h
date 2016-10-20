@@ -170,6 +170,7 @@ enum mlx5_ib_exp_mmap_cmd {
 	MLX5_IB_EXP_MMAP_CORE_CLOCK = 0xFB,
 	MLX5_IB_EXP_MMAP_GET_CONTIGUOUS_PAGES_CPU_NUMA  = 0xFC,
 	MLX5_IB_EXP_MMAP_GET_CONTIGUOUS_PAGES_DEV_NUMA  = 0xFD,
+	MLX5_IB_EXP_ALLOC_N_MMAP_WC                     = 0xFE,
 };
 
 int get_pg_order(unsigned long offset);
@@ -223,5 +224,15 @@ void mlx5_ib_exp_set_rq_attr(struct mlx5_ib_create_wq_data *data,
 int mlx5_ib_exp_get_cmd_data(struct mlx5_ib_dev *dev,
 			     struct ib_udata *udata,
 			     struct mlx5_ib_create_wq_data *data);
+struct mlx5_ib_ucontext;
+struct mlx5_ib_vma_private_data;
+
+int alloc_and_map_wc(struct mlx5_ib_dev *dev,
+		     struct mlx5_ib_ucontext *context, u32 indx,
+		     struct vm_area_struct *vma);
+
+int mlx5_ib_set_vma_data(struct vm_area_struct *vma,
+			 struct mlx5_ib_ucontext *ctx,
+			 struct mlx5_ib_vma_private_data *vma_prv);
 
 #endif

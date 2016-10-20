@@ -828,15 +828,47 @@ static int adjust_bfregn(struct mlx5_ib_dev *dev,
 				bfregn % MLX5_NON_FP_BFREGS_PER_UAR;
 }
 
+static int create_uar_idx(struct mlx5_ib_dev *dev,
+			  struct ib_qp_init_attr *attr,
+			  struct mlx5_exp_ib_create_qp *ucmd,
+			  struct mlx5_ib_ucontext *context,
+			  int *bfregn,
+			  int *uar_index)
+{
+	/* In CROSS_CHANNEL CQ and QP must use the same UAR */
+	if (attr->create_flags & IB_QP_CREATE_CROSS_CHANNEL)
+		return -EINVAL;
+
+	if (ucmd->exp.wc_uar_index == MLX5_EXP_CREATE_QP_DB_ONLY_BFREG) {
+		/* Assign LATENCY_CLASS_LOW (DB only BFREG) to this QP */
+		*bfregn = alloc_bfreg(dev, &context->bfregi);
+		if (*bfregn < 0)
+			 return *bfregn;
+		*uar_index = bfregn_to_uar_index(dev, &context->bfregi, *bfregn, false);
+	} else if (ucmd->exp.wc_uar_index >= MLX5_IB_MAX_CTX_DYNAMIC_UARS ||
+		   context->dynamic_wc_uar_index[ucmd->exp.wc_uar_index] ==
+		   MLX5_IB_INVALID_UAR_INDEX) {
+		mlx5_ib_warn(dev, "dynamic bfreg allocation failed\n");
+		return -EINVAL;
+	} else {
+		*uar_index = context->dynamic_wc_uar_index[ucmd->exp.wc_uar_index];
+		*bfregn = MLX5_IB_INVALID_BFREG;
+	}
+
+	return 0;
+}
+
 static int create_user_qp(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 			  struct mlx5_ib_qp *qp, struct ib_udata *udata,
 			  struct ib_qp_init_attr *attr,
 			  u32 **in,
-			  struct mlx5_ib_create_qp_resp *resp, int *inlen,
-			  struct mlx5_ib_qp_base *base)
+			  int *inlen,
+			  struct mlx5_ib_qp_base *base,
+			  struct mlx5_exp_ib_create_qp *ucmd,
+			  u32  *bfreg_index)
 {
 	struct mlx5_ib_ucontext *context;
-	struct mlx5_ib_create_qp ucmd;
+	struct mlx5_exp_ib_create_qp_resp resp = {};
 	struct mlx5_ib_ubuffer *ubuffer = &base->ubuffer;
 	int page_shift = 0;
 	int uar_index = 0;
@@ -849,21 +881,26 @@ static int create_user_qp(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 	int err;
 
 	context = to_mucontext(pd->uobject->context);
-	if (ucmd.flags & MLX5_QP_FLAG_BFREG_INDEX) {
+	resp.size_of_prefix = offsetof(struct mlx5_exp_ib_create_qp_resp,
+				       prefix_reserved);
+	if (ucmd->flags & MLX5_QP_FLAG_BFREG_INDEX) {
 		uar_index = bfregn_to_uar_index(dev, &context->bfregi,
-						ucmd.bfreg_index, true);
+						ucmd->bfreg_index, true);
 		if (uar_index < 0)
 			return uar_index;
 
 		bfregn = MLX5_IB_INVALID_BFREG;
-	} else if (qp->flags & MLX5_IB_QP_CROSS_CHANNEL) {
+	} else if (ucmd->exp.comp_mask & MLX5_EXP_CREATE_QP_MASK_WC_UAR_IDX) {
 		/*
 		 * TBD: should come from the verbs when we have the API
 		 */
 		/* In CROSS_CHANNEL CQ and QP must use the same UAR */
+		err = create_uar_idx(dev, attr, ucmd, context, &bfregn, &uar_index);
+		if (err)
+			return err;
+	} else if (qp->flags & MLX5_IB_QP_CROSS_CHANNEL) {
 		bfregn = MLX5_CROSS_CHANNEL_BFREG;
-	}
-	else {
+	} else {
 		bfregn = alloc_bfreg(dev, &context->bfregi);
 		if (bfregn < 0)
 			return bfregn;
@@ -878,12 +915,12 @@ static int create_user_qp(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 	qp->sq.wqe_shift = ilog2(MLX5_SEND_WQE_BB);
 	qp->sq.offset = qp->rq.wqe_cnt << qp->rq.wqe_shift;
 
-	err = set_user_buf_size(dev, qp, &ucmd, base, attr);
+	err = set_user_buf_size(dev, qp, (struct mlx5_ib_create_qp *)ucmd, base, attr);
 	if (err)
 		goto err_bfreg;
 
-	if (ucmd.buf_addr && ubuffer->buf_size) {
-		ubuffer->buf_addr = ucmd.buf_addr;
+	if (ucmd->buf_addr && ubuffer->buf_size) {
+		ubuffer->buf_addr = ucmd->buf_addr;
 		err = mlx5_ib_umem_get(dev, pd, ubuffer->buf_addr,
 				       ubuffer->buf_size,
 				       &ubuffer->umem, &npages, &page_shift,
@@ -914,18 +951,23 @@ static int create_user_qp(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 
 	MLX5_SET(qpc, qpc, uar_page, uar_index);
 	if (bfregn != MLX5_IB_INVALID_BFREG)
-		resp->bfreg_index = adjust_bfregn(dev, &context->bfregi, bfregn);
+		resp.bfreg_index = adjust_bfregn(dev, &context->bfregi, bfregn);
 	else
-		resp->bfreg_index = MLX5_IB_INVALID_BFREG;
+		resp.bfreg_index = MLX5_IB_INVALID_BFREG;
+	*bfreg_index = resp.bfreg_index;
 	qp->bfregn = bfregn;
 
-	err = mlx5_ib_db_map_user(context, ucmd.db_addr, &qp->db);
+	err = mlx5_ib_db_map_user(context, ucmd->db_addr, &qp->db);
 	if (err) {
 		mlx5_ib_dbg(dev, "map failed\n");
 		goto err_free;
 	}
 
-	err = ib_copy_to_udata(udata, resp, min(udata->outlen, sizeof(*resp)));
+	if (udata->src == IB_UDATA_EXP_CMD) {
+		err = ib_copy_to_udata(udata, &resp, min(udata->outlen, sizeof(resp)));
+	} else {
+		err = ib_copy_to_udata(udata, &resp, min(udata->outlen, sizeof(struct mlx5_ib_create_qp_resp)));
+	}
 	if (err) {
 		mlx5_ib_dbg(dev, "copy failed\n");
 		goto err_unmap;
@@ -2067,7 +2109,7 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 				return -EINVAL;
 			}
 			err = create_user_qp(dev, pd, qp, udata, init_attr, &in,
-					     &resp, &inlen, base);
+					     &inlen, base, &ucmd, &resp.bfreg_index);
 			if (err)
 				mlx5_ib_dbg(dev, "err %d\n", err);
 		} else {

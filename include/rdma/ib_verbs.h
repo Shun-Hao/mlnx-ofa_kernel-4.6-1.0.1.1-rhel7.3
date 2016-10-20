@@ -2740,9 +2740,13 @@ void *ib_get_client_data(struct ib_device *device, struct ib_client *client);
 void  ib_set_client_data(struct ib_device *device, struct ib_client *client,
 			 void *data);
 
+struct rdma_umap_priv {
+	struct vm_area_struct *vma;
+	struct list_head list;
+};
 #if IS_ENABLED(CONFIG_INFINIBAND_USER_ACCESS)
 int rdma_user_mmap_io(struct ib_ucontext *ucontext, struct vm_area_struct *vma,
-		      unsigned long pfn, unsigned long size, pgprot_t prot);
+		      unsigned long pfn, unsigned long size, pgprot_t prot, struct rdma_umap_priv *priv);
 int rdma_user_mmap_page(struct ib_ucontext *ucontext,
 			struct vm_area_struct *vma, struct page *page,
 			unsigned long size);
@@ -2750,7 +2754,7 @@ int rdma_user_mmap_page(struct ib_ucontext *ucontext,
 static inline int rdma_user_mmap_io(struct ib_ucontext *ucontext,
 				    struct vm_area_struct *vma,
 				    unsigned long pfn, unsigned long size,
-				    pgprot_t prot)
+				    pgprot_t prot, struct rdma_umap_priv *priv)
 {
 	return -EINVAL;
 }

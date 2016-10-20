@@ -880,10 +880,6 @@ out:
  * RDMA drivers supporting disassociation must have their user space designed
  * to cope in some way with their IO pages going to the zero page.
  */
-struct rdma_umap_priv {
-	struct vm_area_struct *vma;
-	struct list_head list;
-};
 
 static const struct vm_operations_struct rdma_umap_ops;
 
@@ -995,9 +991,11 @@ static struct rdma_umap_priv *rdma_user_mmap_pre(struct ib_ucontext *ucontext,
  * to userspace.
  */
 int rdma_user_mmap_io(struct ib_ucontext *ucontext, struct vm_area_struct *vma,
-		      unsigned long pfn, unsigned long size, pgprot_t prot)
+		      unsigned long pfn, unsigned long size, pgprot_t prot,  struct rdma_umap_priv *priv)
 {
-	struct rdma_umap_priv *priv = rdma_user_mmap_pre(ucontext, vma, size);
+
+	if (!priv)
+		priv = rdma_user_mmap_pre(ucontext, vma, size);
 
 	if (IS_ERR(priv))
 		return PTR_ERR(priv);

@@ -459,6 +459,11 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_MAX_DCT;
 	}
 
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_MAX_DEVICE_CTX) {
+		resp->max_device_ctx = exp_attr->max_device_ctx;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_MAX_DEVICE_CTX;
+	}
+
 	/* Handle experimental attr fields */
 	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_CAP_FLAGS2 ||
 	    exp_attr->base.device_cap_flags & IB_EXP_DEVICE_MASK) {

@@ -1501,6 +1501,10 @@ static int allocate_uars(struct mlx5_ib_dev *dev, struct mlx5_ib_ucontext *conte
 	for (i = bfregi->num_static_sys_pages; i < bfregi->num_sys_pages; i++)
 		bfregi->sys_pages[i] = MLX5_IB_INVALID_UAR_INDEX;
 
+
+	for (i = 0; i < MLX5_IB_MAX_CTX_DYNAMIC_UARS; i++)
+		context->dynamic_wc_uar_index[i] = MLX5_IB_INVALID_UAR_INDEX;
+
 	return 0;
 
 error:
@@ -1522,6 +1526,11 @@ static void deallocate_uars(struct mlx5_ib_dev *dev,
 		if (i < bfregi->num_static_sys_pages ||
 		    bfregi->sys_pages[i] != MLX5_IB_INVALID_UAR_INDEX)
 			mlx5_cmd_free_uar(dev->mdev, bfregi->sys_pages[i]);
+
+	for (i = 0; i < MLX5_IB_MAX_CTX_DYNAMIC_UARS; i++) {
+		if (context->dynamic_wc_uar_index[i] != MLX5_IB_INVALID_UAR_INDEX)
+			mlx5_cmd_free_uar(dev->mdev, context->dynamic_wc_uar_index[i]);
+	}
 }
 
 int mlx5_ib_enable_lb(struct mlx5_ib_dev *dev, bool td, bool qp)
@@ -2065,7 +2074,7 @@ static int uar_mmap(struct mlx5_ib_dev *dev, enum mlx5_ib_mmap_cmd cmd,
 	mlx5_ib_dbg(dev, "uar idx 0x%lx, pfn %pa\n", idx, &pfn);
 
 	err = rdma_user_mmap_io(&context->ibucontext, vma, pfn, PAGE_SIZE,
-				prot);
+				prot, NULL);
 	if (err) {
 		mlx5_ib_err(dev,
 			    "rdma_user_mmap_io failed with error=%d, mmap_cmd=%s\n",
@@ -2107,7 +2116,7 @@ static int dm_mmap(struct ib_ucontext *context, struct vm_area_struct *vma)
 	      PAGE_SHIFT) +
 	      page_idx;
 	return rdma_user_mmap_io(context, vma, pfn, map_size,
-				 pgprot_writecombine(vma->vm_page_prot));
+				 pgprot_writecombine(vma->vm_page_prot),NULL);
 }
 
 static int mlx5_ib_mmap(struct ib_ucontext *ibcontext, struct vm_area_struct *vma)
@@ -2129,6 +2138,11 @@ static int mlx5_ib_mmap(struct ib_ucontext *ibcontext, struct vm_area_struct *vm
 	case MLX5_IB_MMAP_REGULAR_PAGE:
 	case MLX5_IB_MMAP_ALLOC_WC:
 		return uar_mmap(dev, command, vma, context);
+
+	case MLX5_IB_EXP_ALLOC_N_MMAP_WC:
+		return alloc_and_map_wc(dev, context, get_index(vma->vm_pgoff),
+					vma);
+		break;
 
 	case MLX5_IB_MMAP_CORE_CLOCK:
 		if (vma->vm_end - vma->vm_start != PAGE_SIZE)

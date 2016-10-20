@@ -30,6 +30,9 @@
  * SOFTWARE.
  */
 
+#if defined(CONFIG_X86)
+#include <asm/pat.h>
+#endif
 #include <linux/highmem.h>
 #include <rdma/ib_cache.h>
 #include "mlx5_ib.h"
@@ -193,6 +196,9 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 	props->device_cap_flags2 = 0;
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_CAP_FLAGS2;
 
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_MAX_CTX_RES_DOMAIN;
+	props->max_ctx_res_domain = MLX5_IB_MAX_CTX_DYNAMIC_UARS *
+		MLX5_NON_FP_BFREGS_PER_UAR;
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_ODP;
 	props->device_cap_flags2 |= IB_EXP_DEVICE_ODP;
@@ -1137,4 +1143,88 @@ void mlx5_ib_cleanup_dc_improvements(struct mlx5_ib_dev *dev)
 	cleanup_sysfs(dev);
 
 	mlx5_ib_disable_dc_tracer(dev);
+}
+
+static phys_addr_t idx2pfn(struct mlx5_ib_dev *dev, int idx)
+{
+	int fw_uars_per_page = MLX5_CAP_GEN(dev->mdev, uar_4k) ? MLX5_UARS_IN_PAGE : 1;
+
+	return (pci_resource_start(dev->mdev->pdev, 0) >> PAGE_SHIFT) + idx /
+	       fw_uars_per_page;
+}
+
+int alloc_and_map_wc(struct mlx5_ib_dev *dev,
+		     struct mlx5_ib_ucontext *context, u32 indx,
+		     struct vm_area_struct *vma)
+{
+	int uars_per_page = get_uars_per_sys_page(dev,
+					          context->bfregi.lib_uar_4k);
+	u32 sys_page_idx = indx / uars_per_page;
+	phys_addr_t pfn;
+	u32 uar_index;
+	size_t map_size = vma->vm_end - vma->vm_start;
+	struct rdma_umap_priv *vma_prv;
+	int err;
+
+	if (indx % uars_per_page) {
+		mlx5_ib_warn(dev, "invalid uar index %d, should be system page aligned and there are %d uars per page.\n",
+			     indx, uars_per_page);
+		return -EINVAL;
+	}
+
+#if defined(CONFIG_X86)
+	if (!pat_enabled()) {
+		mlx5_ib_dbg(dev, "write combine not available\n");
+		return -EPERM;
+	}
+#elif !(defined(CONFIG_PPC) || ((defined(CONFIG_ARM) || defined(CONFIG_ARM64)) && defined(CONFIG_MMU)))
+	return -EPERM;
+#endif
+
+	if (vma->vm_end - vma->vm_start != PAGE_SIZE) {
+		mlx5_ib_warn(dev, "wrong size, expected PAGE_SIZE(%ld) got %ld\n",
+			     PAGE_SIZE, vma->vm_end - vma->vm_start);
+		return -EINVAL;
+	}
+
+	if (indx >= MLX5_IB_MAX_CTX_DYNAMIC_UARS) {
+		mlx5_ib_warn(dev, "wrong offset, idx:%d max:%d\n",
+			     indx, MLX5_IB_MAX_CTX_DYNAMIC_UARS);
+		return -EINVAL;
+	}
+
+	/* Fail if uar already allocated */
+	if (context->dynamic_wc_uar_index[sys_page_idx] != MLX5_IB_INVALID_UAR_INDEX) {
+		mlx5_ib_warn(dev, "wrong offset, idx %d is busy\n", indx);
+		return -EINVAL;
+	}
+
+	err = mlx5_cmd_alloc_uar(dev->mdev, &uar_index);
+	if (err) {
+		mlx5_ib_warn(dev, "UAR alloc failed\n");
+		return err;
+	}
+
+	vma_prv = kzalloc(sizeof(struct rdma_umap_priv), GFP_KERNEL);
+	if (!vma_prv) {
+		mlx5_cmd_free_uar(dev->mdev, uar_index);
+		return -ENOMEM;
+	}
+/*
+	vma->vm_page_prot = pgprot_writecombine(vma->vm_page_prot);
+	pfn = idx2pfn(dev, uar_index);
+
+	if (io_remap_pfn_range(vma, vma->vm_start, pfn,
+			       PAGE_SIZE, vma->vm_page_prot)) {
+		mlx5_ib_err(dev, "io remap failed\n");
+		mlx5_cmd_free_uar(dev->mdev, uar_index);
+		kfree(vma_prv);
+		return -EAGAIN;
+	}
+	context->dynamic_wc_uar_index[sys_page_idx] = uar_index;
+*/
+	rdma_user_mmap_io(&context->ibucontext, vma, pfn, map_size, pgprot_writecombine(vma->vm_page_prot),vma_prv);
+//	mlx5_ib_set_vma_data(vma, context, vma_prv);
+
+	return 0;
 }

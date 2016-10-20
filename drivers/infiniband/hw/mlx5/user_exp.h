@@ -145,14 +145,14 @@ struct mlx5_exp_ib_create_qp {
 	/* To allow casting to mlx5_ib_create_qp the prefix is the same as
 	 * struct mlx5_ib_create_qp prefix
 	 */
-	__u64	buf_addr;
-	__u64	db_addr;
+	__aligned_u64 buf_addr;
+	__aligned_u64 db_addr;
 	__u32	sq_wqe_count;
 	__u32	rq_wqe_count;
 	__u32	rq_wqe_shift;
 	__u32	flags;
 	__u32	uidx;
-	__u32	reserved0;
+	__u32	bfreg_index;
 	__u64	sq_buf_addr;
 
 	/* Some more reserved fields for future growth of mlx5_ib_create_qp */
@@ -165,6 +165,34 @@ struct mlx5_exp_ib_create_qp {
 	 * Add new experimental data only inside the exp struct
 	 */
 	struct mlx5_exp_ib_create_qp_data exp;
+};
+
+enum mlx5_exp_drv_create_qp_uar_idx {
+	MLX5_EXP_CREATE_QP_DB_ONLY_BFREG = -1
+};
+
+
+struct mlx5_exp_ib_create_qp_resp_data {
+	__u32   comp_mask; /* use mlx5_exp_ib_create_qp_resp_mask */
+	__u32   flags; /* use mlx5_exp_create_qp_resp_flags */
+};
+
+struct mlx5_exp_ib_create_qp_resp {
+	__u32   bfreg_index;
+	__u32   rsvd;
+
+	/* Some more reserved fields for future growth of
+	 * mlx5_ib_create_qp_resp
+	 */
+	__u64   prefix_reserved[8];
+
+	/* sizeof prefix aligned with mlx5_ib_create_qp_resp */
+	__u64   size_of_prefix;
+
+	/* Experimental data
+	 * Add new experimental data only inside the exp struct
+	 */
+	struct mlx5_exp_ib_create_qp_resp_data exp;
 };
 
 struct mlx5_ib_create_dct {
