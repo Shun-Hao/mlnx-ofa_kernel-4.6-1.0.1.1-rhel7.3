@@ -70,6 +70,10 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
 	struct ib_uverbs_exp_create_qp *cmd_exp;
 	struct ib_uverbs_exp_create_qp_resp resp_exp;
 	int                             ret;
+	struct ib_rx_hash_conf	rx_hash_conf;
+	struct ib_rwq_ind_table *ind_tbl = NULL;
+	int rx_qp = 0;
+	int i;
 
 	cmd_exp = kzalloc(sizeof(*cmd_exp), GFP_KERNEL);
 	attr = kzalloc(sizeof(*attr), GFP_KERNEL);
@@ -82,6 +86,13 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
 	if (ret)
 		goto err_cmd_attr;
 
+	for (i = 0; i < sizeof(cmd_exp->reserved3); i++) {
+		if (cmd_exp->reserved3[i] != 0) {
+			ret = -EINVAL;
+			goto err_cmd_attr;
+		}
+	}
+
 	obj  = (struct ib_uqp_object *)uobj_alloc(UVERBS_OBJECT_QP,
 						  file, &ib_dev);
 	if (IS_ERR(obj))
@@ -89,6 +100,7 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
 	obj->uxrcd = NULL;
 	obj->uevent.uobject.user_handle = cmd_exp->user_handle;
 
+	rx_qp = cmd_exp->rx_hash_conf.rx_hash_function ? 1 : 0;
 
 	if (cmd_exp->qp_type == IB_QPT_XRC_TGT) {
 		xrcd_uobj = uobj_get_read(UVERBS_OBJECT_XRCD, cmd_exp->pd_handle,
@@ -132,13 +144,13 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
 			}
 		}
 
-		scq = uobj_get_obj_read(cq, UVERBS_OBJECT_CQ,
-					cmd_exp->send_cq_handle,
-					file);
+		if (!rx_qp)
+			scq = uobj_get_obj_read(cq, UVERBS_OBJECT_CQ, cmd_exp->send_cq_handle,
+						file);
 		rcq = rcq ?: scq;
 		pd  = uobj_get_obj_read(pd, UVERBS_OBJECT_PD,
 					cmd_exp->pd_handle, file);
-		if (!pd || !scq) {
+		if (!pd || (!scq && !rx_qp)) {
 			ret = -EINVAL;
 			goto err_put;
 		}
@@ -161,6 +173,7 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
 	attr->cap.max_send_sge    = cmd_exp->max_send_sge;
 	attr->cap.max_recv_sge    = cmd_exp->max_recv_sge;
 	attr->cap.max_inline_data = cmd_exp->max_inline_data;
+	attr->rx_hash_conf = NULL;
 
 	if (cmd_exp->comp_mask & IB_UVERBS_EXP_CREATE_QP_CAP_FLAGS) {
 		if (cmd_exp->qp_cap_flags & ~IBV_UVERBS_EXP_CREATE_QP_FLAGS) {
@@ -212,6 +225,25 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
 	if (cmd_exp->comp_mask & IB_UVERBS_EXP_CREATE_QP_INL_RECV)
 		attr->max_inl_recv = cmd_exp->max_inl_recv;
 
+	/* No comp mask bit is needed, the value of rx_hash_function is used */
+	if (cmd_exp->rx_hash_conf.rx_hash_function) {
+		ind_tbl = uobj_get_obj_read(rwq_ind_table,
+					    UVERBS_OBJECT_RWQ_IND_TBL,
+					    cmd_exp->rx_hash_conf.rwq_ind_tbl_handle,
+					    file);
+		if (!ind_tbl) {
+			ret = -EINVAL;
+			goto err_put;
+		}
+		rx_hash_conf.rwq_ind_tbl = ind_tbl;
+		rx_hash_conf.rx_hash_fields_mask = cmd_exp->rx_hash_conf.rx_hash_fields_mask;
+		rx_hash_conf.rx_hash_function = cmd_exp->rx_hash_conf.rx_hash_function;
+		rx_hash_conf.rx_hash_key = cmd_exp->rx_hash_conf.rx_hash_key;
+		rx_hash_conf.rx_key_len = cmd_exp->rx_hash_conf.rx_key_len;
+		attr->rx_hash_conf = &rx_hash_conf;
+	}
+
+	attr->port_num = cmd_exp->port_num;
 	obj->uevent.events_reported     = 0;
 	INIT_LIST_HEAD(&obj->uevent.event_list);
 	INIT_LIST_HEAD(&obj->mcast_list);
@@ -237,16 +269,20 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
 		qp->send_cq	  = attr->send_cq;
 		qp->recv_cq	  = attr->recv_cq;
 		qp->srq		  = attr->srq;
+		qp->rwq_ind_tbl   = ind_tbl;
 		qp->event_handler = attr->event_handler;
 		qp->qp_context	  = attr->qp_context;
 		qp->qp_type	  = attr->qp_type;
 		atomic_set(&qp->usecnt, 0);
 		atomic_inc(&pd->usecnt);
-		atomic_inc(&attr->send_cq->usecnt);
+		if (!rx_qp)
+			atomic_inc(&attr->send_cq->usecnt);
 		if (attr->recv_cq)
 			atomic_inc(&attr->recv_cq->usecnt);
 		if (attr->srq)
 			atomic_inc(&attr->srq->usecnt);
+		if (ind_tbl)
+			atomic_inc(&ind_tbl->usecnt);
 	}
 	qp->uobject = &obj->uevent.uobject;
 
@@ -285,6 +321,8 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
 		uobj_put_obj_read(srq);
 	if (parentqp)
 		uobj_put_obj_read(parentqp);
+	if (ind_tbl)
+		uobj_put_obj_read(ind_tbl);
 
 	kfree(attr);
 	kfree(cmd_exp);
@@ -307,6 +345,8 @@ err_put:
 		uobj_put_obj_read(srq);
 	if (parentqp)
 		uobj_put_obj_read(parentqp);
+	if (ind_tbl)
+		uobj_put_obj_read(ind_tbl);
 
 	uobj_alloc_abort(&obj->uevent.uobject);
 

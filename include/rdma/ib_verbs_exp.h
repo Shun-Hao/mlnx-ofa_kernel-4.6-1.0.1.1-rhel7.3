@@ -39,6 +39,41 @@ struct ib_qpg_init_attrib {
 	u32 rss_child_count;
 };
 
+/*
+ * RX Hash Function flags.
+*/
+enum ib_rx_hash_function_flags {
+	IB_EXP_RX_HASH_FUNC_TOEPLITZ	= 1 << 0,
+	IB_EXP_RX_HASH_FUNC_XOR		= 1 << 1
+};
+
+/*
+ * RX Hash flags, these flags allows to set which incoming packet field should
+ * participates in RX Hash. Each flag represent certain packet's field,
+ * when the flag is set the field that is represented by the flag will
+ * participate in RX Hash calculation.
+ * Notice: *IPV4 and *IPV6 flags can't be enabled together on the same QP
+ * and *TCP and *UDP flags can't be enabled together on the same QP.
+*/
+enum ib_rx_hash_fields {
+	IB_RX_HASH_SRC_IPV4		= 1 << 0,
+	IB_RX_HASH_DST_IPV4		= 1 << 1,
+	IB_RX_HASH_SRC_IPV6		= 1 << 2,
+	IB_RX_HASH_DST_IPV6		= 1 << 3,
+	IB_RX_HASH_SRC_PORT_TCP	= 1 << 4,
+	IB_RX_HASH_DST_PORT_TCP	= 1 << 5,
+	IB_RX_HASH_SRC_PORT_UDP	= 1 << 6,
+	IB_RX_HASH_DST_PORT_UDP	= 1 << 7
+};
+
+struct ib_rx_hash_conf {
+	enum ib_rx_hash_function_flags rx_hash_function;
+	u8 rx_key_len; /* valid only for Toeplitz */
+	u8 *rx_hash_key;
+	uint64_t rx_hash_fields_mask; /* enum ib_rx_hash_fields */
+	struct ib_rwq_ind_table *rwq_ind_tbl;
+};
+
 struct ib_exp_qp_init_attr {
 	void                  (*event_handler)(struct ib_event *, void *);
 	void		       *qp_context;
@@ -58,6 +93,7 @@ struct ib_exp_qp_init_attr {
 		struct ib_qpg_init_attrib parent_attrib;
 	};
 	u32			max_inl_recv;
+	struct ib_rx_hash_conf	*rx_hash_conf;
 };
 
 struct ib_exp_masked_atomic_caps {

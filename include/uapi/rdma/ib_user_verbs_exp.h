@@ -128,6 +128,16 @@ struct ib_uverbs_exp_masked_atomic_caps {
 	__u64  masked_log_atomic_arg_sizes_network_endianness;
 };
 
+struct ib_uverbs_exp_hash_conf {
+	/* enum ib_rx_hash_fields */
+	__u64 rx_hash_fields_mask;
+	__u32 rwq_ind_tbl_handle;
+	__u8 rx_hash_function; /* enum ib_rx_hash_function_flags */
+	__u8 rx_key_len; /* valid only for Toeplitz */
+	__u8 rx_hash_key[128]; /* valid only for Toeplitz */
+	__u8 reserved[2];
+};
+
 struct ib_uverbs_exp_create_qp {
 	__u64 comp_mask;
 	__u64 user_handle;
@@ -148,6 +158,10 @@ struct ib_uverbs_exp_create_qp {
 	__u32 max_inl_recv;
 	__u32 reserved1;
 	struct ib_uverbs_qpg qpg;
+	__u64 reserved2;
+	struct ib_uverbs_exp_hash_conf rx_hash_conf;
+	uint8_t     port_num;
+	__u8  reserved3[7];
 	__u64 driver_data[0];
 };
 
