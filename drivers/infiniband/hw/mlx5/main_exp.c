@@ -225,6 +225,27 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 	props->umr_caps.max_umr_stride_dimenson = 1;
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_UMR;
 
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_RX_HASH;
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_MAX_WQ_TYPE_RQ;
+	if (MLX5_CAP_GEN(dev->mdev, port_type) == MLX5_CAP_PORT_TYPE_ETH) {
+		props->rx_hash_caps.max_rwq_indirection_tables = 1 << MLX5_CAP_GEN(dev->mdev, log_max_rqt);
+		props->rx_hash_caps.max_rwq_indirection_table_size = 1 << MLX5_CAP_GEN(dev->mdev, log_max_rqt_size);
+		props->rx_hash_caps.supported_hash_functions = IB_EXP_RX_HASH_FUNC_TOEPLITZ;
+		props->rx_hash_caps.supported_packet_fields = IB_RX_HASH_SRC_IPV4 |
+			IB_RX_HASH_DST_IPV4 |
+			IB_RX_HASH_SRC_IPV6 |
+			IB_RX_HASH_DST_IPV6 |
+			IB_RX_HASH_SRC_PORT_TCP |
+			IB_RX_HASH_DST_PORT_TCP |
+			IB_RX_HASH_SRC_PORT_UDP |
+			IB_RX_HASH_DST_PORT_UDP;
+		props->rx_hash_caps.supported_qps = IB_QPT_RAW_PACKET;
+		props->max_wq_type_rq = 1 << MLX5_CAP_GEN(dev->mdev, log_max_rq);
+	} else {
+		memset(&props->rx_hash_caps, 0, sizeof(props->rx_hash_caps));
+		props->max_wq_type_rq = 0;
+	}
+
 	return 0;
 }
 
