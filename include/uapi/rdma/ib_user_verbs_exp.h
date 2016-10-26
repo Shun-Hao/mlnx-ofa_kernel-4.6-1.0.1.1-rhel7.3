@@ -220,6 +220,15 @@ struct ib_uverbs_exp_odp_caps {
 	} per_transport_caps;
 };
 
+struct ib_uverbs_exp_rx_hash_caps {
+	__u32	max_rwq_indirection_tables;
+	__u32	max_rwq_indirection_table_size;
+	__u64	supported_packet_fields;
+	__u32	supported_qps;
+	__u8	supported_hash_functions;
+	__u8	reserved[3];
+};
+
 struct ib_uverbs_exp_query_device_resp {
 	__u64					comp_mask;
 	struct ib_uverbs_query_device_resp	base;
@@ -237,7 +246,8 @@ struct ib_uverbs_exp_query_device_resp {
 	struct ib_uverbs_exp_odp_caps		odp_caps;
 	__u32					max_dct;
 	__u32					max_ctx_res_domain;
-	__u8					reserved4[28];
+	struct ib_uverbs_exp_rx_hash_caps	rx_hash;
+	__u32					max_wq_type_rq;
 	__u32					max_device_ctx;
 	__u8					reserved5[32];
 	struct ib_uverbs_exp_masked_atomic_caps masked_atomic_caps;

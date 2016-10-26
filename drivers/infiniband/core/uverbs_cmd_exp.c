@@ -522,6 +522,20 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_MAX_DEVICE_CTX;
 	}
 
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_MAX_WQ_TYPE_RQ) {
+		resp->max_wq_type_rq = exp_attr->max_wq_type_rq;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_MAX_WQ_TYPE_RQ;
+	}
+
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_RX_HASH) {
+		resp->rx_hash.max_rwq_indirection_tables = exp_attr->rx_hash_caps.max_rwq_indirection_tables;
+		resp->rx_hash.max_rwq_indirection_table_size = exp_attr->rx_hash_caps.max_rwq_indirection_table_size;
+		resp->rx_hash.supported_packet_fields = exp_attr->rx_hash_caps.supported_packet_fields;
+		resp->rx_hash.supported_qps = exp_attr->rx_hash_caps.supported_qps;
+		resp->rx_hash.supported_hash_functions = exp_attr->rx_hash_caps.supported_hash_functions;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_RX_HASH;
+	}
+
 	ret = ib_copy_to_udata(ucore, resp, min_t(size_t, sizeof(*resp), ucore->outlen));
 out:
 	kfree(exp_attr);
