@@ -42,6 +42,8 @@ IB_UVERBS_DECLARE_EXP_CMD(query_mkey);
 IB_UVERBS_DECLARE_EXP_CMD(create_wq);
 IB_UVERBS_DECLARE_EXP_CMD(modify_wq);
 IB_UVERBS_DECLARE_EXP_CMD(destroy_wq);
+IB_UVERBS_DECLARE_EXP_CMD(create_rwq_ind_table);
+IB_UVERBS_DECLARE_EXP_CMD(destroy_rwq_ind_table);
 
 unsigned long ib_uverbs_exp_get_unmapped_area(struct file *filp,
 					      unsigned long addr,

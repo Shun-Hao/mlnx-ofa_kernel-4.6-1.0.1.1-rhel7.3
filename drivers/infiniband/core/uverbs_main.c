@@ -157,6 +157,8 @@ static int (*uverbs_exp_cmd_table[])(struct ib_uverbs_file *file,
 	[IB_USER_VERBS_EXP_CMD_CREATE_WQ]	= ib_uverbs_exp_create_wq,
 	[IB_USER_VERBS_EXP_CMD_MODIFY_WQ]	= ib_uverbs_exp_modify_wq,
 	[IB_USER_VERBS_EXP_CMD_DESTROY_WQ]	= ib_uverbs_exp_destroy_wq,
+	[IB_USER_VERBS_EXP_CMD_CREATE_RWQ_IND_TBL] = ib_uverbs_exp_create_rwq_ind_table,
+	[IB_USER_VERBS_EXP_CMD_DESTROY_RWQ_IND_TBL] = ib_uverbs_exp_destroy_rwq_ind_table,
 };
 
 static void ib_uverbs_add_one(struct ib_device *device);

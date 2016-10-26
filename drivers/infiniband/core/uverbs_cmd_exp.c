@@ -1168,3 +1168,18 @@ int ib_uverbs_exp_destroy_wq(struct ib_uverbs_file *file,
 {
 	return ib_uverbs_ex_destroy_wq(file, ucore, uhw);
 }
+
+int ib_uverbs_exp_create_rwq_ind_table(struct ib_uverbs_file *file,
+				       struct ib_udata *ucore,
+				       struct ib_udata *uhw)
+{
+	return ib_uverbs_ex_create_rwq_ind_table(file, ucore, uhw);
+}
+
+int ib_uverbs_exp_destroy_rwq_ind_table(struct ib_uverbs_file *file,
+					struct ib_udata *ucore,
+					struct ib_udata *uhw)
+{
+	return ib_uverbs_ex_destroy_rwq_ind_table(file, ucore, uhw);
+}
+
