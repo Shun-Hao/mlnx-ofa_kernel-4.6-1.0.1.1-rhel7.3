@@ -116,6 +116,8 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_ODP			= 1ULL << 10,
 	IB_EXP_DEVICE_ATTR_MAX_DCT		= 1ULL << 11,
 	IB_EXP_DEVICE_ATTR_MAX_CTX_RES_DOMAIN	= 1ULL << 12,
+	IB_EXP_DEVICE_ATTR_RX_HASH		= 1ULL << 13,
+	IB_EXP_DEVICE_ATTR_MAX_WQ_TYPE_RQ	= 1ULL << 14,
 	IB_EXP_DEVICE_ATTR_MAX_DEVICE_CTX	= 1ULL << 15,
 	IB_EXP_DEVICE_ATTR_EXT_MASKED_ATOMICS	= 1ULL << 19,
 };
@@ -131,6 +133,14 @@ enum ib_exp_device_cap_flags2 {
 	IB_EXP_DEVICE_EXT_MASKED_ATOMICS	= 1 << 14,
 	IB_EXP_DEVICE_CROSS_CHANNEL	= 1 << 28, /* Comapt with user exp area */
 	IB_EXP_DEVICE_MASK =	IB_DEVICE_CROSS_CHANNEL,
+};
+
+struct ib_exp_rx_hash_caps {
+	uint32_t max_rwq_indirection_tables;
+	uint32_t max_rwq_indirection_table_size;
+	uint8_t  supported_hash_functions; /* from ib_rx_hash_function_flags */
+	uint64_t supported_packet_fields;	/* from ib_rx_hash_fields */
+	uint32_t supported_qps;  /* from ib_exp_supported_qp_types */
 };
 
 struct ib_exp_device_attr {
@@ -156,6 +166,8 @@ struct ib_exp_device_attr {
 	uint32_t		max_ctx_res_domain;
 	struct ib_exp_masked_atomic_caps masked_atomic_caps;
 	uint32_t		max_device_ctx;
+	struct ib_exp_rx_hash_caps	rx_hash_caps;
+	uint32_t			max_wq_type_rq;
 };
 
 enum {
