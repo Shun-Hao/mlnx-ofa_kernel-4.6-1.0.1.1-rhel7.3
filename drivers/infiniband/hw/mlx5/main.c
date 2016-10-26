@@ -5989,7 +5989,9 @@ static int mlx5_ib_stage_common_roce_init(struct mlx5_ib_dev *dev)
 	dev->ib_dev.uverbs_exp_cmd_mask |=
 		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_WQ) |
 		(1ull << IB_USER_VERBS_EXP_CMD_MODIFY_WQ) |
-		(1ull << IB_USER_VERBS_EXP_CMD_DESTROY_WQ);
+		(1ull << IB_USER_VERBS_EXP_CMD_DESTROY_WQ) |
+		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_RWQ_IND_TBL) |
+		(1ull << IB_USER_VERBS_EXP_CMD_DESTROY_RWQ_IND_TBL);
 
 	return mlx5_add_netdev_notifier(dev, port_num);
 }
