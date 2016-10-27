@@ -1540,6 +1540,9 @@ struct ib_ucontext {
 #endif
 
 	struct ib_rdmacg_object	cg_obj;
+
+	void		*peer_mem_private_data;
+	char		*peer_mem_name;
 };
 
 struct ib_uobject {

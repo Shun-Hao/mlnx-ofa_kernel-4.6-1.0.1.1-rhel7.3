@@ -120,6 +120,8 @@ ssize_t ib_uverbs_get_context(struct ib_uverbs_file *file,
 
 	ucontext->closing = false;
 	ucontext->cleanup_retryable = false;
+	ucontext->peer_mem_private_data = NULL;
+	ucontext->peer_mem_name = NULL;
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	mutex_init(&ucontext->per_mm_list_lock);
