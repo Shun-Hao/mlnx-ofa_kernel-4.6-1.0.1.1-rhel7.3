@@ -15,7 +15,7 @@ ib_mad-y :=			ib_mad_dummy.o
 ib_addr-y :=			ib_addr_dummy.o
 
 ib_core-y :=			packer.o ud_header.o verbs.o cq.o rw.o sysfs.o verbs_exp.o \
-				device.o fmr_pool.o cache.o netlink.o \
+				device.o fmr_pool.o cache.o netlink.o peer_mem.o \
 				roce_gid_mgmt.o mr_pool.o addr.o sa_query.o \
 				multicast.o mad.o smi.o agent.o mad_rmpp.o \
 				nldev.o restrack.o 
