@@ -145,6 +145,15 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 
 int mlx5_ib_exp_max_inl_recv(struct ib_qp_init_attr *init_attr);
 
+void mlx5_ib_exp_get_hash_parameters(struct ib_qp_init_attr *init_attr,
+				     struct ib_rwq_ind_table **rwq_ind_tbl,
+				     u64 *rx_hash_fields_mask,
+				     u32 *ind_tbl_num,
+				     u8 **rx_hash_key,
+				     u8 *rx_hash_function,
+				     u8 *rx_key_len);
+bool mlx5_ib_exp_is_rss(struct ib_qp_init_attr *init_attr);
+
 enum mlx5_ib_exp_mmap_cmd {
 	MLX5_IB_MMAP_GET_CONTIGUOUS_PAGES		= 1,
 	MLX5_IB_EXP_MMAP_CORE_CLOCK = 0xFB,

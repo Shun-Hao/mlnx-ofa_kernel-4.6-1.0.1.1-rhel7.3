@@ -34,6 +34,34 @@
 #include "user_exp.h"
 #include <linux/mlx5/qp.h>
 #include <linux/mlx5/qp_exp.h>
+#include <rdma/ib_verbs_exp.h>
+
+void mlx5_ib_exp_get_hash_parameters(struct ib_qp_init_attr *init_attr,
+				     struct ib_rwq_ind_table **rwq_ind_tbl,
+				     u64 *rx_hash_fields_mask,
+				     u32 *ind_tbl_num,
+				     u8 **rx_hash_key,
+				     u8 *rx_hash_function,
+				     u8 *rx_key_len)
+{
+	struct ib_exp_qp_init_attr *exp_init_attr =
+		(struct ib_exp_qp_init_attr *)init_attr;
+	struct ib_rx_hash_conf *conf = exp_init_attr->rx_hash_conf;
+
+	*rx_hash_fields_mask = conf->rx_hash_fields_mask;
+	*rwq_ind_tbl = conf->rwq_ind_tbl;
+	*ind_tbl_num = conf->rwq_ind_tbl->ind_tbl_num;
+	*rx_hash_key = conf->rx_hash_key;
+	*rx_hash_function = conf->rx_hash_function;
+	*rx_key_len = conf->rx_key_len;
+}
+
+bool mlx5_ib_exp_is_rss(struct ib_qp_init_attr *init_attr)
+{
+	if (((struct ib_exp_qp_init_attr *)init_attr)->rx_hash_conf)
+		return true;
+	return false;
+}
 
 u32 mlx5_ib_atomic_mode_qp(struct mlx5_ib_qp *qp)
 {
