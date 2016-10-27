@@ -130,6 +130,8 @@ enum ib_exp_device_cap_flags2 {
 	IB_EXP_DEVICE_EXT_ATOMICS	= 1 << 4,
 	IB_EXP_DEVICE_UMR		= 1 << 6,
 	IB_EXP_DEVICE_ODP               = 1 << 7,
+	IB_EXP_DEVICE_RX_CSUM_TCP_UDP_PKT	= 1 << 11,
+	IB_EXP_DEVICE_RX_CSUM_IP_PKT		= 1 << 12,
 	IB_EXP_DEVICE_EXT_MASKED_ATOMICS	= 1 << 14,
 	IB_EXP_DEVICE_CROSS_CHANNEL	= 1 << 28, /* Comapt with user exp area */
 	IB_EXP_DEVICE_MASK =	IB_DEVICE_CROSS_CHANNEL,

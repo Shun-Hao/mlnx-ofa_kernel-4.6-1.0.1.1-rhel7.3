@@ -246,6 +246,13 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		props->max_wq_type_rq = 0;
 	}
 
+	if (MLX5_CAP_GEN(dev->mdev, eth_net_offloads)) {
+		if (MLX5_CAP_ETH(dev->mdev, csum_cap))
+			props->device_cap_flags2 |=
+				IB_EXP_DEVICE_RX_CSUM_IP_PKT |
+				IB_EXP_DEVICE_RX_CSUM_TCP_UDP_PKT;
+	}
+
 	return 0;
 }
 
