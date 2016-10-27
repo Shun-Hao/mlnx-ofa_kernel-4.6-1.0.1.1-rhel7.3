@@ -154,6 +154,9 @@ static int (*uverbs_exp_cmd_table[])(struct ib_uverbs_file *file,
 	[IB_USER_VERBS_EXP_CMD_PREFETCH_MR]     = ib_uverbs_exp_prefetch_mr,
 #endif
 	[IB_USER_VERBS_EXP_CMD_CREATE_FLOW]	= ib_uverbs_exp_create_flow,
+	[IB_USER_VERBS_EXP_CMD_CREATE_WQ]	= ib_uverbs_exp_create_wq,
+	[IB_USER_VERBS_EXP_CMD_MODIFY_WQ]	= ib_uverbs_exp_modify_wq,
+	[IB_USER_VERBS_EXP_CMD_DESTROY_WQ]	= ib_uverbs_exp_destroy_wq,
 };
 
 static void ib_uverbs_add_one(struct ib_device *device);

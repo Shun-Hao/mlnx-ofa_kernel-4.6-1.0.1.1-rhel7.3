@@ -1147,3 +1147,24 @@ out:
 
 	return err;
 }
+
+int ib_uverbs_exp_create_wq(struct ib_uverbs_file *file,
+			    struct ib_udata *ucore,
+			    struct ib_udata *uhw)
+{
+	return ib_uverbs_ex_create_wq(file, ucore, uhw);
+}
+
+int ib_uverbs_exp_modify_wq(struct ib_uverbs_file *file,
+			    struct ib_udata *ucore,
+			    struct ib_udata *uhw)
+{
+	return ib_uverbs_ex_modify_wq(file, ucore, uhw);
+}
+
+int ib_uverbs_exp_destroy_wq(struct ib_uverbs_file *file,
+			     struct ib_udata *ucore,
+			     struct ib_udata *uhw)
+{
+	return ib_uverbs_ex_destroy_wq(file, ucore, uhw);
+}

@@ -39,6 +39,9 @@ IB_UVERBS_DECLARE_EXP_CMD(create_mr);
 IB_UVERBS_DECLARE_EXP_CMD(prefetch_mr);
 IB_UVERBS_DECLARE_EXP_CMD(create_flow);
 IB_UVERBS_DECLARE_EXP_CMD(query_mkey);
+IB_UVERBS_DECLARE_EXP_CMD(create_wq);
+IB_UVERBS_DECLARE_EXP_CMD(modify_wq);
+IB_UVERBS_DECLARE_EXP_CMD(destroy_wq);
 
 unsigned long ib_uverbs_exp_get_unmapped_area(struct file *filp,
 					      unsigned long addr,
