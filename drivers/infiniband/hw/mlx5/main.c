@@ -5986,6 +5986,11 @@ static int mlx5_ib_stage_common_roce_init(struct mlx5_ib_dev *dev)
 
 	port_num = mlx5_core_native_port_num(dev->mdev) - 1;
 
+	dev->ib_dev.uverbs_exp_cmd_mask |=
+		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_WQ) |
+		(1ull << IB_USER_VERBS_EXP_CMD_MODIFY_WQ) |
+		(1ull << IB_USER_VERBS_EXP_CMD_DESTROY_WQ);
+
 	return mlx5_add_netdev_notifier(dev, port_num);
 }
 
