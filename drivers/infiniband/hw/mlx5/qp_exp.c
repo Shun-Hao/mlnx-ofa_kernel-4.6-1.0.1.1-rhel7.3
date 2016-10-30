@@ -74,6 +74,14 @@ int mlx5_ib_exp_get_cmd_data(struct mlx5_ib_dev *dev,
 			ucmd.mp_rq.single_stride_log_num_of_bytes;
 	}
 
+	if (ucmd.comp_mask & MLX5_EXP_CREATE_WQ_VLAN_OFFLOADS) {
+		if ((ucmd.vlan_offloads & IB_WQ_CVLAN_STRIPPING) &&
+		    (!(MLX5_CAP_GEN(dev->mdev, eth_net_offloads) &&
+		       MLX5_CAP_ETH(dev->mdev, vlan_cap))))
+			return -EOPNOTSUPP;
+		data->vlan_offloads = ucmd.vlan_offloads;
+	}
+
 	return 0;
 }
 
@@ -88,6 +96,8 @@ void mlx5_ib_exp_set_rq_attr(struct mlx5_ib_create_wq_data *data,
 		rwq->mp_rq.use_shift = data->mp_rq.use_shift;
 		rwq->mp_rq.use_mp_rq = 1;
 	}
+	if (data->comp_mask & MLX5_EXP_CREATE_WQ_VLAN_OFFLOADS)
+		rwq->vlan_offloads = data->vlan_offloads;
 }
 
 void mlx5_ib_exp_set_rqc(void *rqc, struct mlx5_ib_rwq *rwq)
@@ -106,6 +116,8 @@ void mlx5_ib_exp_set_rqc(void *rqc, struct mlx5_ib_rwq *rwq)
 		if (rwq->mp_rq.use_shift == IB_MP_RQ_2BYTES_SHIFT)
 			MLX5_SET(wq, wq, two_byte_shift_en, 0x1);
 	}
+	if (rwq->vlan_offloads & IB_WQ_CVLAN_STRIPPING)
+		MLX5_SET(rqc, rqc, vsd, 0);
 }
 
 void mlx5_ib_exp_get_hash_parameters(struct ib_qp_init_attr *init_attr,

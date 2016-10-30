@@ -181,7 +181,8 @@ struct mlx5_ib_arm_dct_resp {
 
 enum mlx5_ib_exp_create_wq_comp_mask {
 	MLX5_EXP_CREATE_WQ_MP_RQ		= 1 << 0,
-	MLX5_EXP_CREATE_WQ_RESERVED		= 1 << 1,
+	MLX5_EXP_CREATE_WQ_VLAN_OFFLOADS	= 1 << 1,
+	MLX5_EXP_CREATE_WQ_RESERVED		= 1 << 2,
 };
 
 struct mlx5_ib_create_wq_data_mp_rq {
@@ -199,6 +200,7 @@ struct mlx5_ib_create_wq_data {
 	__u32   flags;
 	__u32   comp_mask;
 	struct  mlx5_ib_create_wq_data_mp_rq mp_rq;
+	__u16	vlan_offloads;
 };
 
 struct mlx5_ib_create_wq_mp_rq {
@@ -216,7 +218,8 @@ struct mlx5_ib_exp_create_wq {
 	__u32   user_index;
 	__u32   flags;
 	__u32   comp_mask;
-	__u32   reserved;
+	__u16	vlan_offloads;
+	__u16   reserved;
 	struct mlx5_ib_create_wq_mp_rq mp_rq;
 };
 
