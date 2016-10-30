@@ -131,6 +131,10 @@ enum mlx5_exp_ib_create_qp_mask {
 	MLX5_EXP_CREATE_QP_MASK_RESERVED	= 1 << 5,
 };
 
+enum mlx5_exp_create_qp_flags {
+	MLX5_EXP_CREATE_QP_MULTI_PACKET_WQE_REQ_FLAG = 1 << 0,
+};
+
 struct mlx5_exp_ib_create_qp_data {
 	__u32   comp_mask; /* use mlx5_exp_ib_create_qp_mask */
 	__u32   uidx;
@@ -139,6 +143,15 @@ struct mlx5_exp_ib_create_qp_data {
 	__u32   flags; /* use mlx5_exp_create_qp_flags */
 	__u32  associated_qpn;
 	__u32  reserved;
+};
+
+enum mlx5_exp_ib_create_qp_resp_mask {
+	MLX5_EXP_CREATE_QP_RESP_MASK_FLAGS_IDX	= 1 << 0,
+	MLX5_EXP_CREATE_QP_RESP_MASK_RESERVED	= 1 << 1,
+};
+
+enum mlx5_exp_create_qp_resp_flags {
+	MLX5_EXP_CREATE_QP_RESP_MULTI_PACKET_WQE_FLAG = 1 << 0,
 };
 
 struct mlx5_exp_ib_create_qp {

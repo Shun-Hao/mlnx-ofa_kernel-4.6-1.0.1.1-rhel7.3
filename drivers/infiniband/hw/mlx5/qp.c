@@ -858,6 +858,30 @@ static int create_uar_idx(struct mlx5_ib_dev *dev,
 	return 0;
 }
 
+static void set_exp_qp_resp_data(struct mlx5_exp_ib_create_qp *ucmd,
+				 struct mlx5_exp_ib_create_qp_resp *resp,
+				 struct mlx5_ib_dev *dev,
+				 struct mlx5_ib_qp *qp,
+				 struct ib_qp_init_attr *attr)
+{
+	if (attr->qp_type == IB_QPT_RAW_PACKET && qp->sq.wqe_cnt &&
+	    (ucmd->exp.comp_mask & MLX5_EXP_CREATE_QP_MASK_FLAGS_IDX) &&
+	    (ucmd->exp.flags & MLX5_EXP_CREATE_QP_MULTI_PACKET_WQE_REQ_FLAG)) {
+		/*
+		 * Enable Multi-Packet WQE only if:
+		 * - user process is privilege
+		 * - SRIOV is not supported
+		 * - Multi-Packet is supported
+		 */
+		if (capable(CAP_SYS_ADMIN) &&
+		    MLX5_CAP_ETH(dev->mdev, multi_pkt_send_wqe) == 1) {
+			qp->raw_packet_qp.sq.allow_mp_wqe = 1;
+			resp->exp.comp_mask |= MLX5_EXP_CREATE_QP_RESP_MASK_FLAGS_IDX;
+			resp->exp.flags |= MLX5_EXP_CREATE_QP_RESP_MULTI_PACKET_WQE_FLAG;
+		}
+	}
+}
+
 static int create_user_qp(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 			  struct mlx5_ib_qp *qp, struct ib_udata *udata,
 			  struct ib_qp_init_attr *attr,
@@ -964,9 +988,10 @@ static int create_user_qp(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 	}
 
 	if (udata->src == IB_UDATA_EXP_CMD) {
+		set_exp_qp_resp_data(ucmd, &resp, dev, qp, attr);
 		err = ib_copy_to_udata(udata, &resp, min(udata->outlen, sizeof(resp)));
 	} else {
-		err = ib_copy_to_udata(udata, &resp, min(udata->outlen, sizeof(struct mlx5_ib_create_qp_resp)));
+		err = ib_copy_to_udata(udata, &resp, sizeof(struct mlx5_ib_create_qp_resp));
 	}
 	if (err) {
 		mlx5_ib_dbg(dev, "copy failed\n");

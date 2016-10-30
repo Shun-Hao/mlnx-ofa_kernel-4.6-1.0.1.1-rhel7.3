@@ -388,6 +388,7 @@ struct mlx5_ib_sq {
 	struct mlx5_flow_handle	*flow_rule;
 	u32			tisn;
 	u8			state;
+	int			allow_mp_wqe;
 };
 
 struct mlx5_ib_raw_packet_qp {
