@@ -401,6 +401,31 @@ static struct ib_umem *mlx4_get_umem_mr(struct ib_ucontext *context, u64 start,
 	return ib_umem_get(context, start, length, access_flags, 0, peer_mem_flags);
 }
 
+static void mlx4_invalidate_umem(void *invalidation_cookie,
+				 struct ib_umem *umem,
+				 unsigned long addr, size_t size)
+{
+	struct mlx4_ib_mr *mr = (struct mlx4_ib_mr *)invalidation_cookie;
+
+	mutex_lock(&mr->lock);
+	/* This function is called under client peer lock so its resources are race protected */
+	if (atomic_inc_return(&mr->invalidated) > 1) {
+		umem->invalidation_ctx->inflight_invalidation = 1;
+		mutex_unlock(&mr->lock);
+		return;
+	}
+	if (!mr->live) {
+		mutex_unlock(&mr->lock);
+		return;
+	}
+
+	mutex_unlock(&mr->lock);
+	umem->invalidation_ctx->peer_callback = 1;
+	mlx4_mr_free(to_mdev(mr->ibmr.device)->dev, &mr->mmr);
+	ib_umem_release(umem);
+	complete(&mr->invalidation_comp);
+}
+
 struct ib_mr *mlx4_ib_reg_user_mr(struct ib_pd *pd, u64 start, u64 length,
 				  u64 virt_addr, int access_flags,
 				  struct ib_udata *udata)
@@ -410,6 +435,7 @@ struct ib_mr *mlx4_ib_reg_user_mr(struct ib_pd *pd, u64 start, u64 length,
 	int shift;
 	int err;
 	int n;
+	struct ib_peer_memory_client *ib_peer_mem;
 
 	if (access_flags & IB_EXP_ACCESS_PHYSICAL_ADDR)
 		return mlx4_ib_phys_addr(pd, length, virt_addr, access_flags);
@@ -418,11 +444,37 @@ struct ib_mr *mlx4_ib_reg_user_mr(struct ib_pd *pd, u64 start, u64 length,
 	if (!mr)
 		return ERR_PTR(-ENOMEM);
 
+	mutex_init(&mr->lock);
 	mr->umem = mlx4_get_umem_mr(pd->uobject->context, start, length,
-				    virt_addr, access_flags, IB_PEER_MEM_ALLOW);
+				    virt_addr, access_flags,
+				    IB_PEER_MEM_ALLOW | IB_PEER_MEM_INVAL_SUPP);
 	if (IS_ERR(mr->umem)) {
 		err = PTR_ERR(mr->umem);
 		goto err_free;
+	}
+
+	ib_peer_mem = mr->umem->ib_peer_mem;
+	if (ib_peer_mem) {
+		err = ib_umem_activate_invalidation_notifier(mr->umem, mlx4_invalidate_umem, mr);
+		if (err)
+			goto err_umem;
+	}
+
+	mutex_lock(&mr->lock);
+	if (atomic_read(&mr->invalidated))
+		goto err_locked_umem;
+
+	if (ib_peer_mem) {
+		if (access_flags & IB_ACCESS_MW_BIND) {
+			/* Prevent binding MW on peer clients, mlx4_invalidate_umem is a void
+			 * function and must succeed, however, mlx4_mr_free might fail when MW
+			 * are used.
+			*/
+			err = -ENOSYS;
+			pr_err("MW is not supported with peer memory client");
+			goto err_locked_umem;
+		}
+		init_completion(&mr->invalidation_comp);
 	}
 
 	n = ib_umem_page_count(mr->umem);
@@ -431,7 +483,7 @@ struct ib_mr *mlx4_ib_reg_user_mr(struct ib_pd *pd, u64 start, u64 length,
 	err = mlx4_mr_alloc(dev->dev, to_mpd(pd)->pdn, virt_addr, length,
 			    convert_access(access_flags), n, shift, &mr->mmr);
 	if (err)
-		goto err_umem;
+		goto err_locked_umem;
 
 	err = mlx4_ib_umem_write_mtt(dev, &mr->mmr.mtt, mr->umem);
 	if (err)
@@ -445,11 +497,15 @@ struct ib_mr *mlx4_ib_reg_user_mr(struct ib_pd *pd, u64 start, u64 length,
 	mr->ibmr.length = length;
 	mr->ibmr.iova = virt_addr;
 	mr->ibmr.page_size = 1U << shift;
-
+	mr->live = 1;
+	mutex_unlock(&mr->lock);
 	return &mr->ibmr;
 
 err_mr:
 	(void) mlx4_mr_free(to_mdev(pd->device)->dev, &mr->mmr);
+
+err_locked_umem:
+	mutex_unlock(&mr->lock);
 
 err_umem:
 	ib_umem_release(mr->umem);
@@ -610,11 +666,23 @@ int mlx4_ib_dereg_mr(struct ib_mr *ibmr)
 
 	mlx4_free_priv_pages(mr);
 
+	if (atomic_inc_return(&mr->invalidated) > 1) {
+		wait_for_completion(&mr->invalidation_comp);
+		goto end;
+	}
+
 	ret = mlx4_mr_free(to_mdev(ibmr->device)->dev, &mr->mmr);
-	if (ret)
+	if (ret) {
+		/* Error is not expected here, except when memory windows
+		 * are bound to MR which is not supported with
+		 * peer memory clients.
+		*/
+		atomic_set(&mr->invalidated, 0);
 		return ret;
+	}
 	if (mr->umem)
 		ib_umem_release(mr->umem);
+end:
 	kfree(mr);
 
 	return 0;
