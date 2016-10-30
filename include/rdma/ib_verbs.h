@@ -1565,7 +1565,16 @@ enum ib_udate_src {
 	IB_UDATA_EXP_CMD = 32,
 };
 
+struct ib_udata;
+struct ib_udata_ops {
+	int     (*copy_from)(void *dest, struct ib_udata *udata,
+			     size_t len);
+	int     (*copy_to)(struct ib_udata *udata, void *src,
+			   size_t len);
+};
+
 struct ib_udata {
+	struct ib_udata_ops *ops;
 	const void __user *inbuf;
 	void __user *outbuf;
 	size_t       inlen;
@@ -2750,12 +2759,12 @@ static inline int rdma_user_mmap_page(struct ib_ucontext *ucontext,
 
 static inline int ib_copy_from_udata(void *dest, struct ib_udata *udata, size_t len)
 {
-	return copy_from_user(dest, udata->inbuf, len) ? -EFAULT : 0;
+	return udata->ops->copy_from(dest, udata, len);
 }
 
 static inline int ib_copy_to_udata(struct ib_udata *udata, void *src, size_t len)
 {
-	return copy_to_user(udata->outbuf, src, len) ? -EFAULT : 0;
+	return udata->ops->copy_to(udata, src, len);
 }
 
 static inline bool ib_is_buffer_cleared(const void __user *p,

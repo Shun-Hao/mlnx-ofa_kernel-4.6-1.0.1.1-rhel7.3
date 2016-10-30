@@ -57,12 +57,29 @@ struct uverbs_lock_class {
 	char			name[16];
 };
 
+static int uverbs_copy_from_udata(void *dest, struct ib_udata *udata, size_t
+				  len)
+{
+	return copy_from_user(dest, udata->inbuf, len) ? -EFAULT : 0;
+}
+
+static int uverbs_copy_to_udata(struct ib_udata *udata, void *src, size_t len)
+{
+	return copy_to_user(udata->outbuf, src, len) ? -EFAULT : 0;
+}
+
+__used static struct ib_udata_ops uverbs_copy = {
+	.copy_from = uverbs_copy_from_udata,
+	.copy_to   = uverbs_copy_to_udata
+};
+
 static inline void
 ib_uverbs_init_udata(struct ib_udata *udata,
 		     const void __user *ibuf,
 		     void __user *obuf,
 		     size_t ilen, size_t olen)
 {
+	udata->ops    = &uverbs_copy;
 	udata->inbuf  = ibuf;
 	udata->outbuf = obuf;
 	udata->inlen  = ilen;
