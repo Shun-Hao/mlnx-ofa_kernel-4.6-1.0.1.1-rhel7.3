@@ -39,6 +39,11 @@ struct ib_qpg_init_attrib {
 	u32 rss_child_count;
 };
 
+enum ib_mp_rq_shifts {
+	IB_MP_RQ_NO_SHIFT	= 0,
+	IB_MP_RQ_2BYTES_SHIFT	= 1 << 0
+};
+
 /*
  * RX Hash Function flags.
 */
@@ -96,6 +101,15 @@ struct ib_exp_qp_init_attr {
 	struct ib_rx_hash_conf	*rx_hash_conf;
 };
 
+struct ib_exp_mp_rq_caps {
+	uint32_t supported_qps; /* use ib_exp_supported_qp_types */
+	uint32_t allowed_shifts; /* use ib_mp_rq_shifts */
+	uint8_t min_single_wqe_log_num_of_strides;
+	uint8_t max_single_wqe_log_num_of_strides;
+	uint8_t min_single_stride_log_num_of_bytes;
+	uint8_t max_single_stride_log_num_of_bytes;
+};
+
 struct ib_exp_masked_atomic_caps {
 	u32 max_fa_bit_boudary;
 	u32 log_max_atomic_inline_arg;
@@ -119,6 +133,7 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_RX_HASH		= 1ULL << 13,
 	IB_EXP_DEVICE_ATTR_MAX_WQ_TYPE_RQ	= 1ULL << 14,
 	IB_EXP_DEVICE_ATTR_MAX_DEVICE_CTX	= 1ULL << 15,
+	IB_EXP_DEVICE_ATTR_MP_RQ		= 1ULL << 16,
 	IB_EXP_DEVICE_ATTR_EXT_MASKED_ATOMICS	= 1ULL << 19,
 };
 
@@ -171,6 +186,7 @@ struct ib_exp_device_attr {
 	uint32_t		max_device_ctx;
 	struct ib_exp_rx_hash_caps	rx_hash_caps;
 	uint32_t			max_wq_type_rq;
+	struct ib_exp_mp_rq_caps	mp_rq_caps;
 };
 
 enum {
