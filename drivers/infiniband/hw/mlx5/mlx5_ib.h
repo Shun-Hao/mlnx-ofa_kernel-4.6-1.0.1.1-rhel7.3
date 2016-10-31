@@ -289,6 +289,13 @@ enum mlx5_ib_wq_flags {
 #define MLX5_MIN_SINGLE_STRIDE_LOG_NUM_BYTES 6
 #define MLX5_MAX_SINGLE_STRIDE_LOG_NUM_BYTES 13
 
+struct mlx5_ib_mp_rq {
+	u8			use_mp_rq;
+	u8			use_shift;
+	u8			single_wqe_log_num_of_strides;
+	u8			single_stride_log_num_of_bytes;
+};
+
 struct mlx5_ib_rwq {
 	struct ib_wq		ibwq;
 	struct mlx5_core_qp	core_qp;
@@ -310,6 +317,7 @@ struct mlx5_ib_rwq {
 	u32			wqe_shift;
 	int			wq_sig;
 	u32			create_flags; /* Use enum mlx5_ib_wq_flags */
+	struct mlx5_ib_mp_rq	mp_rq;
 };
 
 enum {

@@ -179,6 +179,47 @@ struct mlx5_ib_arm_dct_resp {
 	__u64	reserved1;
 };
 
+enum mlx5_ib_exp_create_wq_comp_mask {
+	MLX5_EXP_CREATE_WQ_MP_RQ		= 1 << 0,
+	MLX5_EXP_CREATE_WQ_RESERVED		= 1 << 1,
+};
+
+struct mlx5_ib_create_wq_data_mp_rq {
+	__u32	use_shift;
+	__u8    single_wqe_log_num_of_strides;
+	__u8    single_stride_log_num_of_bytes;
+};
+
+struct mlx5_ib_create_wq_data {
+	__u64   buf_addr;
+	__u64   db_addr;
+	__u32   rq_wqe_count;
+	__u32   rq_wqe_shift;
+	__u32   user_index;
+	__u32   flags;
+	__u32   comp_mask;
+	struct  mlx5_ib_create_wq_data_mp_rq mp_rq;
+};
+
+struct mlx5_ib_create_wq_mp_rq {
+	__u32	use_shift;
+	__u8    single_wqe_log_num_of_strides;
+	__u8    single_stride_log_num_of_bytes;
+	__u16   reserved2;
+};
+
+struct mlx5_ib_exp_create_wq {
+	__u64   buf_addr;
+	__u64   db_addr;
+	__u32   rq_wqe_count;
+	__u32   rq_wqe_shift;
+	__u32   user_index;
+	__u32   flags;
+	__u32   comp_mask;
+	__u32   reserved;
+	struct mlx5_ib_create_wq_mp_rq mp_rq;
+};
+
 static inline int get_qp_exp_user_index(struct mlx5_ib_ucontext *ucontext,
 					struct mlx5_exp_ib_create_qp *ucmd,
 					int inlen,

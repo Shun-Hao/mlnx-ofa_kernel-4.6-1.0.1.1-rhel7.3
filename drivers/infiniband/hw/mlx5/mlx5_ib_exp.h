@@ -210,4 +210,14 @@ u32 mlx5_ib_atomic_mode_qp(struct mlx5_ib_qp *qp);
 
 int mlx5_ib_exp_query_mkey(struct ib_mr *mr, u64 mkey_attr_mask,
 			   struct ib_mkey_attr *mkey_attr);
+
+void mlx5_ib_exp_set_rqc(void *rqc, struct mlx5_ib_rwq *rwq);
+
+void mlx5_ib_exp_set_rq_attr(struct mlx5_ib_create_wq_data *data,
+			     struct mlx5_ib_rwq *rwq);
+
+int mlx5_ib_exp_get_cmd_data(struct mlx5_ib_dev *dev,
+			     struct ib_udata *udata,
+			     struct mlx5_ib_create_wq_data *data);
+
 #endif

@@ -36,6 +36,78 @@
 #include <linux/mlx5/qp_exp.h>
 #include <rdma/ib_verbs_exp.h>
 
+int mlx5_ib_exp_get_cmd_data(struct mlx5_ib_dev *dev,
+			     struct ib_udata *udata,
+			     struct mlx5_ib_create_wq_data *data)
+{
+	struct mlx5_ib_exp_create_wq ucmd = {};
+
+	if (ib_copy_from_udata(&ucmd, udata, min(sizeof(ucmd),
+						 udata->inlen))) {
+		mlx5_ib_dbg(dev, "copy failed\n");
+		return -EFAULT;
+	}
+
+	data->buf_addr = ucmd.buf_addr;
+	data->db_addr = ucmd.db_addr;
+	data->rq_wqe_count = ucmd.rq_wqe_count;
+	data->rq_wqe_shift = ucmd.rq_wqe_shift;
+	data->user_index = ucmd.user_index;
+	data->flags = ucmd.flags;
+	data->comp_mask = ucmd.comp_mask;
+
+	if (ucmd.comp_mask & MLX5_EXP_CREATE_WQ_MP_RQ) {
+		if (!MLX5_CAP_GEN(dev->mdev, striding_rq))
+			return -EOPNOTSUPP;
+
+		if (ucmd.mp_rq.use_shift & ~IB_MP_RQ_2BYTES_SHIFT ||
+		    ucmd.mp_rq.single_stride_log_num_of_bytes < MLX5_MIN_SINGLE_STRIDE_LOG_NUM_BYTES ||
+		    ucmd.mp_rq.single_stride_log_num_of_bytes > MLX5_MAX_SINGLE_STRIDE_LOG_NUM_BYTES ||
+		    ucmd.mp_rq.single_wqe_log_num_of_strides < MLX5_MIN_SINGLE_WQE_LOG_NUM_STRIDES ||
+		    ucmd.mp_rq.single_wqe_log_num_of_strides > MLX5_MAX_SINGLE_WQE_LOG_NUM_STRIDES)
+			return -EINVAL;
+
+		data->mp_rq.use_shift = ucmd.mp_rq.use_shift;
+		data->mp_rq.single_wqe_log_num_of_strides =
+			ucmd.mp_rq.single_wqe_log_num_of_strides;
+		data->mp_rq.single_stride_log_num_of_bytes =
+			ucmd.mp_rq.single_stride_log_num_of_bytes;
+	}
+
+	return 0;
+}
+
+void mlx5_ib_exp_set_rq_attr(struct mlx5_ib_create_wq_data *data,
+			     struct mlx5_ib_rwq *rwq)
+{
+	if (data->comp_mask & MLX5_EXP_CREATE_WQ_MP_RQ) {
+		rwq->mp_rq.single_wqe_log_num_of_strides =
+			data->mp_rq.single_wqe_log_num_of_strides;
+		rwq->mp_rq.single_stride_log_num_of_bytes =
+			data->mp_rq.single_stride_log_num_of_bytes;
+		rwq->mp_rq.use_shift = data->mp_rq.use_shift;
+		rwq->mp_rq.use_mp_rq = 1;
+	}
+}
+
+void mlx5_ib_exp_set_rqc(void *rqc, struct mlx5_ib_rwq *rwq)
+{
+	void *wq;
+
+	wq = MLX5_ADDR_OF(rqc, rqc, wq);
+	if (rwq->mp_rq.use_mp_rq) {
+		MLX5_SET(wq, wq, wq_type, MLX5_WQ_TYPE_CYCLIC_STRIDING_RQ);
+		MLX5_SET(wq, wq, log_wqe_num_of_strides,
+			 (rwq->mp_rq.single_wqe_log_num_of_strides -
+			  MLX5_MIN_SINGLE_WQE_LOG_NUM_STRIDES));
+		MLX5_SET(wq, wq, log_wqe_stride_size,
+			 (rwq->mp_rq.single_stride_log_num_of_bytes -
+			  MLX5_MIN_SINGLE_STRIDE_LOG_NUM_BYTES));
+		if (rwq->mp_rq.use_shift == IB_MP_RQ_2BYTES_SHIFT)
+			MLX5_SET(wq, wq, two_byte_shift_en, 0x1);
+	}
+}
+
 void mlx5_ib_exp_get_hash_parameters(struct ib_qp_init_attr *init_attr,
 				     struct ib_rwq_ind_table **rwq_ind_tbl,
 				     u64 *rx_hash_fields_mask,

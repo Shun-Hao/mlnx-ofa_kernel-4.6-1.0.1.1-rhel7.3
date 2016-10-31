@@ -763,7 +763,7 @@ static void destroy_user_rq(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 
 static int create_user_rq(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 			  struct mlx5_ib_rwq *rwq,
-			  struct mlx5_ib_create_wq *ucmd)
+			  struct mlx5_ib_create_wq_data *data)
 {
 	struct mlx5_ib_ucontext *context;
 	int page_shift = 0;
@@ -772,11 +772,11 @@ static int create_user_rq(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 	int ncont = 0;
 	int err;
 
-	if (!ucmd->buf_addr)
+	if (!data->buf_addr)
 		return -EINVAL;
 
 	context = to_mucontext(pd->uobject->context);
-	rwq->umem = ib_umem_get(pd->uobject->context, ucmd->buf_addr,
+	rwq->umem = ib_umem_get(pd->uobject->context, data->buf_addr,
 			       rwq->buf_size, 0, 0);
 	if (IS_ERR(rwq->umem)) {
 		mlx5_ib_dbg(dev, "umem_get failed\n");
@@ -784,9 +784,9 @@ static int create_user_rq(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 		return err;
 	}
 
-	mlx5_ib_cont_pages(rwq->umem, ucmd->buf_addr, 0, &npages, &page_shift,
+	mlx5_ib_cont_pages(rwq->umem, data->buf_addr, 0, &npages, &page_shift,
 			   &ncont, NULL);
-	err = mlx5_ib_get_buf_offset(ucmd->buf_addr, page_shift,
+	err = mlx5_ib_get_buf_offset(data->buf_addr, page_shift,
 				     &rwq->rq_page_offset);
 	if (err) {
 		mlx5_ib_warn(dev, "bad offset\n");
@@ -796,13 +796,13 @@ static int create_user_rq(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 	rwq->rq_num_pas = ncont;
 	rwq->page_shift = page_shift;
 	rwq->log_page_size =  page_shift - MLX5_ADAPTER_PAGE_SHIFT;
-	rwq->wq_sig = !!(ucmd->flags & MLX5_WQ_FLAG_SIGNATURE);
+	rwq->wq_sig = !!(data->flags & MLX5_WQ_FLAG_SIGNATURE);
 
 	mlx5_ib_dbg(dev, "addr 0x%llx, size %zd, npages %d, page_shift %d, ncont %d, offset %d\n",
-		    (unsigned long long)ucmd->buf_addr, rwq->buf_size,
+		    (unsigned long long)data->buf_addr, rwq->buf_size,
 		    npages, page_shift, ncont, offset);
 
-	err = mlx5_ib_db_map_user(context, ucmd->db_addr, &rwq->db);
+	err = mlx5_ib_db_map_user(context, data->db_addr, &rwq->db);
 	if (err) {
 		mlx5_ib_dbg(dev, "map failed\n");
 		goto err_umem;
@@ -5793,6 +5793,7 @@ static int  create_rq(struct mlx5_ib_rwq *rwq, struct ib_pd *pd,
 	}
 	rq_pas0 = (__be64 *)MLX5_ADDR_OF(wq, wq, pas);
 	mlx5_ib_populate_pas(dev, rwq->umem, rwq->page_shift, rq_pas0, 0);
+	mlx5_ib_exp_set_rqc(rqc, rwq);
 	err = mlx5_core_create_rq_tracked(dev->mdev, in, inlen, &rwq->core_qp);
 	if (!err && init_attr->create_flags & IB_WQ_FLAGS_DELAY_DROP) {
 		err = set_delay_drop(dev);
@@ -5811,24 +5812,36 @@ out:
 
 static int set_user_rq_size(struct mlx5_ib_dev *dev,
 			    struct ib_wq_init_attr *wq_init_attr,
-			    struct mlx5_ib_create_wq *ucmd,
+			    struct mlx5_ib_create_wq_data *data,
 			    struct mlx5_ib_rwq *rwq)
 {
 	/* Sanity check RQ size before proceeding */
 	if (wq_init_attr->max_wr > (1 << MLX5_CAP_GEN(dev->mdev, log_max_wq_sz)))
 		return -EINVAL;
 
-	if (!ucmd->rq_wqe_count)
+	if (!data->rq_wqe_count)
 		return -EINVAL;
 
-	rwq->wqe_count = ucmd->rq_wqe_count;
-	rwq->wqe_shift = ucmd->rq_wqe_shift;
+	rwq->wqe_count = data->rq_wqe_count;
+	rwq->wqe_shift = data->rq_wqe_shift;
 	if (check_shl_overflow(rwq->wqe_count, rwq->wqe_shift, &rwq->buf_size))
 		return -EINVAL;
 
 	rwq->log_rq_stride = rwq->wqe_shift;
 	rwq->log_rq_size = ilog2(rwq->wqe_count);
+	mlx5_ib_exp_set_rq_attr(data, rwq);
 	return 0;
+}
+
+static void get_cmd_data(struct mlx5_ib_create_wq *ucmd,
+			 struct mlx5_ib_create_wq_data *data)
+{
+	data->buf_addr = ucmd->buf_addr;
+	data->db_addr = ucmd->db_addr;
+	data->rq_wqe_count = ucmd->rq_wqe_count;
+	data->rq_wqe_shift = ucmd->rq_wqe_shift;
+	data->user_index = ucmd->user_index;
+	data->flags = ucmd->flags;
 }
 
 static int prepare_user_rq(struct ib_pd *pd,
@@ -5838,8 +5851,17 @@ static int prepare_user_rq(struct ib_pd *pd,
 {
 	struct mlx5_ib_dev *dev = to_mdev(pd->device);
 	struct mlx5_ib_create_wq ucmd = {};
+	struct mlx5_ib_create_wq_data cmd_data = {};
 	int err;
 	size_t required_cmd_sz;
+
+	if (udata->src == IB_UDATA_EXP_CMD) {
+		err = mlx5_ib_exp_get_cmd_data(dev, udata, &cmd_data);
+		if (err)
+			return err;
+
+		goto common;
+	}
 
 	required_cmd_sz = offsetof(typeof(ucmd), single_stride_log_num_of_bytes)
 		+ sizeof(ucmd.single_stride_log_num_of_bytes);
@@ -5895,19 +5917,21 @@ static int prepare_user_rq(struct ib_pd *pd,
 		rwq->create_flags |= MLX5_IB_WQ_FLAGS_STRIDING_RQ;
 	}
 
-	err = set_user_rq_size(dev, init_attr, &ucmd, rwq);
+	get_cmd_data(&ucmd, &cmd_data);
+common:
+	err = set_user_rq_size(dev, init_attr, &cmd_data, rwq);
 	if (err) {
 		mlx5_ib_dbg(dev, "err %d\n", err);
 		return err;
 	}
 
-	err = create_user_rq(dev, pd, rwq, &ucmd);
+	err = create_user_rq(dev, pd, rwq, &cmd_data);
 	if (err) {
 		mlx5_ib_dbg(dev, "err %d\n", err);
 		return err;
 	}
 
-	rwq->user_index = ucmd.user_index;
+	rwq->user_index = cmd_data.user_index;
 	return 0;
 }
 
