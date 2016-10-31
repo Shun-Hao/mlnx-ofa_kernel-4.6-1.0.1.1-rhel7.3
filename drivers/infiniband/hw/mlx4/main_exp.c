@@ -81,6 +81,9 @@ int mlx4_ib_exp_query_device(struct ib_device *ibdev,
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_MAX_CTX_RES_DOMAIN;
 	props->max_ctx_res_domain = MLX4_IB_MAX_CTX_UARS * dev->dev->caps.bf_regs_per_page;
 
+	if (dev->dev->caps.tunnel_offload_mode != MLX4_TUNNEL_OFFLOAD_MODE_NONE)
+		props->device_cap_flags2 |= IB_EXP_DEVICE_VXLAN_SUPPORT;
+
 	/* Only ConnectX3 pro reports csum for now. can add ConnextX-3 later */
 	if (dev->dev->caps.rx_checksum_flags_port[1] &
 	    MLX4_RX_CSUM_MODE_IP_OK_IP_NON_TCP_UDP)
