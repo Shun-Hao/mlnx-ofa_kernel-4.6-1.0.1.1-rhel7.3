@@ -245,6 +245,17 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		memset(&props->rx_hash_caps, 0, sizeof(props->rx_hash_caps));
 		props->max_wq_type_rq = 0;
 	}
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_MP_RQ;
+	if (MLX5_CAP_GEN(dev->mdev, striding_rq)) {
+		props->mp_rq_caps.allowed_shifts =  IB_MP_RQ_2BYTES_SHIFT;
+		props->mp_rq_caps.supported_qps =  IB_QPT_RAW_PACKET;
+		props->mp_rq_caps.max_single_stride_log_num_of_bytes =  MLX5_MAX_SINGLE_STRIDE_LOG_NUM_BYTES;
+		props->mp_rq_caps.min_single_stride_log_num_of_bytes =  MLX5_MIN_SINGLE_STRIDE_LOG_NUM_BYTES;
+		props->mp_rq_caps.max_single_wqe_log_num_of_strides =  MLX5_MAX_SINGLE_WQE_LOG_NUM_STRIDES;
+		props->mp_rq_caps.min_single_wqe_log_num_of_strides =  MLX5_MIN_SINGLE_WQE_LOG_NUM_STRIDES;
+	} else {
+		props->mp_rq_caps.supported_qps = 0;
+	}
 
 	if (MLX5_CAP_GEN(dev->mdev, eth_net_offloads)) {
 		if (MLX5_CAP_ETH(dev->mdev, csum_cap))

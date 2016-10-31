@@ -154,6 +154,13 @@ void mlx5_ib_exp_get_hash_parameters(struct ib_qp_init_attr *init_attr,
 				     u8 *rx_key_len);
 bool mlx5_ib_exp_is_rss(struct ib_qp_init_attr *init_attr);
 
+enum {
+	MLX5_MAX_SINGLE_STRIDE_LOG_NUM_BYTES	= 13,
+	MLX5_MIN_SINGLE_STRIDE_LOG_NUM_BYTES	= 6,
+	MLX5_MAX_SINGLE_WQE_LOG_NUM_STRIDES	= 16,
+	MLX5_MIN_SINGLE_WQE_LOG_NUM_STRIDES	= 9,
+};
+
 enum mlx5_ib_exp_mmap_cmd {
 	MLX5_IB_MMAP_GET_CONTIGUOUS_PAGES		= 1,
 	MLX5_IB_EXP_MMAP_CORE_CLOCK = 0xFB,
