@@ -6100,6 +6100,7 @@ int mlx5_ib_modify_wq(struct ib_wq *wq, struct ib_wq_attr *wq_attr,
 {
 	struct mlx5_ib_dev *dev = to_mdev(wq->device);
 	struct mlx5_ib_rwq *rwq = to_mrwq(wq);
+	struct mlx5_ib_exp_modify_wq eucmd = {};
 	struct mlx5_ib_modify_wq ucmd = {};
 	size_t required_cmd_sz;
 	int curr_wq_state;
@@ -6108,6 +6109,12 @@ int mlx5_ib_modify_wq(struct ib_wq *wq, struct ib_wq_attr *wq_attr,
 	int err;
 	void *rqc;
 	void *in;
+
+	if (udata->src == IB_UDATA_EXP_CMD) {
+		if (ib_copy_from_udata(&eucmd, udata, min(sizeof(eucmd), udata->inlen)))
+			return -EFAULT;
+		goto common;
+	}
 
 	required_cmd_sz = offsetof(typeof(ucmd), reserved) + sizeof(ucmd.reserved);
 	if (udata->inlen < required_cmd_sz)
@@ -6125,6 +6132,7 @@ int mlx5_ib_modify_wq(struct ib_wq *wq, struct ib_wq_attr *wq_attr,
 		return -EOPNOTSUPP;
 
 	inlen = MLX5_ST_SZ_BYTES(modify_rq_in);
+common:
 	in = kvzalloc(inlen, GFP_KERNEL);
 	if (!in)
 		return -ENOMEM;
@@ -6143,8 +6151,8 @@ int mlx5_ib_modify_wq(struct ib_wq *wq, struct ib_wq_attr *wq_attr,
 	MLX5_SET(modify_rq_in, in, uid, to_mpd(wq->pd)->uid);
 	MLX5_SET(rqc, rqc, state, wq_state);
 
-	if (wq_attr_mask & IB_WQ_FLAGS) {
-		if (wq_attr->flags_mask & IB_WQ_FLAGS_CVLAN_STRIPPING) {
+	if (udata->src == IB_UDATA_EXP_CMD) {
+		if (eucmd.attr_mask & MLX5_EXP_MODIFY_WQ_VLAN_OFFLOADS) {
 			if (!(MLX5_CAP_GEN(dev->mdev, eth_net_offloads) &&
 			      MLX5_CAP_ETH(dev->mdev, vlan_cap))) {
 				mlx5_ib_dbg(dev, "VLAN offloads are not "
@@ -6154,8 +6162,27 @@ int mlx5_ib_modify_wq(struct ib_wq *wq, struct ib_wq_attr *wq_attr,
 			}
 			MLX5_SET64(modify_rq_in, in, modify_bitmask,
 				   MLX5_MODIFY_RQ_IN_MODIFY_BITMASK_VSD);
-			MLX5_SET(rqc, rqc, vsd,
-				 (wq_attr->flags & IB_WQ_FLAGS_CVLAN_STRIPPING) ? 0 : 1);
+			if (eucmd.vlan_offloads & IB_WQ_CVLAN_STRIPPING) {
+				MLX5_SET(rqc, rqc, vsd, 0);
+			} else {
+				MLX5_SET(rqc, rqc, vsd, 1);
+			}
+		}
+	} else {
+		if (wq_attr_mask & IB_WQ_FLAGS) {
+			if (wq_attr->flags_mask & IB_WQ_FLAGS_CVLAN_STRIPPING) {
+				if (!(MLX5_CAP_GEN(dev->mdev, eth_net_offloads) &&
+				      MLX5_CAP_ETH(dev->mdev, vlan_cap))) {
+					mlx5_ib_dbg(dev, "VLAN offloads are not "
+						    "supported\n");
+					err = -EOPNOTSUPP;
+					goto out;
+				}
+				MLX5_SET64(modify_rq_in, in, modify_bitmask,
+					   MLX5_MODIFY_RQ_IN_MODIFY_BITMASK_VSD);
+				MLX5_SET(rqc, rqc, vsd,
+					 (wq_attr->flags & IB_WQ_FLAGS_CVLAN_STRIPPING) ? 0 : 1);
+			}
 		}
 
 		if (wq_attr->flags_mask & IB_WQ_FLAGS_PCI_WRITE_END_PADDING) {

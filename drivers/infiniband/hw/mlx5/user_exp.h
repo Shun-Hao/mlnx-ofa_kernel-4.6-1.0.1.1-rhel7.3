@@ -179,6 +179,18 @@ struct mlx5_ib_arm_dct_resp {
 	__u64	reserved1;
 };
 
+
+enum  mlx5_exp_wq_init_attr_mask {
+	MLX5_EXP_MODIFY_WQ_VLAN_OFFLOADS = (1 << 0),
+};
+
+struct mlx5_ib_exp_modify_wq {
+	__u32	comp_mask;
+	__u32	attr_mask;
+	__u16	vlan_offloads;
+	__u8	reserved[6];
+};
+
 enum mlx5_ib_exp_create_wq_comp_mask {
 	MLX5_EXP_CREATE_WQ_MP_RQ		= 1 << 0,
 	MLX5_EXP_CREATE_WQ_VLAN_OFFLOADS	= 1 << 1,
