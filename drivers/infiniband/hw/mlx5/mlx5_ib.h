@@ -117,6 +117,8 @@ enum {
 	MLX5_MEMIC_BASE_SIZE	= 1 << MLX5_MEMIC_BASE_ALIGN,
 };
 
+struct mlx5_ib_peer_id;
+
 struct mlx5_ib_ucontext {
 	struct ib_ucontext	ibucontext;
 	struct list_head	db_page_list;
@@ -604,6 +606,14 @@ struct mlx5_ib_mr {
 	dma_addr_t		dma;
 	struct mlx5_ib_mr     **children;
 	int			nchild;
+	struct mlx5_ib_peer_id *peer_id;
+	atomic_t      invalidated;
+	struct completion invalidation_comp;
+};
+
+struct mlx5_ib_peer_id {
+	struct completion comp;
+	struct mlx5_ib_mr *mr;
 };
 
 struct mlx5_ib_mw {
