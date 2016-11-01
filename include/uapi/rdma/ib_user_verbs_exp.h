@@ -90,6 +90,7 @@ struct ib_uverbs_exp_modify_qp {
 enum {
 	IB_QP_EXP_USER_CREATE_ATOMIC_BE_REPLY = (1<<8),
 	IB_QP_EXP_USER_CREATE_RX_END_PADDING = (1<<11),
+	IB_QP_EXP_USER_CREATE_SCATTER_FCS = (1 << 12),
 };
 
 enum ib_uverbs_exp_create_qp_flags {
@@ -97,7 +98,8 @@ enum ib_uverbs_exp_create_qp_flags {
 					 IB_QP_CREATE_MANAGED_SEND   |
 					 IB_QP_CREATE_MANAGED_RECV	|
 					 IB_QP_EXP_USER_CREATE_ATOMIC_BE_REPLY |
-					 IB_QP_EXP_USER_CREATE_RX_END_PADDING
+					 IB_QP_EXP_USER_CREATE_RX_END_PADDING |
+					 IB_QP_EXP_USER_CREATE_SCATTER_FCS
 };
 
 enum ib_uverbs_exp_create_qp_comp_mask {

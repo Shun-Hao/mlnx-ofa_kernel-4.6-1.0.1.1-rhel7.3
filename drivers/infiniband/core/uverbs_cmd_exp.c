@@ -182,15 +182,21 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
 		}
 
 		attr->create_flags |= cmd_exp->qp_cap_flags;
+
+		/* convert user requset to kernel matching creation flag */
+
 		if (attr->create_flags & IB_QP_EXP_USER_CREATE_ATOMIC_BE_REPLY) {
-			/* convert user requset to kernel matching creation flag */
 			attr->create_flags &= ~IB_QP_EXP_USER_CREATE_ATOMIC_BE_REPLY;
 			attr->create_flags |= IB_QP_EXP_CREATE_ATOMIC_BE_REPLY;
 		}
 		if (attr->create_flags & IB_QP_EXP_USER_CREATE_RX_END_PADDING) {
-			/* convert user requset to kernel matching creation flag */
 			attr->create_flags &= ~IB_QP_EXP_USER_CREATE_RX_END_PADDING;
 			attr->create_flags |= IB_QP_EXP_CREATE_RX_END_PADDING;
+		}
+
+		if (attr->create_flags & IB_QP_EXP_USER_CREATE_SCATTER_FCS) {
+			attr->create_flags &= ~IB_QP_EXP_USER_CREATE_SCATTER_FCS;
+			attr->create_flags |= IB_QP_CREATE_SCATTER_FCS;
 		}
 	}
 
