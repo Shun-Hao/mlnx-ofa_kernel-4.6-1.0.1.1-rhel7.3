@@ -86,6 +86,11 @@ int mlx5_ib_exp_get_cmd_data(struct mlx5_ib_dev *dev,
 	    !(MLX5_CAP_GEN(dev->mdev, end_pad)))
 		return -EOPNOTSUPP;
 
+	if ((ucmd.flags & MLX5_EXP_WQ_FLAG_SCATTER_FCS) &&
+	    (!MLX5_CAP_GEN(dev->mdev, eth_net_offloads) ||
+	     !MLX5_CAP_ETH(dev->mdev, scatter_fcs)))
+		return -EOPNOTSUPP;
+
 	return 0;
 }
 
@@ -129,6 +134,9 @@ void mlx5_ib_exp_set_rqc(void *rqc, struct mlx5_ib_rwq *rwq)
 		MLX5_SET(wq, wq, end_padding_mode, MLX5_WQ_END_PAD_MODE_ALIGN);
 	else
 		MLX5_SET(wq, wq, end_padding_mode, MLX5_WQ_END_PAD_MODE_NONE);
+
+	if (rwq->flags & MLX5_EXP_WQ_FLAG_SCATTER_FCS)
+		MLX5_SET(rqc, rqc, scatter_fcs, 1);
 }
 
 void mlx5_ib_exp_get_hash_parameters(struct ib_qp_init_attr *init_attr,
