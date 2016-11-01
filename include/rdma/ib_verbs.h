@@ -1150,6 +1150,7 @@ enum ib_qp_create_flags {
 	IB_QP_CREATE_PCI_WRITE_END_PADDING	= 1 << 11,
 	/* EXP stuff */
 	IB_QP_EXP_CREATE_ATOMIC_BE_REPLY	= 1 << 15,
+	IB_QP_EXP_CREATE_RX_END_PADDING		= 1 << 16,
 	/* reserve bits 26-31 for low level drivers' internal use */
 	IB_QP_CREATE_RESERVED_START		= 1 << 26,
 	IB_QP_CREATE_RESERVED_END		= 1 << 31,

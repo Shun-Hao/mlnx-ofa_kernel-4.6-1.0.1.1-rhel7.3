@@ -187,6 +187,11 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
 			attr->create_flags &= ~IB_QP_EXP_USER_CREATE_ATOMIC_BE_REPLY;
 			attr->create_flags |= IB_QP_EXP_CREATE_ATOMIC_BE_REPLY;
 		}
+		if (attr->create_flags & IB_QP_EXP_USER_CREATE_RX_END_PADDING) {
+			/* convert user requset to kernel matching creation flag */
+			attr->create_flags &= ~IB_QP_EXP_USER_CREATE_RX_END_PADDING;
+			attr->create_flags |= IB_QP_EXP_CREATE_RX_END_PADDING;
+		}
 	}
 
 	if (cmd_exp->comp_mask & IB_UVERBS_EXP_CREATE_QP_QPG) {
@@ -549,6 +554,11 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_VLAN_OFFLOADS) {
 		resp->vlan_offloads = exp_attr->vlan_offloads;
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_VLAN_OFFLOADS;
+	}
+
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_RX_PAD_END_ALIGN) {
+		resp->rx_pad_end_addr_align = exp_attr->rx_pad_end_addr_align;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_RX_PAD_END_ALIGN;
 	}
 
 	ret = ib_copy_to_udata(ucore, resp, min_t(size_t, sizeof(*resp), ucore->outlen));

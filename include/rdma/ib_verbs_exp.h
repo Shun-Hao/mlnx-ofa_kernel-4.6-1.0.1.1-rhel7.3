@@ -140,6 +140,7 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_MP_RQ		= 1ULL << 16,
 	IB_EXP_DEVICE_ATTR_VLAN_OFFLOADS	= 1ULL << 17,
 	IB_EXP_DEVICE_ATTR_EXT_MASKED_ATOMICS	= 1ULL << 19,
+	IB_EXP_DEVICE_ATTR_RX_PAD_END_ALIGN	= 1ULL << 20,
 };
 
 enum ib_exp_device_cap_flags2 {
@@ -193,6 +194,13 @@ struct ib_exp_device_attr {
 	uint32_t			max_wq_type_rq;
 	struct ib_exp_mp_rq_caps	mp_rq_caps;
 	u16				vlan_offloads;
+	/*
+	 * The alignment of the padding end address.
+	 * Which means that when RX end of packet padding is enabled the device
+	 * will padd the end of RX packet up until the next address which is
+	 * aligned to the rx_pad_end_addr_align size.
+	 */
+	u16				rx_pad_end_addr_align;
 };
 
 enum {

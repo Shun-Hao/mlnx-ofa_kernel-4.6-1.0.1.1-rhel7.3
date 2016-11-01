@@ -88,14 +88,16 @@ struct ib_uverbs_exp_modify_qp {
 };
 
 enum {
-	IB_QP_EXP_USER_CREATE_ATOMIC_BE_REPLY = (1<<8)
+	IB_QP_EXP_USER_CREATE_ATOMIC_BE_REPLY = (1<<8),
+	IB_QP_EXP_USER_CREATE_RX_END_PADDING = (1<<11),
 };
 
 enum ib_uverbs_exp_create_qp_flags {
 	IBV_UVERBS_EXP_CREATE_QP_FLAGS = IB_QP_CREATE_CROSS_CHANNEL  |
 					 IB_QP_CREATE_MANAGED_SEND   |
 					 IB_QP_CREATE_MANAGED_RECV	|
-					 IB_QP_EXP_USER_CREATE_ATOMIC_BE_REPLY
+					 IB_QP_EXP_USER_CREATE_ATOMIC_BE_REPLY |
+					 IB_QP_EXP_USER_CREATE_RX_END_PADDING
 };
 
 enum ib_uverbs_exp_create_qp_comp_mask {
@@ -264,8 +266,8 @@ struct ib_uverbs_exp_query_device_resp {
 	__u16					vlan_offloads;
 	__u8					reserved5[14];
 	struct ib_uverbs_exp_masked_atomic_caps masked_atomic_caps;
-
-
+	__u16					rx_pad_end_addr_align;
+	__u8					reserved1[6];
 };
 
 enum ib_uverbs_exp_create_cq_comp_mask {
