@@ -82,6 +82,10 @@ int mlx5_ib_exp_get_cmd_data(struct mlx5_ib_dev *dev,
 		data->vlan_offloads = ucmd.vlan_offloads;
 	}
 
+	if ((ucmd.flags & MLX5_EXP_WQ_FLAG_RX_END_PADDING) &&
+	    !(MLX5_CAP_GEN(dev->mdev, end_pad)))
+		return -EOPNOTSUPP;
+
 	return 0;
 }
 
@@ -98,6 +102,8 @@ void mlx5_ib_exp_set_rq_attr(struct mlx5_ib_create_wq_data *data,
 	}
 	if (data->comp_mask & MLX5_EXP_CREATE_WQ_VLAN_OFFLOADS)
 		rwq->vlan_offloads = data->vlan_offloads;
+
+	rwq->flags = data->flags;
 }
 
 void mlx5_ib_exp_set_rqc(void *rqc, struct mlx5_ib_rwq *rwq)
@@ -118,6 +124,11 @@ void mlx5_ib_exp_set_rqc(void *rqc, struct mlx5_ib_rwq *rwq)
 	}
 	if (rwq->vlan_offloads & IB_WQ_CVLAN_STRIPPING)
 		MLX5_SET(rqc, rqc, vsd, 0);
+
+	if (rwq->flags & MLX5_EXP_WQ_FLAG_RX_END_PADDING)
+		MLX5_SET(wq, wq, end_padding_mode, MLX5_WQ_END_PAD_MODE_ALIGN);
+	else
+		MLX5_SET(wq, wq, end_padding_mode, MLX5_WQ_END_PAD_MODE_NONE);
 }
 
 void mlx5_ib_exp_get_hash_parameters(struct ib_qp_init_attr *init_attr,

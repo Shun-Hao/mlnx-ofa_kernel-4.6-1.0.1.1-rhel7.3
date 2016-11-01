@@ -170,6 +170,12 @@ static void ext_atomic_caps(struct mlx5_ib_dev *dev,
 				    IB_EXP_DEVICE_EXT_MASKED_ATOMICS;
 }
 
+enum mlx5_addr_align {
+	MLX5_ADDR_ALIGN_0	= 0,
+	MLX5_ADDR_ALIGN_64	= 64,
+	MLX5_ADDR_ALIGN_128	= 128,
+};
+
 int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			     struct ib_exp_device_attr *props,
 			     struct ib_udata *uhw)
@@ -268,6 +274,16 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 				IB_EXP_DEVICE_ATTR_VLAN_OFFLOADS;
 			props->vlan_offloads |= IB_WQ_CVLAN_STRIPPING;
 		}
+	}
+
+	props->rx_pad_end_addr_align = MLX5_ADDR_ALIGN_0;
+	if (MLX5_CAP_GEN(dev->mdev, end_pad)) {
+		if (MLX5_CAP_GEN(dev->mdev, cache_line_128byte) &&
+		    (cache_line_size() == 128))
+			props->rx_pad_end_addr_align = MLX5_ADDR_ALIGN_128;
+		else
+			props->rx_pad_end_addr_align = MLX5_ADDR_ALIGN_64;
+		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_RX_PAD_END_ALIGN;
 	}
 
 	return 0;

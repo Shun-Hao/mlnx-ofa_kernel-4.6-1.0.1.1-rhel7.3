@@ -319,6 +319,7 @@ struct mlx5_ib_rwq {
 	u32			create_flags; /* Use enum mlx5_ib_wq_flags */
 	struct mlx5_ib_mp_rq	mp_rq;
 	u16			vlan_offloads;
+	u32			flags;
 };
 
 enum {

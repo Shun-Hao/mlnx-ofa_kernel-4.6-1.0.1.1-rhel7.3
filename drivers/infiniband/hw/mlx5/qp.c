@@ -82,6 +82,11 @@ static int get_user_data(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 }
  
 enum {
+	MLX5_QP_END_PAD_MODE_ALIGN	= MLX5_WQ_END_PAD_MODE_ALIGN,
+	MLX5_QP_END_PAD_MODE_NONE	= MLX5_WQ_END_PAD_MODE_NONE,
+};
+
+enum {
 	MLX5_IB_ACK_REQ_FREQ	= 8,
 };
 
@@ -1940,6 +1945,10 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 		qp->flags |= MLX5_IB_QP_CAP_SCATTER_FCS;
 	}
 
+	if (is_exp && (init_attr->create_flags & IB_QP_EXP_CREATE_RX_END_PADDING) &&
+	    MLX5_CAP_GEN(mdev, end_pad))
+		qp->flags |= MLX5_IB_QP_PCI_WRITE_END_PADDING;
+
 	if (init_attr->sq_sig_type == IB_SIGNAL_ALL_WR)
 		qp->sq_signal_bits = MLX5_WQE_CTRL_CQ_UPDATE;
 
@@ -2100,7 +2109,9 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 		MLX5_SET(qpc, qpc, cd_slave_send, 1);
 	if (qp->flags & MLX5_IB_QP_MANAGED_RECV)
 		MLX5_SET(qpc, qpc, cd_slave_receive, 1);
-
+	if (qp->flags & MLX5_IB_QP_PCI_WRITE_END_PADDING)
+		MLX5_SET(qpc, qpc, end_padding_mode, MLX5_QP_END_PAD_MODE_ALIGN);
+	
 	if (qp->scat_cqe && is_connected(init_attr->qp_type)) {
 		configure_responder_scat_cqe(init_attr, qpc);
 		configure_requester_scat_cqe(dev, init_attr,
