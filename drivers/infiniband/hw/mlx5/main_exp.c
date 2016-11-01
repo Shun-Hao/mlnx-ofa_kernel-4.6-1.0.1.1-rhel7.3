@@ -277,6 +277,9 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			props->vlan_offloads |= IB_WQ_CVLAN_STRIPPING |
 						IB_WQ_CVLAN_INSERTION;
 		}
+		if (MLX5_CAP_ETH(dev->mdev, scatter_fcs))
+			props->device_cap_flags2 |=
+				IB_EXP_DEVICE_SCATTER_FCS;
 	}
 
 	props->rx_pad_end_addr_align = MLX5_ADDR_ALIGN_0;
