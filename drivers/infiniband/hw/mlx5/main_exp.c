@@ -269,7 +269,8 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		if (MLX5_CAP_ETH(dev->mdev, csum_cap))
 			props->device_cap_flags2 |=
 				IB_EXP_DEVICE_RX_CSUM_IP_PKT |
-				IB_EXP_DEVICE_RX_CSUM_TCP_UDP_PKT;
+				IB_EXP_DEVICE_RX_CSUM_TCP_UDP_PKT |
+				IB_EXP_DEVICE_RX_TCP_UDP_PKT_TYPE;
 		if (MLX5_CAP_ETH(dev->mdev, vlan_cap)) {
 			props->exp_comp_mask |=
 				IB_EXP_DEVICE_ATTR_VLAN_OFFLOADS;
