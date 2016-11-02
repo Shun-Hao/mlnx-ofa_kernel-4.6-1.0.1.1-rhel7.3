@@ -826,7 +826,8 @@ static int create_cq_user(struct mlx5_ib_dev *dev, struct ib_udata *udata,
 
 	cq->buf.umem = ib_umem_get(context, ucmd.buf_addr,
 				   entries * ucmd.cqe_size,
-				   IB_ACCESS_LOCAL_WRITE, 1);
+				   IB_ACCESS_LOCAL_WRITE, 1,
+				   IB_PEER_MEM_ALLOW);
 	if (IS_ERR(cq->buf.umem)) {
 		err = PTR_ERR(cq->buf.umem);
 		return err;
@@ -1245,7 +1246,7 @@ static int resize_user(struct mlx5_ib_dev *dev, struct mlx5_ib_cq *cq,
 
 	umem = ib_umem_get(context, ucmd.buf_addr,
 			   (size_t)ucmd.cqe_size * entries,
-			   IB_ACCESS_LOCAL_WRITE, 1);
+			   IB_ACCESS_LOCAL_WRITE, 1, IB_PEER_MEM_ALLOW);
 	if (IS_ERR(umem)) {
 		err = PTR_ERR(umem);
 		return err;

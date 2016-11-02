@@ -369,7 +369,7 @@ end:
 
 static struct ib_umem *mlx4_get_umem_mr(struct ib_ucontext *context, u64 start,
 					u64 length, u64 virt_addr,
-					int access_flags)
+					int access_flags, unsigned long peer_mem_flags)
 {
 	/*
 	 * Force registering the memory as writable if the underlying pages
@@ -398,7 +398,7 @@ static struct ib_umem *mlx4_get_umem_mr(struct ib_ucontext *context, u64 start,
 		up_read(&current->mm->mmap_sem);
 	}
 
-	return ib_umem_get(context, start, length, access_flags, 0);
+	return ib_umem_get(context, start, length, access_flags, 0, peer_mem_flags);
 }
 
 struct ib_mr *mlx4_ib_reg_user_mr(struct ib_pd *pd, u64 start, u64 length,
@@ -419,7 +419,7 @@ struct ib_mr *mlx4_ib_reg_user_mr(struct ib_pd *pd, u64 start, u64 length,
 		return ERR_PTR(-ENOMEM);
 
 	mr->umem = mlx4_get_umem_mr(pd->uobject->context, start, length,
-				    virt_addr, access_flags);
+				    virt_addr, access_flags, IB_PEER_MEM_ALLOW);
 	if (IS_ERR(mr->umem)) {
 		err = PTR_ERR(mr->umem);
 		goto err_free;
@@ -471,6 +471,10 @@ int mlx4_ib_rereg_user_mr(struct ib_mr *mr, int flags,
 	struct mlx4_mpt_entry **pmpt_entry = &mpt_entry;
 	int err;
 
+	/* Peer memory isn't supported */
+	 if (mmr->umem->ib_peer_mem)
+		return -ENOTSUPP;
+
 	/* Since we synchronize this call and mlx4_ib_dereg_mr via uverbs,
 	 * we assume that the calls can't run concurrently. Otherwise, a
 	 * race exists.
@@ -510,7 +514,7 @@ int mlx4_ib_rereg_user_mr(struct ib_mr *mr, int flags,
 		ib_umem_release(mmr->umem);
 		mmr->umem =
 			mlx4_get_umem_mr(mr->uobject->context, start, length,
-					 virt_addr, mr_access_flags);
+					 virt_addr, mr_access_flags, 0);
 		if (IS_ERR(mmr->umem)) {
 			err = PTR_ERR(mmr->umem);
 			/* Prevent mlx4_ib_dereg_mr from free'ing invalid pointer */

@@ -1035,7 +1035,8 @@ static int create_qp_common(struct mlx4_ib_dev *dev, struct ib_pd *pd,
 
 		qp->umem = ib_umem_get(pd->uobject->context,
 				(src == MLX4_IB_QP_SRC) ? ucmd.qp.buf_addr :
-				ucmd.wq.buf_addr, qp->buf_size, 0, 0);
+				ucmd.wq.buf_addr, qp->buf_size, 0, 0,
+				IB_PEER_MEM_ALLOW);
 		if (IS_ERR(qp->umem)) {
 			err = PTR_ERR(qp->umem);
 			goto err;

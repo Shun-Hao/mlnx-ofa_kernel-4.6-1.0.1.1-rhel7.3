@@ -726,7 +726,7 @@ static int mlx5_ib_umem_get(struct mlx5_ib_dev *dev,
 {
 	int err;
 
-	*umem = ib_umem_get(pd->uobject->context, addr, size, 0, 0);
+	*umem = ib_umem_get(pd->uobject->context, addr, size, 0, 0, IB_PEER_MEM_ALLOW);
 	if (IS_ERR(*umem)) {
 		mlx5_ib_dbg(dev, "umem_get failed\n");
 		return PTR_ERR(*umem);
@@ -782,7 +782,7 @@ static int create_user_rq(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 
 	context = to_mucontext(pd->uobject->context);
 	rwq->umem = ib_umem_get(pd->uobject->context, data->buf_addr,
-			       rwq->buf_size, 0, 0);
+			       rwq->buf_size, 0, 0, 0);
 	if (IS_ERR(rwq->umem)) {
 		mlx5_ib_dbg(dev, "umem_get failed\n");
 		err = PTR_ERR(rwq->umem);

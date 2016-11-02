@@ -725,7 +725,7 @@ static int mr_cache_max_order(struct mlx5_ib_dev *dev)
 static int mr_umem_get(struct ib_pd *pd, u64 start, u64 length,
 		       int access_flags, struct ib_umem **umem,
 		       int *npages, int *page_shift, int *ncont,
-		       int *order)
+		       int *order, int peer_mem_flags)
 {
 	struct mlx5_ib_dev *dev = to_mdev(pd->device);
 	struct ib_umem *u;
@@ -733,7 +733,8 @@ static int mr_umem_get(struct ib_pd *pd, u64 start, u64 length,
 
 	*umem = NULL;
 
-	u = ib_umem_get(pd->uobject->context, start, length, access_flags, 0);
+	u = ib_umem_get(pd->uobject->context, start, length, access_flags, 0,
+			peer_mem_flags);
 	err = PTR_ERR_OR_ZERO(u);
 	if (err) {
 		mlx5_ib_dbg(dev, "umem get failed (%d)\n", err);
@@ -1214,7 +1215,8 @@ struct ib_mr *mlx5_ib_reg_user_mr(struct ib_pd *pd, u64 start, u64 length,
 #endif
 
 	err = mr_umem_get(pd, start, length, access_flags, &umem, &npages,
-			   &page_shift, &ncont, &order);
+			   &page_shift, &ncont, &order,
+			   IB_PEER_MEM_ALLOW);
 
 	if (err < 0)
 		return ERR_PTR(err);
@@ -1358,6 +1360,10 @@ int mlx5_ib_rereg_user_mr(struct ib_mr *ib_mr, int flags, u64 start,
 
 	atomic_sub(mr->npages, &dev->mdev->priv.reg_pages);
 
+	/* Peer memory isn't supported */
+	 if (mr->umem->ib_peer_mem)
+		return -ENOTSUPP;
+
 	if (!mr->umem)
 		return -EINVAL;
 
@@ -1378,7 +1384,7 @@ int mlx5_ib_rereg_user_mr(struct ib_mr *ib_mr, int flags, u64 start,
 		ib_umem_release(mr->umem);
 		mr->umem = NULL;
 		err = mr_umem_get(pd, addr, len, access_flags, &mr->umem,
-				  &npages, &page_shift, &ncont, &order);
+				  &npages, &page_shift, &ncont, &order, 0);
 		if (err)
 			goto err;
 	}
