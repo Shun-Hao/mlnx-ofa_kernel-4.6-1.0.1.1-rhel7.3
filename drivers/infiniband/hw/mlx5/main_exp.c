@@ -295,6 +295,21 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_TSO_CAPS;
 		}
 
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_EC_CAPS;
+	if (MLX5_CAP_GEN(dev->mdev, vector_calc)) {
+		if (MLX5_CAP_VECTOR_CALC(dev->mdev, calc_matrix)  &&
+		    MLX5_CAP_VECTOR_CALC(dev->mdev, calc0.op_xor) &&
+		    MLX5_CAP_VECTOR_CALC(dev->mdev, calc1.op_xor) &&
+		    MLX5_CAP_VECTOR_CALC(dev->mdev, calc2.op_xor) &&
+		    MLX5_CAP_VECTOR_CALC(dev->mdev, calc3.op_xor)) {
+			props->device_cap_flags2 |= IB_EXP_DEVICE_EC_OFFLOAD;
+			props->ec_caps.max_ec_data_vector_count =
+				MLX5_CAP_VECTOR_CALC(dev->mdev, max_vec_count);
+			/* XXX: Should be MAX_SQ_SIZE / (11 * WQE_BB) */
+			props->ec_caps.max_ec_calc_inflight_calcs = 1024;
+		}
+	}
+
 	return 0;
 }
 
