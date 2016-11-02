@@ -567,6 +567,14 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_RX_PAD_END_ALIGN;
 	}
 
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_EC_CAPS) {
+		resp->ec_caps.max_ec_data_vector_count =
+				exp_attr->ec_caps.max_ec_data_vector_count;
+		resp->ec_caps.max_ec_calc_inflight_calcs =
+				exp_attr->ec_caps.max_ec_calc_inflight_calcs;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_EC_CAPS;
+	}
+
 	ret = ib_copy_to_udata(ucore, resp, min_t(size_t, sizeof(*resp), ucore->outlen));
 out:
 	kfree(exp_attr);

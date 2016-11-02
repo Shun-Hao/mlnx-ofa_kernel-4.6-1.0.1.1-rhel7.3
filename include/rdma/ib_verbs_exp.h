@@ -138,6 +138,7 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_MAX_WQ_TYPE_RQ	= 1ULL << 14,
 	IB_EXP_DEVICE_ATTR_MAX_DEVICE_CTX	= 1ULL << 15,
 	IB_EXP_DEVICE_ATTR_MP_RQ		= 1ULL << 16,
+	IB_EXP_DEVICE_ATTR_EC_CAPS		= 1ULL << 18,
 	IB_EXP_DEVICE_ATTR_VLAN_OFFLOADS	= 1ULL << 17,
 	IB_EXP_DEVICE_ATTR_EXT_MASKED_ATOMICS	= 1ULL << 19,
 	IB_EXP_DEVICE_ATTR_RX_PAD_END_ALIGN	= 1ULL << 20,
@@ -155,9 +156,11 @@ enum ib_exp_device_cap_flags2 {
 	IB_EXP_DEVICE_VXLAN_SUPPORT		= 1 << 10,
 	IB_EXP_DEVICE_RX_CSUM_TCP_UDP_PKT	= 1 << 11,
 	IB_EXP_DEVICE_RX_CSUM_IP_PKT		= 1 << 12,
+	IB_EXP_DEVICE_EC_OFFLOAD		= 1 << 13,
 	IB_EXP_DEVICE_EXT_MASKED_ATOMICS	= 1 << 14,
 	IB_EXP_DEVICE_CROSS_CHANNEL	= 1 << 28, /* Comapt with user exp area */
-	IB_EXP_DEVICE_MASK =	IB_DEVICE_CROSS_CHANNEL,
+	IB_EXP_DEVICE_MASK =	IB_DEVICE_CROSS_CHANNEL |
+				IB_EXP_DEVICE_EC_OFFLOAD,
 };
 
 struct ib_exp_rx_hash_caps {
@@ -176,6 +179,11 @@ struct ib_exp_tso_caps {
 	 * supported_qpts |= 1 << IB_QPT_RAW_PACKET
 	 */
 	__u32 supported_qpts;
+};
+
+struct ib_exp_ec_caps {
+	uint32_t	max_ec_data_vector_count;
+	uint32_t	max_ec_calc_inflight_calcs;
 };
 
 struct ib_exp_device_attr {
@@ -205,6 +213,7 @@ struct ib_exp_device_attr {
 	uint32_t			max_wq_type_rq;
 	struct ib_exp_mp_rq_caps	mp_rq_caps;
 	u16				vlan_offloads;
+	struct ib_exp_ec_caps		ec_caps;
 	/*
 	 * The alignment of the padding end address.
 	 * Which means that when RX end of packet padding is enabled the device

@@ -198,6 +198,11 @@ struct ib_uverbs_exp_modify_cq {
 	__u32 rsvd;
 };
 
+struct ib_uverbs_exp_ec_caps {
+	__u32        max_ec_data_vector_count;
+	__u32        max_ec_calc_inflight_calcs;
+};
+
 struct ib_uverbs_exp_query_device {
 	__u64 comp_mask;
 	__u64 driver_data[0];
@@ -274,10 +279,11 @@ struct ib_uverbs_exp_query_device_resp {
 	__u32					max_device_ctx;
 	struct ib_uverbs_exp_mp_rq_caps		mp_rq_caps;
 	__u16					vlan_offloads;
-	__u8					reserved5[14];
+	__u8					reserved1[6];
+	struct ib_uverbs_exp_ec_caps            ec_caps;
 	struct ib_uverbs_exp_masked_atomic_caps masked_atomic_caps;
 	__u16					rx_pad_end_addr_align;
-	__u8					reserved1[6];
+	__u8					reserved2[6];
 	struct ib_uverbs_exp_tso_caps		tso_caps;
 };
 
