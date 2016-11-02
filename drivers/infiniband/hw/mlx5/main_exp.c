@@ -273,7 +273,8 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		if (MLX5_CAP_ETH(dev->mdev, vlan_cap)) {
 			props->exp_comp_mask |=
 				IB_EXP_DEVICE_ATTR_VLAN_OFFLOADS;
-			props->vlan_offloads |= IB_WQ_CVLAN_STRIPPING;
+			props->vlan_offloads |= IB_WQ_CVLAN_STRIPPING |
+						IB_WQ_CVLAN_INSERTION;
 		}
 	}
 

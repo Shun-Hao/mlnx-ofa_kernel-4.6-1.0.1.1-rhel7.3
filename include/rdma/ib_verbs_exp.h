@@ -41,6 +41,7 @@ struct ib_qpg_init_attrib {
 
 enum ib_wq_vlan_offloads {
 	IB_WQ_CVLAN_STRIPPING	= (1 << 0),
+	IB_WQ_CVLAN_INSERTION	= (1 << 1),
 };
 
 enum ib_mp_rq_shifts {
