@@ -1553,6 +1553,15 @@ static struct mlx4_cmd_info cmd_info[] = {
 		.wrapper = mlx4_QUERY_IF_STAT_wrapper
 	},
 	{
+		.opcode = MLX4_CMD_SET_IF_STAT,
+		.has_inbox = false,
+		.has_outbox = false,
+		.out_is_imm = false,
+		.encode_slave_id = false,
+		.verify = NULL,
+		.wrapper = mlx4_SET_IF_STAT_wrapper
+	},
+	{
 		.opcode = MLX4_CMD_ACCESS_REG,
 		.has_inbox = true,
 		.has_outbox = true,
@@ -2123,6 +2132,7 @@ static void mlx4_master_do_cmd(struct mlx4_dev *dev, int slave, u8 cmd,
 		slave_state[slave].active = false;
 		slave_state[slave].old_vlan_api = false;
 		slave_state[slave].vst_qinq_supported = false;
+		slave_state[slave].counters_mode = MLX4_IF_CNT_MODE_BASIC;
 		mlx4_master_deactivate_admin_state(priv, slave);
 		for (i = 0; i < MLX4_EVENT_TYPES_NUM; ++i) {
 				slave_state[slave].event_eq[i].eqn = -1;
@@ -2441,6 +2451,7 @@ int mlx4_multi_func_init(struct mlx4_dev *dev)
 				mlx4_set_random_admin_guid(dev, i, port);
 			}
 			spin_lock_init(&s_state->lock);
+			s_state->counters_mode = MLX4_IF_CNT_MODE_BASIC;
 		}
 
 		if (dev->caps.flags2 & MLX4_DEV_CAP_FLAG2_QOS_VPP) {

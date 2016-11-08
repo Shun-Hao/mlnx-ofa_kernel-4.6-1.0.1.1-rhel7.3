@@ -73,6 +73,11 @@
  };
 
 enum {
+	MLX4_IF_CNT_MODE_BASIC,
+	MLX4_IF_CNT_MODE_EXT,
+};
+
+enum {
 	MLX4_HCR_BASE		= 0x80680,
 	MLX4_HCR_SIZE		= 0x0001c,
 	MLX4_CLR_INT_SIZE	= 0x00008,
@@ -505,6 +510,7 @@ struct mlx4_slave_state {
 	u8 is_slave_going_down;
 	u32 cookie;
 	enum slave_port_state port_state[MLX4_MAX_PORTS + 1];
+	u8 counters_mode;
 };
 
 #define MLX4_VGT 4095
@@ -1362,6 +1368,11 @@ int mlx4_QUERY_IF_STAT_wrapper(struct mlx4_dev *dev, int slave,
 			       struct mlx4_cmd_mailbox *inbox,
 			       struct mlx4_cmd_mailbox *outbox,
 			       struct mlx4_cmd_info *cmd);
+int mlx4_SET_IF_STAT_wrapper(struct mlx4_dev *dev, int slave,
+			     struct mlx4_vhcr *vhcr,
+			     struct mlx4_cmd_mailbox *inbox,
+			     struct mlx4_cmd_mailbox *outbox,
+			     struct mlx4_cmd_info *cmd);
 int mlx4_QP_FLOW_STEERING_ATTACH_wrapper(struct mlx4_dev *dev, int slave,
 					 struct mlx4_vhcr *vhcr,
 					 struct mlx4_cmd_mailbox *inbox,

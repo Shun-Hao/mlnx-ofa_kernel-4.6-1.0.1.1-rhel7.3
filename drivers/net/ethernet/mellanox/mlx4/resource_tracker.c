@@ -4568,6 +4568,31 @@ int mlx4_QUERY_IF_STAT_wrapper(struct mlx4_dev *dev, int slave,
 	return err;
 }
 
+int mlx4_SET_IF_STAT_wrapper(struct mlx4_dev *dev, int slave,
+			     struct mlx4_vhcr *vhcr,
+			     struct mlx4_cmd_mailbox *inbox,
+			     struct mlx4_cmd_mailbox *outbox,
+			     struct mlx4_cmd_info *cmd)
+{
+	struct mlx4_priv *priv = mlx4_priv(dev);
+	struct mlx4_slave_state *slave_state = priv->mfunc.master.slave_state;
+	u8 counters_mode;
+
+	if (vhcr->in_param != MLX4_IF_CNT_MODE_BASIC &&
+	    vhcr->in_param != MLX4_IF_CNT_MODE_EXT)
+		return -EINVAL;
+
+	counters_mode = vhcr->in_param;
+	slave_state[slave].counters_mode = counters_mode;
+
+	if (mlx4_master_func_num(dev) == slave)
+		return mlx4_cmd(dev, counters_mode, 0, 0,
+				MLX4_CMD_SET_IF_STAT, MLX4_CMD_TIME_CLASS_A,
+				MLX4_CMD_NATIVE);
+
+	return 0;
+}
+
 static void detach_qp(struct mlx4_dev *dev, int slave, struct res_qp *rqp)
 {
 	struct res_gid *rgid;
