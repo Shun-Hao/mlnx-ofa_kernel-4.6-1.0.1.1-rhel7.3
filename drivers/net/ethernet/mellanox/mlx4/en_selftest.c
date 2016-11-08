@@ -123,6 +123,11 @@ static int mlx4_en_test_interrupts(struct mlx4_en_priv *priv)
 	if (!(mdev->dev->flags & MLX4_FLAG_MSI_X) || mlx4_is_slave(mdev->dev))
 		return err;
 
+	/* Test completion interrupts only if port is up */
+	mutex_lock(&mdev->state_lock);
+	if (!priv->port_up)
+		goto out;
+
 	/* A loop over all completion vectors of current port,
 	 * for each vector check whether it works by mapping command
 	 * completions to that vector and performing a NOP command
@@ -133,6 +138,8 @@ static int mlx4_en_test_interrupts(struct mlx4_en_priv *priv)
 			break;
 	}
 
+out:
+	mutex_unlock(&mdev->state_lock);
 	return err;
 }
 
