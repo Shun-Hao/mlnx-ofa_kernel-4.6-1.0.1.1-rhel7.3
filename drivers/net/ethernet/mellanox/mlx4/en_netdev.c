@@ -2034,12 +2034,125 @@ static void mlx4_en_restart(struct work_struct *work)
 	rtnl_unlock();
 }
 
+static const char fmt_u64[] = "%llu\n";
+
+struct en_stats_attribute {
+	struct attribute attr;
+	ssize_t (*show)(struct en_port *, struct en_stats_attribute *,
+			char *buf);
+	ssize_t (*store)(struct en_port *, struct en_stats_attribute *,
+			 char *buf, size_t count);
+};
+
 struct en_port_attribute {
 	struct attribute attr;
 	ssize_t (*show)(struct en_port *, struct en_port_attribute *,
 			char *buf);
 	ssize_t (*store)(struct en_port *, struct en_port_attribute *,
 			 const char *buf, size_t count);
+};
+
+#define EN_PORT_ATTR(_name, _mode, _show, _store) \
+struct en_stats_attribute en_stats_attr_##_name = \
+	__ATTR(_name, _mode, _show, _store)
+
+/* Show a given an attribute in the statistics group */
+static ssize_t mlx4_en_show_vf_statistics(struct en_port *en_p,
+					  struct en_stats_attribute *attr,
+					  char *buf, unsigned long offset)
+{
+	struct net_device_stats vf_stats;
+	ssize_t ret;
+
+	mlx4_get_vf_stats_netdev(en_p->dev, en_p->port_num, en_p->vport_num,
+				 &vf_stats);
+
+	ret = sprintf(buf, fmt_u64, *(u64 *)(((u8 *)&vf_stats) + offset));
+
+	return ret;
+}
+
+/* generate a read-only statistics attribute */
+#define VFSTAT_ENTRY(name)						\
+static ssize_t name##_show(struct en_port *en_p,			\
+			   struct en_stats_attribute *attr, char *buf)	\
+{									\
+	return mlx4_en_show_vf_statistics(en_p, attr, buf,		\
+			    offsetof(struct net_device_stats, name));	\
+}									\
+static EN_PORT_ATTR(name, S_IRUGO, name##_show, NULL)
+
+VFSTAT_ENTRY(rx_packets);
+VFSTAT_ENTRY(tx_packets);
+VFSTAT_ENTRY(rx_bytes);
+VFSTAT_ENTRY(tx_bytes);
+VFSTAT_ENTRY(rx_errors);
+VFSTAT_ENTRY(tx_errors);
+VFSTAT_ENTRY(rx_dropped);
+VFSTAT_ENTRY(tx_dropped);
+VFSTAT_ENTRY(multicast);
+VFSTAT_ENTRY(collisions);
+VFSTAT_ENTRY(rx_length_errors);
+VFSTAT_ENTRY(rx_over_errors);
+VFSTAT_ENTRY(rx_crc_errors);
+VFSTAT_ENTRY(rx_frame_errors);
+VFSTAT_ENTRY(rx_fifo_errors);
+VFSTAT_ENTRY(rx_missed_errors);
+VFSTAT_ENTRY(tx_aborted_errors);
+VFSTAT_ENTRY(tx_carrier_errors);
+VFSTAT_ENTRY(tx_fifo_errors);
+VFSTAT_ENTRY(tx_heartbeat_errors);
+VFSTAT_ENTRY(tx_window_errors);
+VFSTAT_ENTRY(rx_compressed);
+VFSTAT_ENTRY(tx_compressed);
+
+static struct attribute *vfstat_attrs[] = {
+	&en_stats_attr_rx_packets.attr,
+	&en_stats_attr_tx_packets.attr,
+	&en_stats_attr_rx_bytes.attr,
+	&en_stats_attr_tx_bytes.attr,
+	&en_stats_attr_rx_errors.attr,
+	&en_stats_attr_tx_errors.attr,
+	&en_stats_attr_rx_dropped.attr,
+	&en_stats_attr_tx_dropped.attr,
+	&en_stats_attr_multicast.attr,
+	&en_stats_attr_collisions.attr,
+	&en_stats_attr_rx_length_errors.attr,
+	&en_stats_attr_rx_over_errors.attr,
+	&en_stats_attr_rx_crc_errors.attr,
+	&en_stats_attr_rx_frame_errors.attr,
+	&en_stats_attr_rx_fifo_errors.attr,
+	&en_stats_attr_rx_missed_errors.attr,
+	&en_stats_attr_tx_aborted_errors.attr,
+	&en_stats_attr_tx_carrier_errors.attr,
+	&en_stats_attr_tx_fifo_errors.attr,
+	&en_stats_attr_tx_heartbeat_errors.attr,
+	&en_stats_attr_tx_window_errors.attr,
+	&en_stats_attr_rx_compressed.attr,
+	&en_stats_attr_tx_compressed.attr,
+	NULL
+};
+
+static ssize_t en_stats_show(struct kobject *kobj, struct attribute *attr,
+			     char *buf)
+{
+	struct en_stats_attribute *en_stats_attr =
+		container_of(attr, struct en_stats_attribute, attr);
+	struct en_port *p = container_of(kobj, struct en_port, kobj_stats);
+
+	if (!en_stats_attr->show)
+		return -EIO;
+
+	return en_stats_attr->show(p, en_stats_attr, buf);
+}
+
+static const struct sysfs_ops en_port_stats_sysfs_ops = {
+	.show = en_stats_show
+};
+
+static struct kobj_type en_port_stats = {
+	.sysfs_ops  = &en_port_stats_sysfs_ops,
+	.default_attrs = vfstat_attrs,
 };
 
 static ssize_t en_port_show(struct kobject *kobj,
@@ -2407,6 +2520,7 @@ void mlx4_en_destroy_netdev(struct net_device *dev)
 
 		for (i = 0; i < priv->mdev->dev->persist->num_vfs; i++) {
 			if (priv->vf_ports[i]) {
+				kobject_put(&priv->vf_ports[i]->kobj_stats);
 				kobject_put(&priv->vf_ports[i]->kobj_vf);
 				kfree(priv->vf_ports[i]);
 				priv->vf_ports[i] = NULL;
@@ -3655,6 +3769,16 @@ int mlx4_en_init_netdev(struct mlx4_en_dev *mdev, int port,
 						   &dev->dev.kobj,
 						   "vf%d", i);
 			if (err) {
+				kfree(priv->vf_ports[i]);
+				priv->vf_ports[i] = NULL;
+				goto out;
+			}
+			err = kobject_init_and_add(&priv->vf_ports[i]->kobj_stats,
+						   &en_port_stats,
+						   &priv->vf_ports[i]->kobj_vf,
+						   "statistics");
+			if (err) {
+				kobject_put(&priv->vf_ports[i]->kobj_vf);
 				kfree(priv->vf_ports[i]);
 				priv->vf_ports[i] = NULL;
 				goto out;

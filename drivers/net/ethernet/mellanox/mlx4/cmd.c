@@ -3383,12 +3383,10 @@ if_stat_out:
 }
 EXPORT_SYMBOL_GPL(mlx4_get_counter_stats);
 
-int mlx4_get_vf_stats(struct mlx4_dev *dev, int port, int vf_idx,
-		      struct ifla_vf_stats *vf_stats)
+static int mlx4_calc_vf_counters_wrap(struct mlx4_dev *dev, int port,
+				      int vf_idx, struct mlx4_counter *vf_stats)
 {
-	struct mlx4_counter tmp_vf_stats;
 	int slave;
-	int err = 0;
 
 	if (!vf_stats)
 		return -EINVAL;
@@ -3401,7 +3399,17 @@ int mlx4_get_vf_stats(struct mlx4_dev *dev, int port, int vf_idx,
 		return -EINVAL;
 
 	port = mlx4_slaves_closest_port(dev, slave, port);
-	err = mlx4_calc_vf_counters(dev, slave, port, &tmp_vf_stats);
+
+	return mlx4_calc_vf_counters(dev, slave, port, vf_stats);
+}
+
+int mlx4_get_vf_stats(struct mlx4_dev *dev, int port, int vf_idx,
+		      struct ifla_vf_stats *vf_stats)
+{
+	struct mlx4_counter tmp_vf_stats;
+	int err;
+
+	err = mlx4_calc_vf_counters_wrap(dev, port, vf_idx, &tmp_vf_stats);
 	if (err)
 		return err;
 
@@ -3440,6 +3448,55 @@ int mlx4_get_vf_stats(struct mlx4_dev *dev, int port, int vf_idx,
 	return 0;
 }
 EXPORT_SYMBOL_GPL(mlx4_get_vf_stats);
+
+int mlx4_get_vf_stats_netdev(struct mlx4_dev *dev, int port, int vf_idx,
+			     struct net_device_stats *vf_stats)
+{
+	struct mlx4_counter tmp_vf_stats;
+	int err;
+
+	err = mlx4_calc_vf_counters_wrap(dev, port, vf_idx, &tmp_vf_stats);
+	if (err)
+		return err;
+
+	memset(vf_stats, 0, sizeof(*vf_stats));
+
+	if (tmp_vf_stats.counter_mode == MLX4_IF_CNT_MODE_BASIC) {
+		struct mlx4_if_stat_basic *basic = &tmp_vf_stats.basic;
+
+		vf_stats->rx_packets = be64_to_cpu(basic->if_rx_frames);
+		vf_stats->tx_packets = be64_to_cpu(basic->if_tx_frames);
+		vf_stats->rx_bytes = be64_to_cpu(basic->if_rx_octets);
+		vf_stats->tx_bytes = be64_to_cpu(basic->if_tx_octets);
+	} else if (tmp_vf_stats.counter_mode == MLX4_IF_CNT_MODE_EXT) {
+		struct mlx4_if_stat_ext *ext = &tmp_vf_stats.ext;
+
+		vf_stats->rx_packets =
+			be64_to_cpu(ext->if_rx_broadcast_frames) +
+			be64_to_cpu(ext->if_rx_unicast_frames) +
+			be64_to_cpu(ext->if_rx_multicast_frames);
+		vf_stats->tx_packets =
+			be64_to_cpu(ext->if_tx_broadcast_frames) +
+			be64_to_cpu(ext->if_tx_unicast_frames) +
+			be64_to_cpu(ext->if_tx_multicast_frames);
+		vf_stats->rx_bytes =
+			be64_to_cpu(ext->if_rx_broadcast_octets) +
+			be64_to_cpu(ext->if_rx_unicast_octets) +
+			be64_to_cpu(ext->if_rx_multicast_octets);
+		vf_stats->tx_bytes =
+			be64_to_cpu(ext->if_tx_broadcast_octets) +
+			be64_to_cpu(ext->if_tx_unicast_octets) +
+			be64_to_cpu(ext->if_tx_multicast_octets);
+		vf_stats->rx_errors =
+			be64_to_cpu(ext->if_rx_error_frames);
+		vf_stats->rx_dropped = be64_to_cpu(ext->if_rx_nobuffer_frames);
+		vf_stats->tx_dropped = be64_to_cpu(ext->if_tx_dropped_frames);
+		vf_stats->multicast = be64_to_cpu(ext->if_rx_multicast_frames);
+	}
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(mlx4_get_vf_stats_netdev);
 
 int mlx4_vf_smi_enabled(struct mlx4_dev *dev, int slave, int port)
 {

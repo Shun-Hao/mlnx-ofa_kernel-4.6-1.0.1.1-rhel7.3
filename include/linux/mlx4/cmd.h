@@ -308,6 +308,9 @@ int mlx4_get_counter_stats(struct mlx4_dev *dev, int counter_index,
 			   struct mlx4_counter *counter_stats, int reset);
 int mlx4_get_vf_stats(struct mlx4_dev *dev, int port, int vf_idx,
 		      struct ifla_vf_stats *vf_stats);
+int mlx4_get_vf_stats_netdev(struct mlx4_dev *dev, int port, int vf_idx,
+			     struct net_device_stats *vf_stats);
+
 u32 mlx4_comm_get_version(void);
 int mlx4_set_vf_mac(struct mlx4_dev *dev, int port, int vf, u8 *mac);
 int mlx4_set_vf_vlan(struct mlx4_dev *dev, int port, int vf, u16 vlan,
