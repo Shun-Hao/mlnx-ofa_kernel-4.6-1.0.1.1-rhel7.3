@@ -2034,6 +2034,50 @@ static void mlx4_en_restart(struct work_struct *work)
 	rtnl_unlock();
 }
 
+struct en_port_attribute {
+	struct attribute attr;
+	ssize_t (*show)(struct en_port *, struct en_port_attribute *,
+			char *buf);
+	ssize_t (*store)(struct en_port *, struct en_port_attribute *,
+			 const char *buf, size_t count);
+};
+
+static ssize_t en_port_show(struct kobject *kobj,
+			    struct attribute *attr, char *buf)
+{
+	struct en_port_attribute *en_port_attr =
+		container_of(attr, struct en_port_attribute, attr);
+	struct en_port *p = container_of(kobj, struct en_port, kobj_vf);
+
+	if (!en_port_attr->show)
+		return -EIO;
+
+	return en_port_attr->show(p, en_port_attr, buf);
+}
+
+static ssize_t en_port_store(struct kobject *kobj,
+			     struct attribute *attr,
+			     const char *buf, size_t count)
+{
+	struct en_port_attribute *en_port_attr =
+		container_of(attr, struct en_port_attribute, attr);
+	struct en_port *p = container_of(kobj, struct en_port, kobj_vf);
+
+	if (!en_port_attr->store)
+		return -EIO;
+
+	return en_port_attr->store(p, en_port_attr, buf, count);
+}
+
+static const struct sysfs_ops en_port_vf_ops = {
+	.show = en_port_show,
+	.store = en_port_store,
+};
+
+static struct kobj_type en_port_type = {
+	.sysfs_ops  = &en_port_vf_ops,
+};
+
 static void mlx4_en_clear_stats(struct net_device *dev)
 {
 	struct mlx4_en_priv *priv = netdev_priv(dev);
@@ -2357,6 +2401,18 @@ void mlx4_en_destroy_netdev(struct net_device *dev)
 	mutex_lock(&mdev->state_lock);
 	mdev->pndev[priv->port] = NULL;
 	mdev->upper[priv->port] = NULL;
+
+	if (mlx4_is_master(priv->mdev->dev)) {
+		int i;
+
+		for (i = 0; i < priv->mdev->dev->persist->num_vfs; i++) {
+			if (priv->vf_ports[i]) {
+				kobject_put(&priv->vf_ports[i]->kobj_vf);
+				kfree(priv->vf_ports[i]);
+				priv->vf_ports[i] = NULL;
+			}
+		}
+	}
 
 #ifdef CONFIG_RFS_ACCEL
 	mlx4_en_cleanup_filters(priv);
@@ -3583,6 +3639,28 @@ int mlx4_en_init_netdev(struct mlx4_en_dev *mdev, int port,
 	priv->registered = 1;
 	devlink_port_type_eth_set(mlx4_get_devlink_port(mdev->dev, priv->port),
 				  dev);
+
+	if (mlx4_is_master(priv->mdev->dev)) {
+		for (i = 0; i < priv->mdev->dev->persist->num_vfs; i++) {
+			priv->vf_ports[i] = kzalloc(sizeof(*priv->vf_ports[i]), GFP_KERNEL);
+			if (!priv->vf_ports[i]) {
+				err = -ENOMEM;
+				goto out;
+			}
+			priv->vf_ports[i]->dev = priv->mdev->dev;
+			priv->vf_ports[i]->port_num = port & 0xff;
+			priv->vf_ports[i]->vport_num = i & 0xff;
+			err = kobject_init_and_add(&priv->vf_ports[i]->kobj_vf,
+						   &en_port_type,
+						   &dev->dev.kobj,
+						   "vf%d", i);
+			if (err) {
+				kfree(priv->vf_ports[i]);
+				priv->vf_ports[i] = NULL;
+				goto out;
+			}
+		}
+	}
 
 	return 0;
 

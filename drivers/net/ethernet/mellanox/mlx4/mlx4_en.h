@@ -539,6 +539,14 @@ struct mlx4_en_stats_bitmap {
 	struct mutex mutex; /* for mutual access to stats bitmap */
 };
 
+struct en_port {
+	struct kobject		kobj_vf;
+	struct kobject		kobj_stats;
+	struct mlx4_dev		*dev;
+	u8			port_num;
+	u8			vport_num;
+};
+
 struct mlx4_en_priv {
 	struct mlx4_en_dev *mdev;
 	struct mlx4_en_port_profile *prof;
@@ -632,6 +640,7 @@ struct mlx4_en_priv {
 	struct hlist_head mac_hash[MLX4_EN_MAC_HASH_SIZE];
 	struct hwtstamp_config hwtstamp_config;
 	u32 counter_index;
+	struct en_port *vf_ports[MLX4_MAX_NUM_VF];
 
 #ifdef CONFIG_MLX4_EN_DCB
 #define MLX4_EN_DCB_ENABLED	0x3
