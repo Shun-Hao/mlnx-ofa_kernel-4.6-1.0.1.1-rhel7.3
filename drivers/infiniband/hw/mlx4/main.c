@@ -2627,7 +2627,8 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
 		(1ull << IB_USER_VERBS_EXP_CMD_MODIFY_CQ)	|
 		(1ull << IB_USER_VERBS_EXP_CMD_QUERY_DEVICE)	|
 		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_CQ)	|
-		(1ull << IB_USER_VERBS_EXP_CMD_MODIFY_QP);
+		(1ull << IB_USER_VERBS_EXP_CMD_MODIFY_QP)	|
+		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_FLOW);
 
 	ibdev->ib_dev.query_device	= mlx4_ib_query_device;
 	ibdev->ib_dev.query_port	= mlx4_ib_query_port;
