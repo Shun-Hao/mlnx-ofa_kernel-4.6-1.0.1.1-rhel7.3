@@ -439,7 +439,8 @@ enum mlx4_port_type {
 	MLX4_PORT_TYPE_NONE	= 0,
 	MLX4_PORT_TYPE_IB	= 1,
 	MLX4_PORT_TYPE_ETH	= 2,
-	MLX4_PORT_TYPE_AUTO	= 3
+	MLX4_PORT_TYPE_AUTO	= 3,
+	MLX4_PORT_TYPE_NA	= 4,
 };
 
 enum mlx4_special_vlan_idx {

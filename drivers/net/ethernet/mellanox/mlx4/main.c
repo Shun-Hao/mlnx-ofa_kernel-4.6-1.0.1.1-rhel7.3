@@ -90,17 +90,73 @@ int ingress_parser_mode = MLX4_INGRESS_PARSER_MODE_STANDARD;
 module_param(ingress_parser_mode, int, 0444);
 MODULE_PARM_DESC(ingress_parser_mode, "Mode of ingress parser for ConnectX3-Pro. 0 - standard. 1 - checksum for non TCP/UDP. (default: standard)");
 
-static uint8_t num_vfs[3] = {0, 0, 0};
-static int num_vfs_argc;
-module_param_array(num_vfs, byte , &num_vfs_argc, 0444);
-MODULE_PARM_DESC(num_vfs, "enable #num_vfs functions if num_vfs > 0\n"
-			  "num_vfs=port1,port2,port1+2");
+enum {
+	DEFAULT_DOMAIN	= 0,
+	BDF_STR_SIZE	= 8, /* bb:dd.f- */
+	DBDF_STR_SIZE	= 13 /* mmmm:bb:dd.f- */
+};
 
-static uint8_t probe_vf[3] = {0, 0, 0};
-static int probe_vfs_argc;
-module_param_array(probe_vf, byte, &probe_vfs_argc, 0444);
-MODULE_PARM_DESC(probe_vf, "number of vfs to probe by pf driver (num_vfs > 0)\n"
-			   "probe_vf=port1,port2,port1+2");
+enum {
+	NUM_VFS,
+	PROBE_VF,
+	PORT_TYPE_ARRAY,
+};
+
+enum {
+	VALID_DATA,
+	INVALID_DATA,
+	INVALID_STR,
+};
+
+struct param_data {
+	int				id;
+	struct mlx4_dbdf2val_lst	dbdf2val;
+};
+
+static struct param_data num_vfs = {
+	.id		= NUM_VFS,
+	.dbdf2val = {
+		.name		= "num_vfs param",
+		.num_vals	= 3,
+		.def_val	= {0},
+		.range		= {0, MLX4_MAX_NUM_VF},
+		.num_inval_vals = 0
+	}
+};
+module_param_string(num_vfs, num_vfs.dbdf2val.str,
+		    sizeof(num_vfs.dbdf2val.str), 0444);
+MODULE_PARM_DESC(num_vfs,
+		 "Either single value (e.g. '5') or triplet (e.g. '10,11,12') to define uniform num_vfs value for all devices functions.\n"
+		 "\t\tIf a single value is given, this value will be used in order to define <num_vfs> dual ports virtual functions.\n"
+		 "\t\tIf a triplet <a,b,c> is given, <a> single port virtual functions are defined on port1, <b> single port\n"
+		 "\t\tvirtual functions are defined on port2 and <c> dual port virtual functions are defined.\n"
+		 "\t\tAlternatively, a string to map device function numbers to their num_vfs values\n"
+		 "\t\t (e.g. '0000:04:00.0-5,002b:1c:0b.a-15;2;4') could be given.\n"
+		 "\t\tHexadecimal digits for the device function (e.g. 002b:1c:0b.a) and decimal or triplet for num_vfs value\n"
+		 "\t\t(e.g. 15 or 1;2;3).");
+
+static struct param_data probe_vf = {
+	.id		= PROBE_VF,
+	.dbdf2val = {
+		.name		= "probe_vf param",
+		.num_vals	= 3,
+		.def_val	= {0},
+		.range		= {0, MLX4_MAX_NUM_VF},
+		.num_inval_vals = 0
+	}
+};
+module_param_string(probe_vf, probe_vf.dbdf2val.str,
+		    sizeof(probe_vf.dbdf2val.str), 0444);
+MODULE_PARM_DESC(probe_vf,
+		 "Either single value (e.g. '3') or triplet (e.g '1,2,3') to define uniform number of VFs to probe by the pf\n"
+		 "\t\tdriver for all devices functions.\n"
+		 "\t\tIf a single value is given, this value will be used in order to define <probe_vf> probed dual ports virtual\n"
+		 "\t\tfunctions. If a triplet <a,b,c> is given, <a> single port virtual functions are probed on port1, <b> single port\n"
+		 "\t\tvirtual functions are probed on port2 and <c> dual port virtual functions are probed.\n"
+		 "\t\tAlternatively, a string to map device function numbers to their probe_vf values\n"
+		 "\t\t(e.g. '0000:04:00.0-3,002b:1c:0b.a-13;12;11') could be given.\n"
+		 "\t\tHexadecimal digits for the device function (e.g. 002b:1c:0b.a) and decimal for probe_vf value (e.g. 13 or 1;2;3).");
+
 #define MLX4_FORCE_DMFS_IF_NO_NCSI_FS		(1U << 0)
 #define MLX4_DMFS_ETH_ONLY			(1U << 1)
 #define MLX4_DMFS_A0_STEERING			(1U << 2)
@@ -199,11 +255,25 @@ module_param_named(log_mtts_per_seg, log_mtts_per_seg, int, 0444);
 MODULE_PARM_DESC(log_mtts_per_seg, "Log2 number of MTT entries per segment "
 		 "(0-7) (default: 0)");
 
-static int port_type_array[2] = {MLX4_PORT_TYPE_NONE, MLX4_PORT_TYPE_NONE};
-static int arr_argc = 2;
-module_param_array(port_type_array, int, &arr_argc, 0444);
-MODULE_PARM_DESC(port_type_array, "Array of port types: HW_DEFAULT (0) is default "
-				"1 for IB, 2 for Ethernet");
+static struct param_data port_type_array = {
+	.id		= PORT_TYPE_ARRAY,
+	.dbdf2val = {
+		.name		= "port_type_array param",
+		.num_vals	= 2,
+		.def_val	= {MLX4_PORT_TYPE_NONE, MLX4_PORT_TYPE_NONE},
+		.range		= {MLX4_PORT_TYPE_IB, MLX4_PORT_TYPE_NA},
+		.num_inval_vals = 1,
+		.inval_val = {MLX4_PORT_TYPE_AUTO}
+	}
+};
+module_param_string(port_type_array, port_type_array.dbdf2val.str,
+		    sizeof(port_type_array.dbdf2val.str), 0444);
+MODULE_PARM_DESC(port_type_array,
+		 "Valid only if num_vfs is non-zero (SRIOV mode). Ignored otherwise.\n"
+		 "\t\tEither pair of values (e.g. '1,2') to define uniform port1/port2 types configuration for all devices functions\n"
+		 "\t\tor a string to map device function numbers to their pair of port types values (e.g. '0000:04:00.0-1;2,002b:1c:0b.a-1;1').\n"
+		 "\t\tValid port types: 1-ib, 2-eth, 4-N/A\n"
+		 "\t\tIn case that only one port is available use the N/A port type for port2 (e.g '1,4').");
 
 struct mlx4_port_config {
 	struct list_head list;
@@ -338,6 +408,352 @@ static inline void mlx4_set_num_reserved_uars(struct mlx4_dev *dev,
 		      dev_cap->reserved_uars /
 			(1 << (PAGE_SHIFT - dev->uar_page_shift)));
 }
+
+static inline u64 dbdf_to_u64(int domain, int bus, int dev, int fn)
+{
+	return (domain << 20) | (bus << 12) | (dev << 4) | fn;
+}
+
+static inline void pr_bdf_err(const char *dbdf, const char *pname)
+{
+	pr_warn("mlx4_core: '%s' is not valid bdf in '%s'\n", dbdf, pname);
+}
+
+static inline void pr_val_err(const char *dbdf, const char *pname,
+			      const char *val)
+{
+	pr_warn("mlx4_core: value '%s' of bdf '%s' in '%s' is not valid\n",
+		val, dbdf, pname);
+}
+
+static inline void pr_out_of_range_bdf(const char *dbdf, int val,
+				       struct mlx4_dbdf2val_lst *dbdf2val)
+{
+	pr_warn("mlx4_core: value %d in bdf '%s' of '%s' is out of its valid range (%d,%d)\n",
+		val, dbdf, dbdf2val->name, dbdf2val->range.min,
+		dbdf2val->range.max);
+}
+
+static inline void pr_out_of_range(struct mlx4_dbdf2val_lst *dbdf2val)
+{
+	pr_warn("mlx4_core: value of '%s' is out of its valid range (%d,%d)\n",
+		dbdf2val->name, dbdf2val->range.min, dbdf2val->range.max);
+}
+
+static inline int is_valid_value(int val, struct mlx4_dbdf2val_lst *v)
+{
+	int i;
+
+	for (i = 0; i < v->num_inval_vals; i++) {
+		if (val == v->inval_val[i])
+			return 0;
+	}
+	return 1;
+}
+
+static inline void pr_invalid_value(int val, struct mlx4_dbdf2val_lst *dbdf2val)
+{
+	pr_warn("mlx4_core: value %d of '%s' is not allowed\n",
+		val, dbdf2val->name);
+}
+
+static inline int is_in_range(int val, struct mlx4_range *r)
+{
+	return (val >= r->min && val <= r->max);
+}
+
+static int parse_array(struct param_data *pdata, char *p, long *vals, u32 n)
+{
+	u32 iter = 0;
+
+	while (n != 0 && strlen(p)) {
+		char *t = strchr(p, ',');
+		int val_len = t - p;
+		char sval[32];
+		int ret;
+
+		/* Try to parse as last element */
+		if (!t && !kstrtol(p, 0, vals)) {
+			if (!is_in_range(*vals, &pdata->dbdf2val.range)) {
+				pr_out_of_range(&pdata->dbdf2val);
+				return -INVALID_DATA;
+			}
+			if (!is_valid_value(*vals, &pdata->dbdf2val)) {
+				pr_invalid_value(*vals, &pdata->dbdf2val);
+				return -INVALID_DATA;
+			}
+			return ++iter;
+		}
+
+		if (!t || t == p || val_len > sizeof(sval))
+			return -INVALID_STR;
+
+		strncpy(sval, p, val_len);
+		sval[val_len] = 0;
+
+		ret = kstrtol(sval, 0, vals);
+
+		if (ret == -EINVAL)
+			return -INVALID_STR;
+		if (ret || !is_in_range(*vals, &pdata->dbdf2val.range)) {
+			pr_out_of_range(&pdata->dbdf2val);
+			return -INVALID_DATA;
+		}
+		if (!is_valid_value(*vals, &pdata->dbdf2val)) {
+			pr_invalid_value(*vals, &pdata->dbdf2val);
+			return -INVALID_DATA;
+		}
+
+		++iter;
+		++vals;
+		p += val_len + 1;
+		if (n > 0)
+			n--;
+	}
+
+	return -INVALID_STR;
+}
+
+static int parse_mod_param(struct param_data *pdata)
+{
+	int i;
+	int ret = 0;
+	long port_array[ARRAY_SIZE(pdata->dbdf2val.tbl[0].val)];
+	char *p = pdata->dbdf2val.str;
+
+	ret = parse_array(pdata, p, port_array,
+			  pdata->dbdf2val.num_vals);
+	if (ret > pdata->dbdf2val.num_vals || ret <= 0)
+		return ret < 0 ? -ret : INVALID_STR;
+	for (i = 0; i < ret; i++)
+		pdata->dbdf2val.tbl[0].val[i] = port_array[i];
+	pdata->dbdf2val.tbl[0].argc = i;
+	return 0;
+}
+
+static int update_defaults(struct param_data *pdata)
+{
+	int ret;
+	char *p = pdata->dbdf2val.str;
+
+	if (!strlen(p) || strchr(p, ':') || strchr(p, '.') || strchr(p, ';'))
+		return INVALID_STR;
+
+	switch (pdata->id) {
+	case PORT_TYPE_ARRAY:
+	case NUM_VFS:
+	case PROBE_VF:
+		ret = parse_mod_param(pdata);
+		if (ret)
+			return ret;
+		break;
+	default:
+		return INVALID_DATA;
+	}
+	pdata->dbdf2val.tbl[1].dbdf = MLX4_ENDOF_TBL;
+
+	return VALID_DATA;
+}
+
+int mlx4_fill_dbdf2val_tbl(struct mlx4_dbdf2val_lst *dbdf2val_lst)
+{
+	int domain, bus, dev, fn;
+	u64 dbdf;
+	char *p, *t, *v;
+	char tmp[32];
+	char sbdf[32];
+	char sep = ',';
+	int j, k, str_size, i = 1;
+	int prfx_size;
+
+	p = dbdf2val_lst->str;
+
+	for (j = 0; j < dbdf2val_lst->num_vals; j++)
+		dbdf2val_lst->tbl[0].val[j] = dbdf2val_lst->def_val[j];
+	dbdf2val_lst->tbl[0].argc = 0;
+	dbdf2val_lst->tbl[1].dbdf = MLX4_ENDOF_TBL;
+
+	str_size = strlen(dbdf2val_lst->str);
+
+	if (str_size == 0)
+		return 0;
+
+	while (strlen(p)) {
+		prfx_size = BDF_STR_SIZE;
+		sbdf[prfx_size] = 0;
+		strncpy(sbdf, p, prfx_size);
+		domain = DEFAULT_DOMAIN;
+		if (sscanf(sbdf, "%02x:%02x.%x-", &bus, &dev, &fn) != 3) {
+			prfx_size = DBDF_STR_SIZE;
+			sbdf[prfx_size] = 0;
+			strncpy(sbdf, p, prfx_size);
+			if (sscanf(sbdf, "%04x:%02x:%02x.%x-", &domain, &bus,
+				   &dev, &fn) != 4) {
+				pr_bdf_err(sbdf, dbdf2val_lst->name);
+				goto err;
+			}
+			sprintf(tmp, "%04x:%02x:%02x.%x-", domain, bus, dev,
+				fn);
+		} else {
+			sprintf(tmp, "%02x:%02x.%x-", bus, dev, fn);
+		}
+
+		if (strnicmp(sbdf, tmp, sizeof(tmp))) {
+			pr_bdf_err(sbdf, dbdf2val_lst->name);
+			goto err;
+		}
+
+		dbdf = dbdf_to_u64(domain, bus, dev, fn);
+
+		for (j = 1; j < i; j++)
+			if (dbdf2val_lst->tbl[j].dbdf == dbdf) {
+				pr_warn("mlx4_core: in '%s', %s appears multiple times\n"
+					, dbdf2val_lst->name, sbdf);
+				goto err;
+			}
+
+		if (i >= MLX4_DEVS_TBL_SIZE) {
+			pr_warn("mlx4_core: Too many devices in '%s'\n"
+				, dbdf2val_lst->name);
+			goto err;
+		}
+
+		p += prfx_size;
+		t = strchr(p, sep);
+		t = t ? t : p + strlen(p);
+		if (p >= t) {
+			pr_val_err(sbdf, dbdf2val_lst->name, "");
+			goto err;
+		}
+
+		for (k = 0; k < dbdf2val_lst->num_vals; k++) {
+			char sval[32];
+			long int val;
+			int ret, val_len;
+			char vsep = ';';
+			int last_occurrence = 0;
+
+			v = (k == dbdf2val_lst->num_vals - 1) ? t : strchr(p, vsep);
+			if (!v) {
+				v = t;
+				last_occurrence = 1;
+			}
+			if (!v || v > t || v == p || (v - p) > sizeof(sval)) {
+				pr_val_err(sbdf, dbdf2val_lst->name, p);
+				goto err;
+			}
+			val_len = v - p;
+			strncpy(sval, p, val_len);
+			sval[val_len] = 0;
+
+			ret = kstrtol(sval, 0, &val);
+			if (ret) {
+				if (strchr(p, vsep))
+					pr_warn("mlx4_core: too many vals in bdf '%s' of '%s'\n"
+						, sbdf, dbdf2val_lst->name);
+				else
+					pr_val_err(sbdf, dbdf2val_lst->name,
+						   sval);
+				goto err;
+			}
+			if (!is_in_range(val, &dbdf2val_lst->range)) {
+				pr_out_of_range_bdf(sbdf, val, dbdf2val_lst);
+				goto err;
+			}
+
+			dbdf2val_lst->tbl[i].val[k] = val;
+			dbdf2val_lst->tbl[i].argc = k + 1;
+			p = v;
+			if (p[0] == vsep)
+				p++;
+			if (last_occurrence)
+				break;
+		}
+
+		dbdf2val_lst->tbl[i].dbdf = dbdf;
+		if (strlen(p)) {
+			if (p[0] != sep) {
+				pr_warn("mlx4_core: expect separator '%c' before '%s' in '%s'\n"
+					, sep, p, dbdf2val_lst->name);
+				goto err;
+			}
+			p++;
+		}
+		i++;
+		if (i < MLX4_DEVS_TBL_SIZE)
+			dbdf2val_lst->tbl[i].dbdf = MLX4_ENDOF_TBL;
+	}
+
+	return 0;
+
+err:
+	dbdf2val_lst->tbl[1].dbdf = MLX4_ENDOF_TBL;
+	pr_warn("mlx4_core: The value of '%s' is incorrect. The value is discarded!\n"
+		, dbdf2val_lst->name);
+
+	return -EINVAL;
+}
+EXPORT_SYMBOL(mlx4_fill_dbdf2val_tbl);
+
+int mlx4_get_val(struct mlx4_dbdf2val *tbl, struct pci_dev *pdev, int idx,
+		 int *val)
+{
+	u64 dbdf;
+	int i = 1;
+
+	*val = tbl[0].val[idx];
+	if (!pdev)
+		return -EINVAL;
+
+	if (!pdev->bus) {
+		pr_debug("mlx4_core: pci_dev without valid bus number\n");
+		return -EINVAL;
+	}
+
+	dbdf = dbdf_to_u64(pci_domain_nr(pdev->bus), pdev->bus->number,
+			   PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn));
+
+	while ((i < MLX4_DEVS_TBL_SIZE) && (tbl[i].dbdf != MLX4_ENDOF_TBL)) {
+		if (tbl[i].dbdf == dbdf) {
+			if (idx < tbl[i].argc) {
+				*val = tbl[i].val[idx];
+				return 0;
+			} else {
+				return -EINVAL;
+			}
+		}
+		i++;
+	}
+
+	return 0;
+}
+EXPORT_SYMBOL(mlx4_get_val);
+
+int mlx4_get_argc(struct mlx4_dbdf2val *tbl, struct pci_dev *pdev)
+{
+	u64 dbdf;
+	int i = 1;
+
+	if (!pdev)
+		return -EINVAL;
+
+	if (!pdev->bus) {
+		pr_debug("mlx4_core: pci_dev without valid bus number\n");
+		return -EINVAL;
+	}
+
+	dbdf = dbdf_to_u64(pci_domain_nr(pdev->bus), pdev->bus->number,
+			   PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn));
+
+	while ((i < MLX4_DEVS_TBL_SIZE) && (tbl[i].dbdf != MLX4_ENDOF_TBL)) {
+		if (tbl[i].dbdf == dbdf)
+			return tbl[i].argc;
+		i++;
+	}
+
+	return tbl[0].argc;
+}
+EXPORT_SYMBOL(mlx4_get_argc);
 
 int mlx4_check_port_params(struct mlx4_dev *dev,
 			   enum mlx4_port_type *port_type)
@@ -645,12 +1061,23 @@ static int mlx4_dev_cap(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 			else {
 				/* if IB and ETH are supported, we set the port
 				 * type according to user selection of port type;
-				 * if user selected none, take the FW hint */
-				if (port_type_array[i - 1] == MLX4_PORT_TYPE_NONE)
+				 * if user selected none, take the FW hint
+				 */
+				int pta;
+
+				mlx4_get_val(port_type_array.dbdf2val.tbl,
+					     pci_physfn(dev->persist->pdev), i - 1,
+					     &pta);
+				if (pta == MLX4_PORT_TYPE_NONE) {
 					dev->caps.port_type[i] = dev->caps.suggested_type[i] ?
 						MLX4_PORT_TYPE_ETH : MLX4_PORT_TYPE_IB;
-				else
-					dev->caps.port_type[i] = port_type_array[i - 1];
+				} else if (pta == MLX4_PORT_TYPE_NA) {
+					mlx4_err(dev, "Port %d is valid port. It is not allowed to configure its type to N/A(%d)\n",
+						 i, MLX4_PORT_TYPE_NA);
+					return -EINVAL;
+				} else {
+					dev->caps.port_type[i] = pta;
+				}
 			}
 		}
 		/*
@@ -689,14 +1116,6 @@ static int mlx4_dev_cap(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 			mlx4_warn(dev, "Requested number of VLANs is too much for port %d, reducing to %d\n",
 				  i, 1 << dev->caps.log_num_vlans);
 		}
-	}
-
-	if (mlx4_is_master(dev) && (dev->caps.num_ports == 2) &&
-	    (port_type_array[0] == MLX4_PORT_TYPE_IB) &&
-	    (port_type_array[1] == MLX4_PORT_TYPE_ETH)) {
-		mlx4_warn(dev,
-			  "Granular QoS per VF not supported with IB/Eth configuration\n");
-		dev->caps.flags2 &= ~MLX4_DEV_CAP_FLAG2_QOS_VPP;
 	}
 
 	dev->caps.max_counters = dev_cap->max_counters;
@@ -3416,6 +3835,16 @@ static int mlx4_load_one(struct pci_dev *pdev, int pci_dev_data,
 	int port;
 	int i;
 	struct mlx4_dev_cap *dev_cap = NULL;
+	int num_vfs_argc =
+		mlx4_get_argc(num_vfs.dbdf2val.tbl, pci_physfn(pdev));
+	int probe_vfs_argc =
+		mlx4_get_argc(probe_vf.dbdf2val.tbl, pci_physfn(pdev));
+	/* existing_vfs will contain the number of VFs which were active when
+	 * remove_one was invoked on the PF driver. In this case,
+	 * the PF driver did not disable SRIOV during remove_one.
+	 * When the PF is reloaded (mlx4_load_one), SRIOV is therefore
+	 * still enabled, and pci_enable_sriov should not be called.
+	 */
 	int existing_vfs = 0;
 
 	dev = &priv->dev;
@@ -3626,6 +4055,18 @@ slave_start:
 	/* In master functions, the communication channel must be initialized
 	 * after obtaining its address from fw */
 	if (mlx4_is_master(dev)) {
+		int ib_ports = 0;
+
+		mlx4_foreach_port(i, dev, MLX4_PORT_TYPE_IB)
+			ib_ports++;
+
+		if (ib_ports &&
+		    (num_vfs_argc > 1 || probe_vfs_argc > 1)) {
+			mlx4_err(dev,
+				 "Invalid syntax of num_vfs/probe_vfs with IB port - single port VFs syntax is only supported when all ports are configured as ethernet\n");
+			err = -EINVAL;
+			goto err_close;
+		}
 		if (dev->caps.num_ports < 2 &&
 		    num_vfs_argc > 1) {
 			err = -EINVAL;
@@ -3810,6 +4251,10 @@ static int __mlx4_init_one(struct pci_dev *pdev, int pci_dev_data,
 		{2, 0, 0}, {0, 1, 2}, {0, 1, 2} };
 	unsigned total_vfs = 0;
 	unsigned int i;
+	int num_vfs_argc =
+		mlx4_get_argc(num_vfs.dbdf2val.tbl, pci_physfn(pdev));
+	int probe_vfs_argc =
+		mlx4_get_argc(probe_vf.dbdf2val.tbl, pci_physfn(pdev));
 
 	pr_info(DRV_NAME ": Initializing %s\n", pci_name(pdev));
 
@@ -3819,24 +4264,32 @@ static int __mlx4_init_one(struct pci_dev *pdev, int pci_dev_data,
 		return err;
 	}
 
-	/* Due to requirement that all VFs and the PF are *guaranteed* 2 MACS
-	 * per port, we must limit the number of VFs to 63 (since their are
-	 * 128 MACs)
-	 */
-	for (i = 0; i < ARRAY_SIZE(nvfs) && i < num_vfs_argc;
+	for (i = 0; i < num_vfs_argc;
 	     total_vfs += nvfs[param_map[num_vfs_argc - 1][i]], i++) {
-		nvfs[param_map[num_vfs_argc - 1][i]] = num_vfs[i];
-		if (nvfs[i] < 0) {
+		int *cur_nvfs = &nvfs[param_map[num_vfs_argc - 1][i]];
+
+		mlx4_get_val(num_vfs.dbdf2val.tbl, pci_physfn(pdev), i,
+			     cur_nvfs);
+		if (*cur_nvfs < 0) {
 			dev_err(&pdev->dev, "num_vfs module parameter cannot be negative\n");
 			err = -EINVAL;
 			goto err_disable_pdev;
 		}
 	}
-	for (i = 0; i < ARRAY_SIZE(prb_vf) && i < probe_vfs_argc;
-	     i++) {
-		prb_vf[param_map[probe_vfs_argc - 1][i]] = probe_vf[i];
-		if (prb_vf[i] < 0 || prb_vf[i] > nvfs[i]) {
-			dev_err(&pdev->dev, "probe_vf module parameter cannot be negative or greater than num_vfs\n");
+	for (i = 0; i < probe_vfs_argc; i++) {
+		int *cur_prbvf = &prb_vf[param_map[probe_vfs_argc - 1][i]];
+
+		mlx4_get_val(probe_vf.dbdf2val.tbl, pci_physfn(pdev), i,
+			     cur_prbvf);
+		if (*cur_prbvf < 0) {
+			dev_err(&pdev->dev, "probe_vf module parameter cannot be negative\n");
+			err = -EINVAL;
+			goto err_disable_pdev;
+		}
+	}
+	for (i = 0; i < ARRAY_SIZE(nvfs); i++) {
+		if (prb_vf[i] > nvfs[i]) {
+			dev_err(&pdev->dev, "probe_vf module parameter cannot be greater than num_vfs\n");
 			err = -EINVAL;
 			goto err_disable_pdev;
 		}
@@ -4485,6 +4938,32 @@ static struct pci_driver mlx4_driver = {
 
 static int __init mlx4_verify_params(void)
 {
+	int status;
+
+	status = update_defaults(&port_type_array);
+	if (status == INVALID_STR) {
+		if (mlx4_fill_dbdf2val_tbl(&port_type_array.dbdf2val))
+			return -1;
+	} else if (status == INVALID_DATA) {
+		return -1;
+	}
+
+	status = update_defaults(&num_vfs);
+	if (status == INVALID_STR) {
+		if (mlx4_fill_dbdf2val_tbl(&num_vfs.dbdf2val))
+			return -1;
+	} else if (status == INVALID_DATA) {
+		return -1;
+	}
+
+	status = update_defaults(&probe_vf);
+	if (status == INVALID_STR) {
+		if (mlx4_fill_dbdf2val_tbl(&probe_vf.dbdf2val))
+			return -1;
+	} else if (status == INVALID_DATA) {
+		return -1;
+	}
+
 	if (msi_x < 0) {
 		pr_warn("mlx4_core: bad msi_x: %d\n", msi_x);
 		return -1;
@@ -4511,12 +4990,6 @@ static int __init mlx4_verify_params(void)
 		return -1;
 	}
 
-	/* Check if module param for ports type has legal combination */
-	if (port_type_array[0] == false && port_type_array[1] == true) {
-		pr_warn("Module parameter configuration ETH/IB is not supported. Switching to default configuration IB/IB\n");
-		port_type_array[0] = true;
-	}
-
 	if (mlx4_log_num_mgm_entry_size < (int)(-MLX4_DMFS_PARAM_VALUES) ||
 	    (mlx4_log_num_mgm_entry_size > 0 &&
 	     (mlx4_log_num_mgm_entry_size < MLX4_MIN_MGM_LOG_ENTRY_SIZE ||
@@ -4541,6 +5014,12 @@ static int __init mlx4_verify_params(void)
 		ingress_parser_mode = MLX4_INGRESS_PARSER_MODE_STANDARD;
 	}
 
+	if (mlx4_log_num_mgm_entry_size < 0 &&
+	    (!((-mlx4_log_num_mgm_entry_size) & MLX4_DMFS_ETH_ONLY)) &&
+	    ((-mlx4_log_num_mgm_entry_size) & MLX4_DMFS_A0_STEERING)) {
+		pr_warn("mlx4_core: Can't support IPoIB flow steering along with optimized steering\n");
+		return -1;
+	}
 	return 0;
 }
 
