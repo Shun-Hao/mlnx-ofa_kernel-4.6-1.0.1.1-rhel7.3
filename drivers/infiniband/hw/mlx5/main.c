@@ -6231,6 +6231,11 @@ int mlx5_ib_stage_post_ib_reg_umr_init(struct mlx5_ib_dev *dev)
 	return create_umr_res(dev);
 }
 
+void mlx5_ib_stage_post_ib_reg_umr_cleanup(struct mlx5_ib_dev *dev)
+{
+       mlx5_ib_odp_shutdown_one(dev);
+}
+
 static int mlx5_ib_stage_delay_drop_init(struct mlx5_ib_dev *dev)
 {
 	init_delay_drop(dev);
@@ -6364,7 +6369,7 @@ static const struct mlx5_ib_profile pf_profile = {
 		     mlx5_ib_stage_ib_reg_cleanup),
 	STAGE_CREATE(MLX5_IB_STAGE_POST_IB_REG_UMR,
 		     mlx5_ib_stage_post_ib_reg_umr_init,
-		     NULL),
+		     mlx5_ib_stage_post_ib_reg_umr_cleanup),
 	STAGE_CREATE(MLX5_IB_STAGE_DELAY_DROP,
 		     mlx5_ib_stage_delay_drop_init,
 		     mlx5_ib_stage_delay_drop_cleanup),
@@ -6412,7 +6417,7 @@ static const struct mlx5_ib_profile nic_rep_profile = {
 		     mlx5_ib_stage_ib_reg_cleanup),
 	STAGE_CREATE(MLX5_IB_STAGE_POST_IB_REG_UMR,
 		     mlx5_ib_stage_post_ib_reg_umr_init,
-		     NULL),
+		     mlx5_ib_stage_post_ib_reg_umr_cleanup),
 	STAGE_CREATE(MLX5_IB_STAGE_REP_REG,
 		     mlx5_ib_stage_rep_reg_init,
 		     mlx5_ib_stage_rep_reg_cleanup),

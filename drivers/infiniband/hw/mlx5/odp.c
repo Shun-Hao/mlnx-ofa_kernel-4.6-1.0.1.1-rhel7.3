@@ -690,10 +690,10 @@ struct pf_frame {
  * -EFAULT when there's an error mapping the requested pages. The caller will
  *  abort the page fault handling.
  */
-static int pagefault_single_data_segment(struct mlx5_ib_dev *dev,
-					 u32 key, u64 io_virt, size_t bcnt,
-					 u32 *bytes_committed,
-					 u32 *bytes_mapped)
+int pagefault_single_data_segment(struct mlx5_ib_dev *dev,
+				  u32 key, u64 io_virt, size_t bcnt,
+				  u32 *bytes_committed,
+				  u32 *bytes_mapped)
 {
 	int npages = 0, srcu_key, ret, i, outlen, cur_outlen = 0, depth = 0;
 	struct pf_frame *head = NULL, *frame;
@@ -1318,10 +1318,19 @@ int mlx5_ib_odp_init_one(struct mlx5_ib_dev *dev)
 		}
 	}
 
+	init_completion(&dev->comp_prefetch);
+	atomic_set(&dev->num_prefetch, 1);
+
 	return 0;
 out_srcu:
 	cleanup_srcu_struct(&dev->mr_srcu);
 	return ret;
+}
+
+void mlx5_ib_odp_shutdown_one(struct mlx5_ib_dev *dev)
+{
+	if (!atomic_dec_and_test(&dev->num_prefetch))
+		wait_for_completion(&dev->comp_prefetch);
 }
 
 int mlx5_ib_odp_init(void)
