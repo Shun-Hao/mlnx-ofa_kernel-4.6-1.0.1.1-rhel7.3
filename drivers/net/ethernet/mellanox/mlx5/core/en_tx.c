@@ -159,7 +159,8 @@ static inline int mlx5e_skb_l3_header_offset(struct sk_buff *skb)
 }
 
 static inline u16 mlx5e_calc_min_inline(enum mlx5_inline_modes mode,
-					struct sk_buff *skb)
+					struct sk_buff *skb,
+					bool vlan_present)
 {
 	u16 hlen;
 
@@ -168,7 +169,7 @@ static inline u16 mlx5e_calc_min_inline(enum mlx5_inline_modes mode,
 		return 0;
 	case MLX5_INLINE_MODE_TCP_UDP:
 		hlen = eth_get_headlen(skb->data, skb_headlen(skb));
-		if (hlen == ETH_HLEN && !skb_vlan_tag_present(skb))
+		if (hlen == ETH_HLEN && !vlan_present)
 			hlen += VLAN_HLEN;
 		break;
 	case MLX5_INLINE_MODE_IP:
@@ -346,6 +347,7 @@ netdev_tx_t mlx5e_sq_xmit(struct mlx5e_txqsq *sq, struct sk_buff *skb,
 	struct mlx5_wqe_data_seg *dseg;
 	struct mlx5e_tx_wqe_info *wi;
 
+	bool vlan_present = skb_vlan_tag_present(skb);
 	struct mlx5e_sq_stats *stats = sq->stats;
 	u16 headlen, ihs, contig_wqebbs_room;
 	u16 ds_cnt, ds_cnt_inl = 0;
@@ -365,7 +367,8 @@ netdev_tx_t mlx5e_sq_xmit(struct mlx5e_txqsq *sq, struct sk_buff *skb,
 	} else {
 		opcode    = MLX5_OPCODE_SEND;
 		mss       = 0;
-		ihs       = mlx5e_calc_min_inline(sq->min_inline_mode, skb);
+		ihs = mlx5e_calc_min_inline(sq->min_inline_mode, skb,
+					    vlan_present);
 		num_bytes = max_t(unsigned int, skb->len, ETH_ZLEN);
 		stats->packets++;
 	}
@@ -403,7 +406,7 @@ netdev_tx_t mlx5e_sq_xmit(struct mlx5e_txqsq *sq, struct sk_buff *skb,
 
 	if (ihs) {
 		eseg->inline_hdr.sz = cpu_to_be16(ihs);
-		if (skb_vlan_tag_present(skb)) {
+		if (vlan_present) {
 			ihs -= VLAN_HLEN;
 			mlx5e_insert_vlan(eseg->inline_hdr.start, skb, ihs);
 			stats->added_vlan_packets++;
@@ -411,7 +414,7 @@ netdev_tx_t mlx5e_sq_xmit(struct mlx5e_txqsq *sq, struct sk_buff *skb,
 			memcpy(eseg->inline_hdr.start, skb->data, ihs);
 		}
 		dseg += ds_cnt_inl;
-	} else if (skb_vlan_tag_present(skb)) {
+	} else if (vlan_present) {
 		eseg->insert.type = cpu_to_be16(MLX5_ETH_WQE_INSERT_VLAN);
 		if (skb->vlan_proto == cpu_to_be16(ETH_P_8021AD))
 			eseg->insert.type |= cpu_to_be16(MLX5_ETH_WQE_SVLAN);
@@ -634,6 +637,7 @@ netdev_tx_t mlx5i_sq_xmit(struct mlx5e_txqsq *sq, struct sk_buff *skb,
 	struct mlx5_wqe_data_seg *dseg;
 	struct mlx5e_tx_wqe_info *wi;
 
+	bool vlan_present = skb_vlan_tag_present(skb);
 	struct mlx5e_sq_stats *stats = sq->stats;
 	u16 headlen, ihs, pi, contig_wqebbs_room;
 	u16 ds_cnt, ds_cnt_inl = 0;
@@ -653,7 +657,8 @@ netdev_tx_t mlx5i_sq_xmit(struct mlx5e_txqsq *sq, struct sk_buff *skb,
 	} else {
 		opcode    = MLX5_OPCODE_SEND;
 		mss       = 0;
-		ihs       = mlx5e_calc_min_inline(sq->min_inline_mode, skb);
+		ihs = mlx5e_calc_min_inline(sq->min_inline_mode, skb,
+					    vlan_present);
 		num_bytes = max_t(unsigned int, skb->len, ETH_ZLEN);
 		stats->packets++;
 	}
