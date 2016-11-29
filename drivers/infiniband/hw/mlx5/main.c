@@ -749,6 +749,11 @@ int mlx5_ib_query_device(struct ib_device *ibdev,
 	if (MLX5_CAP_GEN(mdev, block_lb_mc))
 		props->device_cap_flags |= IB_DEVICE_BLOCK_MULTICAST_LOOPBACK;
 
+	if (MLX5_CAP_GEN(mdev, nvmf_target_offload)) {
+		props->device_cap_flags |= IB_DEVICE_NVMF_TARGET_OFFLOAD;
+		props->nvmf_caps = dev->nvmf_caps;
+	}
+
 	if (MLX5_CAP_GEN(dev->mdev, eth_net_offloads) && raw_support) {
 		if (MLX5_CAP_ETH(mdev, csum_cap)) {
 			/* Legacy bit to support old userspace libraries */
@@ -5944,6 +5949,9 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 	}
 
 	dev->ib_dev.disassociate_ucontext = mlx5_ib_disassociate_ucontext;
+
+	if (MLX5_CAP_GEN(mdev, nvmf_target_offload))
+		mlx5_ib_internal_fill_nvmf_caps(dev);
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	dev->ib_dev.exp_prefetch_mr	= mlx5_ib_prefetch_mr;

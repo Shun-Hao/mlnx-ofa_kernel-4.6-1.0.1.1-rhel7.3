@@ -952,6 +952,7 @@ struct mlx5_ib_dev {
 	atomic_t		num_prefetch;
 	struct completion       comp_prefetch;
 #endif
+	struct ib_nvmf_caps	nvmf_caps;
 	struct mlx5_ib_flow_db	*flow_db;
 	/* protect resources needed as part of reset flow */
 	spinlock_t		reset_flow_resource_lock;
