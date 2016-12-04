@@ -319,6 +319,7 @@ struct ib_uverbs_exp_query_device_resp {
 	struct ib_uverbs_exp_packet_pacing_caps packet_pacing_caps;
 	struct ib_uverbs_exp_ooo_caps		ooo_caps;
 	struct ib_uverbs_exp_sw_parsing_caps	sw_parsing_caps;
+	__u64					odp_mr_max_size;
 };
 
 enum ib_uverbs_exp_create_cq_comp_mask {

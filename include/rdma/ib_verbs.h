@@ -286,7 +286,8 @@ enum ib_odp_transport_cap_bits {
 };
 
 struct ib_odp_caps {
-	uint64_t general_caps;
+	u64 general_caps;
+	u64 max_size;
 	struct {
 		uint32_t  rc_odp_caps;
 		uint32_t  uc_odp_caps;

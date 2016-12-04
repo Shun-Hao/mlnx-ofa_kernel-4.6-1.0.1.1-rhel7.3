@@ -45,6 +45,7 @@ static void copy_odp_exp_caps(struct ib_exp_odp_caps *exp_caps,
 			      struct ib_odp_caps *caps)
 {
 	exp_caps->general_odp_caps = caps->general_caps;
+	exp_caps->max_size = caps->max_size;
 	exp_caps->per_transport_caps.rc_odp_caps = caps->per_transport_caps.rc_odp_caps;
 	exp_caps->per_transport_caps.uc_odp_caps = caps->per_transport_caps.uc_odp_caps;
 	exp_caps->per_transport_caps.ud_odp_caps = caps->per_transport_caps.ud_odp_caps;
@@ -223,6 +224,7 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		MLX5_NON_FP_BFREGS_PER_UAR;
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_ODP;
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_ODP_MAX_SIZE;
 	props->device_cap_flags2 |= IB_EXP_DEVICE_ODP;
 	copy_odp_exp_caps(&props->odp_caps, &to_mdev(ibdev)->odp_caps);
 #endif

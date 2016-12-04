@@ -12,6 +12,7 @@ struct ib_exp_umr_caps {
 
 struct ib_exp_odp_caps {
 	uint64_t	general_odp_caps;
+	uint64_t	max_size;
 	struct {
 		uint32_t	rc_odp_caps;
 		uint32_t	uc_odp_caps;
@@ -147,6 +148,7 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_PACKET_PACING_CAPS	= 1ULL << 22,
 	IB_EXP_DEVICE_ATTR_OOO_CAPS		= 1ULL << 24,
 	IB_EXP_DEVICE_ATTR_SW_PARSING_CAPS	= 1ULL << 25,
+	IB_EXP_DEVICE_ATTR_ODP_MAX_SIZE		= 1ULL << 26,
 };
 
 enum ib_exp_device_cap_flags2 {
