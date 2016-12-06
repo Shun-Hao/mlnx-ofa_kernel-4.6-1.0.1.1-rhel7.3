@@ -299,6 +299,30 @@ struct nvme_peer_resource *nvme_peer_get_resource(struct pci_dev *pdev,
 }
 EXPORT_SYMBOL_GPL(nvme_peer_get_resource);
 
+bool nvme_pdev_is_bdev(struct pci_dev *pdev, struct block_device *bdev)
+{
+	struct nvme_dev *dev = pci_get_drvdata(pdev);
+	struct nvme_ctrl *ctrl = &dev->ctrl;
+	struct nvme_ns *ns = NULL, *ctrl_ns;
+
+	if (bdev && bdev->bd_disk)
+		ns = bdev->bd_disk->private_data;
+
+	if (ns) {
+		down_read(&ctrl->namespaces_rwsem);
+		list_for_each_entry(ctrl_ns, &ctrl->namespaces, list) {
+			if (ns == ctrl_ns) {
+				up_read(&ctrl->namespaces_rwsem);
+				return true;
+			}
+		}
+		up_read(&ctrl->namespaces_rwsem);
+	}
+
+	return false;
+}
+EXPORT_SYMBOL_GPL(nvme_pdev_is_bdev);
+
 /*
  * Check we didin't inadvertently grow the command struct
  */
