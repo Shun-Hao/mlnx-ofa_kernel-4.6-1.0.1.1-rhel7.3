@@ -543,6 +543,27 @@ static struct ib_qp *ipoib_cm_create_tx_qp_rss(struct net_device *dev, struct ip
 	return tx_qp;
 }
 
+/* Rearm Recv and Send CQ */
+static void ipoib_arm_cq_rss(struct net_device *dev)
+{
+	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_recv_ring *recv_ring;
+	struct ipoib_send_ring *send_ring;
+	int i;
+
+	recv_ring = priv->recv_ring;
+	for (i = 0; i < priv->num_rx_queues; i++) {
+		ib_req_notify_cq(recv_ring->recv_cq, IB_CQ_NEXT_COMP);
+		recv_ring++;
+	}
+
+	send_ring = priv->send_ring;
+	for (i = 0; i < priv->num_tx_queues; i++) {
+		ib_req_notify_cq(send_ring->send_cq, IB_CQ_NEXT_COMP);
+		send_ring++;
+	}
+}
+
 static void ipoib_cm_tx_destroy_rss(struct ipoib_cm_tx *p)
 {
 	struct ipoib_dev_priv *priv = netdev_priv(p->dev);
@@ -555,6 +576,12 @@ static void ipoib_cm_tx_destroy_rss(struct ipoib_cm_tx *p)
 	if (p->id)
 		ib_destroy_cm_id(p->id);
 
+	if (p->qp) {
+		if (ib_modify_qp(p->qp, &ipoib_cm_err_attr, IB_QP_STATE))
+			ipoib_warn(priv, "%s: Failed to modify QP to ERROR state\n",
+				   __func__);
+	}
+
 	if (p->tx_ring) {
 		/* Wait for all sends to complete */
 		begin = jiffies;
@@ -562,6 +589,18 @@ static void ipoib_cm_tx_destroy_rss(struct ipoib_cm_tx *p)
 			if (time_after(jiffies, begin + 5 * HZ)) {
 				ipoib_warn(priv, "timing out; %d sends not completed\n",
 					   p->tx_head - p->tx_tail);
+				/*
+				 * check if we are in napi_disable state
+				 * (in port/module down etc.), if so we need
+				 * to force drain over the qp in order to get
+				 * all the wc's.
+				 */
+				if (!test_bit(IPOIB_FLAG_INITIALIZED, &priv->flags))
+					ipoib_drain_cq_rss(p->dev);
+
+				/* arming cq's*/
+				ipoib_arm_cq_rss(p->dev);
+
 				goto timeout;
 			}
 

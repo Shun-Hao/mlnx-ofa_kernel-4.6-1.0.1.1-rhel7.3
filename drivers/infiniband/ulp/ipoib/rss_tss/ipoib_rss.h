@@ -195,7 +195,7 @@ void ipoib_cm_handle_rx_wc_rss(struct net_device *dev, struct ib_wc *wc);
 void ipoib_cm_handle_tx_wc_rss(struct net_device *dev, struct ib_wc *wc);
 void ipoib_cm_send_rss(struct net_device *dev, struct sk_buff *skb,
 		       struct ipoib_cm_tx *tx);
-
+void ipoib_drain_cq_rss(struct net_device *dev);
 #else
 
 static inline int ipoib_cm_handle_rx_wc_rss(struct net_device *dev,
