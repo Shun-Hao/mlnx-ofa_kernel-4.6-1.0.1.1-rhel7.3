@@ -694,7 +694,7 @@ static int pagefault_single_data_segment(struct mlx5_ib_dev *dev,
 	bcnt -= *bytes_committed;
 
 next_mr:
-	mmkey = __mlx5_mr_lookup(dev->mdev, mlx5_base_mkey(key));
+	mmkey = __mlx5_mr_lookup(dev->mdev, mlx5_mkey_to_idx(key));
 	if (!mmkey || mmkey->key != key) {
 		mlx5_ib_dbg(dev, "failed to find mkey %x\n", key);
 		atomic_inc(&dev->odp_stats.num_mrs_not_found);

@@ -536,6 +536,8 @@ static int mlx5_poll_one(struct mlx5_ib_cq *cq,
 	struct mlx5_sig_err_cqe *sig_err_cqe;
 	struct mlx5_core_mkey *mmkey;
 	struct mlx5_ib_mr *mr;
+	unsigned long flags;
+	u32 mkey;
 	uint8_t opcode;
 	uint32_t qpn;
 	u16 wqe_ctr;
@@ -632,10 +634,11 @@ repoll:
 		break;
 	case MLX5_CQE_SIG_ERR:
 		sig_err_cqe = (struct mlx5_sig_err_cqe *)cqe64;
+		mkey = be32_to_cpu(sig_err_cqe->mkey);
 
-		read_lock(&dev->mdev->priv.mkey_table.lock);
-		mmkey = __mlx5_mr_lookup(dev->mdev,
-					 mlx5_base_mkey(be32_to_cpu(sig_err_cqe->mkey)));
+		spin_lock_irqsave(&dev->mdev->priv.mkey_table.lock, flags);
+		mmkey = __mlx5_mr_lookup(dev->mdev, mlx5_mkey_to_idx(mkey));
+
 		mr = to_mibmr(mmkey);
 		get_sig_err_item(sig_err_cqe, &mr->sig->err_item);
 		mr->sig->sig_err_exists = true;
@@ -648,7 +651,7 @@ repoll:
 			     mr->sig->err_item.expected,
 			     mr->sig->err_item.actual);
 
-		read_unlock(&dev->mdev->priv.mkey_table.lock);
+		spin_unlock_irqrestore(&dev->mdev->priv.mkey_table.lock, flags);
 		goto repoll;
 	}
 

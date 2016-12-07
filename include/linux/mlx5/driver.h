@@ -573,7 +573,7 @@ struct mlx5_srq_table {
 struct mlx5_mkey_table {
 	/* protect radix tree
 	 */
-	rwlock_t		lock;
+	spinlock_t		lock;
 	struct radix_tree_root	tree;
 };
 
@@ -1043,11 +1043,6 @@ static inline void *mlx5_vmalloc(unsigned long size)
 	if (!rtn)
 		rtn = vmalloc(size);
 	return rtn;
-}
-
-static inline u32 mlx5_base_mkey(const u32 key)
-{
-	return key & 0xffffff00u;
 }
 
 static inline void mlx5_init_fbc_offset(struct mlx5_buf_list *frags,

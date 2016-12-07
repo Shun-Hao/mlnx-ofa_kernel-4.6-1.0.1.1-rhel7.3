@@ -63,7 +63,7 @@ int mlx5_ib_prefetch_mr(struct ib_mr *ibmr, u64 start, u64 length, u32 flags)
 	 * - MR is not being destroyed (i.e. still in the mr tree)
 	 */
 	if (!mr->umem || !mr->umem->is_odp ||
-	    !__mlx5_mr_lookup(dev->mdev, mlx5_base_mkey(ibmr->lkey)) ||
+	    !__mlx5_mr_lookup(dev->mdev, mlx5_mkey_to_idx(ibmr->lkey)) ||
 	    !mr->ibmr.pd) {
 		ret = -EINVAL;
 		goto srcu_unlock;
