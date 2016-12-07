@@ -1655,7 +1655,7 @@ static int _ib_modify_qp(struct ib_qp *qp, struct ib_qp_attr *attr,
 	 * If the user provided the qp_attr then we have to resolve it. Kernel
 	 * users have to provide already resolved rdma_ah_attr's
 	 */
-	if (udata && (attr_mask & IB_QP_AV) &&
+	if ((qp->qp_type != IB_EXP_QPT_DC_INI) && udata && (attr_mask & IB_QP_AV) &&
 	    attr->ah_attr.type == RDMA_AH_ATTR_TYPE_ROCE &&
 	    is_qp_type_connected(qp)) {
 		ret = ib_resolve_eth_dmac(qp->device, &attr->ah_attr);
