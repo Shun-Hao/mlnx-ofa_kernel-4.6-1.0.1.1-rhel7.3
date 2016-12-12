@@ -1106,7 +1106,7 @@ static u32 get_rx_type(struct mlx5_ib_qp *qp, struct ib_qp_init_attr *attr)
 static int is_connected(enum ib_qp_type qp_type)
 {
 	if (qp_type == IB_QPT_RC || qp_type == IB_QPT_UC ||
-	    qp_type == MLX5_IB_QPT_DCI)
+		qp_type == MLX5_IB_QPT_DCI || qp_type == IB_EXP_QPT_DC_INI)
 		return 1;
 
 	return 0;
@@ -1762,7 +1762,7 @@ static void configure_responder_scat_cqe(struct ib_qp_init_attr *init_attr,
 {
 	int rcqe_sz;
 
-	if (init_attr->qp_type == MLX5_IB_QPT_DCI)
+	if (init_attr->qp_type == MLX5_IB_QPT_DCI || init_attr->qp_type == IB_EXP_QPT_DC_INI)
 		return;
 
 	rcqe_sz = mlx5_ib_get_cqe_size(init_attr->recv_cq);
@@ -1795,9 +1795,15 @@ static void configure_requester_scat_cqe(struct mlx5_ib_dev *dev,
 		return;
 
 	scqe_sz = mlx5_ib_get_cqe_size(init_attr->send_cq);
-	if (scqe_sz == 128) {
-		MLX5_SET(qpc, qpc, cs_req, MLX5_REQ_SCAT_DATA64_CQE);
-		return;
+
+	if ((init_attr->qp_type != IB_EXP_QPT_DC_INI	&&
+		     init_attr->sq_sig_type == IB_SIGNAL_ALL_WR)		     ||
+		    (init_attr->qp_type == IB_EXP_QPT_DC_INI	&&
+		     mlx5_ib_exp_is_scat_cqe_dci(dev, init_attr->sq_sig_type, scqe_sz))) {
+		if (scqe_sz == 128) {
+			MLX5_SET(qpc, qpc, cs_req, MLX5_REQ_SCAT_DATA64_CQE);
+			return;
+		}
 	}
 
 	if (init_attr->qp_type != MLX5_IB_QPT_DCI ||

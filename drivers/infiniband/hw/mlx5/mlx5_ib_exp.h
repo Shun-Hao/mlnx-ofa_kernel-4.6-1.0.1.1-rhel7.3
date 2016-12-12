@@ -143,6 +143,10 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			     struct ib_exp_device_attr *props,
 			     struct ib_udata *uhw);
 
+int mlx5_ib_exp_is_scat_cqe_dci(struct mlx5_ib_dev *dev,
+				enum ib_sig_type sig_type,
+				int scqe_sz);
+
 int mlx5_ib_exp_max_inl_recv(struct ib_qp_init_attr *init_attr);
 
 void mlx5_ib_exp_get_hash_parameters(struct ib_qp_init_attr *init_attr,

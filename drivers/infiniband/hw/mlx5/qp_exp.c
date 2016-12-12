@@ -186,6 +186,13 @@ u32 mlx5_ib_atomic_mode_qp(struct mlx5_ib_qp *qp)
 	return tmp << MLX5_ATOMIC_MODE_OFF;
 }
 
+int mlx5_ib_exp_is_scat_cqe_dci(struct mlx5_ib_dev *dev,
+				enum ib_sig_type sig_type,
+				int scqe_sz) {
+	return ((sig_type == IB_SIGNAL_ALL_WR) &&
+		((scqe_sz == 128) || MLX5_CAP_GEN(dev->mdev, dc_req_scat_data_cqe)));
+}
+
 int mlx5_ib_exp_max_inl_recv(struct ib_qp_init_attr *init_attr)
 {
 	return ((struct ib_exp_qp_init_attr *)init_attr)->max_inl_recv;
@@ -198,6 +205,8 @@ struct ib_qp *mlx5_ib_exp_create_qp(struct ib_pd *pd,
 	if (pd) {
 		struct mlx5_ib_dev *dev;
 		int use_inlr;
+		int scqe_sz;
+		int use_inlr_dci;
 
 		dev = to_mdev(pd->device);
 
@@ -208,18 +217,28 @@ struct ib_qp *mlx5_ib_exp_create_qp(struct ib_pd *pd,
 			return ERR_PTR(-EINVAL);
 		}
 
+		scqe_sz = mlx5_ib_get_cqe_size(init_attr->send_cq);
+
+		use_inlr_dci = (init_attr->qp_type == IB_EXP_QPT_DC_INI)    &&
+			       init_attr->max_inl_recv			    &&
+			       mlx5_ib_exp_is_scat_cqe_dci(dev,
+							   init_attr->sq_sig_type,
+							   scqe_sz);
+
 		use_inlr = (init_attr->qp_type == IB_QPT_RC ||
 			    init_attr->qp_type == IB_QPT_UC) &&
-			init_attr->max_inl_recv;
+			    init_attr->max_inl_recv;
 
-		if (use_inlr) {
-			int rcqe_sz;
-			int scqe_sz;
+		if (use_inlr || use_inlr_dci) {
+			int cqe_sz;
 
-			rcqe_sz = mlx5_ib_get_cqe_size(init_attr->recv_cq);
-			scqe_sz = mlx5_ib_get_cqe_size(init_attr->send_cq);
+			/* DCI can receive only response messages. Hence,
+			*  max_inl_recv is reported according to SCQE.
+			*/
+			cqe_sz = use_inlr_dci ? scqe_sz :
+				mlx5_ib_get_cqe_size(init_attr->recv_cq);
 
-			if (rcqe_sz == 128)
+			if (cqe_sz == 128)
 				init_attr->max_inl_recv = 64;
 			else
 				init_attr->max_inl_recv = 32;
