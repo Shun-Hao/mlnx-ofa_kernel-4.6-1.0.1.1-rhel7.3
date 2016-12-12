@@ -924,7 +924,7 @@ int ib_uverbs_exp_create_cq(struct ib_uverbs_file *file,
 int ib_uverbs_exp_modify_qp(struct ib_uverbs_file *file,
 			    struct ib_udata *ucore, struct ib_udata *uhw)
 {
-	struct ib_uverbs_exp_modify_qp	cmd;
+	struct ib_uverbs_exp_modify_qp	cmd = {};
 	int ret;
 	struct ib_qp		       *qp;
 	struct ib_qp_attr	       *attr;
