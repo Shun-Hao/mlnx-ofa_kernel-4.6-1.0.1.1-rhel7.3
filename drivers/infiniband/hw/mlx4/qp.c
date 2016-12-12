@@ -1606,7 +1606,8 @@ struct ib_qp *mlx4_ib_create_qp(struct ib_pd *pd,
 		int is_eth = rdma_cap_eth_ah(&dev->ib_dev, init_attr->port_num);
 
 		if (is_eth &&
-		    dev->dev->caps.flags2 & MLX4_DEV_CAP_FLAG2_ROCE_V1_V2) {
+		    ((dev->dev->caps.roce_mode == MLX4_ROCE_MODE_1_PLUS_2) ||
+		      dev->dev->caps.roce_mode == MLX4_ROCE_MODE_2)) {
 			init_attr->create_flags |= MLX4_IB_QP_CREATE_ROCE_V2_GSI;
 			sqp->roce_v2_gsi = ib_create_qp(pd, init_attr);
 
@@ -3159,7 +3160,7 @@ static int build_mlx_header(struct mlx4_ib_sqp *sqp, const struct ib_ud_wr *wr,
 		u16 ether_type;
 		u16 pcp = (be32_to_cpu(ah->av.ib.sl_tclass_flowlabel) >> 29) << 13;
 
-		ether_type = (!is_udp) ? ETH_P_IBOE:
+		ether_type = (!ip_version) ? ETH_P_IBOE:
 			(ip_version == 4 ? ETH_P_IP : ETH_P_IPV6);
 
 		mlx->sched_prio = cpu_to_be16(pcp);

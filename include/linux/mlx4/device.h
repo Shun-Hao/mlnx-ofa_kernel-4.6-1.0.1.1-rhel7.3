@@ -250,6 +250,7 @@ enum {
 	MLX4_DEV_CAP_FLAG2_FS_EN_NCSI		= 1ULL << 43,
 	MLX4_DEV_CAP_FLAG2_DISABLE_SIP_CHECK	= 1ULL << 44,
 	MLX4_DEV_CAP_FLAG2_SW_CQ_INIT           = 1ULL << 45,
+	MLX4_DEV_CAP_FLAG2_ROCEV2		= 1ULL << 46,
 };
 
 enum {
@@ -524,6 +525,28 @@ enum mlx4_module_id {
 	MLX4_MODULE_ID_QSFP28           = 0x11,
 };
 
+enum mlx4_roce_mode {
+	MLX4_ROCE_MODE_1,
+	MLX4_ROCE_MODE_2,
+	MLX4_ROCE_MODE_1_PLUS_2,
+	MLX4_ROCE_MODE_MAX,
+	MLX4_ROCE_MODE_INVALID = MLX4_ROCE_MODE_MAX,
+};
+
+static inline const char *mlx4_roce_mode_to_str(enum mlx4_roce_mode m)
+{
+	switch (m) {
+	case MLX4_ROCE_MODE_1:
+		return "Roce V1";
+	case MLX4_ROCE_MODE_2:
+		return "RoCE V2";
+	case MLX4_ROCE_MODE_1_PLUS_2:
+		return "RoCE V1/V2";
+	default:
+		return "Unknown";
+	}
+}
+
 enum { /* rl */
 	MLX4_QP_RATE_LIMIT_NONE		= 0,
 	MLX4_QP_RATE_LIMIT_KBS		= 1,
@@ -615,6 +638,7 @@ struct mlx4_caps {
 	int			num_qp_per_mgm;
 	int			steering_mode;
 	int			steering_attr;
+	enum mlx4_roce_mode	roce_mode;
 	int			dmfs_high_steer_mode;
 	int			fs_log_max_ucast_qp_range_size;
 	int			num_pds;
@@ -1113,6 +1137,11 @@ struct mlx4_mad_ifc {
 #define mlx4_foreach_port(port, dev, type)				\
 	for ((port) = 1; (port) <= (dev)->caps.num_ports; (port)++)	\
 		if ((type) == (dev)->caps.port_mask[(port)])
+
+#define mlx4_is_roce_dev(dev)					\
+			(((dev)->caps.flags & MLX4_DEV_CAP_FLAG_IBOE) || \
+			((dev)->caps.flags & MLX4_DEV_CAP_FLAG2_ROCE_V1_V2) || \
+			((dev)->caps.flags2 & MLX4_DEV_CAP_FLAG2_ROCEV2))
 
 #define mlx4_foreach_ib_transport_port(port, dev)                         \
 	for ((port) = 1; (port) <= (dev)->caps.num_ports; (port)++)       \

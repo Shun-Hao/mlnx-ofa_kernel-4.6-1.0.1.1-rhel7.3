@@ -273,7 +273,7 @@ static int mlx4_ib_update_gids(struct gid_entry *gids,
 			       struct mlx4_ib_dev *ibdev,
 			       u8 port_num)
 {
-	if (ibdev->dev->caps.flags2 & MLX4_DEV_CAP_FLAG2_ROCE_V1_V2)
+	if (ibdev->dev->caps.roce_mode == MLX4_ROCE_MODE_1_PLUS_2)
 		return mlx4_ib_update_gids_v1_v2(gids, ibdev, port_num);
 
 	return mlx4_ib_update_gids_v1(gids, ibdev, port_num);
@@ -2555,11 +2555,14 @@ static int mlx4_port_immutable(struct ib_device *ibdev, u8 port_num,
 		immutable->core_cap_flags = RDMA_CORE_PORT_IBA_IB;
 		immutable->max_mad_size = IB_MGMT_MAD_SIZE;
 	} else {
-		if (mdev->dev->caps.flags & MLX4_DEV_CAP_FLAG_IBOE)
-			immutable->core_cap_flags = RDMA_CORE_PORT_IBA_ROCE;
-		if (mdev->dev->caps.flags2 & MLX4_DEV_CAP_FLAG2_ROCE_V1_V2)
-			immutable->core_cap_flags = RDMA_CORE_PORT_IBA_ROCE |
-				RDMA_CORE_PORT_IBA_ROCE_UDP_ENCAP;
+		if (mdev->dev->caps.roce_mode == MLX4_ROCE_MODE_1 ||
+		    mdev->dev->caps.roce_mode == MLX4_ROCE_MODE_1_PLUS_2)
+			immutable->core_cap_flags |= RDMA_CORE_PORT_IBA_ROCE;
+
+		if (mdev->dev->caps.roce_mode == MLX4_ROCE_MODE_2 ||
+		    mdev->dev->caps.roce_mode == MLX4_ROCE_MODE_1_PLUS_2)
+			immutable->core_cap_flags |= RDMA_CORE_PORT_IBA_ROCE_UDP_ENCAP;
+
 		immutable->core_cap_flags |= RDMA_CORE_PORT_RAW_PACKET;
 		if (immutable->core_cap_flags & (RDMA_CORE_PORT_IBA_ROCE |
 		    RDMA_CORE_PORT_IBA_ROCE_UDP_ENCAP))

@@ -37,6 +37,7 @@
 
 #include <linux/mlx4/cmd.h>
 
+#include <rdma/ib_verbs.h>
 #include "mlx4.h"
 #include "mlx4_stats.h"
 #include "fw.h"
@@ -1373,6 +1374,15 @@ mlx4_en_set_port_global_pause(struct mlx4_dev *dev, int slave,
 	}
 }
 
+enum mlx4_set_port_roce_mode {
+	MLX4_SET_PORT_ROCE_MODE_1,
+	MLX4_SET_PORT_ROCE_MODE_RESERVED,
+	MLX4_SET_PORT_ROCE_MODE_1_PLUS_2,
+	MLX4_SET_PORT_ROCE_MODE_RESERVED2,
+	MLX4_SET_PORT_ROCE_MODE_MAX,
+	MLX4_SET_PORT_ROCE_MODE_INVALID = MLX4_SET_PORT_ROCE_MODE_MAX
+};
+
 static int mlx4_common_set_port(struct mlx4_dev *dev, int slave, u32 in_mod,
 				u8 op_mod, struct mlx4_cmd_mailbox *inbox)
 {
@@ -1647,8 +1657,21 @@ int mlx4_SET_PORT(struct mlx4_dev *dev, u8 port, int pkey_tbl_sz)
 	return err;
 }
 
-#define SET_PORT_ROCE_2_FLAGS          0x10
-#define MLX4_SET_PORT_ROCE_V1_V2       0x2
+static inline enum mlx4_set_port_roce_mode get_set_port_roce_mode(struct mlx4_dev *dev)
+{
+	switch (dev->caps.roce_mode) {
+	case MLX4_ROCE_MODE_1:
+		return MLX4_SET_PORT_ROCE_MODE_1;
+	case MLX4_ROCE_MODE_2:
+	case MLX4_ROCE_MODE_1_PLUS_2:
+		return MLX4_SET_PORT_ROCE_MODE_1_PLUS_2;
+	default:
+		return MLX4_SET_PORT_ROCE_MODE_INVALID;
+	}
+}
+
+#define SET_PORT_ROCE_MODE_FLAGS 0x10
+#define MLX4_SET_PORT_ROCE_V1_V2 0x2
 int mlx4_SET_PORT_general(struct mlx4_dev *dev, u8 port, int mtu,
 			  u8 pptx, u8 pfctx, u8 pprx, u8 pfcrx)
 {
@@ -1668,10 +1691,18 @@ int mlx4_SET_PORT_general(struct mlx4_dev *dev, u8 port, int mtu,
 	context->pprx = (pprx * (!pfcrx)) << 7;
 	context->pfcrx = pfcrx;
 
-	if (dev->caps.flags2 & MLX4_DEV_CAP_FLAG2_ROCE_V1_V2) {
-		context->flags |= SET_PORT_ROCE_2_FLAGS;
-		context->roce_mode |=
-			MLX4_SET_PORT_ROCE_V1_V2 << 4;
+	if (dev->caps.port_type[port] == MLX4_PORT_TYPE_ETH) {
+		enum mlx4_set_port_roce_mode set_roce_mode = get_set_port_roce_mode(dev);
+
+		if (set_roce_mode == MLX4_SET_PORT_ROCE_MODE_1_PLUS_2) {
+			context->roce_mode |= (set_roce_mode & 7) << 4;
+			context->flags |= SET_PORT_ROCE_MODE_FLAGS;
+			if(!mlx4_is_slave(dev)) {
+				err = mlx4_config_roce_v2_port(dev, ROCE_V2_UDP_DPORT);
+				if (err)
+					return err;
+			}
+		}
 	}
 	in_mod = MLX4_SET_PORT_GENERAL << 8 | port;
 	err = mlx4_cmd(dev, mailbox->dma, in_mod, MLX4_SET_PORT_ETH_OPCODE,

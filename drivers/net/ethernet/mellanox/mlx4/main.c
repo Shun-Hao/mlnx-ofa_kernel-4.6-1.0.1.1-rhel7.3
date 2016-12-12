@@ -100,6 +100,7 @@ enum {
 	NUM_VFS,
 	PROBE_VF,
 	PORT_TYPE_ARRAY,
+	ROCE_MODE,
 };
 
 enum {
@@ -112,6 +113,24 @@ struct param_data {
 	int				id;
 	struct mlx4_dbdf2val_lst	dbdf2val;
 };
+
+static struct param_data roce_mode = {
+	.id		= ROCE_MODE,
+	.dbdf2val = {
+		.name		= "roce_mode param",
+		.num_vals	= 1,
+		.def_val	= {0},
+		.range		= {0, 2},
+		.num_inval_vals = 0
+	}
+};
+module_param_string(roce_mode, roce_mode.dbdf2val.str,
+		    sizeof(roce_mode.dbdf2val.str), 0444);
+MODULE_PARM_DESC(roce_mode,
+		 "Set RoCE modes supported by the port\n"
+		 "\tA single value (e.g. 0) to define uniform preferred RoCE_mode value for all devices\n"
+		 "\t\tor a string to map device function numbers to their RoCE mode value (e.g. '0000:04:00.0-0,002b:1c:0b.a-0').\n"
+		 "\t\tAllowed values are 0: RoCEv1 (default), 1: RoCEv2, 2: RoCEv1+2)\n");
 
 static struct param_data num_vfs = {
 	.id		= NUM_VFS,
@@ -602,6 +621,7 @@ static int update_defaults(struct param_data *pdata)
 		return INVALID_STR;
 
 	switch (pdata->id) {
+	case ROCE_MODE:
 	case PORT_TYPE_ARRAY:
 	case NUM_VFS:
 	case PROBE_VF:
@@ -1432,6 +1452,39 @@ err_mem:
 		mlx4_slave_destroy_special_qp_cap(dev);
 	kfree(func_cap);
 	return err;
+}
+
+static void choose_roce_mode(struct mlx4_dev *dev,
+			     struct mlx4_dev_cap *dev_cap)
+{
+	int req_roce_mode;
+	enum mlx4_roce_mode def_roce_mode;
+
+	def_roce_mode = mlx4_is_roce_dev(dev) ?
+		MLX4_ROCE_MODE_1 : MLX4_ROCE_MODE_INVALID;
+
+	mlx4_get_val(roce_mode.dbdf2val.tbl,
+		     pci_physfn(dev->persist->pdev), 0, &req_roce_mode);
+
+	switch (req_roce_mode) {
+	case MLX4_ROCE_MODE_1:
+		req_roce_mode = def_roce_mode;
+		break;
+	case MLX4_ROCE_MODE_2:
+		if (!(dev_cap->flags2 & MLX4_DEV_CAP_FLAG2_ROCEV2))
+			req_roce_mode = def_roce_mode;
+		break;
+	case MLX4_ROCE_MODE_1_PLUS_2:
+		if (!(dev_cap->flags2 & MLX4_DEV_CAP_FLAG2_ROCE_V1_V2))
+			req_roce_mode = def_roce_mode;
+		break;
+	default:
+		req_roce_mode = def_roce_mode;
+	}
+
+	dev->caps.roce_mode = req_roce_mode;
+	pr_info("mlx4_core: device is working in RoCE mode: %s\n",
+		mlx4_roce_mode_to_str(dev->caps.roce_mode));
 }
 
 static int mlx4_slave_cap(struct mlx4_dev *dev)
@@ -2870,6 +2923,7 @@ static int mlx4_init_hca(struct mlx4_dev *dev)
 		}
 
 		choose_steering_mode(dev, &dev_cap);
+		choose_roce_mode(dev, &dev_cap);
 		choose_tunnel_offload_mode(dev, &dev_cap);
 
 		if (dev->caps.dmfs_high_steer_mode == MLX4_STEERING_DMFS_A0_STATIC &&
@@ -5024,6 +5078,14 @@ static int __init mlx4_verify_params(void)
 	status = update_defaults(&probe_vf);
 	if (status == INVALID_STR) {
 		if (mlx4_fill_dbdf2val_tbl(&probe_vf.dbdf2val))
+			return -1;
+	} else if (status == INVALID_DATA) {
+		return -1;
+	}
+
+	status = update_defaults(&roce_mode);
+	if (status == INVALID_STR) {
+		if (mlx4_fill_dbdf2val_tbl(&roce_mode.dbdf2val))
 			return -1;
 	} else if (status == INVALID_DATA) {
 		return -1;

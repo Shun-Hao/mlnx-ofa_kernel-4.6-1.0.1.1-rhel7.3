@@ -165,7 +165,7 @@ static void dump_dev_cap_flags2(struct mlx4_dev *dev, u64 flags)
 		[29] = "802.1ad offload support",
 		[31] = "Modifying loopback source checks using UPDATE_QP support",
 		[32] = "Loopback source checks support",
-		[33] = "RoCEv2 support",
+		[33] = "RoCEv1 + RoCEv2 support",
 		[34] = "DMFS Sniffer support (UC & MC)",
 		[35] = "Diag counters per port",
 		[36] = "QinQ VST mode support",
@@ -178,6 +178,7 @@ static void dump_dev_cap_flags2(struct mlx4_dev *dev, u64 flags)
 		[43] = "NCSI in DMFS mode support",
 		[44] = "Optimized steering table for non source IP rules",
 		[45] = "SW CQ initialization support",
+		[46] = "RoCEv2 support",
 	};
 	int i;
 
@@ -1132,6 +1133,8 @@ int mlx4_QUERY_DEV_CAP(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_80_VFS;
 	if (field32 & (1 << 23))
 		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_SW_CQ_INIT;
+	if (field32 & (1 << 24))
+		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_ROCEV2;
 
 	for (i = 1; i <= dev_cap->num_ports; i++) {
 		err = mlx4_QUERY_PORT(dev, i, dev_cap->port_cap + i);
