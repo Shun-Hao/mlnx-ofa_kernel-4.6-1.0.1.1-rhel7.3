@@ -1259,7 +1259,8 @@ enum ib_qp_attr_mask {
 	/* EXP stuff with shift of 0x06 to support both user and kernel masks */
 	IB_QP_GROUP_RSS		= (1<<27),
 	IB_QP_DC_KEY		= (1<<28),
-	IB_QP_FLOW_ENTROPY	= (1<<29)
+	IB_QP_FLOW_ENTROPY	= (1<<29),
+	IB_EXP_QP_RATE_LIMIT    = (1<<31),
 };
 
 enum ib_qp_state {

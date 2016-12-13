@@ -980,6 +980,7 @@ int ib_uverbs_exp_modify_qp(struct ib_uverbs_file *file,
 	attr->alt_port_num        = cmd.alt_port_num;
 	attr->alt_timeout         = cmd.alt_timeout;
 	attr->dct_key             = cmd.dct_key;
+	attr->rate_limit	  = cmd.rate_limit;
 
 	copy_ah_attr_from_uverbs(qp->device, &attr->ah_attr, &cmd.dest);
 	copy_ah_attr_from_uverbs(qp->device, &attr->alt_ah_attr,
@@ -993,6 +994,10 @@ int ib_uverbs_exp_modify_qp(struct ib_uverbs_file *file,
 			goto out;
 		}
 	}
+
+	if ((cmd.exp_attr_mask << IBV_EXP_ATTR_MASK_SHIFT) &
+	    IB_EXP_QP_RATE_LIMIT)
+		cmd.attr_mask |= IB_QP_RATE_LIMIT;
 
 	exp_mask = (cmd.exp_attr_mask << IBV_EXP_ATTR_MASK_SHIFT) & IBV_EXP_QP_ATTR_MASK;
 

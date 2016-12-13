@@ -84,6 +84,8 @@ struct ib_uverbs_exp_modify_qp {
 	__u64 dct_key;
 	__u32 exp_attr_mask;
 	__u32 flow_entropy;
+	__u32 rate_limit;
+	__u32 reserved1;
 	__u64 driver_data[0];
 };
 
