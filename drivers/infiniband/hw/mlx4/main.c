@@ -82,9 +82,33 @@ module_param_named(en_ecn, en_ecn, bool, 0444);
 MODULE_PARM_DESC(en_ecn, "Enable q/ecn [enable = 1, disable = 0 (default)]");
 #endif
 
+enum {
+	MAX_NUM_STR_BITMAP = 1 << 15,
+	DEFAULT_TBL_VAL = -1
+};
+
+static struct mlx4_dbdf2val_lst dev_assign_str = {
+	.name		= "dev_assign_str param",
+	.num_vals	= 1,
+	.def_val	= {DEFAULT_TBL_VAL},
+	.range		= {0, MAX_NUM_STR_BITMAP - 1}
+};
+module_param_string(dev_assign_str, dev_assign_str.str,
+		    sizeof(dev_assign_str.str), 0444);
+MODULE_PARM_DESC(dev_assign_str,
+		 "Map device function numbers to IB device numbers (e.g. '0000:04:00.0-0,002b:1c:0b.a-1,...').\n"
+		 "\t\tHexadecimal digits for the device function (e.g. 002b:1c:0b.a) and decimal for IB device numbers (e.g. 1).\n"
+		 "\t\tMax supported devices - 32");
+
+
+static unsigned long *dev_num_str_bitmap;
+static spinlock_t dev_num_str_lock;
+
 static const char mlx4_ib_version[] =
 	DRV_NAME ": Mellanox ConnectX InfiniBand driver v"
 	DRV_VERSION "\n";
+
+static int dr_active;
 
 static void do_slave_init(struct mlx4_ib_dev *ibdev, int slave, int do_init);
 static enum rdma_link_layer mlx4_ib_port_link_layer(struct ib_device *device,
@@ -2552,6 +2576,63 @@ static int mlx4_port_immutable(struct ib_device *ibdev, u8 port_num,
 	return 0;
 }
 
+static void init_dev_assign(void)
+{
+	int i = 1;
+
+	spin_lock_init(&dev_num_str_lock);
+	if (mlx4_fill_dbdf2val_tbl(&dev_assign_str))
+		return;
+	dev_num_str_bitmap =
+		kmalloc(BITS_TO_LONGS(MAX_NUM_STR_BITMAP) * sizeof(long),
+			GFP_KERNEL);
+	if (!dev_num_str_bitmap) {
+		pr_warn("bitmap alloc failed -- cannot apply dev_assign_str parameter\n");
+		return;
+	}
+	bitmap_zero(dev_num_str_bitmap, MAX_NUM_STR_BITMAP);
+	while ((i < MLX4_DEVS_TBL_SIZE) && (dev_assign_str.tbl[i].dbdf !=
+	       MLX4_ENDOF_TBL)) {
+		if (bitmap_allocate_region(dev_num_str_bitmap,
+					   dev_assign_str.tbl[i].val[0], 0))
+			goto err;
+		i++;
+	}
+	dr_active = 1;
+	return;
+
+err:
+	kfree(dev_num_str_bitmap);
+	dev_num_str_bitmap = NULL;
+	pr_warn("mlx4_ib: The value of 'dev_assign_str' parameter "
+			    "is incorrect. The parameter value is discarded!");
+}
+
+static int mlx4_ib_dev_idx(struct mlx4_dev *dev)
+{
+	int i, val;
+
+	if (!dr_active)
+		return -1;
+	if (!dev)
+		return -1;
+	if (mlx4_get_val(dev_assign_str.tbl, dev->persist->pdev, 0, &val))
+		return -1;
+
+	if (val != DEFAULT_TBL_VAL) {
+		dev->flags |= MLX4_FLAG_DEV_NUM_STR;
+		return val;
+	}
+
+	spin_lock(&dev_num_str_lock);
+	i = bitmap_find_free_region(dev_num_str_bitmap, MAX_NUM_STR_BITMAP, 0);
+	spin_unlock(&dev_num_str_lock);
+	if (i >= 0)
+		return i;
+
+	return -1;
+}
+
 static void get_fw_ver_str(struct ib_device *device, char *str)
 {
 	struct mlx4_ib_dev *dev =
@@ -2566,6 +2647,7 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
 {
 	struct mlx4_ib_dev *ibdev;
 	int num_ports = 0;
+	int dev_idx;
 	int i, j;
 	int err;
 	struct mlx4_ib_iboe *iboe;
@@ -2610,7 +2692,12 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
 
 	ibdev->dev = dev;
 	ibdev->bond_next_port	= 0;
-
+  
+	dev_idx = mlx4_ib_dev_idx(dev);
+	if (dev_idx >= 0)
+		sprintf(ibdev->ib_dev.name, "mlx4_%d", dev_idx);
+	else
+		strlcpy(ibdev->ib_dev.name, "mlx4_%d", IB_DEVICE_NAME_MAX);
 	ibdev->ib_dev.owner		= THIS_MODULE;
 	ibdev->ib_dev.node_type		= RDMA_NODE_IB_CA;
 	ibdev->ib_dev.local_dma_lkey	= dev->caps.reserved_lkey;
@@ -3056,6 +3143,7 @@ int mlx4_ib_steer_qp_reg(struct mlx4_ib_dev *mdev, struct mlx4_ib_qp *mqp,
 static void mlx4_ib_remove(struct mlx4_dev *dev, void *ibdev_ptr)
 {
 	struct mlx4_ib_dev *ibdev = ibdev_ptr;
+	int dev_idx, ret;
 	int p;
 	int i;
 
@@ -3066,8 +3154,20 @@ static void mlx4_ib_remove(struct mlx4_dev *dev, void *ibdev_ptr)
 
 	mlx4_ib_close_sriov(ibdev);
 	mlx4_ib_mad_cleanup(ibdev);
+	dev_idx = -1;
+	if (dr_active && !(ibdev->dev->flags & MLX4_FLAG_DEV_NUM_STR)) {
+		ret = sscanf(ibdev->ib_dev.name, "mlx4_%d", &dev_idx);
+		if (ret != 1)
+			dev_idx = -1;
+	}
 	ib_unregister_device(&ibdev->ib_dev);
 	mlx4_ib_diag_cleanup(ibdev);
+	if (dev_idx >= 0) {
+		spin_lock(&dev_num_str_lock);
+		bitmap_release_region(dev_num_str_bitmap, dev_idx, 0);
+		spin_unlock(&dev_num_str_lock);
+	}
+
 	if (ibdev->iboe.nb.notifier_call) {
 		if (unregister_netdevice_notifier(&ibdev->iboe.nb))
 			pr_warn("failure unregistering notifier\n");
@@ -3417,6 +3517,8 @@ static int __init mlx4_ib_init(void)
 	if (err)
 		goto clean_wq;
 
+	init_dev_assign();
+
 	err = mlx4_register_interface(&mlx4_ib_interface);
 	if (err)
 		goto clean_mcg;
@@ -3439,6 +3541,7 @@ static void __exit mlx4_ib_cleanup(void)
 #endif
 	mlx4_ib_mcg_destroy();
 	destroy_workqueue(wq);
+	kfree(dev_num_str_bitmap);
 }
 
 module_init(mlx4_ib_init);
