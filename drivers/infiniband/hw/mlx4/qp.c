@@ -1597,6 +1597,11 @@ struct ib_qp *mlx4_ib_create_qp(struct ib_pd *pd,
 	struct ib_qp *ibqp;
 	struct mlx4_ib_dev *dev = to_mdev(device);
 
+	if (init_attr->qp_type == IB_EXP_UD_RSS_TSS) {
+		init_attr->qp_type = IB_QPT_UD;
+		is_exp = 1;
+	}
+
 	ibqp = _mlx4_ib_create_qp(pd, init_attr, udata, is_exp);
 
 	if (!IS_ERR(ibqp) &&
