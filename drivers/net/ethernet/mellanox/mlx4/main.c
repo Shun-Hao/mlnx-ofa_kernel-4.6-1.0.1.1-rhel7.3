@@ -192,10 +192,10 @@ module_param(enable_64b_cqe_eqe, bool, 0444);
 MODULE_PARM_DESC(enable_64b_cqe_eqe,
 		 "Enable 64 byte CQEs/EQEs when the FW supports this (default: True)");
 
-static bool enable_4k_uar;
+static bool enable_4k_uar = true;
 module_param(enable_4k_uar, bool, 0444);
 MODULE_PARM_DESC(enable_4k_uar,
-		 "Enable using 4K UAR. Should not be enabled if have VFs which do not support 4K UARs (default: false)");
+		 "Enable using 4K UAR. Should not be enabled if have VFs which do not support 4K UARs (default: true)");
 
 #define PF_CONTEXT_BEHAVIOUR_MASK	(MLX4_FUNC_CAP_64B_EQE_CQE | \
 					 MLX4_FUNC_CAP_EQE_CQE_STRIDE | \
