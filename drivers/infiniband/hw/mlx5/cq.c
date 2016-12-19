@@ -431,17 +431,17 @@ static void get_sig_err_item(struct mlx5_sig_err_cqe *cqe,
 
 static void set_cqe_compression(struct mlx5_ib_dev *dev,
 				struct mlx5_exp_ib_create_cq *ucmd,
-				u32 **cqb)
+				u32 *cqc)
 {
 	if (ucmd->cqe_size  == 64 && MLX5_CAP_GEN(dev->mdev, cqe_compression)) {
 		if (ucmd->exp_data.cqe_comp_en == 1 &&
 		    (ucmd->exp_data.comp_mask & MLX5_EXP_CREATE_CQ_MASK_CQE_COMP_EN)) {
-			MLX5_SET(cqc, *cqb, cqe_comp_en, 1);
+			MLX5_SET(cqc, cqc, cqe_comp_en, 1);
 			if (ucmd->exp_data.cqe_comp_recv_type ==
 			    MLX5_IB_CQE_FORMAT_CSUM &&
 			    (ucmd->exp_data.comp_mask &
 			     MLX5_EXP_CREATE_CQ_MASK_CQE_COMP_RECV_TYPE))
-				MLX5_SET(cqc, *cqb, mini_cqe_res_format,
+				MLX5_SET(cqc, cqc, mini_cqe_res_format,
 					 MLX5_IB_CQE_FORMAT_CSUM);
 		}
 	}
@@ -889,7 +889,7 @@ static int create_cq_user(struct mlx5_ib_dev *dev, struct ib_udata *udata,
 		MLX5_SET(cqc, cqc, cqe_comp_en, 1);
 		MLX5_SET(cqc, cqc, mini_cqe_res_format, mini_cqe_format);
 	} else {
-		set_cqe_compression(dev, &ucmd, cqb);
+		set_cqe_compression(dev, &ucmd, cqc);
 	}
 
 	if (ucmd.flags & MLX5_IB_CREATE_CQ_FLAGS_CQE_128B_PAD) {
