@@ -81,6 +81,14 @@ MODULE_PARM_DESC(msi_x, "0 - don't use MSI-X, 1 - use MSI-X, >1 - limit number o
 
 #endif /* CONFIG_PCI_MSI */
 
+static int enable_sys_tune;
+module_param(enable_sys_tune, int, 0444);
+MODULE_PARM_DESC(enable_sys_tune, "Tune the cpu's for better performance (default 0) (deprecated)");
+
+static int mlx4_roce_proto_config;
+module_param_named(rr_proto, mlx4_roce_proto_config, int, 0444);
+MODULE_PARM_DESC(rr_proto, "IP next protocol for RoCEv1.5 or destination port for RoCEv2. Setting 0 means using driver default values (deprecated)");
+
 int mlx4_blck_lb = 1;
 module_param_named(block_loopback, mlx4_blck_lb, int, 0644);
 MODULE_PARM_DESC(block_loopback, "Block multicast loopback packets if > 0 "
