@@ -62,6 +62,10 @@ MODULE_VERSION(DRV_VERSION);
 
 struct workqueue_struct *mlx4_wq;
 
+static int mlx4_en_only_mode = 0;
+module_param(mlx4_en_only_mode, int, 0444);
+MODULE_PARM_DESC(mlx4_en_only_mode, "Load in Ethernet only mode");
+
 #ifdef CONFIG_MLX4_DEBUG
 
 int mlx4_debug_level = 0;
@@ -1211,10 +1215,13 @@ static int mlx4_dev_cap(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 		 * 2. Different types are supported on the port
 		 * 3. FW declared that it supports link sensing
 		 */
-		mlx4_priv(dev)->sense.sense_allowed[i] =
-			((dev->caps.supported_type[i] == MLX4_PORT_TYPE_AUTO) &&
-			 (dev->caps.flags & MLX4_DEV_CAP_FLAG_DPDP) &&
-			 (dev->caps.flags & MLX4_DEV_CAP_FLAG_SENSE_SUPPORT));
+		if (mlx4_en_only_mode)
+			mlx4_priv(dev)->sense.sense_allowed[i] = 0;
+		else
+			mlx4_priv(dev)->sense.sense_allowed[i] =
+				((dev->caps.supported_type[i] == MLX4_PORT_TYPE_AUTO) &&
+				 (dev->caps.flags & MLX4_DEV_CAP_FLAG_DPDP) &&
+				 (dev->caps.flags & MLX4_DEV_CAP_FLAG_SENSE_SUPPORT));
 
 		/*
 		 * If "default_sense" bit is set, we move the port to "AUTO" mode
@@ -1788,7 +1795,7 @@ static void mlx4_request_modules(struct mlx4_dev *dev)
 
 	if (has_eth_port)
 		request_module_nowait(EN_DRV_NAME);
-	if (has_ib_port || (dev->caps.flags & MLX4_DEV_CAP_FLAG_IBOE))
+	if (!mlx4_en_only_mode && (has_ib_port || (dev->caps.flags & MLX4_DEV_CAP_FLAG_IBOE)))
 		request_module_nowait(IB_DRV_NAME);
 }
 
@@ -5203,6 +5210,13 @@ static struct pci_driver mlx4_driver = {
 static int __init mlx4_verify_params(void)
 {
 	int status;
+
+	if (mlx4_en_only_mode) {
+		port_type_array.dbdf2val.def_val[0]	= MLX4_PORT_TYPE_ETH;
+		port_type_array.dbdf2val.def_val[1]	= MLX4_PORT_TYPE_ETH;
+		port_type_array.dbdf2val.range.min 	= MLX4_PORT_TYPE_ETH;
+		port_type_array.dbdf2val.range.max 	= MLX4_PORT_TYPE_ETH;
+	}
 
 	status = update_defaults(&port_type_array);
 	if (status == INVALID_STR) {
