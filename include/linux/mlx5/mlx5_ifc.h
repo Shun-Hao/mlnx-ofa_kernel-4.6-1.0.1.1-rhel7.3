@@ -822,7 +822,8 @@ struct mlx5_ifc_calc_op {
 
 struct mlx5_ifc_vector_calc_cap_bits {
 	u8         calc_matrix[0x1];
-	u8         reserved_at_1[0x1f];
+	u8         calc_matrix_type_8bit[0x1];
+	u8         reserved_at_2[0x1e];
 	u8         reserved_at_20[0x8];
 	u8         max_vec_count[0x8];
 	u8         reserved_at_30[0xd];

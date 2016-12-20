@@ -313,6 +313,9 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 				MLX5_CAP_VECTOR_CALC(dev->mdev, max_vec_count);
 			/* XXX: Should be MAX_SQ_SIZE / (11 * WQE_BB) */
 			props->ec_caps.max_ec_calc_inflight_calcs = 1024;
+			props->ec_w_mask = 1 << 0 | 1 << 1 | 1 << 3;
+			if (MLX5_CAP_VECTOR_CALC(dev->mdev, calc_matrix_type_8bit))
+				props->ec_w_mask |= 1 << 7;
 		}
 	}
 
