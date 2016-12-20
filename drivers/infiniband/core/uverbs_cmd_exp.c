@@ -578,6 +578,7 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 				exp_attr->ec_caps.max_ec_data_vector_count;
 		resp->ec_caps.max_ec_calc_inflight_calcs =
 				exp_attr->ec_caps.max_ec_calc_inflight_calcs;
+		resp->ec_w_mask = exp_attr->ec_w_mask;
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_EC_CAPS;
 	}
 

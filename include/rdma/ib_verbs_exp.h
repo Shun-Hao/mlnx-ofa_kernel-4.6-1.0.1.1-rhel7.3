@@ -230,6 +230,12 @@ struct ib_exp_device_attr {
 	uint32_t			max_wq_type_rq;
 	struct ib_exp_mp_rq_caps	mp_rq_caps;
 	u16				vlan_offloads;
+	/*
+	 * This field is a bit mask for the supported Galois field
+	 * bits GF(2^w) for Erasure coding. E.g. if ec_w_mask = 0x8B
+	 * then w=1, w=2, w=4 and w=8 are supported.
+	 */
+	u32				ec_w_mask;
 	struct ib_exp_ec_caps		ec_caps;
 	/*
 	 * The alignment of the padding end address.
