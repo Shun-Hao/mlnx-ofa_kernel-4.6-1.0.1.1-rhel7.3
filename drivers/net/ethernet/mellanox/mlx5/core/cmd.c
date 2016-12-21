@@ -323,6 +323,8 @@ static int mlx5_internal_err_ret_value(struct mlx5_core_dev *dev, u16 op,
 	case MLX5_CMD_OP_SET_HCA_CAP:
 	case MLX5_CMD_OP_QUERY_ISSI:
 	case MLX5_CMD_OP_SET_ISSI:
+	case MLX5_CMD_OP_QUERY_OTHER_HCA_CAP:
+	case MLX5_CMD_OP_MODIFY_OTHER_HCA_CAP:
 	case MLX5_CMD_OP_CREATE_MKEY:
 	case MLX5_CMD_OP_QUERY_MKEY:
 	case MLX5_CMD_OP_QUERY_SPECIAL_CONTEXTS:

@@ -98,6 +98,8 @@ enum {
 	MLX5_CMD_OP_QUERY_ISSI                    = 0x10a,
 	MLX5_CMD_OP_SET_ISSI                      = 0x10b,
 	MLX5_CMD_OP_SET_DRIVER_VERSION            = 0x10d,
+	MLX5_CMD_OP_QUERY_OTHER_HCA_CAP           = 0x10e,
+	MLX5_CMD_OP_MODIFY_OTHER_HCA_CAP          = 0x10f,
 	MLX5_CMD_OP_CREATE_MKEY                   = 0x200,
 	MLX5_CMD_OP_QUERY_MKEY                    = 0x201,
 	MLX5_CMD_OP_DESTROY_MKEY                  = 0x202,
@@ -885,7 +887,8 @@ enum {
 };
 
 struct mlx5_ifc_cmd_hca_cap_bits {
-	u8         reserved_at_0[0x30];
+	u8	   access_other_hca_roce[0x01];
+	u8         reserved_at_0[0x2f];
 	u8         vhca_id[0x10];
 
 	u8         reserved_at_40[0x40];
@@ -4589,6 +4592,61 @@ struct mlx5_ifc_query_hca_cap_in_bits {
 	u8         op_mod[0x10];
 
 	u8         reserved_at_40[0x40];
+};
+
+struct mlx5_ifc_other_hca_cap_bits {
+	u8         roce[0x1];
+	u8         reserved_0[0x27F];
+};
+
+struct mlx5_ifc_query_other_hca_cap_out_bits {
+	u8         status[0x8];
+	u8         reserved_0[0x18];
+
+	u8         syndrome[0x20];
+
+	u8         reserved_1[0x40];
+
+	struct     mlx5_ifc_other_hca_cap_bits other_capability;
+};
+
+struct mlx5_ifc_query_other_hca_cap_in_bits {
+	u8         opcode[0x10];
+	u8         reserved_0[0x10];
+
+	u8         reserved_1[0x10];
+	u8         op_mod[0x10];
+
+	u8         reserved_2[0x10];
+	u8         function_id[0x10];
+	u8         reserved_3[0x20];
+};
+
+struct mlx5_ifc_modify_other_hca_cap_out_bits {
+	u8         status[0x8];
+	u8         reserved_0[0x18];
+
+	u8         syndrome[0x20];
+
+	u8         reserved_1[0x40];
+};
+
+enum other_hca_cap_field_select {
+	ROCE_SELECT = 1,
+};
+
+struct mlx5_ifc_modify_other_hca_cap_in_bits {
+	u8         opcode[0x10];
+	u8         reserved_0[0x10];
+
+	u8         reserved_1[0x10];
+	u8         op_mod[0x10];
+
+	u8         reserved_2[0x10];
+	u8         function_id[0x10];
+	u8         field_select[0x20];
+
+	struct     mlx5_ifc_other_hca_cap_bits other_capability;
 };
 
 struct mlx5_ifc_query_flow_table_out_bits {
