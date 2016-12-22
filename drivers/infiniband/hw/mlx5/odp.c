@@ -392,6 +392,7 @@ static struct mlx5_ib_mr *implicit_mr_alloc(struct ib_pd *pd,
 
 	mr->ibmr.lkey = mr->mmkey.key;
 	mr->ibmr.rkey = mr->mmkey.key;
+	atomic_set(&mr->invalidated, 0);
 
 	mr->live = 1;
 	mr->free = 0;
