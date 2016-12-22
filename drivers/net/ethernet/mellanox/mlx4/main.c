@@ -1234,7 +1234,9 @@ static int mlx4_dev_cap(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 		}
 	}
 
-	dev->caps.max_counters = dev_cap->max_counters;
+	dev->caps.max_counters = dev_cap->max_counters_basic;
+	dev->caps.max_counters_basic = dev_cap->max_counters_basic;
+	dev->caps.max_counters_ext = dev_cap->max_counters_ext;
 
 	dev->caps.reserved_qps_cnt[MLX4_QP_REGION_FW] = dev_cap->reserved_qps;
 	dev->caps.reserved_qps_cnt[MLX4_QP_REGION_ETH_ADDR] =
@@ -3215,9 +3217,16 @@ static int mlx4_set_ext_counters_mode(struct mlx4_dev *dev)
 	err = mlx4_cmd(dev, MLX4_IF_CNT_MODE_EXT, 0, 0, MLX4_CMD_SET_IF_STAT,
 		       MLX4_CMD_TIME_CLASS_A, MLX4_CMD_WRAPPED);
 
-	if (mlx4_is_slave(dev))
-		return err == -EINVAL ? 0 : err;
-	return err;
+	/* Slave is allowed to continue if err == -EINVAL, as old hypervisor do
+	 * not support EXT counters handshake mechanism but do set EXT mode
+	 * Native/Master should return error if command failed
+	 */
+	if (err && (!mlx4_is_slave(dev) || err != -EINVAL))
+		return err;
+
+	dev->caps.max_counters = dev->caps.max_counters_ext;
+
+	return 0;
 }
 
 static void mlx4_cleanup_counters_table(struct mlx4_dev *dev)
@@ -3503,18 +3512,18 @@ static int mlx4_setup_hca(struct mlx4_dev *dev)
 		goto err_srq_table_free;
 	}
 
+	err = mlx4_set_ext_counters_mode(dev);
+	if (err) {
+		mlx4_err(dev, "Failed to set extended counters, aborting\n");
+		goto err_counters_table_free;
+	}
+
 	if (!mlx4_is_slave(dev)) {
 		err = mlx4_init_counters_table(dev);
 		if (err && err != -ENOENT) {
 			mlx4_err(dev, "Failed to initialize counters table, aborting\n");
 			goto err_qp_table_free;
 		}
-	}
-
-	err = mlx4_set_ext_counters_mode(dev);
-	if (err) {
-		mlx4_err(dev, "Failed to set extended counters, aborting\n");
-		goto err_counters_table_free;
 	}
 
 	err = mlx4_allocate_default_counters(dev);

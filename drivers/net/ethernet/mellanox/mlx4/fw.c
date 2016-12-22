@@ -1088,10 +1088,10 @@ int mlx4_QUERY_DEV_CAP(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 	MLX4_GET(dev_cap->max_icm_sz, outbox,
 		 QUERY_DEV_CAP_MAX_ICM_SZ_OFFSET);
 	if (dev_cap->flags & MLX4_DEV_CAP_FLAG_IF_CNT_EXT)
-		MLX4_GET(dev_cap->max_counters, outbox,
+		MLX4_GET(dev_cap->max_counters_ext, outbox,
 			 QUERY_DEV_CAP_MAX_IF_CNT_EXT_OFFSET);
-	else if (dev_cap->flags & MLX4_DEV_CAP_FLAG_IF_CNT_BASIC)
-		MLX4_GET(dev_cap->max_counters, outbox,
+	if (dev_cap->flags & MLX4_DEV_CAP_FLAG_IF_CNT_BASIC)
+		MLX4_GET(dev_cap->max_counters_basic, outbox,
 			 QUERY_DEV_CAP_MAX_IF_CNT_BASIC_OFFSET);
 
 	MLX4_GET(field32, outbox,
