@@ -44,6 +44,7 @@ struct mlx5_ib_qp;
 
 enum mlx5_cap_flags {
 	MLX5_CAP_COMPACT_AV = 1 << 0,
+	MLX5_CAP_ODP_IMPLICIT = 1 << 1,
 };
 
 enum {

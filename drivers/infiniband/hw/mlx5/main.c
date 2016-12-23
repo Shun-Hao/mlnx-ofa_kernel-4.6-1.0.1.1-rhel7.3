@@ -1635,6 +1635,11 @@ static void set_exp_data(struct mlx5_ib_dev *dev,
 	resp->exp_data.flags |= MLX5_CAP_GEN(dev->mdev, compact_address_vector) ?
 		MLX5_CAP_COMPACT_AV : 0;
 
+#ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
+	resp->exp_data.flags |= (dev->odp_caps.general_caps &
+		IB_ODP_SUPPORT_IMPLICIT) ?  MLX5_CAP_ODP_IMPLICIT : 0;
+#endif
+
 	if (MLX5_CAP_GEN(dev->mdev, roce)) {
 		resp->exp_data.comp_mask |= MLX5_EXP_ALLOC_CTX_RESP_MASK_RROCE_UDP_SPORT_MIN |
 			MLX5_EXP_ALLOC_CTX_RESP_MASK_RROCE_UDP_SPORT_MAX;
