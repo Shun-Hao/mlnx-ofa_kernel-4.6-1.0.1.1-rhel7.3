@@ -388,10 +388,8 @@ static int ipoib_create_parent_qp(struct net_device *dev,
 	init_attr.send_cq = priv->send_ring[priv->tss_qp_num].send_cq;
 
 	qp = ib_create_qp(priv->pd, (struct ib_qp_init_attr *)&init_attr);
-	if (IS_ERR(qp)) {
-		pr_warn("%s: failed to create parent QP\n", ca->name);
-		return -ENODEV; /* qp is an error value and will be checked */
-	}
+	if (IS_ERR(qp))
+		return IS_ERR(qp); /* qp is an error value and will be checked */
 
 	priv->qp = qp;
 
@@ -588,7 +586,10 @@ int ipoib_transport_dev_init_rss(struct net_device *dev, struct ib_device *ca)
 	/* Init the parent QP */
 	ret = ipoib_create_parent_qp(dev, ca);
 	if (ret) {
-		pr_warn("%s: failed to create parent QP\n", ca->name);
+		pr_warn("%s: failed to create parent QP (ret = %d)\n",
+			ca->name, ret);
+		if (ret == -ENOMEM)
+			printk(KERN_ERR "IPoIB ERROR - check send_queue_size module parameter\n");
 		goto out_free_cqs;
 	}
 
@@ -760,14 +761,17 @@ static void ipoib_destroy_rx_cqs(struct net_device *dev)
 void ipoib_transport_dev_cleanup_rss(struct net_device *dev)
 {
 	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	int ret;
 
 	ipoib_destroy_rx_qps(dev);
 	ipoib_destroy_tx_qps(dev);
 
 	/* Destroy parent or only QP */
 	if (priv->qp) {
-		if (ib_destroy_qp(priv->qp))
-			ipoib_warn(priv, "ib_qp_destroy failed\n");
+		ret = ib_destroy_qp(priv->qp);
+		if (ret)
+			ipoib_warn(priv, "ib_qp_destroy failed (ret = %d)\n",
+				   ret);
 
 		priv->qp = NULL;
 		clear_bit(IPOIB_PKEY_ASSIGNED, &priv->flags);
