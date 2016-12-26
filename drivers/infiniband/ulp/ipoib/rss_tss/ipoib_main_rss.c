@@ -38,6 +38,14 @@ int ipoib_set_mode_rss(struct net_device *dev, const char *buf)
 	struct ipoib_send_ring *send_ring;
 	int i;
 
+	if ((test_bit(IPOIB_FLAG_ADMIN_CM, &priv->flags) &&
+	     !strcmp(buf, "connected\n")) ||
+	     (!test_bit(IPOIB_FLAG_ADMIN_CM, &priv->flags) &&
+	     !strcmp(buf, "datagram\n"))) {
+		ipoib_dbg(priv, "already in that mode, goes out.\n");
+		return 0;
+	}
+
 	/* flush paths if we switch modes so that connections are restarted */
 	if (IPOIB_CM_SUPPORTED(dev->dev_addr) && !strcmp(buf, "connected\n")) {
 		set_bit(IPOIB_FLAG_ADMIN_CM, &priv->flags);
