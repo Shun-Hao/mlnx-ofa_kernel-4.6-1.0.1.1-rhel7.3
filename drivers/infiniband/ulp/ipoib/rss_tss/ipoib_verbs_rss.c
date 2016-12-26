@@ -309,7 +309,7 @@ static int ipoib_transport_cq_init_rss(struct net_device *dev,
 		cq_attr.cqe = ipoib_sendq_size;
 		cq_attr.comp_vector = req_vec % priv->ca->num_comp_vectors;
 		cq = ib_create_cq(priv->ca,
-				  ipoib_send_comp_handler, NULL,
+				  ipoib_send_comp_handler_rss, NULL,
 				  send_ring, &cq_attr);
 		if (IS_ERR(cq)) {
 			printk(KERN_WARNING "%s: failed to create send CQ\n",
