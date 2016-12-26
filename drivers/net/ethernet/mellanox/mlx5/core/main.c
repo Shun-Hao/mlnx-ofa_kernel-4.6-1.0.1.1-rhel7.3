@@ -49,6 +49,7 @@
 #include <linux/kmod.h>
 #include <linux/mlx5/mlx5_ifc.h>
 #include <linux/mlx5/vport.h>
+#include <linux/pm.h>
 #ifdef CONFIG_RFS_ACCEL
 #include <linux/cpu_rmap.h>
 #endif
@@ -1597,6 +1598,87 @@ static void remove_one(struct pci_dev *pdev)
 	devlink_free(devlink);
 }
 
+#ifdef CONFIG_PM
+static int suspend(struct device *device)
+{
+	struct pci_dev *pdev = to_pci_dev(device);
+	struct mlx5_core_dev *dev = pci_get_drvdata(pdev);
+	struct mlx5_priv *priv = &dev->priv;
+	int err;
+
+	dev_info(&pdev->dev, "suspend was called\n");
+
+	err = mlx5_unload_one(dev, priv, false);
+	if (err) {
+		dev_err(&pdev->dev, "mlx5_unload_one failed with error code: %d\n", err);
+		return err;
+	}
+
+	err = pci_save_state(pdev);
+	if (err) {
+		dev_err(&pdev->dev, "pci_save_state failed with error code: %d\n", err);
+		return err;
+	}
+
+	err = pci_enable_wake(pdev, PCI_D3hot, 0);
+	if (err) {
+		dev_err(&pdev->dev, "pci_enable_wake failed with error code: %d\n", err);
+		return err;
+	}
+
+	mlx5_pci_disable_device(dev);
+	err = pci_set_power_state(pdev, PCI_D3hot);
+	if (err) {
+		dev_warn(&pdev->dev, "pci_set_power_state failed with error code: %d\n", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int resume(struct device *device)
+{
+	struct pci_dev *pdev = to_pci_dev(device);
+	struct mlx5_core_dev *dev = pci_get_drvdata(pdev);
+	struct mlx5_priv *priv = &dev->priv;
+	int err;
+
+	dev_info(&pdev->dev, "resume was called\n");
+
+	err = pci_set_power_state(pdev, PCI_D0);
+	if (err) {
+		dev_warn(&pdev->dev, "pci_set_power_state failed with error code: %d\n", err);
+		return err;
+	}
+
+	pci_restore_state(pdev);
+	err = pci_save_state(pdev);
+	if (err) {
+		dev_err(&pdev->dev, "pci_save_state failed with error code: %d\n", err);
+		return err;
+	}
+	err = mlx5_pci_enable_device(dev);
+	if (err) {
+		dev_err(&pdev->dev, "mlx5_pci_enabel_device failed with error code: %d\n", err);
+		return err;
+	}
+	pci_set_master(pdev);
+
+	err = mlx5_load_one(dev, priv, false);
+	if (err) {
+		dev_err(&pdev->dev, "mlx5_load_one failed with error code: %d\n", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static const struct dev_pm_ops mlnx_pm = {
+	.suspend = suspend,
+	.resume = resume,
+};
+
+#endif	/* CONFIG_PM */
 static pci_ers_result_t mlx5_pci_err_detected(struct pci_dev *pdev,
 					      pci_channel_state_t state)
 {
@@ -1791,6 +1873,11 @@ void mlx5_recover_device(struct mlx5_core_dev *dev)
 static struct pci_driver mlx5_core_driver = {
 	.name           = DRIVER_NAME,
 	.id_table       = mlx5_core_pci_table,
+#ifdef CONFIG_PM
+	.driver = {
+		.pm	= &mlnx_pm,
+	},
+#endif /* CONFIG_PM */
 	.probe          = init_one,
 	.remove         = remove_one,
 	.shutdown	= shutdown,
