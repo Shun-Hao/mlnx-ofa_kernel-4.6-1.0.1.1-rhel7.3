@@ -919,13 +919,14 @@ static void cleanup_port_sysfs(struct mlx5_dc_data *dcd)
 
 static int init_driver_cnak(struct mlx5_ib_dev *dev, int port)
 {
-	int ncqe = 1 << MLX5_CAP_GEN(dev->mdev, log_max_qp_sz);
 	struct mlx5_dc_data *dcd = &dev->dcd[port - 1];
 	struct mlx5_ib_resources *devr = &dev->devr;
 	struct ib_cq_init_attr cq_attr = {};
 	struct ib_qp_init_attr init_attr;
 	struct ib_pd *pd = devr->p0;
 	struct ib_qp_attr attr;
+	int ncqe;
+	int nwr;
 	int err;
 	int i;
 
@@ -943,6 +944,10 @@ static int init_driver_cnak(struct mlx5_ib_dev *dev, int port)
 	dcd->mr->uobject     = NULL;
 	dcd->mr->need_inval  = false;
 
+	ncqe = min_t(int, MLX5_DC_CONNECT_QP_DEPTH,
+		     BIT(MLX5_CAP_GEN(dev->mdev, log_max_cq_sz)));
+	nwr = min_t(int, ncqe,
+		    BIT(MLX5_CAP_GEN(dev->mdev, log_max_qp_sz)));
 	cq_attr.cqe = ncqe;
 	dcd->rcq = ib_create_cq(&dev->ib_dev, dc_cnack_rcv_comp_handler, NULL,
 				dcd, &cq_attr);
@@ -968,9 +973,9 @@ static int init_driver_cnak(struct mlx5_ib_dev *dev, int port)
 
 	memset(&init_attr, 0, sizeof(init_attr));
 	init_attr.qp_type = MLX5_IB_QPT_SW_CNAK;
-	init_attr.cap.max_recv_wr = ncqe;
+	init_attr.cap.max_recv_wr = nwr;
 	init_attr.cap.max_recv_sge = 1;
-	init_attr.cap.max_send_wr = ncqe;
+	init_attr.cap.max_send_wr = nwr;
 	init_attr.cap.max_send_sge = 1;
 	init_attr.sq_sig_type = IB_SIGNAL_REQ_WR;
 	init_attr.recv_cq = dcd->rcq;
@@ -1009,7 +1014,7 @@ static int init_driver_cnak(struct mlx5_ib_dev *dev, int port)
 		goto error5;
 	}
 
-	dcd->max_wqes = ncqe;
+	dcd->max_wqes = nwr;
 	err = alloc_dc_rx_buf(dcd);
 	if (err) {
 		mlx5_ib_warn(dev, "failed to allocate rx buf\n");
@@ -1022,7 +1027,7 @@ static int init_driver_cnak(struct mlx5_ib_dev *dev, int port)
 		goto error6;
 	}
 
-	for (i = 0; i < ncqe; i++) {
+	for (i = 0; i < nwr; i++) {
 		err = mlx5_post_one_rxdc(dcd, i);
 		if (err)
 			goto error7;
