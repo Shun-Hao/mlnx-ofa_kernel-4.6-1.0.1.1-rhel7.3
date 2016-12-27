@@ -3988,6 +3988,43 @@ struct ib_xrcd *__ib_alloc_xrcd(struct ib_device *device, const char *caller);
  */
 int ib_dealloc_xrcd(struct ib_xrcd *xrcd);
 
+static inline int ib_active_speed_enum_to_rate(enum ib_port_speed active_speed,
+					       int *rate,
+					       char **speed)
+{
+	switch (active_speed) {
+	case IB_SPEED_DDR:
+		*speed = " DDR";
+		*rate = 50;
+		break;
+	case IB_SPEED_QDR:
+		*speed = " QDR";
+		*rate = 100;
+		break;
+	case IB_SPEED_FDR10:
+		*speed = " FDR10";
+		*rate = 100;
+		break;
+	case IB_SPEED_FDR:
+		*speed = " FDR";
+		*rate = 140;
+		break;
+	case IB_SPEED_EDR:
+		*speed = " EDR";
+		*rate = 250;
+		break;
+	case IB_SPEED_HDR:
+		*speed = " HDR";
+		*rate = 500;
+		break;
+	case IB_SPEED_SDR:
+	default:		/* default to SDR for invalid rates */
+		*rate = 25;
+		break;
+	}
+	return 0;
+}
+
 static inline int ib_check_mr_access(int flags)
 {
 	/*
