@@ -62,7 +62,8 @@ int ipoib_set_mode_rss(struct net_device *dev, const char *buf)
 		}
 
 		ipoib_flush_paths(dev);
-		rtnl_lock();
+		if (!rtnl_trylock())
+			return -EBUSY;
 		return 0;
 	}
 
@@ -72,7 +73,8 @@ int ipoib_set_mode_rss(struct net_device *dev, const char *buf)
 		dev_set_mtu(dev, min(priv->mcast_mtu, dev->mtu));
 		rtnl_unlock();
 		ipoib_flush_paths(dev);
-		rtnl_lock();
+		if (!rtnl_trylock())
+			return -EBUSY;
 		return 0;
 	}
 
