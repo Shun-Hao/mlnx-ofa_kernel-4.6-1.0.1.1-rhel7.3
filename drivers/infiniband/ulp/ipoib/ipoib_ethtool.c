@@ -112,6 +112,36 @@ static int ipoib_set_coalesce(struct net_device *dev,
 
 	return 0;
 }
+
+static int ipoib_get_settings(struct net_device *dev, struct ethtool_cmd *ecmd)
+{
+	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ib_port_attr attr;
+	char *speed = "";
+	int rate;/* in deci-Gb/sec */
+	int ret;
+
+	ret = ib_query_port(priv->ca, priv->port, &attr);
+	if (ret)
+		return ret;
+
+	ecmd->duplex = DUPLEX_FULL;
+	ecmd->autoneg = AUTONEG_DISABLE;
+	ecmd->phy_address = 255;
+	ecmd->port = PORT_OTHER;/* till define IB port type */
+
+	ib_active_speed_enum_to_rate(attr.active_speed,
+				     &rate,
+				     &speed);
+
+	rate *= ib_width_enum_to_int(attr.active_width);
+	if (rate < 0)
+		rate = -1;
+
+	ethtool_cmd_speed_set(ecmd, rate * 100);
+
+	return 0;
+}
 static void ipoib_get_ethtool_stats(struct net_device *dev,
 				    struct ethtool_stats __always_unused *stats,
 				    u64 *data)
@@ -219,6 +249,8 @@ static const struct ethtool_ops ipoib_ethtool_ops = {
 	.get_drvinfo		= ipoib_get_drvinfo,
 	.get_coalesce		= ipoib_get_coalesce,
 	.set_coalesce		= ipoib_set_coalesce,
+	//VALENTINE .get_settings		= ipoib_get_settings,
+	.get_link		= ethtool_op_get_link,
 	.get_strings		= ipoib_get_strings,
 	.get_ethtool_stats	= ipoib_get_ethtool_stats,
 	.get_sset_count		= ipoib_get_sset_count,
