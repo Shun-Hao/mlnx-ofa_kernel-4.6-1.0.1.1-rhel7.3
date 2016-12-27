@@ -1706,17 +1706,17 @@ static int ipoib_dev_init_default(struct net_device *dev)
 	ipoib_napi_add(dev);
 
 	/* Allocate RX/TX "rings" to hold queued skbs */
-	priv->rx_ring =	kcalloc(ipoib_recvq_size,
+	priv->rx_ring =	kcalloc(priv->recvq_size,
 				       sizeof(*priv->rx_ring),
 				       GFP_KERNEL);
 	if (!priv->rx_ring)
 		goto out;
 
-	priv->tx_ring = vzalloc(array_size(ipoib_sendq_size,
+	priv->tx_ring = vzalloc(array_size(priv->sendq_size,
 					   sizeof(*priv->tx_ring)));
 	if (!priv->tx_ring) {
 		pr_warn("%s: failed to allocate TX ring (%d entries)\n",
-			priv->ca->name, ipoib_sendq_size);
+			priv->ca->name, priv->sendq_size);
 		goto out_rx_ring_cleanup;
 	}
 
@@ -1932,6 +1932,10 @@ static int ipoib_ndo_init(struct net_device *ndev)
 		if (rc)
 			return rc;
 	}
+
+	/* Initial ring params*/
+	priv->sendq_size = ipoib_sendq_size;
+	priv->recvq_size = ipoib_recvq_size;
 
 	/* MTU will be reset when mcast join happens */
 	ndev->mtu = IPOIB_UD_MTU(priv->max_ib_mtu);

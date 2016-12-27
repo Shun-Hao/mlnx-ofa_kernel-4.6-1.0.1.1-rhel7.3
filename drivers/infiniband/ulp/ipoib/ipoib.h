@@ -423,6 +423,8 @@ struct ipoib_dev_priv {
 #endif
 	u64	hca_caps;
 	struct ipoib_ethtool_st ethtool;
+	u32 sendq_size;
+	u32 recvq_size;
 	unsigned int max_send_sge;
 	bool sm_fullmember_sendonly_support;
 	const struct net_device_ops	*rn_ops;

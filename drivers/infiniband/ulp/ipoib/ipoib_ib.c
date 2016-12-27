@@ -156,7 +156,7 @@ static int ipoib_ib_post_receives(struct net_device *dev)
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	int i;
 
-	for (i = 0; i < ipoib_recvq_size; ++i) {
+	for (i = 0; i < priv->recvq_size; ++i) {
 		if (!ipoib_alloc_rx_skb(dev, i)) {
 			ipoib_warn(priv, "failed to allocate receive buffer %d\n", i);
 			return -ENOMEM;
@@ -182,9 +182,9 @@ static void ipoib_ib_handle_rx_wc(struct net_device *dev, struct ib_wc *wc)
 	ipoib_dbg_data(priv, "recv completion: id %d, status: %d\n",
 		       wr_id, wc->status);
 
-	if (unlikely(wr_id >= ipoib_recvq_size)) {
+	if (unlikely(wr_id >= priv->recvq_size)) {
 		ipoib_warn(priv, "recv completion event with wrid %d (> %d)\n",
-			   wr_id, ipoib_recvq_size);
+			   wr_id, priv->recvq_size);
 		return;
 	}
 
@@ -390,9 +390,9 @@ static void ipoib_ib_handle_tx_wc(struct net_device *dev, struct ib_wc *wc)
 	ipoib_dbg_data(priv, "send completion: id %d, status: %d\n",
 		       wr_id, wc->status);
 
-	if (unlikely(wr_id >= ipoib_sendq_size)) {
+	if (unlikely(wr_id >= priv->sendq_size)) {
 		ipoib_warn(priv, "send completion event with wrid %d (> %d)\n",
-			   wr_id, ipoib_sendq_size);
+			   wr_id, priv->sendq_size);
 		return;
 	}
 
@@ -409,7 +409,7 @@ static void ipoib_ib_handle_tx_wc(struct net_device *dev, struct ib_wc *wc)
 	++priv->tx_tail;
 
 	if (unlikely(netif_queue_stopped(dev) &&
-		     ((priv->tx_head - priv->tx_tail) <= ipoib_sendq_size >> 1) &&
+		     ((priv->tx_head - priv->tx_tail) <= priv->sendq_size >> 1) &&
 		     test_bit(IPOIB_FLAG_ADMIN_UP, &priv->flags)))
 		netif_wake_queue(dev);
 
@@ -627,7 +627,7 @@ int ipoib_send(struct net_device *dev, struct sk_buff *skb,
 	 * means we have to make sure everything is properly recorded and
 	 * our state is consistent before we call post_send().
 	 */
-	tx_req = &priv->tx_ring[priv->tx_head & (ipoib_sendq_size - 1)];
+	tx_req = &priv->tx_ring[priv->tx_head & (priv->sendq_size - 1)];
 	tx_req->skb = skb;
 
 	if (skb->len < ipoib_inline_thold &&
@@ -649,7 +649,7 @@ int ipoib_send(struct net_device *dev, struct sk_buff *skb,
 	else
 		priv->tx_wr.wr.send_flags &= ~IB_SEND_IP_CSUM;
 	/* increase the tx_head after send success, but use it for queue state */
-	if (priv->tx_head - priv->tx_tail == ipoib_sendq_size - 1) {
+	if (priv->tx_head - priv->tx_tail == priv->sendq_size - 1) {
 		ipoib_dbg(priv, "TX ring full, stopping kernel net queue\n");
 		netif_stop_queue(dev);
 	}
@@ -662,7 +662,7 @@ int ipoib_send(struct net_device *dev, struct sk_buff *skb,
 				     IB_CQ_REPORT_MISSED_EVENTS) < 0)
 			ipoib_warn(priv, "request notify on send CQ failed\n");
 
-	rc = post_send(priv, priv->tx_head & (ipoib_sendq_size - 1),
+	rc = post_send(priv, priv->tx_head & (priv->sendq_size - 1),
 		       address, dqpn, tx_req, phead, hlen);
 	if (unlikely(rc)) {
 		ipoib_warn(priv, "post_send failed, error %d\n", rc);
@@ -739,7 +739,7 @@ static int recvs_pending(struct net_device *dev)
 	int pending = 0;
 	int i;
 
-	for (i = 0; i < ipoib_recvq_size; ++i)
+	for (i = 0; i < priv->recvq_size; ++i)
 		if (priv->rx_ring[i].skb)
 			++pending;
 
@@ -820,14 +820,14 @@ int ipoib_ib_dev_stop_default(struct net_device *dev)
 			 */
 			while ((int)priv->tx_tail - (int)priv->tx_head < 0) {
 				tx_req = &priv->tx_ring[priv->tx_tail &
-							(ipoib_sendq_size - 1)];
+							(priv->sendq_size - 1)];
 				if (!tx_req->is_inline)
 					ipoib_dma_unmap_tx(priv, tx_req);
 				dev_kfree_skb_any(tx_req->skb);
 				++priv->tx_tail;
 			}
 
-			for (i = 0; i < ipoib_recvq_size; ++i) {
+			for (i = 0; i < priv->recvq_size; ++i) {
 				struct ipoib_rx_buf *rx_req;
 
 				rx_req = &priv->rx_ring[i];

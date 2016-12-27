@@ -58,6 +58,103 @@ static const struct ipoib_stats ipoib_gstrings_stats[] = {
 
 #define IPOIB_GLOBAL_STATS_LEN	ARRAY_SIZE(ipoib_gstrings_stats)
 
+static int ipoib_set_ring_param(struct net_device *dev,
+				struct ethtool_ringparam *ringparam)
+{
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
+	unsigned int new_recvq_size, new_sendq_size;
+	unsigned long priv_current_flags;
+	unsigned int dev_current_flags;
+	bool init = false, init_fail = false;
+
+	if (ringparam->rx_pending <= IPOIB_MAX_QUEUE_SIZE &&
+	    ringparam->rx_pending >= IPOIB_MIN_QUEUE_SIZE) {
+		new_recvq_size = roundup_pow_of_two(ringparam->rx_pending);
+		if (ringparam->rx_pending != new_recvq_size)
+			pr_warn("%s: %s: rx_pending should be power of two. rx_pending is %d\n",
+				dev->name, __func__, new_recvq_size);
+	} else {
+		pr_err("rx_pending (%d) is out of bounds [%d-%d]\n",
+		       ringparam->rx_pending,
+		       IPOIB_MIN_QUEUE_SIZE, IPOIB_MAX_QUEUE_SIZE);
+		return -EINVAL;
+	}
+
+	if (ringparam->tx_pending <= IPOIB_MAX_QUEUE_SIZE &&
+	    ringparam->tx_pending >= IPOIB_MIN_QUEUE_SIZE) {
+		new_sendq_size = roundup_pow_of_two(ringparam->tx_pending);
+		if (ringparam->tx_pending != new_sendq_size)
+			pr_warn("%s: %s: tx_pending should be power of two. tx_pending is %d\n",
+				dev->name, __func__, new_sendq_size);
+	} else {
+		pr_err("tx_pending (%d) is out of bounds [%d-%d]\n",
+		       ringparam->tx_pending,
+		       IPOIB_MIN_QUEUE_SIZE, IPOIB_MAX_QUEUE_SIZE);
+		return -EINVAL;
+	}
+
+	if ((new_recvq_size != priv->recvq_size) ||
+	    (new_sendq_size != priv->sendq_size)) {
+		priv_current_flags = priv->flags;
+		dev_current_flags = dev->flags;
+
+		dev_change_flags(dev, dev->flags & ~IFF_UP);
+		priv->rn_ops->ndo_uninit(dev);
+
+		do {
+			priv->recvq_size = new_recvq_size;
+			priv->sendq_size = new_sendq_size;
+			if (priv->rn_ops->ndo_init(dev)) {
+				new_recvq_size >>= 1;
+				new_sendq_size >>= 1;
+				/* keep the values always legal */
+				new_recvq_size = max_t(unsigned int,
+						       new_recvq_size,
+						       IPOIB_MIN_QUEUE_SIZE);
+				new_sendq_size = max_t(unsigned int,
+						       new_sendq_size,
+						       IPOIB_MIN_QUEUE_SIZE);
+				init_fail = true;
+			} else {
+				init = true;
+			}
+		} while (!init &&
+			 !(priv->recvq_size == IPOIB_MIN_QUEUE_SIZE &&
+			   priv->sendq_size == IPOIB_MIN_QUEUE_SIZE));
+
+		if (!init) {
+			pr_err("%s: Failed to init interface %s, removing it\n",
+			       __func__, dev->name);
+			return -ENOMEM;
+		}
+
+		if (init_fail)
+			pr_warn("%s: Unable to set the requested ring size values, "
+				"new values are rx = %d, tx = %d\n",
+				dev->name, new_recvq_size, new_sendq_size);
+
+		if (dev_current_flags & IFF_UP)
+			dev_change_flags(dev, dev_current_flags);
+	}
+
+	return 0;
+}
+
+static void ipoib_get_ring_param(struct net_device *dev,
+				 struct ethtool_ringparam *ringparam)
+{
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
+
+	ringparam->rx_max_pending = IPOIB_MAX_QUEUE_SIZE;
+	ringparam->tx_max_pending = IPOIB_MAX_QUEUE_SIZE;
+	ringparam->rx_mini_max_pending = 0;
+	ringparam->rx_jumbo_max_pending = 0;
+	ringparam->rx_pending = priv->recvq_size;
+	ringparam->tx_pending = priv->sendq_size;
+	ringparam->rx_mini_pending = 0;
+	ringparam->rx_jumbo_pending = 0;
+}
+
 static void ipoib_get_drvinfo(struct net_device *netdev,
 			      struct ethtool_drvinfo *drvinfo)
 {
@@ -254,6 +351,8 @@ static const struct ethtool_ops ipoib_ethtool_ops = {
 	.get_strings		= ipoib_get_strings,
 	.get_ethtool_stats	= ipoib_get_ethtool_stats,
 	.get_sset_count		= ipoib_get_sset_count,
+	.set_ringparam		= ipoib_set_ring_param,
+	.get_ringparam		= ipoib_get_ring_param,
 };
 
 void ipoib_set_ethtool_ops(struct net_device *dev)
