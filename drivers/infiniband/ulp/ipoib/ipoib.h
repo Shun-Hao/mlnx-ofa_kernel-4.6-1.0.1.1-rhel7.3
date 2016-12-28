@@ -112,6 +112,9 @@ enum {
 	MAX_SEND_CQE		  = 64,
 	IPOIB_CM_COPYBREAK	  = 256,
 
+	IPOIB_MAX_INLINE_SIZE	  = 800,
+	IPOIB_INLINE_THOLD	  = 120,
+
 	IPOIB_NON_CHILD		  = 0,
 	IPOIB_LEGACY_CHILD	  = 1,
 	IPOIB_RTNL_CHILD	  = 2,
@@ -189,7 +192,18 @@ struct ipoib_rx_buf {
 struct ipoib_tx_buf {
 	struct sk_buff *skb;
 	u64		mapping[MAX_SKB_FRAGS + 1];
+	u32		is_inline;
 };
+ 
+/* Talat & Tzafrir: Alex Vesker: re-added struct removed in upstream.
+ * Used only in drivers/infiniband/ulp/ipoib_1.5.3/ipoib_cm.c .
+ */
+struct ipoib_cm_tx_buf {
+	struct sk_buff *skb;
+	u64		mapping;
+	u32		is_inline;
+};
+ 
 
 struct ib_cm_id;
 
@@ -803,6 +817,7 @@ do {							\
 
 extern int ipoib_sendq_size;
 extern int ipoib_recvq_size;
+extern u32 ipoib_inline_thold;
 
 extern struct ib_sa_client ipoib_sa_client;
 

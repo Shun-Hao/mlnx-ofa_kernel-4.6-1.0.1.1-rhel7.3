@@ -44,6 +44,7 @@
 #include "ipoib.h"
 
 int ipoib_max_conn_qp = 128;
+u32 ipoib_inline_thold = IPOIB_INLINE_THOLD;
 
 module_param_named(max_nonsrq_conn_qp, ipoib_max_conn_qp, int, 0444);
 MODULE_PARM_DESC(max_nonsrq_conn_qp,
@@ -750,10 +751,18 @@ void ipoib_cm_send(struct net_device *dev, struct sk_buff *skb, struct ipoib_cm_
 	tx_req = &tx->tx_ring[tx->tx_head & (ipoib_sendq_size - 1)];
 	tx_req->skb = skb;
 
-	if (unlikely(ipoib_dma_map_tx(priv->ca, tx_req))) {
-		++dev->stats.tx_errors;
-		dev_kfree_skb_any(skb);
-		return;
+	if (skb->len < ipoib_inline_thold && !skb_shinfo(skb)->nr_frags) {
+		tx_req->mapping[0] = (u64)skb->data;
+		priv->tx_wr.wr.send_flags |= IB_SEND_INLINE;
+		tx_req->is_inline = 1;
+	} else {
+		if (unlikely(ipoib_dma_map_tx(priv->ca, tx_req))) {
+			++dev->stats.tx_errors;
+			dev_kfree_skb_any(skb);
+			return;
+		}
+		tx_req->is_inline = 0;
+		priv->tx_wr.wr.send_flags &= ~IB_SEND_INLINE;
 	}
 
 	if ((priv->tx_head - priv->tx_tail) == ipoib_sendq_size - 1) {
@@ -778,7 +787,8 @@ void ipoib_cm_send(struct net_device *dev, struct sk_buff *skb, struct ipoib_cm_
 	if (unlikely(rc)) {
 		ipoib_warn(priv, "IPoIB/CM:post_send failed, error %d\n", rc);
 		++dev->stats.tx_errors;
-		ipoib_dma_unmap_tx(priv, tx_req);
+		if (!tx_req->is_inline)
+			ipoib_dma_unmap_tx(priv, tx_req);
 		dev_kfree_skb_any(skb);
 
 		if (netif_queue_stopped(dev))
@@ -809,7 +819,9 @@ void ipoib_cm_handle_tx_wc(struct net_device *dev, struct ib_wc *wc)
 
 	tx_req = &tx->tx_ring[wr_id];
 
-	ipoib_dma_unmap_tx(priv, tx_req);
+	/* Checking whether inline send was used - nothing to unmap */
+	if (!tx_req->is_inline)
+		ipoib_dma_unmap_tx(priv, tx_req);
 
 	/* FIXME: is this right? Shouldn't we only increment on success? */
 	++dev->stats.tx_packets;
@@ -1061,6 +1073,7 @@ static struct ib_qp *ipoib_cm_create_tx_qp(struct net_device *dev, struct ipoib_
 		.srq			= priv->cm.srq,
 		.cap.max_send_wr	= ipoib_sendq_size,
 		.cap.max_send_sge	= 1,
+		.cap.max_inline_data    = IPOIB_MAX_INLINE_SIZE,
 		.sq_sig_type		= IB_SIGNAL_ALL_WR,
 		.qp_type		= IB_QPT_RC,
 		.qp_context		= tx,
@@ -1262,7 +1275,8 @@ timeout:
 
 	while ((int) p->tx_tail - (int) p->tx_head < 0) {
 		tx_req = &p->tx_ring[p->tx_tail & (ipoib_sendq_size - 1)];
-		ipoib_dma_unmap_tx(priv, tx_req);
+		if (!tx_req->is_inline)
+			ipoib_dma_unmap_tx(priv, tx_req);
 		dev_kfree_skb_any(tx_req->skb);
 		netif_tx_lock_bh(p->dev);
 		++p->tx_tail;
