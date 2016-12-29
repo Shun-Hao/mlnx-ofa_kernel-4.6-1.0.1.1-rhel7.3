@@ -75,6 +75,9 @@ module_param_named(debug_level, ipoib_debug_level, int, 0644);
 MODULE_PARM_DESC(debug_level, "Enable debug tracing if > 0");
 #endif
 
+#define		IPOIB_MAX_NEIGH_TIME  (240UL * HZ)
+#define		IPOIB_MIN_NEIGH_TIME  (30UL * HZ)
+
 struct ipoib_path_iter {
 	struct net_device *dev;
 	struct ipoib_path  path;
@@ -1317,6 +1320,8 @@ static void __ipoib_reap_neigh(struct ipoib_dev_priv *priv)
 	/* neigh is obsolete if it was idle for two GC periods */
 	dt = 2 * arp_tbl.gc_interval;
 	neigh_obsolete = jiffies - dt;
+	dt = min(dt, IPOIB_MAX_NEIGH_TIME);
+	dt = max(dt, IPOIB_MIN_NEIGH_TIME);
 
 	for (i = 0; i < htbl->size; i++) {
 		struct ipoib_neigh *neigh;
@@ -1351,11 +1356,16 @@ static void ipoib_reap_neigh(struct work_struct *work)
 {
 	struct ipoib_dev_priv *priv =
 		container_of(work, struct ipoib_dev_priv, neigh_reap_task.work);
+	unsigned long gc_time;
 
+	gc_time = arp_tbl.gc_interval;
+	gc_time = min(gc_time, IPOIB_MAX_NEIGH_TIME);
+	gc_time = max(gc_time, IPOIB_MIN_NEIGH_TIME);
+	
 	__ipoib_reap_neigh(priv);
 
 	queue_delayed_work(priv->wq, &priv->neigh_reap_task,
-			   arp_tbl.gc_interval);
+			   gc_time);
 }
 
 
@@ -1532,7 +1542,7 @@ static int ipoib_neigh_hash_init(struct ipoib_dev_priv *priv)
 
 	/* start garbage collection */
 	queue_delayed_work(priv->wq, &priv->neigh_reap_task,
-			   arp_tbl.gc_interval);
+			  IPOIB_MIN_NEIGH_TIME);
 
 	return 0;
 }
