@@ -102,8 +102,9 @@ struct mlx5e_sw_stats {
 	u64 rx_page_reuse;
 	u64 rx_cache_reuse;
 	u64 rx_cache_full;
-	u64 rx_cache_empty;
-	u64 rx_cache_busy;
+	u64 rx_cache_ext;
+	u64 rx_cache_rdc;
+	u64 rx_cache_alloc;
 	u64 rx_cache_waive;
 	u64 rx_congst_umr;
 	u64 rx_arfs_err;
@@ -199,8 +200,9 @@ struct mlx5e_rq_stats {
 	u64 page_reuse;
 	u64 cache_reuse;
 	u64 cache_full;
-	u64 cache_empty;
-	u64 cache_busy;
+	u64 cache_ext;
+	u64 cache_rdc;
+	u64 cache_alloc;
 	u64 cache_waive;
 	u64 congst_umr;
 	u64 arfs_err;

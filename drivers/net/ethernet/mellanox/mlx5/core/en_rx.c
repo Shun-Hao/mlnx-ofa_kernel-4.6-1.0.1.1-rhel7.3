@@ -165,6 +165,106 @@ static inline u32 mlx5e_decompress_cqes_start(struct mlx5e_rq *rq,
 	return mlx5e_decompress_cqes_cont(rq, cq, 1, budget_rem) - 1;
 }
 
+static inline void mlx5e_rx_cache_page_swap(struct mlx5e_page_cache *cache,
+					    u32 a, u32 b)
+{
+	struct mlx5e_dma_info tmp;
+
+	tmp = cache->page_cache[a];
+	cache->page_cache[a] = cache->page_cache[b];
+	cache->page_cache[b] = tmp;
+}
+
+static inline bool mlx5e_rx_cache_is_empty(struct mlx5e_page_cache *cache)
+{
+	return cache->head < 0;
+}
+static inline bool mlx5e_rx_cache_page_busy(struct mlx5e_page_cache *cache,
+					    u32 i)
+{
+	return page_ref_count(cache->page_cache[i].page) != 1;
+}
+
+static inline bool mlx5e_rx_cache_check_reduce(struct mlx5e_rq *rq)
+{
+	struct mlx5e_page_cache *cache = &rq->page_cache;
+
+	if (unlikely(test_bit(MLX5E_RQ_STATE_CACHE_REDUCE_PENDING, &rq->state)))
+		return false;
+
+	if (time_before(jiffies, cache->reduce.next_ts))
+		return false;
+
+	if (likely(!mlx5e_rx_cache_is_empty(cache)) &&
+	    mlx5e_rx_cache_page_busy(cache, cache->head))
+		return false;
+
+	if (ilog2(cache->sz) == cache->log_min_sz)
+		return false;
+
+	/* would like to reduce */
+	if (cache->reduce.successive < MLX5E_PAGE_CACHE_REDUCE_SUCCESSIVE_CNT) {
+		cache->reduce.successive++;
+		return false;
+	}
+
+	return true;
+}
+
+static inline void
+mlx5e_rx_cache_reduce_reset_watch(struct mlx5e_page_cache_reduce *reduce)
+{
+	reduce->next_ts = jiffies + reduce->graceful_period;
+	reduce->successive = 0;
+}
+
+static inline void mlx5e_rx_cache_may_reduce(struct mlx5e_rq *rq)
+{
+	struct mlx5e_page_cache *cache = &rq->page_cache;
+	struct mlx5e_page_cache_reduce *reduce = &cache->reduce;
+	int max_new_head;
+
+	if (!mlx5e_rx_cache_check_reduce(rq))
+		return;
+
+	/* do reduce */
+	rq->stats->cache_rdc++;
+	cache->sz >>= 1;
+	max_new_head = (cache->sz >> 1) - 1;
+	if (cache->head > max_new_head) {
+		u32 npages = cache->head - max_new_head;
+
+		cache->head = max_new_head;
+		if (cache->lrs >= cache->head)
+			cache->lrs = 0;
+
+		memcpy(reduce->pending, &cache->page_cache[cache->head + 1],
+		       npages * sizeof(*reduce->pending));
+		reduce->npages = npages;
+		set_bit(MLX5E_RQ_STATE_CACHE_REDUCE_PENDING, &rq->state);
+	}
+
+	mlx5e_rx_cache_reduce_reset_watch(reduce);
+
+}
+
+static inline bool mlx5e_rx_cache_extend(struct mlx5e_rq *rq)
+{
+	struct mlx5e_page_cache *cache = &rq->page_cache;
+	struct mlx5e_page_cache_reduce *reduce = &cache->reduce;
+
+	if (ilog2(cache->sz) == cache->log_max_sz)
+		return false;
+
+	rq->stats->cache_ext++;
+	cache->sz <<= 1;
+
+	mlx5e_rx_cache_reduce_reset_watch(reduce);
+	schedule_delayed_work_on(smp_processor_id(), &reduce->reduce_work,
+				 reduce->delay);
+	return true;
+}
+
 static inline bool mlx5e_page_is_reserved(struct page *page)
 {
 	return page_is_pfmemalloc(page) || page_to_nid(page) != numa_mem_id();
@@ -174,12 +274,13 @@ static inline bool mlx5e_rx_cache_put(struct mlx5e_rq *rq,
 				      struct mlx5e_dma_info *dma_info)
 {
 	struct mlx5e_page_cache *cache = &rq->page_cache;
-	u32 tail_next = (cache->tail + 1) & (MLX5E_CACHE_SIZE - 1);
 	struct mlx5e_rq_stats *stats = rq->stats;
 
-	if (tail_next == cache->head) {
-		stats->cache_full++;
-		return false;
+	if (unlikely(cache->head == cache->sz - 1)) {
+		if (!mlx5e_rx_cache_extend(rq)) {
+			rq->stats->cache_full++;
+			return false;
+		}
 	}
 
 	if (unlikely(mlx5e_page_is_reserved(dma_info->page))) {
@@ -187,8 +288,7 @@ static inline bool mlx5e_rx_cache_put(struct mlx5e_rq *rq,
 		return false;
 	}
 
-	cache->page_cache[cache->tail] = *dma_info;
-	cache->tail = tail_next;
+	cache->page_cache[++cache->head] = *dma_info;
 	return true;
 }
 
@@ -198,24 +298,29 @@ static inline bool mlx5e_rx_cache_get(struct mlx5e_rq *rq,
 	struct mlx5e_page_cache *cache = &rq->page_cache;
 	struct mlx5e_rq_stats *stats = rq->stats;
 
-	if (unlikely(cache->head == cache->tail)) {
-		stats->cache_empty++;
-		return false;
-	}
+	if (unlikely(mlx5e_rx_cache_is_empty(cache)))
+		goto err_no_page;
 
-	if (page_ref_count(cache->page_cache[cache->head].page) != 1) {
-		stats->cache_busy++;
-		return false;
-	}
+	mlx5e_rx_cache_page_swap(cache, cache->head, cache->lrs);
+	cache->lrs++;
+	if (cache->lrs >= cache->head)
+		cache->lrs = 0;
+	if (mlx5e_rx_cache_page_busy(cache, cache->head))
+		goto err_no_page;
 
-	*dma_info = cache->page_cache[cache->head];
-	cache->head = (cache->head + 1) & (MLX5E_CACHE_SIZE - 1);
 	stats->cache_reuse++;
+	*dma_info = cache->page_cache[cache->head--];
 
 	dma_sync_single_for_device(rq->pdev, dma_info->addr,
 				   PAGE_SIZE,
 				   DMA_FROM_DEVICE);
 	return true;
+
+err_no_page:
+	stats->cache_alloc++;
+	cache->reduce.successive = 0;
+
+	return false;
 }
 
 static inline int mlx5e_page_alloc_mapped(struct mlx5e_rq *rq,
@@ -423,6 +528,8 @@ static void mlx5e_post_rx_mpwqe(struct mlx5e_rq *rq)
 	dma_wmb();
 
 	mlx5_wq_ll_update_db_record(wq);
+
+	mlx5e_rx_cache_may_reduce(rq);
 }
 
 static inline u16 mlx5e_icosq_wrap_cnt(struct mlx5e_icosq *sq)
@@ -539,6 +646,8 @@ bool mlx5e_post_rx_wqes(struct mlx5e_rq *rq)
 	dma_wmb();
 
 	mlx5_wq_cyc_update_db_record(wq);
+
+	mlx5e_rx_cache_may_reduce(rq);
 
 	return !!err;
 }

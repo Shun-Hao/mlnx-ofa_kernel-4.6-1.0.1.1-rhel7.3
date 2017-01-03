@@ -89,8 +89,9 @@ static const struct counter_desc sw_stats_desc[] = {
 	{ MLX5E_DECLARE_STAT(struct mlx5e_sw_stats, rx_page_reuse) },
 	{ MLX5E_DECLARE_STAT(struct mlx5e_sw_stats, rx_cache_reuse) },
 	{ MLX5E_DECLARE_STAT(struct mlx5e_sw_stats, rx_cache_full) },
-	{ MLX5E_DECLARE_STAT(struct mlx5e_sw_stats, rx_cache_empty) },
-	{ MLX5E_DECLARE_STAT(struct mlx5e_sw_stats, rx_cache_busy) },
+	{ MLX5E_DECLARE_STAT(struct mlx5e_sw_stats, rx_cache_ext) },
+	{ MLX5E_DECLARE_STAT(struct mlx5e_sw_stats, rx_cache_rdc) },
+	{ MLX5E_DECLARE_STAT(struct mlx5e_sw_stats, rx_cache_alloc) },
 	{ MLX5E_DECLARE_STAT(struct mlx5e_sw_stats, rx_cache_waive) },
 	{ MLX5E_DECLARE_STAT(struct mlx5e_sw_stats, rx_congst_umr) },
 	{ MLX5E_DECLARE_STAT(struct mlx5e_sw_stats, rx_arfs_err) },
@@ -167,8 +168,9 @@ void mlx5e_grp_sw_update_stats(struct mlx5e_priv *priv)
 		s->rx_page_reuse  += rq_stats->page_reuse;
 		s->rx_cache_reuse += rq_stats->cache_reuse;
 		s->rx_cache_full  += rq_stats->cache_full;
-		s->rx_cache_empty += rq_stats->cache_empty;
-		s->rx_cache_busy  += rq_stats->cache_busy;
+		s->rx_cache_ext   += rq_stats->cache_ext;
+		s->rx_cache_rdc   += rq_stats->cache_rdc;
+		s->rx_cache_alloc += rq_stats->cache_alloc;
 		s->rx_cache_waive += rq_stats->cache_waive;
 		s->rx_congst_umr  += rq_stats->congst_umr;
 		s->rx_arfs_err    += rq_stats->arfs_err;
@@ -1195,8 +1197,9 @@ static const struct counter_desc rq_stats_desc[] = {
 	{ MLX5E_DECLARE_RX_STAT(struct mlx5e_rq_stats, page_reuse) },
 	{ MLX5E_DECLARE_RX_STAT(struct mlx5e_rq_stats, cache_reuse) },
 	{ MLX5E_DECLARE_RX_STAT(struct mlx5e_rq_stats, cache_full) },
-	{ MLX5E_DECLARE_RX_STAT(struct mlx5e_rq_stats, cache_empty) },
-	{ MLX5E_DECLARE_RX_STAT(struct mlx5e_rq_stats, cache_busy) },
+	{ MLX5E_DECLARE_RX_STAT(struct mlx5e_rq_stats, cache_ext) },
+	{ MLX5E_DECLARE_RX_STAT(struct mlx5e_rq_stats, cache_rdc) },
+	{ MLX5E_DECLARE_RX_STAT(struct mlx5e_rq_stats, cache_alloc) },
 	{ MLX5E_DECLARE_RX_STAT(struct mlx5e_rq_stats, cache_waive) },
 	{ MLX5E_DECLARE_RX_STAT(struct mlx5e_rq_stats, congst_umr) },
 	{ MLX5E_DECLARE_RX_STAT(struct mlx5e_rq_stats, arfs_err) },

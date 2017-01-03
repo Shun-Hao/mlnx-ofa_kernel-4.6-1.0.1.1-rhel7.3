@@ -313,6 +313,7 @@ enum {
 	MLX5E_RQ_STATE_ENABLED,
 	MLX5E_RQ_STATE_AM,
 	MLX5E_RQ_STATE_NO_CSUM_COMPLETE,
+	MLX5E_RQ_STATE_CACHE_REDUCE_PENDING,
 };
 
 struct mlx5e_cq {
@@ -502,16 +503,30 @@ struct mlx5e_mpw_info {
 
 #define MLX5E_MAX_RX_FRAGS 4
 
-/* a single cache unit is capable to serve one napi call (for non-striding rq)
- * or a MPWQE (for striding rq).
- */
-#define MLX5E_CACHE_UNIT	(MLX5_MPWRQ_PAGES_PER_WQE > NAPI_POLL_WEIGHT ? \
-				 MLX5_MPWRQ_PAGES_PER_WQE : NAPI_POLL_WEIGHT)
-#define MLX5E_CACHE_SIZE	(4 * roundup_pow_of_two(MLX5E_CACHE_UNIT))
+#define MLX5E_PAGE_CACHE_LOG_MAX_RQ_MULT	4
+#define MLX5E_PAGE_CACHE_REDUCE_WORK_INTERVAL	200 /* msecs */
+#define MLX5E_PAGE_CACHE_REDUCE_GRACE_PERIOD	1000 /* msecs */
+#define MLX5E_PAGE_CACHE_REDUCE_SUCCESSIVE_CNT	5
+
+struct mlx5e_page_cache_reduce {
+	struct delayed_work reduce_work;
+	u32 successive;
+	unsigned long next_ts;
+	unsigned long graceful_period;
+	unsigned long delay;
+
+	struct mlx5e_dma_info *pending;
+	u32 npages;
+};
+
 struct mlx5e_page_cache {
-	u32 head;
-	u32 tail;
-	struct mlx5e_dma_info page_cache[MLX5E_CACHE_SIZE];
+	struct mlx5e_dma_info *page_cache;
+	int head;
+	u32 sz;
+	u32 lrs; /* least recently sampled */
+	u8 log_min_sz;
+	u8 log_max_sz;
+	struct mlx5e_page_cache_reduce reduce;
 };
 
 struct mlx5e_rq;

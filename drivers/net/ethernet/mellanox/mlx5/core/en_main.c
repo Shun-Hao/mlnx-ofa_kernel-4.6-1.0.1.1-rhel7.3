@@ -478,6 +478,93 @@ static void mlx5e_free_di_list(struct mlx5e_rq *rq)
 	kvfree(rq->wqe.di);
 }
 
+static void mlx5e_rx_cache_reduce_clean_pending(struct mlx5e_rq *rq)
+{
+	struct mlx5e_page_cache_reduce *reduce = &rq->page_cache.reduce;
+	int i;
+
+	if (!test_bit(MLX5E_RQ_STATE_CACHE_REDUCE_PENDING, &rq->state))
+		return;
+
+	for (i = 0; i < reduce->npages; i++)
+		mlx5e_page_release(rq, &reduce->pending[i], false);
+
+	clear_bit(MLX5E_RQ_STATE_CACHE_REDUCE_PENDING, &rq->state);
+}
+
+static void mlx5e_rx_cache_reduce_work(struct work_struct *work)
+{
+	struct delayed_work *dwork = to_delayed_work(work);
+	struct mlx5e_page_cache_reduce *reduce =
+		container_of(dwork, struct mlx5e_page_cache_reduce, reduce_work);
+	struct mlx5e_page_cache *cache =
+		container_of(reduce, struct mlx5e_page_cache, reduce);
+	struct mlx5e_rq *rq = container_of(cache, struct mlx5e_rq, page_cache);
+
+	local_bh_disable();
+	napi_schedule(&rq->channel->napi);
+	local_bh_enable();
+	mlx5e_rx_cache_reduce_clean_pending(rq);
+
+	if (ilog2(cache->sz) > cache->log_min_sz)
+		schedule_delayed_work_on(smp_processor_id(),
+					 dwork, reduce->delay);
+}
+
+static int mlx5e_rx_alloc_page_cache(struct mlx5e_rq *rq,
+				     int node, u8 log_init_sz)
+{
+	struct mlx5e_page_cache *cache = &rq->page_cache;
+	struct mlx5e_page_cache_reduce *reduce = &cache->reduce;
+	u32 max_sz;
+
+	cache->log_max_sz = log_init_sz + MLX5E_PAGE_CACHE_LOG_MAX_RQ_MULT;
+	cache->log_min_sz = log_init_sz;
+	max_sz = 1 << cache->log_max_sz;
+
+	cache->page_cache = kvzalloc_node(max_sz * sizeof(*cache->page_cache),
+					  GFP_KERNEL, node);
+	if (!cache->page_cache)
+		return -ENOMEM;
+
+	reduce->pending = kvzalloc_node(max_sz * sizeof(*reduce->pending),
+					GFP_KERNEL, node);
+	if (!reduce->pending)
+		goto err_free_cache;
+
+	cache->sz = 1 << cache->log_min_sz;
+	cache->head = -1;
+	INIT_DELAYED_WORK(&reduce->reduce_work, mlx5e_rx_cache_reduce_work);
+	reduce->delay = msecs_to_jiffies(MLX5E_PAGE_CACHE_REDUCE_WORK_INTERVAL);
+	reduce->graceful_period = msecs_to_jiffies(MLX5E_PAGE_CACHE_REDUCE_GRACE_PERIOD);
+	reduce->next_ts = jiffies + cache->reduce.graceful_period;
+
+	return 0;
+
+err_free_cache:
+	kvfree(cache->page_cache);
+
+	return -ENOMEM;
+}
+
+static void mlx5e_rx_free_page_cache(struct mlx5e_rq *rq)
+{
+	struct mlx5e_page_cache *cache = &rq->page_cache;
+	struct mlx5e_page_cache_reduce *reduce = &cache->reduce;
+	int i;
+
+	cancel_delayed_work_sync(&reduce->reduce_work);
+	mlx5e_rx_cache_reduce_clean_pending(rq);
+	kvfree(reduce->pending);
+
+	for (i = 0; i <= cache->head; i++) {
+		struct mlx5e_dma_info *dma_info = &cache->page_cache[i];
+
+		mlx5e_page_release(rq, dma_info, false);
+	}
+	kvfree(cache->page_cache);
+}
+
 static int mlx5e_alloc_rq(struct mlx5e_channel *c,
 			  struct mlx5e_params *params,
 			  struct mlx5e_rq_param *rqp,
@@ -488,6 +575,7 @@ static int mlx5e_alloc_rq(struct mlx5e_channel *c,
 	void *rqc = rqp->rqc;
 	void *rqc_wq = MLX5_ADDR_OF(rqc, rqc, wq);
 	u32 pool_size;
+	u32 cache_init_sz;
 	int wq_sz;
 	int err;
 	int i;
@@ -529,6 +617,7 @@ static int mlx5e_alloc_rq(struct mlx5e_channel *c,
 		rq->mpwqe.wq.db = &rq->mpwqe.wq.db[MLX5_RCV_DBR];
 
 		wq_sz = mlx5_wq_ll_get_size(&rq->mpwqe.wq);
+		cache_init_sz = wq_sz * MLX5_MPWRQ_PAGES_PER_WQE;
 
 		pool_size = MLX5_MPWRQ_PAGES_PER_WQE << mlx5e_mpwqe_get_log_rq_size(params);
 
@@ -574,6 +663,7 @@ static int mlx5e_alloc_rq(struct mlx5e_channel *c,
 		rq->wqe.wq.db = &rq->wqe.wq.db[MLX5_RCV_DBR];
 
 		wq_sz = mlx5_wq_cyc_get_size(&rq->wqe.wq);
+		cache_init_sz = wq_sz;
 
 		rq->wqe.info = rqp->frags_info;
 		rq->wqe.frags =
@@ -608,6 +698,11 @@ static int mlx5e_alloc_rq(struct mlx5e_channel *c,
 			mlx5e_skb_from_cqe_nonlinear;
 		rq->mkey_be = c->mkey_be;
 	}
+
+	err = mlx5e_rx_alloc_page_cache(rq, cpu_to_node(c->cpu),
+					ilog2(cache_init_sz));
+	if (err)
+		goto err_free;
 
 	/* Create a page_pool and register it with rxq */
 	pp_params.order     = 0;
@@ -676,9 +771,6 @@ static int mlx5e_alloc_rq(struct mlx5e_channel *c,
 		rq->dim.mode = NET_DIM_CQ_PERIOD_MODE_START_FROM_EQE;
 	}
 
-	rq->page_cache.head = 0;
-	rq->page_cache.tail = 0;
-
 	return 0;
 
 err_free:
@@ -705,10 +797,11 @@ err_rq_wq_destroy:
 
 static void mlx5e_free_rq(struct mlx5e_rq *rq)
 {
-	int i;
-
 	if (rq->xdp_prog)
 		bpf_prog_put(rq->xdp_prog);
+
+	if (rq->page_cache.page_cache)
+		mlx5e_rx_free_page_cache(rq);
 
 	xdp_rxq_info_unreg(&rq->xdp_rxq);
 	if (rq->page_pool)
@@ -724,12 +817,6 @@ static void mlx5e_free_rq(struct mlx5e_rq *rq)
 		mlx5e_free_di_list(rq);
 	}
 
-	for (i = rq->page_cache.head; i != rq->page_cache.tail;
-	     i = (i + 1) & (MLX5E_CACHE_SIZE - 1)) {
-		struct mlx5e_dma_info *dma_info = &rq->page_cache.page_cache[i];
-
-		mlx5e_page_release(rq, dma_info, false);
-	}
 	mlx5_wq_destroy(&rq->wq_ctrl);
 }
 
