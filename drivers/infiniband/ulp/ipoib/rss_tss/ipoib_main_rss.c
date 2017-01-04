@@ -322,7 +322,8 @@ void ipoib_dev_cleanup_rss(struct net_device *dev)
 	 * Must be before ipoib_ib_dev_cleanup or we delete an in use
 	 * work queue
 	 */
-	ipoib_neigh_hash_uninit(dev);
+	if (dev->reg_state != NETREG_UNINITIALIZED)
+		ipoib_neigh_hash_uninit(dev);
 
 	ipoib_ib_dev_cleanup(dev);
 
