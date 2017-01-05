@@ -328,6 +328,13 @@ struct ipoib_qp_state_validate {
 	struct ipoib_dev_priv   *priv;
 };
 
+struct ipoib_arp_repath {
+	struct work_struct	 work;
+	u16			 lid;
+	union ib_gid		 sgid;
+	struct net_device	*dev;
+};
+
 /*
  * Device private locking: network stack tx_lock protects members used
  * in TX fast path, lock protects everything else.  lock nests inside
@@ -511,6 +518,7 @@ int ipoib_add_umcast_attr(struct net_device *dev);
 int ipoib_send(struct net_device *dev, struct sk_buff *skb,
 	       struct ib_ah *address, u32 dqpn);
 void ipoib_reap_ah(struct work_struct *work);
+void ipoib_repath_ah(struct work_struct *work);
 
 struct ipoib_path *__path_find(struct net_device *dev, void *gid);
 void ipoib_mark_paths_invalid(struct net_device *dev);
