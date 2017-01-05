@@ -456,6 +456,7 @@ static int ipoib_get_hca_features(struct ipoib_dev_priv *priv,
 	if (priv->hca_caps_exp & IB_EXP_DEVICE_UD_RSS) {
 		int max_rss_tbl_sz;
 		max_rss_tbl_sz = exp_device_attr.max_rss_tbl_sz;
+		max_rss_tbl_sz = min(IPOIB_MAX_RX_QUEUES, max_rss_tbl_sz);
 		max_rss_tbl_sz = min(num_cores, max_rss_tbl_sz);
 		max_rss_tbl_sz = rounddown_pow_of_two(max_rss_tbl_sz);
 		priv->rss_qp_num    = max_rss_tbl_sz;
@@ -466,7 +467,7 @@ static int ipoib_get_hca_features(struct ipoib_dev_priv *priv,
 		priv->num_rx_queues = 1;
 	}
 
-	priv->tss_qp_num = num_cores;
+	priv->tss_qp_num = min(IPOIB_MAX_TX_QUEUES, num_cores);
 	/* If TSS is not support by HW use the parent QP for ARP */
 	priv->num_tx_queues = priv->tss_qp_num + 1;
 

@@ -38,6 +38,11 @@
 #define IPOIB_FLAGS_TSS		0x20
 #define IPOIB_TSS_SUPPORTED(ha)   (ha[0] & (IPOIB_FLAGS_TSS))
 
+enum {
+	IPOIB_MAX_RX_QUEUES = 16,
+	IPOIB_MAX_TX_QUEUES = 16,
+};
+
 /*
  * Per QP stats
  */
