@@ -223,6 +223,9 @@ static void ipoib_ib_handle_rx_wc_rss(struct net_device *dev,
 	++recv_ring->stats.rx_packets;
 	recv_ring->stats.rx_bytes += skb->len;
 
+	if (unlikely(be16_to_cpu(skb->protocol)) == ETH_P_ARP)
+		ipoib_create_repath_ent(dev, skb, wc->slid);
+
 	skb->dev = dev;
 	if ((dev->features & NETIF_F_RXCSUM) &&
 			likely(wc->wc_flags & IB_WC_IP_CSUM_OK))
