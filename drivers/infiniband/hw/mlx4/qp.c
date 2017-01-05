@@ -1950,6 +1950,8 @@ static int create_qp_lb_counter(struct mlx4_ib_dev *dev, struct mlx4_ib_qp *qp)
 	err = mlx4_counter_alloc(dev->dev, &tmp_idx, MLX4_RES_USAGE_DRIVER);
 	if (err)
 		return err;
+	if (tmp_idx == MLX4_SINK_COUNTER_INDEX(dev->dev))
+		return -ENOSPC;
 
 	new_counter_index = kmalloc(sizeof(*new_counter_index), GFP_KERNEL);
 	if (!new_counter_index) {

@@ -1027,9 +1027,19 @@ static int handle_unexisting_counter(struct mlx4_dev *dev,
 	return err;
 }
 
+#define PF_USES_EXT_COUNTERS(d)		((d)->caps.max_counters == \
+					 (d)->caps.max_counters_ext)
+#define MLX4_OLD_SINK_COUNTER_INDEX	0xFF
+
 static int handle_counter(struct mlx4_dev *dev, struct mlx4_qp_context *qpc,
 			  u8 slave, int port)
 {
+	if (PF_USES_EXT_COUNTERS(dev) &&
+	    qpc->pri_path.counter_index == MLX4_OLD_SINK_COUNTER_INDEX) {
+		qpc->pri_path.counter_index = MLX4_SINK_COUNTER_INDEX(dev);
+		mlx4_dbg(dev, "%s: modifying sink counter index to %d. slave=%d, port = %d\n",
+			 __func__, qpc->pri_path.counter_index, slave, port);
+	}
 	if (qpc->pri_path.counter_index != MLX4_SINK_COUNTER_INDEX(dev))
 		return handle_existing_counter(dev, slave, port,
 					       qpc->pri_path.counter_index);
@@ -2243,7 +2253,9 @@ static int counter_alloc_res(struct mlx4_dev *dev, int slave, int op, int cmd,
 		return err;
 
 	err = __mlx4_counter_alloc(dev, &index);
-	if (err) {
+	if (err || index == MLX4_SINK_COUNTER_INDEX(dev)) {
+		if (!err)
+			set_param_l(out_param, index);
 		mlx4_release_resource(dev, slave, RES_COUNTER, 1, 0);
 		return err;
 	}
@@ -4591,6 +4603,13 @@ static int mlx4_if_stat_ext2basic(struct mlx4_counter *if_cnt)
 	return 0;
 }
 
+static void mlx4_if_stat_zeroes(struct mlx4_counter *if_cnt, u8 counter_mode)
+{
+	memset(if_cnt, 0, sizeof(*if_cnt));
+	if_cnt->counter_mode = counter_mode;
+	if_cnt->num_ifc = cpu_to_be32(1);
+}
+
 int mlx4_QUERY_IF_STAT_wrapper(struct mlx4_dev *dev, int slave,
 			       struct mlx4_vhcr *vhcr,
 			       struct mlx4_cmd_mailbox *inbox,
@@ -4603,6 +4622,11 @@ int mlx4_QUERY_IF_STAT_wrapper(struct mlx4_dev *dev, int slave,
 	u8 slave_mode = priv->mfunc.master.slave_state[slave].counters_mode;
 	u8 master_mode = priv->mfunc.master.
 			 slave_state[mlx4_master_func_num(dev)].counters_mode;
+
+	if (index == MLX4_SINK_COUNTER_INDEX(dev)) {
+		mlx4_if_stat_zeroes(outbox->buf, slave_mode);
+		return 0;
+	}
 
 	err = get_res(dev, slave, index, RES_COUNTER, NULL);
 	if (err)

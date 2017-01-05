@@ -3302,10 +3302,8 @@ int __mlx4_counter_alloc(struct mlx4_dev *dev, u32 *idx)
 		return -ENOENT;
 
 	*idx = mlx4_bitmap_alloc(&priv->counters_bitmap);
-	if (*idx == -1) {
+	if (*idx == -1)
 		*idx = MLX4_SINK_COUNTER_INDEX(dev);
-		return -ENOSPC;
-	}
 
 	return 0;
 }

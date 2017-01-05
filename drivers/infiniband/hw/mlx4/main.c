@@ -2822,7 +2822,8 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
 			err = mlx4_counter_alloc(ibdev->dev, &counter_index,
 						 MLX4_RES_USAGE_DRIVER);
 			/* if failed to allocate a new counter, use default */
-			if (err)
+			if (err || counter_index ==
+					MLX4_SINK_COUNTER_INDEX(ibdev->dev))
 				counter_index =
 					mlx4_get_default_counter_index(dev,
 								       i + 1);
