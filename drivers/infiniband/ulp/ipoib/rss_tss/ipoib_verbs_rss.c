@@ -271,7 +271,7 @@ static int ipoib_transport_cq_init_rss(struct net_device *dev,
 	struct ipoib_recv_ring *recv_ring;
 	struct ipoib_send_ring *send_ring;
 	struct ib_cq *cq;
-	int i, allocated_rx, allocated_tx, req_vec;
+	int i, allocated_rx, allocated_tx, req_vec, ret;
 	struct ib_cq_init_attr cq_attr = {};
 
 	allocated_rx = 0;
@@ -319,6 +319,12 @@ static int ipoib_transport_cq_init_rss(struct net_device *dev,
 		send_ring->send_cq = cq;
 		allocated_tx++;
 		req_vec++;
+
+		ret = ib_req_notify_cq(send_ring->send_cq, IB_CQ_NEXT_COMP);
+		if (ret)
+			pr_warn("%s: ib_req_notify_cq failed on index %u (%d)\n",
+				__func__, send_ring->index, ret);
+
 		send_ring++;
 	}
 

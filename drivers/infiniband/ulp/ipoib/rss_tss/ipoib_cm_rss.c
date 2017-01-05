@@ -532,7 +532,7 @@ static struct ib_qp *ipoib_cm_create_tx_qp_rss(struct net_device *dev, struct ip
 		index = 0;
 
 	priv->cm.tx_cq_ind = index + 1;
-	attr.send_cq = attr.recv_cq = priv->recv_ring[index].recv_cq;
+	attr.send_cq = attr.recv_cq = priv->send_ring[index].send_cq;
 
 	if (dev->features & NETIF_F_SG)
 		attr.cap.max_send_sge =

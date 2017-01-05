@@ -517,10 +517,6 @@ void ipoib_send_rss(struct net_device *dev, struct sk_buff *skb,
 
 		++send_ring->tx_head;
 	}
-
-	if (unlikely(send_ring->tx_outstanding > MAX_SEND_CQE))
-		while (poll_tx_ring(send_ring))
-			; /* nothing */
 }
 
 static void ipoib_ib_tx_timer_func_rss(unsigned long ctx)
