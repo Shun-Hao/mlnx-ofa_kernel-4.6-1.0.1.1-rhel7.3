@@ -223,14 +223,8 @@ static void ipoib_ib_handle_rx_wc_rss(struct net_device *dev,
 	++recv_ring->stats.rx_packets;
 	recv_ring->stats.rx_bytes += skb->len;
 
-	/*
-	 * TODO
-	 * This is disabled since ipoib_create_repath_ent is not in
-	 * main code yet.
-	 *
-	 * if (unlikely(be16_to_cpu(skb->protocol)) == ETH_P_ARP)
-	 * 	ipoib_create_repath_ent(dev, skb, wc->slid);
-	 */
+	if (unlikely(be16_to_cpu(skb->protocol) == ETH_P_ARP))
+		ipoib_create_repath_ent(dev, skb, wc->slid);
 
 	skb->dev = dev;
 	if ((dev->features & NETIF_F_RXCSUM) &&
