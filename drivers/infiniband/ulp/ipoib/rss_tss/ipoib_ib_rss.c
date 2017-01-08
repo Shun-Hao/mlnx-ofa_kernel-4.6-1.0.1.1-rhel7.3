@@ -267,7 +267,7 @@ static void ipoib_ib_handle_tx_wc_rss(struct ipoib_send_ring *send_ring,
 	dev_kfree_skb_any(tx_req->skb);
 
 	++send_ring->tx_tail;
-	if (unlikely(--send_ring->tx_outstanding == ipoib_sendq_size >> 1) &&
+	if (unlikely(atomic_dec_return(&send_ring->tx_outstanding) == ipoib_sendq_size >> 1) &&
 		     __netif_subqueue_stopped(dev, send_ring->index) &&
 		     test_bit(IPOIB_FLAG_ADMIN_UP, &priv->flags))
 		netif_wake_subqueue(dev, send_ring->index);
@@ -485,7 +485,7 @@ void ipoib_send_rss(struct net_device *dev, struct sk_buff *skb,
 	else
 		send_ring->tx_wr.wr.send_flags &= ~IB_SEND_IP_CSUM;
 
-	if (++send_ring->tx_outstanding == ipoib_sendq_size) {
+	if (atomic_inc_return(&send_ring->tx_outstanding) == ipoib_sendq_size) {
 		ipoib_dbg(priv, "TX ring full, stopping kernel net queue\n");
 		if (ib_req_notify_cq(send_ring->send_cq, IB_CQ_NEXT_COMP))
 			ipoib_warn(priv, "request notify on send CQ failed\n");
@@ -506,7 +506,7 @@ void ipoib_send_rss(struct net_device *dev, struct sk_buff *skb,
 	if (unlikely(rc)) {
 		ipoib_warn(priv, "post_send_rss failed, error %d\n", rc);
 		++send_ring->stats.tx_errors;
-		--send_ring->tx_outstanding;
+		atomic_dec(&send_ring->tx_outstanding);
 		ipoib_dma_unmap_tx(priv, tx_req);
 		dev_kfree_skb_any(skb);
 		atomic_dec(&address->refcnt);
@@ -725,7 +725,7 @@ static void ipoib_ib_send_ring_stop(struct ipoib_dev_priv *priv)
 			ipoib_dma_unmap_tx(priv, tx_req);
 			dev_kfree_skb_any(tx_req->skb);
 			++tx_ring->tx_tail;
-			--tx_ring->tx_outstanding;
+			atomic_dec(&tx_ring->tx_outstanding);
 		}
 		tx_ring++;
 	}

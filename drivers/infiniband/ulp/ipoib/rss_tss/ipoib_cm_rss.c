@@ -424,7 +424,7 @@ void ipoib_cm_send_rss(struct net_device *dev, struct sk_buff *skb, struct ipoib
 		netdev_get_tx_queue(dev, queue_index)->trans_start = jiffies;
 		++tx->tx_head;
 
-		if (++send_ring->tx_outstanding == ipoib_sendq_size) {
+		if (atomic_inc_return(&send_ring->tx_outstanding) == ipoib_sendq_size) {
 			ipoib_dbg(priv, "TX ring 0x%x full, stopping kernel net queue\n",
 				  tx->qp->qp_num);
 			netif_stop_subqueue(dev, queue_index);
@@ -472,7 +472,7 @@ void ipoib_cm_handle_tx_wc_rss(struct net_device *dev, struct ib_wc *wc)
 	netif_tx_lock(dev);
 
 	++tx->tx_tail;
-	if (unlikely(--send_ring->tx_outstanding == ipoib_sendq_size >> 1) &&
+	if (unlikely(atomic_dec_return(&send_ring->tx_outstanding) == ipoib_sendq_size >> 1) &&
 	    __netif_subqueue_stopped(dev, queue_index) &&
 	    test_bit(IPOIB_FLAG_ADMIN_UP, &priv->flags))
 		netif_wake_subqueue(dev, queue_index);
@@ -620,7 +620,7 @@ timeout:
 		queue_index = skb_get_queue_mapping(tx_req->skb);
 		send_ring = priv->send_ring + queue_index;
 		netif_tx_lock_bh(p->dev);
-		if (unlikely(--send_ring->tx_outstanding ==
+		if (unlikely(atomic_dec_return(&send_ring->tx_outstanding) ==
 				(ipoib_sendq_size >> 1)) &&
 				__netif_subqueue_stopped(p->dev, queue_index) &&
 		    test_bit(IPOIB_FLAG_ADMIN_UP, &priv->flags))

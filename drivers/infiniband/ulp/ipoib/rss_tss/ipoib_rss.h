@@ -72,7 +72,7 @@ struct ipoib_send_ring {
 	unsigned		tx_tail;
 	struct ib_sge		tx_sge[MAX_SKB_FRAGS + 1];
 	struct ib_ud_wr		tx_wr;
-	unsigned		tx_outstanding;
+	atomic_t		tx_outstanding;
 	struct ib_wc		tx_wc[MAX_SEND_CQE];
 	struct timer_list	poll_timer;
 	struct ipoib_tx_ring_stats stats;
