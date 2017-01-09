@@ -1204,9 +1204,15 @@ static void ipoib_cm_tx_destroy(struct ipoib_cm_tx *p)
 	struct ipoib_dev_priv *priv = ipoib_priv(p->dev);
 	struct ipoib_tx_buf *tx_req;
 	unsigned long begin;
+	int num_tries = 0;
 
 	ipoib_dbg(priv, "Destroy active connection 0x%x head 0x%x tail 0x%x\n",
 		  p->qp ? p->qp->qp_num : 0, p->tx_head, p->tx_tail);
+
+	/* arming cq*/
+	ib_req_notify_cq(priv->send_cq,
+			 IB_CQ_NEXT_COMP |
+			 IB_CQ_REPORT_MISSED_EVENTS);
 
 	if (p->id)
 		ib_destroy_cm_id(p->id);
@@ -1238,7 +1244,13 @@ static void ipoib_cm_tx_destroy(struct ipoib_cm_tx *p)
 						 IB_CQ_NEXT_COMP |
 						 IB_CQ_REPORT_MISSED_EVENTS);
 
-				goto timeout;
+				num_tries++;
+				if (num_tries == 5) {
+					ipoib_warn(priv, "%s: %d not completed "
+							 "force cleanup.\n",
+						   __func__, p->tx_head - p->tx_tail);
+					goto timeout;
+				}
 			}
 
 			usleep_range(1000, 2000);

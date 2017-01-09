@@ -569,9 +569,13 @@ static void ipoib_cm_tx_destroy_rss(struct ipoib_cm_tx *p)
 	struct ipoib_dev_priv *priv = netdev_priv(p->dev);
 	struct ipoib_tx_buf *tx_req;
 	unsigned long begin;
+	int num_tries = 0;
 
 	ipoib_dbg(priv, "Destroy active connection 0x%x head 0x%x tail 0x%x\n",
 		  p->qp ? p->qp->qp_num : 0, p->tx_head, p->tx_tail);
+
+	/* arming cq*/
+	ipoib_arm_cq_rss(p->dev);
 
 	if (p->id)
 		ib_destroy_cm_id(p->id);
@@ -601,7 +605,13 @@ static void ipoib_cm_tx_destroy_rss(struct ipoib_cm_tx *p)
 				/* arming cq's*/
 				ipoib_arm_cq_rss(p->dev);
 
-				goto timeout;
+				num_tries++;
+				if (num_tries == 5) {
+					ipoib_warn(priv, "%s: %d not completed "
+							 "force cleanup.\n",
+						   __func__, p->tx_head - p->tx_tail);
+					goto timeout;
+				}
 			}
 
 			msleep(1);
