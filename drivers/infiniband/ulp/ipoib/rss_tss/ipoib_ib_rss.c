@@ -789,8 +789,8 @@ static void set_tx_rings_qp_state(struct ipoib_dev_priv *priv,
 	for (i = 0; i <  priv->num_tx_queues; i++) {
 		qp_attr.qp_state = new_state;
 		if (ib_modify_qp(send_ring->send_qp, &qp_attr, IB_QP_STATE))
-			ipoib_warn(priv, "Failed to modify QP to state(%d)\n",
-				   new_state);
+			check_qp_movement_and_print(priv, send_ring->send_qp,
+						    new_state);
 		send_ring++;
 	}
 }
@@ -806,8 +806,8 @@ static void set_rx_rings_qp_state(struct ipoib_dev_priv *priv,
 	for (i = 0; i < priv->num_rx_queues; i++) {
 		qp_attr.qp_state = new_state;
 		if (ib_modify_qp(recv_ring->recv_qp, &qp_attr, IB_QP_STATE))
-			ipoib_warn(priv, "Failed to modify QP to state(%d)\n",
-				   new_state);
+			check_qp_movement_and_print(priv, recv_ring->recv_qp,
+						    new_state);
 		recv_ring++;
 	}
 }

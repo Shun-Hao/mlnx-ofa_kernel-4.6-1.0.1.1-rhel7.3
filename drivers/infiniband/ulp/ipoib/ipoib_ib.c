@@ -834,7 +834,7 @@ int ipoib_ib_dev_stop_default(struct net_device *dev)
 timeout:
 	qp_attr.qp_state = IB_QPS_RESET;
 	if (ib_modify_qp(priv->qp, &qp_attr, IB_QP_STATE))
-		ipoib_warn(priv, "Failed to modify QP to RESET state\n");
+		check_qp_movement_and_print(priv, priv->qp, IB_QPS_RESET);
 
 	ib_req_notify_cq(priv->recv_cq, IB_CQ_NEXT_COMP);
 
