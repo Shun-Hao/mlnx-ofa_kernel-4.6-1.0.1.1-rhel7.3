@@ -99,8 +99,8 @@ static u16 ipoib_select_queue_sw_rss(struct net_device *dev, struct sk_buff *skb
 	if (IPOIB_CM_SUPPORTED(phdr->hwaddr)) {
 		if (ipoib_cm_admin_enabled(dev)) {
 			/* use remote QP for hash, so we use the same ring */
-			u32 *daddr_32 = (u32 *) phdr->hwaddr;
-			u32 hv = jhash_1word(*daddr_32 & 0xFFFFFF, 0);
+			u32 *d32 = (u32 *)phdr->hwaddr;
+			u32 hv = jhash_1word(*d32 & cpu_to_be32(0xFFFFFF), 0);
 			return hv % priv->tss_qp_num;
 		}
 		else
