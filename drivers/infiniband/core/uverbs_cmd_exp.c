@@ -306,6 +306,7 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
 	resp_exp.max_send_sge    = attr->cap.max_send_sge;
 	resp_exp.max_recv_wr     = attr->cap.max_recv_wr;
 	resp_exp.max_send_wr     = attr->cap.max_send_wr;
+	resp_exp.max_inline_data = attr->cap.max_inline_data;
 
 	if (cmd_exp->comp_mask & IB_UVERBS_EXP_CREATE_QP_INL_RECV) {
 		resp_exp.comp_mask |= IB_UVERBS_EXP_CREATE_QP_RESP_INL_RECV;
