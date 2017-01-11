@@ -53,6 +53,14 @@
 #define MLX4_EN_MAX_XDP_MTU ((int)(PAGE_SIZE - ETH_HLEN - (2 * VLAN_HLEN) - \
 				   XDP_PACKET_HEADROOM))
 
+static int udev_dev_port_dev_id = 0;
+module_param(udev_dev_port_dev_id, int, 0444);
+MODULE_PARM_DESC(udev_dev_port_dev_id, "Work with dev_id or dev_port when"
+		 " supported by the kernel. Range: 0 <= udev_dev_port_dev_id <= 2 (default = 0).\n"
+		 "\t\t0: Work with dev_port if supported by the kernel, otherwise work with dev_id.\n"
+		 "\t\t1: Work only with dev_id regardless of dev_port support.\n"
+		 "\t\t2: Work with both of dev_id and dev_port (if dev_port is supported by the kernel).");
+
 int mlx4_en_setup_tc(struct net_device *dev, u8 up)
 {
 	struct mlx4_en_priv *priv = netdev_priv(dev);
@@ -3508,7 +3516,23 @@ int mlx4_en_init_netdev(struct mlx4_en_dev *mdev, int port,
 	netif_set_real_num_rx_queues(dev, prof->rx_ring_num);
 
 	SET_NETDEV_DEV(dev, &mdev->dev->persist->pdev->dev);
-	dev->dev_port = port - 1;
+
+	if (udev_dev_port_dev_id < 0 || udev_dev_port_dev_id > 2) {
+		printk(KERN_WARNING "mlx4_en: udev_dev_port_dev_id value '%d' is out of valid range, using default.\n",
+		       udev_dev_port_dev_id);
+		udev_dev_port_dev_id = 0;
+	}
+	if (udev_dev_port_dev_id == 0) {
+		/* in mode 0 update dev_port */
+		dev->dev_port = port - 1;
+	} else if (udev_dev_port_dev_id == 1) {
+		/* in mode 1 update only dev_id */
+		dev->dev_id = port - 1;
+	} else if (udev_dev_port_dev_id == 2) {
+		/* in mode 2 update both of dev_id and dev_port */
+		dev->dev_id = port - 1;
+		dev->dev_port = port - 1;
+	}
 
 	/*
 	 * Initialize driver private data
