@@ -51,6 +51,7 @@
 #include <net/addrconf.h>
 #include <linux/inetdevice.h>
 #include <rdma/ib_cache.h>
+#include <linux/inet.h>
 
 #define DRV_VERSION "1.0.0"
 
@@ -2354,6 +2355,23 @@ static int ipoib_set_mac(struct net_device *dev, void *addr)
 	return 0;
 }
 
+static ssize_t ipoib_set_mac_using_sysfs(struct device *dev,
+					 struct device_attribute *attr,
+					 const char *buf, size_t count)
+{
+	struct ipoib_dev_priv *priv = netdev_priv(to_net_dev(dev));
+	union ib_gid gid;
+
+	if (!in6_pton(buf, count, gid.raw, -1, NULL))
+		return -EINVAL;
+
+	set_base_guid(priv, &gid);
+	queue_work(ipoib_workqueue, &priv->flush_light);
+
+	return count;
+}
+static DEVICE_ATTR(set_mac, S_IWUSR, NULL, ipoib_set_mac_using_sysfs);
+
 static ssize_t create_child(struct device *dev,
 			    struct device_attribute *attr,
 			    const char *buf, size_t count)
@@ -2490,6 +2508,8 @@ static struct net_device *ipoib_add_port(const char *format,
 	if (device_create_file(&ndev->dev, &dev_attr_create_child))
 		goto sysfs_failed;
 	if (device_create_file(&ndev->dev, &dev_attr_delete_child))
+		goto sysfs_failed;
+	if (device_create_file(&priv->dev->dev, &dev_attr_set_mac))
 		goto sysfs_failed;
 
 	return ndev;
