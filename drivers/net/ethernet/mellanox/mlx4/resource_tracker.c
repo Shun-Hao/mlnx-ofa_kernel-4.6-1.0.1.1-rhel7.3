@@ -755,6 +755,16 @@ static int update_vport_qp_param(struct mlx4_dev *dev,
 	if (err)
 		goto out;
 
+	if ((dev->caps.flags2 & MLX4_DEV_CAP_FLAG2_LB_SRC_CHK) &&
+	    dev->caps.port_type[port] == MLX4_PORT_TYPE_ETH &&
+	    !mlx4_is_qp_reserved(dev, qpn) &&
+	    qp_type == MLX4_QP_ST_MLX &&
+	    qpc->pri_path.counter_index != MLX4_SINK_COUNTER_INDEX(dev)) {
+		/* disable multicast loopback to qp with same counter */
+		qpc->pri_path.fl |= MLX4_FL_ETH_SRC_CHECK_MC_LB;
+		qpc->pri_path.control |= MLX4_CTRL_ETH_SRC_CHECK_IF_COUNTER;
+	}
+
 	if (MLX4_VGT != vp_oper->state.default_vlan) {
 		/* the reserved QPs (special, proxy, tunnel)
 		 * do not operate over vlans
