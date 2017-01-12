@@ -3233,11 +3233,12 @@ static int mlx4_set_ext_counters_mode(struct mlx4_dev *dev)
 	err = mlx4_cmd(dev, MLX4_IF_CNT_MODE_EXT, 0, 0, MLX4_CMD_SET_IF_STAT,
 		       MLX4_CMD_TIME_CLASS_A, MLX4_CMD_WRAPPED);
 
-	/* Slave is allowed to continue if err == -EINVAL, as old hypervisor do
-	 * not support EXT counters handshake mechanism but do set EXT mode
-	 * Native/Master should return error if command failed
+	/* Slave is allowed to continue if err == -EINVAL or -EPERM, as old
+	 * hypervisors do not support EXT counters handshake mechanism but
+	 * do set EXT mode.
+	 * Native/Master should return error if command failed.
 	 */
-	if (err && (!mlx4_is_slave(dev) || err != -EINVAL))
+	if (err && (!mlx4_is_slave(dev) || (err != -EINVAL && err != -EPERM)))
 		return err;
 
 	dev->caps.max_counters = dev->caps.max_counters_ext;

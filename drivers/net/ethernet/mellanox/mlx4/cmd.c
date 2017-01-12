@@ -83,6 +83,8 @@ enum {
 	CMD_STAT_BAD_NVMEM	= 0x0b,
 	/* Error in ICM mapping (e.g. not enough auxiliary ICM pages to execute command): */
 	CMD_STAT_ICM_ERROR	= 0x0c,
+	/* Requester does not have sufficient permissions to execute the command): */
+	CMD_STAT_BAD_PERM	= 0x0d,
 	/* Attempt to modify a QP/EE which is not in the presumed state: */
 	CMD_STAT_BAD_QP_STATE   = 0x10,
 	/* Bad segment parameters (Address/Size): */
@@ -150,6 +152,7 @@ static int mlx4_status_to_errno(u8 status)
 		[CMD_STAT_BAD_INDEX]	  = -EBADF,
 		[CMD_STAT_BAD_NVMEM]	  = -EFAULT,
 		[CMD_STAT_ICM_ERROR]	  = -ENFILE,
+		[CMD_STAT_BAD_PERM]	  = -EPERM,
 		[CMD_STAT_BAD_QP_STATE]   = -EINVAL,
 		[CMD_STAT_BAD_SEG_PARAM]  = -EFAULT,
 		[CMD_STAT_REG_BOUND]	  = -EBUSY,
