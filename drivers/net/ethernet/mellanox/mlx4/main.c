@@ -163,7 +163,7 @@ MODULE_PARM_DESC(ud_gid_type,
 		 "Set gid type for UD QPs\n"
 		 "\tA single value (e.g. 1) to define uniform UD QP gid type for all devices\n"
 		 "\t\tor a string to map device function numbers to their UD QP gid type (e.g. '0000:04:00.0-0,002b:1c:0b.a-1').\n"
-		 "\t\tAllowed values are 0 for RoCEv1, 1 for RoCEv1.5 (default) and 2 for RoCEv2");
+		 "\t\tAllowed values are 0 for RoCEv1 (default) and 2 for RoCEv2");
 
 static struct param_data num_vfs = {
 	.id		= NUM_VFS,
