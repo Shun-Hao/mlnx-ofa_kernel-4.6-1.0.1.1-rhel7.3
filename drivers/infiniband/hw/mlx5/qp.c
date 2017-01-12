@@ -1643,7 +1643,7 @@ common:
 		}
 
 		MLX5_SET(tirc, tirc, rx_hash_fn, MLX5_RX_HASH_FN_TOEPLITZ);
-		MLX5_SET(tirc, tirc, rx_hash_symmetric, 1);
+		MLX5_SET(tirc, tirc, rx_hash_symmetric, 0);
 		memcpy(rss_key, rx_hash_key, len);
 		break;
 	}
