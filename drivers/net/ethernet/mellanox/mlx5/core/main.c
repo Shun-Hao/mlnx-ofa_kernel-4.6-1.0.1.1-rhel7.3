@@ -1208,6 +1208,10 @@ static int mlx5_load_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
 		goto err_disable_hca;
 	}
 
+	err = mlx5_update_guids(dev);
+	if (err)
+		dev_err(&pdev->dev, "failed to update guids. continue with default...\n");
+
 	err = set_hca_ctrl(dev);
 	if (err) {
 		dev_err(&pdev->dev, "set_hca_ctrl failed\n");
