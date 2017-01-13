@@ -769,6 +769,7 @@ int ib_init_ah_attr_from_wc(struct ib_device *device, u8 port_num,
 	if (rdma_protocol_roce(device, port_num)) {
 		u16 vlan_id = wc->wc_flags & IB_WC_WITH_VLAN ?
 				wc->vlan_id : 0xffff;
+		bool ll_dest_addr = rdma_link_local_addr((struct in6_addr *)sgid.raw);
 
 		if (!(wc->wc_flags & IB_WC_GRH))
 			return -EPROTOTYPE;
@@ -780,18 +781,27 @@ int ib_init_ah_attr_from_wc(struct ib_device *device, u8 port_num,
 			return PTR_ERR(sgid_attr);
 
 		flow_class = be32_to_cpu(grh->version_tclass_flow);
-		rdma_move_grh_sgid_attr(ah_attr,
-					&sgid,
-					flow_class & 0xFFFFF,
-					hoplimit,
-					(flow_class >> 20) & 0xFF,
-					sgid_attr);
+		if (ll_dest_addr && wc->wc_flags & IB_WC_WITH_VLAN &&
+				wc->wc_flags & IB_WC_WITH_SMAC) {
+			memcpy(ah_attr->roce.dmac, wc->smac, ETH_ALEN);
+			hoplimit = 1;
+			rdma_move_grh_sgid_attr(ah_attr,
+						&sgid,
+						flow_class & 0xFFFFF,
+						hoplimit,
+						(flow_class >> 20) & 0xFF,
+						sgid_attr);
+			return 0;
+		} else {
 
-		ret = ib_resolve_unicast_gid_dmac(device, ah_attr);
-		if (ret)
-			rdma_destroy_ah_attr(ah_attr);
-
-		return ret;
+			rdma_move_grh_sgid_attr(ah_attr,
+						&sgid,
+						flow_class & 0xFFFFF,
+						hoplimit,
+						(flow_class >> 20) & 0xFF,
+						sgid_attr);
+			return ib_resolve_unicast_gid_dmac(device, ah_attr);
+		}
 	} else {
 		rdma_ah_set_dlid(ah_attr, wc->slid);
 		rdma_ah_set_path_bits(ah_attr, wc->dlid_path_bits);
