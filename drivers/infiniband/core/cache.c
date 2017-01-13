@@ -41,9 +41,11 @@
 #include <net/addrconf.h>
 
 #include <rdma/ib_cache.h>
+#include <rdma/ib_addr.h>
 
 #include "core_priv.h"
 
+extern bool roce_v1_noncompat_gid;
 struct ib_pkey_cache {
 	int             table_len;
 	u16             table[0];
@@ -493,8 +495,8 @@ static int find_gid(struct ib_gid_table *table, const union ib_gid *gid,
 
 static void make_default_gid(struct  net_device *dev, union ib_gid *gid)
 {
-	gid->global.subnet_prefix = cpu_to_be64(0xfe80000000000000LL);
-	addrconf_ifid_eui48(&gid->raw[8], dev);
+	return rdma_make_default_gid(dev, gid,
+			roce_v1_noncompat_gid ? true : false);
 }
 
 static int __ib_cache_gid_add(struct ib_device *ib_dev, u8 port,
@@ -853,6 +855,13 @@ static void gid_table_reserve_default(struct ib_device *ib_dev, u8 port,
 	unsigned int i;
 	unsigned long roce_gid_type_mask;
 	unsigned int num_default_gids;
+
+	/* Default GID management is not valid in RoCEv1 compat mode.
+	 * In general, this function should not write to entries that
+	 * are not defined as defaults.
+	 */
+	if (!roce_v1_noncompat_gid)
+		return;
 
 	roce_gid_type_mask = roce_gid_type_mask_support(ib_dev, port);
 	num_default_gids = hweight_long(roce_gid_type_mask);

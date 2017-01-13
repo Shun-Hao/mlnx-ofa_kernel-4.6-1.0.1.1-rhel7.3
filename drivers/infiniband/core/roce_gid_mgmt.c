@@ -44,6 +44,11 @@
 
 static struct workqueue_struct *gid_cache_wq;
 
+bool roce_v1_noncompat_gid = true;
+EXPORT_SYMBOL_GPL(roce_v1_noncompat_gid);
+module_param_named(roce_v1_noncompat_gid, roce_v1_noncompat_gid, bool, 0444);
+MODULE_PARM_DESC(roce_v1_noncompat_gid, "Default GID auto configuration (Default: yes)");
+
 enum gid_op_type {
 	GID_DEL = 0,
 	GID_ADD
