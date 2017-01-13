@@ -82,6 +82,7 @@ module_param_named(en_ecn, en_ecn, bool, 0444);
 MODULE_PARM_DESC(en_ecn, "Enable q/ecn [enable = 1, disable = 0 (default)]");
 #endif
 
+extern bool roce_v1_noncompat_gid;
 enum {
 	MAX_NUM_STR_BITMAP = 1 << 15,
 	DEFAULT_TBL_VAL = -1
@@ -206,6 +207,16 @@ static inline enum mlx4_roce_gid_type ib_gid_type_to_mlx4_gid_type(enum ib_gid_t
  	}
 }
 
+static int rdma_is_default_gid(struct  net_device *dev,
+			       const union ib_gid *gid,
+			       bool std)
+{
+	union ib_gid default_gid;
+
+	rdma_make_default_gid(dev, &default_gid, std);
+	return !memcmp(&default_gid, gid, sizeof(default_gid));
+}
+
 static int mlx4_ib_add_gid(const struct ib_gid_attr *attr, void **context)
 {
 	struct mlx4_ib_dev *ibdev = to_mdev(attr->device);
@@ -225,6 +236,11 @@ static int mlx4_ib_add_gid(const struct ib_gid_attr *attr, void **context)
 
 	if (!context)
 		return -EINVAL;
+
+	if (!roce_v1_noncompat_gid && attr->ndev)
+		if (rdma_is_default_gid(attr->ndev, &attr->gid, false) ||
+		    rdma_is_default_gid(attr->ndev, &attr->gid, true))
+			return -EADDRNOTAVAIL;
 
 	port_gid_table = &iboe->gids[attr->port_num - 1];
 	spin_lock_bh(&iboe->lock);
