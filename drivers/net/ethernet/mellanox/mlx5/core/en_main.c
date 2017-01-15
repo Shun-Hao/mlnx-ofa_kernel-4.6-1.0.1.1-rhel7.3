@@ -2819,13 +2819,11 @@ void mlx5e_build_indir_tir_ctx_hash(struct mlx5e_params *params,
 int mlx5e_modify_tirs_lro(struct mlx5e_priv *priv)
 {
 	struct mlx5_core_dev *mdev = priv->mdev;
-
+	struct mlx5e_tir *tir;
 	void *in;
 	void *tirc;
 	int inlen;
 	int err;
-	int tt;
-	int ix;
 
 	inlen = MLX5_ST_SZ_BYTES(modify_tir_in);
 	in = kvzalloc(inlen, GFP_KERNEL);
@@ -2837,21 +2835,12 @@ int mlx5e_modify_tirs_lro(struct mlx5e_priv *priv)
 
 	mlx5e_build_tir_ctx_lro(&priv->channels.params, tirc);
 
-	for (tt = 0; tt < MLX5E_NUM_INDIR_TIRS; tt++) {
-		err = mlx5_core_modify_tir(mdev, priv->indir_tir[tt].tirn, in,
-					   inlen);
+	list_for_each_entry(tir, &mdev->mlx5e_res.td.tirs_list, list) {
+		err = mlx5_core_modify_tir(mdev, tir->tirn, in, inlen);
 		if (err)
-			goto free_in;
+			break;
 	}
 
-	for (ix = 0; ix < mlx5e_get_netdev_max_channels(priv->netdev); ix++) {
-		err = mlx5_core_modify_tir(mdev, priv->direct_tir[ix].tirn,
-					   in, inlen);
-		if (err)
-			goto free_in;
-	}
-
-free_in:
 	kvfree(in);
 
 	return err;
