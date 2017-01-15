@@ -70,8 +70,8 @@ static void mlx4_inc_port_macs(struct mlx4_dev *mdev, int port)
 	mutex_lock(&info->mac_table.mutex);
 	info->mac_table.total++;
 	mutex_unlock(&info->mac_table.mutex);
-	mlx4_info(mdev, "%s added mac for port: %d, now: %d\n",
-		  __func__, port, info->mac_table.total);
+	mlx4_dbg(mdev, "%s added mac for port: %d, now: %d\n",
+		 __func__, port, info->mac_table.total);
 }
 
 static void mlx4_dec_port_macs(struct mlx4_dev *mdev, int port)
@@ -88,8 +88,8 @@ static void mlx4_dec_port_macs(struct mlx4_dev *mdev, int port)
 	info->mac_table.total--;
 	mutex_unlock(&info->mac_table.mutex);
 
-	mlx4_info(mdev, "%s removed mac, port: %d, now: %d\n",
-		  __func__, port, info->mac_table.total);
+	mlx4_dbg(mdev, "%s removed mac, port: %d, now: %d\n",
+		 __func__, port, info->mac_table.total);
 }
 
 void mlx4_init_mac_table(struct mlx4_dev *dev, struct mlx4_mac_table *table)
