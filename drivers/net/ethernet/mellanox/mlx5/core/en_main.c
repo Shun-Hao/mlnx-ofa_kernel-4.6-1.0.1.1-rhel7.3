@@ -2823,7 +2823,7 @@ int mlx5e_modify_tirs_lro(struct mlx5e_priv *priv)
 	void *in;
 	void *tirc;
 	int inlen;
-	int err;
+	int err = 0;
 
 	inlen = MLX5_ST_SZ_BYTES(modify_tir_in);
 	in = kvzalloc(inlen, GFP_KERNEL);
