@@ -351,10 +351,17 @@ void ipoib_send_comp_handler_rss(struct ib_cq *cq, void *ctx_ptr)
 static int poll_tx_ring(struct ipoib_send_ring *send_ring)
 {
 	int n, i;
+	struct ib_wc *wc;
 
 	n = ib_poll_cq(send_ring->send_cq, MAX_SEND_CQE, send_ring->tx_wc);
-	for (i = 0; i < n; ++i)
-		ipoib_ib_handle_tx_wc_rss(send_ring, send_ring->tx_wc + i);
+
+	for (i = 0; i < n; ++i) {
+		wc = send_ring->tx_wc + i;
+		if (wc->wr_id & IPOIB_OP_CM)
+			ipoib_cm_handle_tx_wc_rss(send_ring->dev, wc);
+		else
+			ipoib_ib_handle_tx_wc_rss(send_ring, wc);
+	}
 
 	return n == MAX_SEND_CQE;
 }
@@ -668,7 +675,8 @@ static void ipoib_drain_rx_ring(struct ipoib_dev_priv *priv,
 					ipoib_ib_handle_rx_wc_rss(dev, rx_ring,
 								  rx_ring->ibwc + i);
 			} else
-				ipoib_cm_handle_tx_wc_rss(dev, rx_ring->ibwc + i);
+				pr_warn("%s got strange wrid: %llu\n",
+					__func__, rx_ring->ibwc[i].wr_id);
 		}
 	} while (n == IPOIB_NUM_WC);
 
