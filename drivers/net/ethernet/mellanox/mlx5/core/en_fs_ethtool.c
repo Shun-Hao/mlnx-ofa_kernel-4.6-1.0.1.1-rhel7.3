@@ -400,7 +400,7 @@ add_ethtool_flow_rule(struct mlx5e_priv *priv,
 	struct mlx5_flow_destination *dst = NULL;
 	struct mlx5_flow_act flow_act = {0};
 	struct mlx5_flow_spec *spec;
-	struct mlx5_flow_handle *rule;
+	struct mlx5_flow_handle *rule = NULL;
 	int err = 0;
 
 	spec = kvzalloc(sizeof(*spec), GFP_KERNEL);
