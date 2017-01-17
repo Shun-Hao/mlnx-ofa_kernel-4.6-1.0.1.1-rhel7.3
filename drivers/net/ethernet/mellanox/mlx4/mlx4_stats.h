@@ -153,7 +153,8 @@ enum {
 
 #define NUM_ALL_STATS	(NUM_MAIN_STATS + NUM_PORT_STATS + NUM_PKT_STATS + \
 			 NUM_FLOW_STATS + NUM_PERF_STATS + NUM_PF_STATS + \
-			 NUM_XDP_STATS + NUM_PHY_STATS)
+			 NUM_XDP_STATS + NUM_PHY_STATS + NUM_VF_STATS + \
+			 NUM_VPORT_STATS)
 
 #define MLX4_FIND_NETDEV_STAT(n) (offsetof(struct net_device_stats, n) / \
 				  sizeof(((struct net_device_stats *)0)->n))
