@@ -1244,16 +1244,16 @@ static void ipoib_cm_tx_destroy(struct ipoib_cm_tx *p)
 						 IB_CQ_NEXT_COMP |
 						 IB_CQ_REPORT_MISSED_EVENTS);
 
+				begin = jiffies;
 				num_tries++;
 				if (num_tries == 5) {
-					ipoib_warn(priv, "%s: %d not completed "
-							 "force cleanup.\n",
-						   __func__, p->tx_head - p->tx_tail);
+					ipoib_warn(priv, "%s: %d not completed for QP: 0x%x force cleanup.\n",
+						   __func__, p->tx_head - p->tx_tail, p->qp->qp_num);
 					goto timeout;
 				}
 			}
 
-			usleep_range(1000, 2000);
+			msleep(5);
 		}
 	}
 

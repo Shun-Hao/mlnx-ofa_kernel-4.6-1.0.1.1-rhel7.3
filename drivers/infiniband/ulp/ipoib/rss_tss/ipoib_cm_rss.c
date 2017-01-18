@@ -605,16 +605,16 @@ static void ipoib_cm_tx_destroy_rss(struct ipoib_cm_tx *p)
 				/* arming cq's*/
 				ipoib_arm_cq_rss(p->dev);
 
+				begin = jiffies;
 				num_tries++;
 				if (num_tries == 5) {
-					ipoib_warn(priv, "%s: %d not completed "
-							 "force cleanup.\n",
-						   __func__, p->tx_head - p->tx_tail);
+					ipoib_warn(priv, "%s: %d not completed for QP: 0x%x force cleanup.\n",
+						   __func__, p->tx_head - p->tx_tail, p->qp->qp_num);
 					goto timeout;
 				}
 			}
 
-			msleep(1);
+			msleep(5);
 		}
 	}
 
