@@ -111,6 +111,11 @@ int srp_tmo_valid(int reconnect_delay, int fast_io_fail_tmo, long dev_loss_tmo)
 	if (fast_io_fail_tmo >= 0 && dev_loss_tmo >= 0 &&
 	    fast_io_fail_tmo >= dev_loss_tmo)
 		return -EINVAL;
+	if (fast_io_fail_tmo > 0 && reconnect_delay > 0 &&
+	    fast_io_fail_tmo >= reconnect_delay)
+		return -EINVAL;
+	if (fast_io_fail_tmo < 0 && reconnect_delay > 0)
+		return -EINVAL;
 	return 0;
 }
 EXPORT_SYMBOL_GPL(srp_tmo_valid);

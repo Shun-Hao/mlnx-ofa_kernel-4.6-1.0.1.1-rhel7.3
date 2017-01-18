@@ -111,7 +111,7 @@ MODULE_PARM_DESC(never_register, "Never register memory");
 
 static const struct kernel_param_ops srp_tmo_ops;
 
-static int srp_reconnect_delay = 10;
+static int srp_reconnect_delay = 20;
 module_param_cb(reconnect_delay, &srp_tmo_ops, &srp_reconnect_delay,
 		S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(reconnect_delay, "Time between successive reconnect attempts");
