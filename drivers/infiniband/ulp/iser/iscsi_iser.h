@@ -164,6 +164,14 @@
 /* Length of an object name string */
 #define ISER_OBJECT_NAME_SIZE		    64
 
+/* Timeout in milliseconds to wait for rdma_cm events in disconnect
+* flows.
+* This timeout is needed for a workaround in iSER for a bug in the
+* CM layer that doesn't handle CM_DREQ timeouts correctly.
+* TODO: remove this workaround once the CM bug fixed.
+*/
+#define IB_COMPLETION_TMO      4096
+
 enum iser_conn_state {
 	ISER_CONN_INIT,		   /* descriptor allocd, no conn          */
 	ISER_CONN_PENDING,	   /* in the process of being established */

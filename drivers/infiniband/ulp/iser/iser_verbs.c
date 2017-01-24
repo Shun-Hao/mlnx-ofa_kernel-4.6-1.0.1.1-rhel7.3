@@ -568,7 +568,10 @@ void iser_release_work(struct work_struct *work)
 	/* Wait for conn_stop to complete */
 	wait_for_completion(&iser_conn->stop_completion);
 	/* Wait for IB resouces cleanup to complete */
-	wait_for_completion(&iser_conn->ib_completion);
+	if (!wait_for_completion_timeout(&iser_conn->ib_completion,
+					msecs_to_jiffies(IB_COMPLETION_TMO)))
+		iser_info("RDMA cleanup completion timeout expired, conn %p\n",
+			iser_conn);	
 
 	mutex_lock(&iser_conn->state_mutex);
 	iser_conn->state = ISER_CONN_DOWN;
