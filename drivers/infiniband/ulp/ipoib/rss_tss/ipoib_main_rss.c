@@ -290,10 +290,12 @@ out_dev_uninit:
 out_send_ring_cleanup:
 	for (i = 0; i < tx_allocated; i++)
 		vfree(priv->send_ring[i].tx_ring);
+	kfree(priv->send_ring);
 
 out_recv_ring_cleanup:
 	for (i = 0; i < rx_allocated; i++)
 		kfree(priv->recv_ring[i].rx_ring);
+	kfree(priv->recv_ring);
 
 out:
 	priv->send_ring = NULL;
