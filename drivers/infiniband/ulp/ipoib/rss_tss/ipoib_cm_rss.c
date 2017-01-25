@@ -599,7 +599,8 @@ static void ipoib_cm_tx_destroy_rss(struct ipoib_cm_tx *p)
 				 * to force drain over the qp in order to get
 				 * all the wc's.
 				 */
-				if (!test_bit(IPOIB_FLAG_INITIALIZED, &priv->flags))
+				if (!test_bit(IPOIB_FLAG_INITIALIZED, &priv->flags) ||
+				    netif_queue_stopped(p->dev))
 					ipoib_drain_cq_rss(p->dev);
 
 				/* arming cq's*/

@@ -1232,11 +1232,12 @@ static void ipoib_cm_tx_destroy(struct ipoib_cm_tx *p)
 					   p->tx_head - p->tx_tail);
 				/*
 				 * check if we are in napi_disable state
-				 * (in port/module down etc.), if so we need
-				 * to force drain over the qp in order to get
-				 * all the wc's.
+				 * (in port/module down etc.), or if send queue
+				 * is closed, then force drain over the qp
+				 * in order to get all the wc's.
 				 */
-				if (!test_bit(IPOIB_FLAG_INITIALIZED, &priv->flags))
+				if (!test_bit(IPOIB_FLAG_INITIALIZED, &priv->flags) ||
+				    netif_queue_stopped(p->dev))
 					ipoib_drain_cq(p->dev);
 
 				/* arming cq*/
