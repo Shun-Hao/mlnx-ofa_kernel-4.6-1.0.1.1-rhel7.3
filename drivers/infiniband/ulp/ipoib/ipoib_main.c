@@ -224,16 +224,7 @@ static netdev_features_t ipoib_fix_features(struct net_device *dev, netdev_featu
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 
 	if (test_bit(IPOIB_FLAG_ADMIN_CM, &priv->flags)) {
-		features &= ~(NETIF_F_IP_CSUM | NETIF_F_TSO);
-
-		/* In system with large page size using SG will cause
-		 * performance issues, since each large page will hold a small
-		 * segment of data causing high page usage and more address
-		 * translations. The main impact is on CM mode since the MTU is
-		 * larger than UD.
-		 */
-		if (PAGE_SIZE > IPOIB_CM_MTU)
-			features &= ~NETIF_F_SG;
+		features &= ~(NETIF_F_IP_CSUM | NETIF_F_TSO | NETIF_F_SG);
 	} else {
 		if (priv->max_send_sge > 1)
 			features |= NETIF_F_SG;
