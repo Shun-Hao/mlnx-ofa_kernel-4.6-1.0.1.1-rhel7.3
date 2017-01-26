@@ -443,7 +443,14 @@ void *ib_register_peer_memory_client(const struct peer_memory_client *peer_clien
 	init_completion(&ib_peer_client->unload_comp);
 	kref_init(&ib_peer_client->ref);
 	ib_peer_client->peer_mem = peer_client;
-	*invalidate_callback = ib_invalidate_peer_memory;
+
+	/* Once peer supplied a non NULL callback it's an indication that
+	 * invalidation support is required for any memory owning.
+	 */
+	if (invalidate_callback) {
+		*invalidate_callback = ib_invalidate_peer_memory;
+		ib_peer_client->invalidation_required = 1;
+	}
 	ib_peer_client->last_ticket = 1;
 
 	mutex_lock(&peer_memory_mutex);
@@ -480,10 +487,16 @@ struct ib_peer_memory_client *ib_get_peer_client(struct ib_ucontext *context, un
 						 void **peer_client_context)
 {
 	struct ib_peer_memory_client *ib_peer_client;
-	int ret;
+	int ret = 0;
 
 	mutex_lock(&peer_memory_mutex);
 	list_for_each_entry(ib_peer_client, &peer_memory_list, core_peer_list) {
+		/* In case peer requires invalidation it can't own
+		 * memory which doesn't support it
+		 */
+		if (ib_peer_client->invalidation_required &&
+		    (!(peer_mem_flags & IB_PEER_MEM_INVAL_SUPP)))
+			continue;
 		ret = ib_peer_client->peer_mem->acquire(addr, size,
 						   context->peer_mem_private_data,
 						   context->peer_mem_name,
