@@ -311,13 +311,9 @@ static inline bool mlx5e_rx_cache_get(struct mlx5e_rq *rq,
 	stats->cache_reuse++;
 	*dma_info = cache->page_cache[cache->head--];
 
-	dma_sync_single_for_device(rq->pdev, dma_info->addr,
-				   PAGE_SIZE,
-				   DMA_FROM_DEVICE);
 	return true;
 
 err_no_page:
-	stats->cache_alloc++;
 	cache->reduce.successive = 0;
 
 	return false;
@@ -326,12 +322,12 @@ err_no_page:
 static inline int mlx5e_page_alloc_mapped(struct mlx5e_rq *rq,
 					  struct mlx5e_dma_info *dma_info)
 {
-	if (mlx5e_rx_cache_get(rq, dma_info))
-		return 0;
-
-	dma_info->page = page_pool_dev_alloc_pages(rq->page_pool);
-	if (unlikely(!dma_info->page))
-		return -ENOMEM;
+	if (!mlx5e_rx_cache_get(rq, dma_info)) {
+		dma_info->page = page_pool_dev_alloc_pages(rq->page_pool);
+		if (unlikely(!dma_info->page))
+			return -ENOMEM;
+		rq->stats->cache_alloc++;
+	}
 
 	dma_info->addr = dma_map_page(rq->pdev, dma_info->page, 0,
 				      PAGE_SIZE, rq->buff.map_dir);
@@ -352,14 +348,13 @@ void mlx5e_page_dma_unmap(struct mlx5e_rq *rq, struct mlx5e_dma_info *dma_info)
 void mlx5e_page_release(struct mlx5e_rq *rq, struct mlx5e_dma_info *dma_info,
 			bool recycle)
 {
+	mlx5e_page_dma_unmap(rq, dma_info);
 	if (likely(recycle)) {
 		if (mlx5e_rx_cache_put(rq, dma_info))
 			return;
 
-		mlx5e_page_dma_unmap(rq, dma_info);
 		page_pool_recycle_direct(rq->page_pool, dma_info->page);
 	} else {
-		mlx5e_page_dma_unmap(rq, dma_info);
 		put_page(dma_info->page);
 	}
 }

@@ -487,7 +487,7 @@ static void mlx5e_rx_cache_reduce_clean_pending(struct mlx5e_rq *rq)
 		return;
 
 	for (i = 0; i < reduce->npages; i++)
-		mlx5e_page_release(rq, &reduce->pending[i], false);
+		put_page(reduce->pending[i].page);
 
 	clear_bit(MLX5E_RQ_STATE_CACHE_REDUCE_PENDING, &rq->state);
 }
@@ -560,7 +560,7 @@ static void mlx5e_rx_free_page_cache(struct mlx5e_rq *rq)
 	for (i = 0; i <= cache->head; i++) {
 		struct mlx5e_dma_info *dma_info = &cache->page_cache[i];
 
-		mlx5e_page_release(rq, dma_info, false);
+		put_page(dma_info->page);
 	}
 	kvfree(cache->page_cache);
 }
