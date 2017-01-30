@@ -56,6 +56,7 @@ enum {
 static int mlx5e_set_trust_state(struct mlx5e_priv *priv, u8 trust_state);
 static int mlx5e_set_dscp2prio(struct mlx5e_priv *priv, u8 dscp, u8 prio);
 
+#ifdef CONFIG_MLX5_CORE_EN_DCB
 /* If dcbx mode is non-host set the dcbx mode to host.
  */
 static int mlx5e_dcbnl_set_dcbx_mode(struct mlx5e_priv *priv,
@@ -1204,3 +1205,4 @@ void mlx5e_dcbnl_initialize(struct mlx5e_priv *priv)
 
 	mlx5e_ets_init(priv);
 }
+#endif
