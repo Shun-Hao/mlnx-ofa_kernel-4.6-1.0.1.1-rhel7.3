@@ -50,6 +50,9 @@
 #define MAX_MSIX		1024
 #define MIN_MSIX_P_PORT		5
 #define PPC_MAX_MSIX		32
+#ifdef CONFIG_ARM64_64K_PAGES
+#define ARM64_64K_MAX_MSIX	32
+#endif
 #define MLX4_IS_LEGACY_EQ_MODE(dev_cap) ((dev_cap).num_comp_vectors < \
 					 (dev_cap).num_ports * MIN_MSIX_P_PORT)
 

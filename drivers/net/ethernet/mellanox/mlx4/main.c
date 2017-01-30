@@ -3720,6 +3720,9 @@ static void mlx4_enable_msi_x(struct mlx4_dev *dev)
 #ifdef CONFIG_PPC
 		nreq = min_t(int, nreq, PPC_MAX_MSIX);
 #endif
+#ifdef CONFIG_ARM64_64K_PAGES
+		nreq = min_t(int, nreq, ARM64_64K_MAX_MSIX);
+#endif
 
 		entries = kcalloc(nreq, sizeof(*entries), GFP_KERNEL);
 		if (!entries)
