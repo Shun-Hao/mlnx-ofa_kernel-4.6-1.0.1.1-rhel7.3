@@ -43,6 +43,7 @@
 #include <linux/inetdevice.h>
 #include <linux/slab.h>
 #include <linux/module.h>
+#include <linux/ratelimit.h>
 #include <net/route.h>
 
 #include <net/net_namespace.h>
