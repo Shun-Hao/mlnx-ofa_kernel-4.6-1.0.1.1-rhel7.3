@@ -1680,6 +1680,8 @@ int mlx4_phys_to_slave_port(struct mlx4_dev *dev, int slave, int port);
 int mlx4_get_base_gid_ix(struct mlx4_dev *dev, int slave, int port);
 
 int mlx4_config_vxlan_port(struct mlx4_dev *dev, __be16 udp_port);
+int mlx4_get_port_max_macs(struct mlx4_dev *mdev, int port);
+int mlx4_get_port_total_macs(struct mlx4_dev *mdev, int port);
 int mlx4_get_port_free_macs(struct mlx4_dev *mdev, int port);
 bool mlx4_is_available_mac(struct mlx4_dev *mdev, int port);
 int mlx4_disable_rx_port_check(struct mlx4_dev *dev, bool dis);

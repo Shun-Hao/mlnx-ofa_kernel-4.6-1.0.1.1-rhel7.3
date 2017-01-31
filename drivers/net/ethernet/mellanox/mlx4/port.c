@@ -2405,20 +2405,22 @@ static int mlx4_get_port_reserved_mac_num(struct mlx4_dev *mdev, int port)
 	return reserved;
 }
 
-static int mlx4_get_port_max_macs(struct mlx4_dev *mdev, int port)
+int mlx4_get_port_max_macs(struct mlx4_dev *mdev, int port)
 {
 	struct mlx4_port_info *info = &mlx4_priv(mdev)->port[port];
 
 	/* The maximum value should considers the reserved macs for the vfs */
 	return info->mac_table.max - mlx4_get_port_reserved_mac_num(mdev, port);
 }
+EXPORT_SYMBOL(mlx4_get_port_max_macs);
 
-static int mlx4_get_port_total_macs(struct mlx4_dev *mdev, int port)
+int mlx4_get_port_total_macs(struct mlx4_dev *mdev, int port)
 {
 	struct mlx4_port_info *info = &mlx4_priv(mdev)->port[port];
 
 	return info->mac_table.total;
 }
+EXPORT_SYMBOL(mlx4_get_port_total_macs);
 
 int mlx4_get_port_free_macs(struct mlx4_dev *mdev, int port)
 {
