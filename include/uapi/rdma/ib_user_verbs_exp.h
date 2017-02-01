@@ -34,6 +34,7 @@ enum {
 	IB_USER_VERBS_EXP_CMD_DESTROY_RWQ_IND_TBL,
 	IB_USER_VERBS_EXP_CMD_CREATE_FLOW = 19,
 	IB_USER_VERBS_EXP_CMD_SET_CTX_ATTR,
+	IB_USER_VERBS_EXP_CMD_CREATE_SRQ,
 };
 
 enum ib_uverbs_exp_modify_qp_comp_mask {
@@ -482,6 +483,26 @@ struct ib_uverbs_arm_dct {
 
 struct ib_uverbs_arm_dct_resp {
 	__u64	driver_data[0];
+};
+
+struct ib_uverbs_exp_create_srq {
+	__u64 comp_mask;
+	__u64 user_handle;
+	__u32 srq_type;
+	__u32 pd_handle;
+	__u32 max_wr;
+	__u32 max_sge;
+	__u32 srq_limit;
+	__u32 cq_handle;
+	__u32 xrcd_handle;
+	__u32 reserved;
+	__u64 driver_data[0];
+};
+
+struct ib_uverbs_exp_create_srq_resp {
+	struct ib_uverbs_create_srq_resp base;
+	__u32  comp_mask;
+	__u32  response_length;
 };
 
 struct ib_uverbs_exp_kern_ib_filter {

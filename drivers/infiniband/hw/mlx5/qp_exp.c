@@ -299,7 +299,7 @@ static struct mlx5_ib_qp *dct_create_qp(struct ib_pd *pd,
        void *dctc;
        struct mlx5_ib_dev *dev = to_mdev(pd->device);
 
-       /* TODO: re-add TAG_MATCHING
+       /* TODO: re-add TAG_MATCHING and OOO
        if (!pd->uobject &&
            dev->ooo.enabled &&
            MLX5_CAP_GEN(dev->mdev, multipath_dc_qp))
@@ -337,7 +337,7 @@ static struct mlx5_ib_qp *dct_create_qp(struct ib_pd *pd,
 	       }
        }
 	
-       /* TODO: re-add TAG_MATCHING
+       /* TODO: re-add TAG_MATCHING and OOO
        if (attr->create_flags & IB_EXP_DCT_OOO_RW_DATA_PLACEMENT)
 	       MLX5_SET(dctc, dctc, multipath, 1);
        if (attr->srq && attr->srq->srq_type == IB_EXP_SRQT_TAG_MATCHING)

@@ -1371,3 +1371,60 @@ int ib_uverbs_exp_set_context_attr(struct ib_uverbs_file *file,
 
 	return ret;
 }
+
+int ib_uverbs_exp_create_srq(struct ib_uverbs_file *file,
+			     struct ib_udata *ucore,
+			     struct ib_udata *uhw)
+{
+	struct ib_uverbs_create_xsrq xcmd = {};
+	struct ib_uverbs_exp_create_srq cmd;
+	size_t required_cmd_sz;
+	int err;
+
+	required_cmd_sz = offsetof(typeof(cmd), reserved) +
+			  sizeof(cmd.reserved);
+
+	if (ucore->inlen < required_cmd_sz)
+		return -EINVAL;
+
+	if (ucore->inlen > sizeof(cmd) &&
+	    !ib_is_udata_cleared(ucore, sizeof(cmd),
+				 ucore->inlen - sizeof(cmd)))
+		return -EOPNOTSUPP;
+
+	if (ucore->outlen < sizeof(struct ib_uverbs_create_srq_resp))
+		return -ENOSPC;
+
+	err = ib_copy_from_udata(&cmd, ucore, min(sizeof(cmd), ucore->inlen));
+	if (err)
+		return err;
+
+	if (cmd.comp_mask || cmd.reserved)
+		return -EINVAL;
+
+	xcmd.response    = (u64)ucore;
+	xcmd.user_handle = cmd.user_handle;
+	xcmd.srq_type	 = cmd.srq_type;
+	xcmd.pd_handle	 = cmd.pd_handle;
+	xcmd.max_wr	 = cmd.max_wr;
+	xcmd.max_sge	 = cmd.max_sge;
+	xcmd.srq_limit	 = cmd.srq_limit;
+	xcmd.cq_handle   = cmd.cq_handle;
+	xcmd.xrcd_handle = cmd.xrcd_handle;
+
+	return __uverbs_create_xsrq(file,  &xcmd, uhw);
+}
+
+int ib_uverbs_exp_create_srq_resp(struct ib_uverbs_create_srq_resp *resp,
+				  u64 response)
+{
+	struct ib_udata *ucore = (struct ib_udata *)response;
+	struct ib_uverbs_exp_create_srq_resp resp_exp;
+
+	resp_exp.base = *resp;
+	resp_exp.comp_mask = 0;
+	resp_exp.response_length = min(ucore->outlen, sizeof(resp_exp));
+
+	return ib_copy_to_udata(ucore, &resp_exp, resp_exp.response_length);
+}
+

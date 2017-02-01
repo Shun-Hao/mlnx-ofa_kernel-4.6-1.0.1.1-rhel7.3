@@ -3712,7 +3712,7 @@ static int __uverbs_create_xsrq(struct ib_uverbs_file *file,
 	struct ib_srq                   *srq;
 	struct ib_uobject               *uninitialized_var(xrcd_uobj);
 	struct ib_srq_init_attr          attr;
-	int ret;
+	int ret = 0;
 	struct ib_device *ib_dev;
 
 	obj = (struct ib_usrq_object *)uobj_alloc(UVERBS_OBJECT_SRQ, file,
@@ -3802,11 +3802,16 @@ static int __uverbs_create_xsrq(struct ib_uverbs_file *file,
 	if (cmd->srq_type == IB_SRQT_XRC)
 		resp.srqn = srq->ext.xrc.srq_num;
 
-	if (copy_to_user(u64_to_user_ptr(cmd->response),
-			 &resp, sizeof resp)) {
-		ret = -EFAULT;
-		goto err_copy;
+	if (udata->src == IB_UDATA_EXP_CMD) {
+		ret = ib_uverbs_exp_create_srq_resp(&resp, cmd->response);
+	} else {
+		if (copy_to_user(u64_to_user_ptr(cmd->response),
+				 &resp, sizeof resp))
+			ret = -EFAULT;
 	}
+
+	if (ret)
+		goto err_copy;
 
 	if (cmd->srq_type == IB_SRQT_XRC)
 		uobj_put_read(xrcd_uobj);
