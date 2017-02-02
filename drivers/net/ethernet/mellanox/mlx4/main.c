@@ -41,6 +41,7 @@
 #include <linux/dma-mapping.h>
 #include <linux/slab.h>
 #include <linux/io-mapping.h>
+#include <linux/cpu_rmap.h>
 #include <linux/delay.h>
 #include <linux/kmod.h>
 #include <linux/etherdevice.h>
