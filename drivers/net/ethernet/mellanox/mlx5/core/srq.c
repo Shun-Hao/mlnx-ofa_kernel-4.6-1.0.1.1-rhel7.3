@@ -37,6 +37,7 @@
 #include <linux/mlx5/srq.h>
 #include <rdma/ib_verbs.h>
 #include "mlx5_core.h"
+#include "srq_exp.h"
 #include <linux/mlx5/transobj.h>
 
 void mlx5_srq_event(struct mlx5_core_dev *dev, u32 srqn, int event_type)
@@ -461,11 +462,21 @@ static int create_xrq_cmd(struct mlx5_core_dev *dev, struct mlx5_core_srq *srq,
 	void *create_in;
 	void *xrqc;
 	void *wq;
-	int pas_size;
+	int pas_size, rq_pas_size;
 	int inlen;
+	void *rq_pas_addr;
 	int err;
 
-	pas_size = get_pas_size(in);
+	rq_pas_size = get_pas_size(in);
+	if (in->type == IB_EXP_SRQT_NVMF)
+		pas_size = roundup(rq_pas_size, MLX5_PAS_ALIGN) +
+			   roundup(get_nvmf_pas_size(&in->nvmf), MLX5_PAS_ALIGN);
+	else if (in->type == IB_EXP_SRQT_TAG_MATCHING ||
+		 in->type == IB_SRQT_TM)
+		pas_size = rq_pas_size;
+	else
+		return -EINVAL;
+
 	inlen = MLX5_ST_SZ_BYTES(create_xrq_in) + pas_size;
 	create_in = kvzalloc(inlen, GFP_KERNEL);
 	if (!create_in)
@@ -475,7 +486,8 @@ static int create_xrq_cmd(struct mlx5_core_dev *dev, struct mlx5_core_srq *srq,
 	wq = MLX5_ADDR_OF(xrqc, xrqc, wq);
 
 	set_wq(wq, in);
-	memcpy(MLX5_ADDR_OF(xrqc, xrqc, wq.pas), in->pas, pas_size);
+	rq_pas_addr = MLX5_ADDR_OF(xrqc, xrqc, wq.pas);
+	memcpy(rq_pas_addr, in->pas, rq_pas_size);
 
 	if (in->type == IB_SRQT_TM ||
 	    in->type == IB_EXP_SRQT_TAG_MATCHING) {
@@ -485,6 +497,11 @@ static int create_xrq_cmd(struct mlx5_core_dev *dev, struct mlx5_core_srq *srq,
 		MLX5_SET(xrqc, xrqc,
 			 tag_matching_topology_context.log_matching_list_sz,
 			 in->tm_log_list_size);
+	} else if (in->type == IB_EXP_SRQT_NVMF) {
+		MLX5_SET(xrqc, xrqc, offload, MLX5_XRQC_OFFLOAD_NVMF);
+		set_nvmf_srq_pas(&in->nvmf,
+				 rq_pas_addr + roundup(rq_pas_size, MLX5_PAS_ALIGN));
+		set_nvmf_xrq_context(&in->nvmf, xrqc);
 	}
 	MLX5_SET(xrqc, xrqc, user_index, in->user_index);
 	MLX5_SET(xrqc, xrqc, cqn, in->cqn);
@@ -611,6 +628,7 @@ int mlx5_core_create_srq(struct mlx5_core_dev *dev, struct mlx5_core_srq *srq,
 		break;
 	case IB_SRQT_TM:
 	case IB_EXP_SRQT_TAG_MATCHING:
+	case IB_EXP_SRQT_NVMF:
 		srq->common.res = MLX5_RES_XRQ;
 		break;
 	default:
