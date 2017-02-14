@@ -507,3 +507,22 @@ void mlx5_icmd_cleanup(struct mlx5_core_dev *dev)
 {
 	/* Nothing for now */
 }
+
+int mlx5_core_icmd_query_cap(struct mlx5_core_dev *dev, u16 cap_group, u64 *out)
+{
+	u32 cg = cap_group;
+	int err;
+	u32 tmp[2];
+
+	err = mlx5_icmd_exec(&dev->icmd, ICMD_OP_QUERY_CAPABILITIES, &cg, sizeof(cg) / 4,
+			     &tmp, 2);
+	if (err) {
+		mlx5_core_warn(dev, "query_icmd_cap failed\n");
+		return err;
+	}
+
+	/* fw output is big endian */
+	*out = (((u64)tmp[0] << 32) | tmp[1]);
+
+	return 0;
+}

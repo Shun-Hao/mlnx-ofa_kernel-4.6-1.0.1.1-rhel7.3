@@ -33,9 +33,14 @@
 #ifndef __ICMD_H
 #define __ICMD_H
 
+enum {
+	ICMD_OP_QUERY_CAPABILITIES	= 0x8400,
+};
+
 int mlx5_icmd_init(struct mlx5_core_dev *dev);
 void mlx5_icmd_cleanup(struct mlx5_core_dev *dev);
 int mlx5_icmd_exec(struct mlx5_icmd *icmd, u16 opcode, void *inbox,
 		   int in_dw_sz, void *outbox, int out_dw_sz);
+int mlx5_core_icmd_query_cap(struct mlx5_core_dev *dev, u16 cap_group, u64 *out);
 
 #endif /* __ICMD_H */
