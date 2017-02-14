@@ -66,6 +66,7 @@
 #include "lib/clock.h"
 #include "lib/vxlan.h"
 #include "diag/fw_tracer.h"
+#include "icmd.h"
 
 MODULE_AUTHOR("Eli Cohen <eli@mellanox.com>");
 MODULE_DESCRIPTION("Mellanox 5th generation network adapters (ConnectX series) core driver");
@@ -1680,6 +1681,14 @@ static int init_one(struct pci_dev *pdev,
 		goto clean_srcu;
 	}
 
+#ifdef CONFIG_CXL_LIB
+	if (mlx5_core_is_pf(dev)) {
+		err = mlx5_icmd_init(dev);
+		if (err)
+			dev_info(&pdev->dev, "mlx5_icmd_init failed with error code %d\n", err);
+	}
+#endif
+
 	err = mlx5_health_init(dev);
 	if (err) {
 		dev_err(&pdev->dev, "mlx5_health_init failed with error code %d\n", err);
@@ -1718,6 +1727,10 @@ clean_crdump:
 clean_health:
 	mlx5_health_cleanup(dev);
 close_pci:
+#ifdef CONFIG_CXL_LIB
+	if (mlx5_core_is_pf(dev))
+		mlx5_icmd_cleanup(dev);
+#endif
 	mlx5_pci_close(dev, priv);
 clean_srcu:
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
@@ -1754,6 +1767,10 @@ static void remove_one(struct pci_dev *pdev)
 	mlx5_pagealloc_cleanup(dev);
 	mlx5_health_cleanup(dev);
 	mlx5_crdump_cleanup(dev);
+#ifdef CONFIG_CXL_LIB
+	if (mlx5_core_is_pf(dev))
+		mlx5_icmd_cleanup(dev);
+#endif
 	mlx5_pci_close(dev, priv);
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	cleanup_srcu_struct(&priv->pfault_srcu);

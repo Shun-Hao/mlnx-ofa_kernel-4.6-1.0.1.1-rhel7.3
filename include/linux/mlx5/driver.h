@@ -886,6 +886,12 @@ struct mlx5_special_contexts {
 struct mlx5_fw_tracer;
 struct mlx5_vxlan;
 
+struct mlx5_icmd {
+	unsigned int	cap_addr;
+	u32		mbox_size;
+	bool		initialized;
+};
+
 struct mlx5_core_dev {
 	struct pci_dev	       *pdev;
 	/* sync pci state */
@@ -894,6 +900,7 @@ struct mlx5_core_dev {
 	u8			rev_id;
 	char			board_id[MLX5_BOARD_ID_LEN];
 	struct mlx5_cmd		cmd;
+	struct mlx5_icmd	icmd;
 	struct mlx5_port_caps	port_caps[MLX5_MAX_PORTS];
 	struct {
 		u32 hca_cur[MLX5_CAP_NUM][MLX5_UN_SZ_DW(hca_cap_union)];
