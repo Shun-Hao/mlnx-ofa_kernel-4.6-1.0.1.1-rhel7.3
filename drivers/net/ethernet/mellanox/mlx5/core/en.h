@@ -972,9 +972,20 @@ void mlx5e_init_rq_type_params(struct mlx5_core_dev *mdev,
 
 static inline bool mlx5e_tunnel_inner_ft_supported(struct mlx5_core_dev *mdev)
 {
-	return (MLX5_CAP_ETH(mdev, tunnel_stateless_gre) &&
-		MLX5_CAP_FLOWTABLE_NIC_RX(mdev, ft_field_support.inner_ip_version));
+	return ((MLX5_CAP_ETH(mdev, tunnel_stateless_gre) ||
+#ifdef CONFIG_MLX5_INNER_RSS
+		 MLX5_CAP_ETH(mdev, tunnel_stateless_vxlan)) &&
+#else
+		 0) &&
+#endif
+		 MLX5_CAP_FLOWTABLE_NIC_RX(mdev, ft_field_support.inner_ip_version));
 }
+
+#ifdef CONFIG_MLX5_INNER_RSS
+struct mlx5_flow_handle *
+mlx5e_add_udp_tunnel_flow_rule(struct mlx5e_priv *priv,
+			       u16 etype, u16 port);
+#endif
 
 void mlx5e_create_debugfs(struct mlx5e_priv *priv);
 void mlx5e_destroy_debugfs(struct mlx5e_priv *priv);

@@ -33,6 +33,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/mlx5/driver.h>
+#include <linux/mlx5/fs.h>
 #include "mlx5_core.h"
 #include "vxlan.h"
 
@@ -109,6 +110,9 @@ int mlx5_vxlan_add_port(struct mlx5_vxlan *vxlan, u16 port)
 {
 	struct mlx5_vxlan_port *vxlanp;
 	int ret = -ENOSPC;
+#ifdef CONFIG_MLX5_INNER_RSS
+	u16 etype;
+#endif
 
 	vxlanp = mlx5_vxlan_lookup_port(vxlan, port);
 	if (vxlanp) {
@@ -135,6 +139,23 @@ int mlx5_vxlan_add_port(struct mlx5_vxlan *vxlan, u16 port)
 		goto err_delete_port;
 	}
 
+/* Talat - Saeed, how can we add the rule? from where we can take the priv? for
+ * now I'll remark the call of mlx5e_add_udp_tunnel_flow_rule */
+/*
+#ifdef CONFIG_MLX5_INNER_RSS
+	if (vxlan_work->sa_family == AF_INET)
+		etype = ETH_P_IP;
+	else if (vxlan_work->sa_family == AF_INET6)
+		etype = ETH_P_IPV6;
+	else
+		goto err_delete_port;
+	vxlanp->flow_rule = mlx5e_add_udp_tunnel_flow_rule(priv, etype, port);
+	if (IS_ERR(vxlanp->flow_rule)) {
+		pr_warn("Failed to add flow rule for VXLAN port %d\n", port);
+		goto err_delete_port;
+	}
+#endif
+*/
 	vxlanp->udp_port = port;
 	atomic_set(&vxlanp->refcount, 1);
 
@@ -178,6 +199,10 @@ out_unlock:
 	spin_unlock_bh(&vxlan->lock);
 
 	if (remove) {
+		mlx5_vxlan_debugfs_remove(vxlan->mdev, vxlanp);
+#ifdef config_mlx5_inner_rss
+	mlx5_del_flow_rules(vxlanp->flow_rule);
+#endif
 		mlx5_vxlan_core_del_port_cmd(vxlan->mdev, port);
 		kfree(vxlanp);
 		vxlan->num_ports--;

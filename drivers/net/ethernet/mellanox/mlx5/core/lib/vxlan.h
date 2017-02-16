@@ -45,6 +45,16 @@ static inline bool mlx5_vxlan_allowed(struct mlx5_vxlan *vxlan)
 	return !IS_ERR_OR_NULL(vxlan);
 }
 
+struct mlx5_vxlan_port {
+	struct hlist_node hlist;
+	atomic_t refcount;
+	u16 udp_port;
+#ifdef CONFIG_MLX5_INNER_RSS
+	struct mlx5_flow_handle	*flow_rule;
+#endif
+	struct dentry		*dbg;
+};
+
 #if IS_ENABLED(CONFIG_VXLAN)
 struct mlx5_vxlan *mlx5_vxlan_create(struct mlx5_core_dev *mdev);
 void mlx5_vxlan_destroy(struct mlx5_vxlan *vxlan);

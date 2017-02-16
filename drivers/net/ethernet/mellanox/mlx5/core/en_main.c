@@ -3526,7 +3526,6 @@ out:
 err_destroy_inner_tirs:
 	for (i--; i >= 0; i--)
 		mlx5e_destroy_tir(priv->mdev, &priv->inner_indir_tir[i]);
-
 	for (tt--; tt >= 0; tt--)
 		mlx5e_destroy_tir(priv->mdev, &priv->indir_tir[tt]);
 
