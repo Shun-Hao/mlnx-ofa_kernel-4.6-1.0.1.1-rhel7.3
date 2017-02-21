@@ -1000,8 +1000,16 @@ static int mlx5_pci_init(struct mlx5_core_dev *dev, struct mlx5_priv *priv)
 		goto err_clr_master;
 	}
 
+	err = pci_save_state(pdev);
+	if (err) {
+		dev_err(&pdev->dev, "pci_save_state failed with error code: %d\n", err);
+		goto err_io_unmap;
+	}
+
 	return 0;
 
+err_io_unmap:
+	iounmap(dev->iseg);
 err_clr_master:
 	pci_clear_master(dev->pdev);
 	release_bar(dev->pdev);
