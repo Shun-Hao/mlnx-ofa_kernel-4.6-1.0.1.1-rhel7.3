@@ -1851,6 +1851,8 @@ static void mlx4_en_get_channels(struct net_device *dev,
 {
 	struct mlx4_en_priv *priv = netdev_priv(dev);
 
+	memset(channel, 0, sizeof(*channel));
+
 	channel->max_rx = mlx4_en_get_max_num_rx_rings(dev);
 	channel->max_tx = priv->mdev->profile.max_num_tx_rings_p_up;
 
@@ -1871,7 +1873,10 @@ static int mlx4_en_set_channels(struct net_device *dev,
 	int err = 0;
 	u8 up;
 
-	if (!channel->tx_count || !channel->rx_count)
+	if (channel->other_count || channel->combined_count ||
+	    channel->tx_count > MLX4_EN_MAX_TX_RING_P_UP ||
+	    channel->rx_count > MAX_RX_RINGS ||
+	    !channel->tx_count || !channel->rx_count)
 		return -EINVAL;
 
 	tmp = kzalloc(sizeof(*tmp), GFP_KERNEL);
