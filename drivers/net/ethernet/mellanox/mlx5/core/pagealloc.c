@@ -266,6 +266,9 @@ static void page_notify_fail(struct mlx5_core_dev *dev, u16 func_id)
 	if (err)
 		mlx5_core_warn(dev, "page notify failed func_id(%d) err(%d)\n",
 			       func_id, err);
+	else
+		mlx5_core_warn(dev, "Page allocation failure notification on func_id(%d) sent to fw\n",
+			       func_id);
 }
 
 static int give_pages(struct mlx5_core_dev *dev, u16 func_id, int npages,
