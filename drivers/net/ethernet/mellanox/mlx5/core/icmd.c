@@ -526,3 +526,102 @@ int mlx5_core_icmd_query_cap(struct mlx5_core_dev *dev, u16 cap_group, u64 *out)
 
 	return 0;
 }
+
+enum {
+	ACCESS_REG_DW0 = 0x08040000,
+	ACCESS_REG_DW1 = 0x00000001,
+	ACCESS_REG_DW4 = 0x18000000,
+};
+
+enum {
+	AR_STAT_SUCCESS		= 0,
+	AR_STAT_BUSY		= 1,
+	AR_STAT_BAD_CMD_LAYOUT1	= 3,
+	AR_STAT_REG_NOT_SUP	= 4,
+	AR_STAT_BAD_CMD_LAYOUT2	= 5,
+	AR_STAT_METHOD_NOT_SUP	= 6,
+	AR_STAT_BAD_PARAM	= 7,
+	AR_STAT_NO_RSC		= 8,
+	AR_STAT_INTERNAL_ERR	= 0x70,
+};
+
+static int access_reg_status(u8 status)
+{
+	if (status == AR_STAT_SUCCESS)
+		return 0;
+
+	switch (status) {
+	case AR_STAT_BUSY:
+		return -EBUSY;
+	case AR_STAT_BAD_CMD_LAYOUT1:
+	case AR_STAT_BAD_CMD_LAYOUT2:
+	case AR_STAT_BAD_PARAM:
+		return -EINVAL;
+	case AR_STAT_REG_NOT_SUP:
+	case AR_STAT_METHOD_NOT_SUP:
+		return -ENOTSUPP;
+	case AR_STAT_NO_RSC:
+		return -ENOMEM;
+	case AR_STAT_INTERNAL_ERR:
+		return -1;
+	}
+	pr_warn("%s: unknown status 0x%x\n", __func__, status);
+	return -EINVAL;
+}
+
+enum {
+	ICMD_ACC_REG_OVERHEAD = 20
+};
+
+int mlx5_core_icmd_access_reg(struct mlx5_core_dev *dev,
+			      struct icmd_acc_reg_in *in,
+			      struct icmd_acc_reg_out *out)
+{
+	u32 *ombox = NULL;
+	u32 *imbox;
+	u8 status;
+	int ilen;
+	int olen;
+	int err = -ENOMEM;
+	int i;
+
+	ilen = ICMD_ACC_REG_OVERHEAD + in->dw_len * 4;
+	imbox = kzalloc(ilen, GFP_KERNEL);
+	if (!imbox)
+		goto out;
+
+	olen = ICMD_ACC_REG_OVERHEAD + out->dw_len * 4;
+	ombox = kzalloc(olen, GFP_KERNEL);
+	if (!ombox)
+		goto out;
+
+	imbox[0] = ACCESS_REG_DW0;
+	imbox[1] = ACCESS_REG_DW1;
+	imbox[4] = ACCESS_REG_DW4;
+
+	imbox[1] |= (in->reg_id << 16) | (in->method << 8);
+	imbox[4] |= ((in->dw_len + 1) << 16);
+
+	for (i = 0; i < in->dw_len; i++)
+		imbox[5 + i] = in->data[i];
+
+	err = mlx5_icmd_exec(&dev->icmd, ICMD_OP_ACCESS_REGISTER, imbox, ilen / 4,
+			     ombox, olen / 4);
+	if (err)
+		goto out;
+
+	status = (ombox[0] >> 8) & 0xff;
+	err = access_reg_status(status);
+	if (err) {
+		mlx5_core_warn(dev, "access_reg failed with status 0x%x, err %d\n", status, err);
+		return err;
+	}
+
+	for (i = 0; i < out->dw_len; i++)
+		out->data[i] = ombox[5 + i];
+
+out:
+	kfree(imbox);
+	kfree(ombox);
+	return err;
+}
