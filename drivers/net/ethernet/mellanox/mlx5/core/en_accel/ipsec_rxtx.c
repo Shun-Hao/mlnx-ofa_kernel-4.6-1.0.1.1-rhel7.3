@@ -399,3 +399,25 @@ void mlx5e_ipsec_build_inverse_table(void)
 		mlx5e_ipsec_inverse_table[mss] = htons(mss_inv);
 	}
 }
+
+int mlx5e_ipsec_set_flow_attrs(struct mlx5e_priv *priv, u32 *match_c, u32 *match_v,
+			       struct ethtool_rx_flow_spec *fs)
+{
+	void *misc_param_c = MLX5_ADDR_OF(fte_match_param, match_c, misc_parameters);
+	void *misc_param_v = MLX5_ADDR_OF(fte_match_param, match_v, misc_parameters);
+	struct mlx5e_ipsec_metadata *mdata_c, *mdata_v;
+	u32 handle;
+	int err;
+
+	err = mlx5e_ipsec_sadb_rx_lookup_rev(priv->ipsec, fs, &handle);
+	if (err)
+		return err;
+
+	mdata_c = (void *)MLX5_ADDR_OF(fte_match_set_misc, misc_param_c, outer_emd_tag_data);
+	mdata_v = (void *)MLX5_ADDR_OF(fte_match_set_misc, misc_param_v, outer_emd_tag_data);
+
+	MLX5_SET(fte_match_set_misc, misc_param_c, outer_emd_tag, 1);
+	mdata_c->content.rx.sa_handle = 0xFFFFFFFF;
+	mdata_v->content.rx.sa_handle = htonl(handle);
+	return 0;
+}

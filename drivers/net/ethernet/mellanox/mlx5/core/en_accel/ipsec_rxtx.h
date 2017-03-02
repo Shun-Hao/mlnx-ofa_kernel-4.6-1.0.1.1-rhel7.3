@@ -55,6 +55,9 @@ struct sk_buff *mlx5e_ipsec_handle_tx_skb(struct net_device *netdev,
 					  struct mlx5e_tx_wqe *wqe,
 					  struct sk_buff *skb);
 
+int mlx5e_ipsec_set_flow_attrs(struct mlx5e_priv *priv, u32 *match_c, u32 *match_v,
+			       struct ethtool_rx_flow_spec *fs);
+
 #endif /* CONFIG_MLX5_EN_IPSEC */
 
 #endif /* __MLX5E_IPSEC_RXTX_H__ */

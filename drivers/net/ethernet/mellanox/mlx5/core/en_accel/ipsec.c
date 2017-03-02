@@ -75,6 +75,28 @@ struct xfrm_state *mlx5e_ipsec_sadb_rx_lookup(struct mlx5e_ipsec *ipsec,
 	return ret;
 }
 
+int mlx5e_ipsec_sadb_rx_lookup_rev(struct mlx5e_ipsec *ipsec,
+				   struct ethtool_rx_flow_spec *fs, u32 *handle)
+{
+	struct mlx5e_ipsec_sa_entry *sa_entry;
+	unsigned int temp;
+
+	if ((fs->flow_type & ~(FLOW_EXT | FLOW_MAC_EXT)) != ESP_V4_FLOW)
+		return -ENOENT;
+
+	rcu_read_lock();
+	hash_for_each_rcu(ipsec->sadb_rx, temp, sa_entry, hlist)
+		if ((fs->h_u.esp_ip4_spec.ip4dst == sa_entry->x->id.daddr.a4) &&
+		    (fs->h_u.esp_ip4_spec.ip4src == sa_entry->x->props.saddr.a4) &&
+		    (fs->h_u.esp_ip4_spec.spi == sa_entry->x->id.spi)) {
+			*handle = sa_entry->handle;
+			return 0;
+		}
+	rcu_read_unlock();
+
+	return -ENOENT;
+}
+
 static int mlx5e_ipsec_sadb_rx_add(struct mlx5e_ipsec_sa_entry *sa_entry)
 {
 	struct mlx5e_ipsec *ipsec = sa_entry->ipsec;

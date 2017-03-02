@@ -116,6 +116,8 @@ int mlx5e_ipsec_get_stats(struct mlx5e_priv *priv, u64 *data);
 
 struct xfrm_state *mlx5e_ipsec_sadb_rx_lookup(struct mlx5e_ipsec *dev,
 					      unsigned int handle);
+int mlx5e_ipsec_sadb_rx_lookup_rev(struct mlx5e_ipsec *ipsec,
+				   struct ethtool_rx_flow_spec *fs, u32 *handle);
 
 #else
 

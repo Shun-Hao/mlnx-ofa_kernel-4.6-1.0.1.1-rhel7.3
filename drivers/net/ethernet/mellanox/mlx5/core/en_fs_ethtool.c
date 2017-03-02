@@ -32,6 +32,7 @@
 
 #include <linux/mlx5/fs.h>
 #include "en.h"
+#include "en_accel/ipsec_rxtx.h"
 
 struct mlx5e_ethtool_rule {
 	struct list_head             list;
@@ -66,6 +67,9 @@ static struct mlx5e_ethtool_table *get_flow_table(struct mlx5e_priv *priv,
 	switch (fs->flow_type & ~(FLOW_EXT | FLOW_MAC_EXT)) {
 	case TCP_V4_FLOW:
 	case UDP_V4_FLOW:
+#ifdef CONFIG_MLX5_EN_IPSEC
+	case ESP_V4_FLOW:
+#endif
 	case TCP_V6_FLOW:
 	case UDP_V6_FLOW:
 		max_tuples = ETHTOOL_NUM_L3_L4_FTS;
@@ -318,14 +322,16 @@ set_dmac(void *headers_c, void *headers_v,
 }
 
 static int set_flow_attrs(u32 *match_c, u32 *match_v,
-			  struct ethtool_rx_flow_spec *fs)
+			  struct ethtool_rx_flow_spec *fs, struct mlx5e_priv *priv)
 {
 	void *outer_headers_c = MLX5_ADDR_OF(fte_match_param, match_c,
 					     outer_headers);
 	void *outer_headers_v = MLX5_ADDR_OF(fte_match_param, match_v,
 					     outer_headers);
 	u32 flow_type = fs->flow_type & ~(FLOW_EXT | FLOW_MAC_EXT);
-
+#ifdef CONFIG_MLX5_EN_IPSEC
+	int err;
+#endif
 	switch (flow_type) {
 	case TCP_V4_FLOW:
 		parse_tcp4(outer_headers_c, outer_headers_v, fs);
@@ -333,6 +339,13 @@ static int set_flow_attrs(u32 *match_c, u32 *match_v,
 	case UDP_V4_FLOW:
 		parse_udp4(outer_headers_c, outer_headers_v, fs);
 		break;
+#ifdef CONFIG_MLX5_EN_IPSEC
+	case ESP_V4_FLOW:
+		err = mlx5e_ipsec_set_flow_attrs(priv, match_c, match_v, fs);
+		if (err)
+			return err;
+		break;
+#endif
 	case IP_USER_FLOW:
 		parse_ip4(outer_headers_c, outer_headers_v, fs);
 		break;
@@ -392,6 +405,15 @@ static bool outer_header_zero(u32 *match_criteria)
 						  size - 1);
 }
 
+static bool misc_param_zero(u32 *match_criteria)
+{
+	int size = MLX5_FLD_SZ_BYTES(fte_match_param, misc_parameters);
+	char *misc_param_c = MLX5_ADDR_OF(fte_match_param, match_criteria,
+					  misc_parameters);
+
+	return misc_param_c[0] == 0 && !memcmp(misc_param_c, misc_param_c + 1, size - 1);
+}
+
 static struct mlx5_flow_handle *
 add_ethtool_flow_rule(struct mlx5e_priv *priv,
 		      struct mlx5_flow_table *ft,
@@ -407,7 +429,7 @@ add_ethtool_flow_rule(struct mlx5e_priv *priv,
 	if (!spec)
 		return ERR_PTR(-ENOMEM);
 	err = set_flow_attrs(spec->match_criteria, spec->match_value,
-			     fs);
+			     fs, priv);
 	if (err)
 		goto free;
 
@@ -425,7 +447,10 @@ add_ethtool_flow_rule(struct mlx5e_priv *priv,
 		flow_act.action = MLX5_FLOW_CONTEXT_ACTION_FWD_DEST;
 	}
 
-	spec->match_criteria_enable = (!outer_header_zero(spec->match_criteria));
+	if (!outer_header_zero(spec->match_criteria))
+		spec->match_criteria_enable |= MLX5_MATCH_OUTER_HEADERS;
+	if (!misc_param_zero(spec->match_criteria))
+		spec->match_criteria_enable |= MLX5_MATCH_MISC_PARAMETERS;
 	flow_act.flow_tag = MLX5_FS_DEFAULT_FLOW_TAG;
 	rule = mlx5_add_flow_rules(ft, spec, &flow_act, dst, dst ? 1 : 0);
 	if (IS_ERR(rule)) {
@@ -594,6 +619,9 @@ static int validate_vlan(struct ethtool_rx_flow_spec *fs)
 static int validate_flow(struct mlx5e_priv *priv,
 			 struct ethtool_rx_flow_spec *fs)
 {
+#ifdef CONFIG_MLX5_EN_IPSEC
+	struct ethtool_ah_espip4_spec *ipsec4_mask;
+#endif
 	int num_tuples = 0;
 	int ret = 0;
 
@@ -615,6 +643,21 @@ static int validate_flow(struct mlx5e_priv *priv,
 			return ret;
 		num_tuples += ret;
 		break;
+#ifdef CONFIG_MLX5_EN_IPSEC
+	case ESP_V4_FLOW:
+		if (fs->m_u.esp_ip4_spec.tos)
+			return -EINVAL;
+		ipsec4_mask = &fs->m_u.esp_ip4_spec;
+		if (!all_ones(ipsec4_mask->ip4src))
+			return -EINVAL;
+		if (!all_ones(ipsec4_mask->ip4dst))
+			return -EINVAL;
+		if (!all_ones(ipsec4_mask->spi))
+			return -EINVAL;
+		/* Flow is ESP, match only on PET offloaded traffic */
+		num_tuples++;
+		break;
+#endif
 	case IP_USER_FLOW:
 		ret = validate_ip4(fs);
 		if (ret < 0)
