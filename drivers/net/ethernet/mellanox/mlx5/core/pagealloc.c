@@ -273,6 +273,7 @@ static void page_notify_fail(struct mlx5_core_dev *dev, u16 func_id)
 static int give_pages(struct mlx5_core_dev *dev, u16 func_id, int npages,
 		      int notify_fail)
 {
+	unsigned long max_duration = jiffies + msecs_to_jiffies(MLX5_CMD_TIMEOUT_MSEC / 2);
 	u32 out[MLX5_ST_SZ_DW(manage_pages_out)] = {0};
 	int inlen = MLX5_ST_SZ_BYTES(manage_pages_in);
 	u64 addr;
@@ -289,6 +290,13 @@ static int give_pages(struct mlx5_core_dev *dev, u16 func_id, int npages,
 	}
 
 	for (i = 0; i < npages; i++) {
+		if (time_after(jiffies, max_duration)) {
+			mlx5_core_warn(dev,
+				       "%d pages alloc time exceeded the max permitted duration\n",
+				       npages);
+			err = -ENOMEM;
+			goto out_4k;
+		}
 retry:
 		err = alloc_4k(dev, &addr);
 		if (err) {
