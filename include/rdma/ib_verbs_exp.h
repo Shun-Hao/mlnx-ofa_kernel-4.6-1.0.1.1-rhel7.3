@@ -168,6 +168,10 @@ enum ib_exp_device_cap_flags2 {
 				IB_EXP_DEVICE_EC_OFFLOAD,
 };
 
+enum ib_exp_supported_qp_types {
+	IB_EXP_QPT_RAW_PACKET	= 1ULL << 5,
+};
+
 struct ib_exp_rx_hash_caps {
 	uint32_t max_rwq_indirection_tables;
 	uint32_t max_rwq_indirection_table_size;
