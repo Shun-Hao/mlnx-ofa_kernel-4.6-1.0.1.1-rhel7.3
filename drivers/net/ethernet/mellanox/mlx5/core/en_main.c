@@ -537,7 +537,7 @@ static int mlx5e_rx_alloc_page_cache(struct mlx5e_rq *rq,
 	INIT_DELAYED_WORK(&reduce->reduce_work, mlx5e_rx_cache_reduce_work);
 	reduce->delay = msecs_to_jiffies(MLX5E_PAGE_CACHE_REDUCE_WORK_INTERVAL);
 	reduce->graceful_period = msecs_to_jiffies(MLX5E_PAGE_CACHE_REDUCE_GRACE_PERIOD);
-	reduce->next_ts = jiffies + cache->reduce.graceful_period;
+	reduce->next_ts = MAX_JIFFY_OFFSET; /* in init, no reduce is needed */
 
 	return 0;
 
