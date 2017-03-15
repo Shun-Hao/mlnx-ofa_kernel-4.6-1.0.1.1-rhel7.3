@@ -1241,7 +1241,7 @@ static void __ipoib_ib_dev_flush(struct ipoib_dev_priv *priv,
 			return;
 
 		if (netif_queue_stopped(dev))
-			netif_start_queue(dev);
+			netif_tx_start_all_queues(dev);
 	}
 
 	/*
