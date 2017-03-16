@@ -561,7 +561,7 @@ int mlx5_reclaim_startup_pages(struct mlx5_core_dev *dev)
 	WARN(dev->priv.fw_pages,
 	     "FW pages counter is %d after reclaiming all pages\n",
 	     dev->priv.fw_pages);
-	WARN(dev->priv.vfs_pages,
+	WARN(dev->priv.vfs_pages && (dev->state != MLX5_DEVICE_STATE_INTERNAL_ERROR),
 	     "VFs FW pages counter is %d after reclaiming all pages\n",
 	     dev->priv.vfs_pages);
 
