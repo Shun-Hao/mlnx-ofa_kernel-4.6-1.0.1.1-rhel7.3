@@ -8257,7 +8257,10 @@ struct mlx5_ifc_pcam_regs_5000_to_507f_bits {
 	u8         port_access_reg_cap_mask_127_to_96[0x20];
 	u8         port_access_reg_cap_mask_95_to_64[0x20];
 
-	u8         port_access_reg_cap_mask_63_to_36[0x1c];
+	u8         reserved_at_40[0xe];
+	u8         pddr[0x1];
+	u8         reserved_at_4f[0xd];
+
 	u8         pplm[0x1];
 	u8         port_access_reg_cap_mask_34_to_32[0x3];
 
