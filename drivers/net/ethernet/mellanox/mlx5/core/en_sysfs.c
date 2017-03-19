@@ -263,6 +263,30 @@ bad_input:
 static DEVICE_ATTR(lro_timeout, S_IRUGO | S_IWUSR,
 		  mlx5e_show_lro_timeout, mlx5e_store_lro_timeout);
 
+static ssize_t mlx5e_show_link_down_reason(struct device *device,
+					    struct device_attribute *attr,
+					    char *buf)
+{
+	struct mlx5e_priv *priv = netdev_priv(to_net_dev(device));
+	u8 status_message[ETH_GSTRING_LEN];
+	u16 monitor_opcode;
+	int len = 0;
+	int err;
+
+	err = mlx5_query_pddr_troubleshooting_info(priv->mdev, &monitor_opcode,
+						   status_message);
+	if (err)
+		return err;
+
+	len += sprintf(buf + len, "monitor_opcode: %#x\n", monitor_opcode);
+	len += sprintf(buf + len, "status_message: %s\n", status_message);
+
+	return len;
+}
+
+static DEVICE_ATTR(link_down_reason, S_IRUGO,
+		   mlx5e_show_link_down_reason, NULL);
+
 static const char *mlx5e_get_cong_protocol(int protocol)
 {
 	switch (protocol) {
@@ -592,6 +616,7 @@ static struct attribute_group settings_group = {
 
 static struct attribute *mlx5e_debug_group_attrs[] = {
 	&dev_attr_lro_timeout.attr,
+	&dev_attr_link_down_reason.attr,
 	NULL,
 };
 
