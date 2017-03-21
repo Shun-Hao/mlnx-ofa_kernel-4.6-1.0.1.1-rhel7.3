@@ -2635,6 +2635,11 @@ static int mlx4_en_change_mtu(struct net_device *dev, int new_mtu)
 	en_dbg(DRV, priv, "Change MTU called - current:%d new:%d\n",
 		 dev->mtu, new_mtu);
 
+	if ((new_mtu < MLX4_EN_MIN_MTU) || (new_mtu > priv->max_mtu)) {
+		en_err(priv, "Bad MTU size:%d.\n", new_mtu);
+		return -EPERM;
+	}
+
 	if (priv->tx_ring_num[TX_XDP] &&
 	    !mlx4_en_check_xdp_mtu(dev, new_mtu))
 		return -EOPNOTSUPP;

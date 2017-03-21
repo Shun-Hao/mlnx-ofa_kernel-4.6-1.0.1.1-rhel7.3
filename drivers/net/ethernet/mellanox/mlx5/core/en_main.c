@@ -3807,18 +3807,35 @@ static netdev_features_t mlx5e_fix_features(struct net_device *netdev,
 	return features;
 }
 
+#define MXL5_HW_MIN_MTU 64
+#define MXL5E_MIN_MTU (MXL5_HW_MIN_MTU + ETH_FCS_LEN)
+
 int mlx5e_change_mtu(struct net_device *netdev, int new_mtu,
 		     change_hw_mtu_cb set_mtu_cb)
 {
 	struct mlx5e_priv *priv = netdev_priv(netdev);
+	struct mlx5_core_dev *mdev = priv->mdev;
 	struct mlx5e_channels new_channels = {};
 	struct mlx5e_params *params;
+	u16 max_mtu;
+	u16 min_mtu;
 	int err = 0;
 	bool reset;
 
-	mutex_lock(&priv->state_lock);
+	mlx5_query_port_max_mtu(mdev, &max_mtu, 1);
 
 	params = &priv->channels.params;
+	max_mtu = MLX5E_HW2SW_MTU(params, max_mtu);
+	min_mtu = MLX5E_HW2SW_MTU(params, MXL5E_MIN_MTU);
+
+	if (new_mtu > max_mtu || new_mtu < min_mtu) {
+		netdev_err(netdev,
+			   "%s: Bad MTU (%d), valid range is: [%d..%d]\n",
+			   __func__, new_mtu, min_mtu, max_mtu);
+		return -EINVAL;
+	}
+
+	mutex_lock(&priv->state_lock);
 
 	reset = !params->lro_en;
 	reset = reset && test_bit(MLX5E_STATE_OPENED, &priv->state);
