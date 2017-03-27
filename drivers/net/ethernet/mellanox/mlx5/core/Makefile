@@ -53,7 +53,7 @@ mlx5_core-$(CONFIG_MLX5_CORE_IPOIB) += ipoib/ipoib.o ipoib/ethtool.o ipoib/ipoib
 mlx5_core-$(CONFIG_MLX5_ACCEL) += accel/ipsec.o accel/tls.o
 
 mlx5_core-$(CONFIG_MLX5_FPGA) += fpga/cmd.o fpga/core.o fpga/conn.o fpga/sdk.o \
-				 fpga/ipsec.o fpga/tls.o
+		     		fpga/ipsec.o fpga/tls.o fpga/trans.o
 
 mlx5_core-$(CONFIG_MLX5_EN_IPSEC) += en_accel/ipsec.o en_accel/ipsec_rxtx.o \
 				     en_accel/ipsec_stats.o

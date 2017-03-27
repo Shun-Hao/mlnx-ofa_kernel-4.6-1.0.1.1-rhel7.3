@@ -38,6 +38,7 @@
 #include "lib/mlx5.h"
 #include "fpga/core.h"
 #include "fpga/conn.h"
+#include "fpga/trans.h"
 
 static LIST_HEAD(mlx5_fpga_devices);
 static LIST_HEAD(mlx5_fpga_clients);
@@ -187,6 +188,8 @@ int mlx5_fpga_device_start(struct mlx5_core_dev *mdev)
 {
 	struct mlx5_fpga_client_data *client_context;
 	struct mlx5_fpga_device *fdev = mdev->fpga;
+	struct mlx5_fpga_conn_attr conn_attr = {0};
+	struct mlx5_fpga_conn *conn;
 	unsigned int max_num_qps;
 	unsigned long flags;
 	u32 fpga_device_id;
@@ -230,10 +233,30 @@ int mlx5_fpga_device_start(struct mlx5_core_dev *mdev)
 	if (err)
 		goto err_rsvd_gid;
 
+	err = mlx5_fpga_trans_device_init(fdev);
+	if (err) {
+		mlx5_fpga_err(fdev, "Failed to init transaction: %d\n",
+			      err);
+		goto err_conn_init;
+	}
+
+	conn_attr.tx_size = MLX5_FPGA_TID_COUNT;
+	conn_attr.rx_size = MLX5_FPGA_TID_COUNT;
+	conn_attr.recv_cb = mlx5_fpga_trans_recv;
+	conn_attr.cb_arg = fdev;
+	conn = mlx5_fpga_conn_create(fdev, &conn_attr,
+				     MLX5_FPGA_QPC_QP_TYPE_SHELL_QP);
+	if (IS_ERR(conn)) {
+		err = PTR_ERR(conn);
+		mlx5_fpga_err(fdev, "Failed to create shell conn: %d\n", err);
+		goto err_trans;
+	}
+	fdev->shell_conn = conn;
+
 	if (fdev->last_oper_image == MLX5_FPGA_IMAGE_USER) {
 		err = mlx5_fpga_device_brb(fdev);
 		if (err)
-			goto err_conn_init;
+			goto err_shell_conn;
 
 		vid = MLX5_CAP_FPGA(fdev->mdev, ieee_vendor_id);
 		pid = MLX5_CAP_FPGA(fdev->mdev, sandbox_product_id);
@@ -248,6 +271,15 @@ int mlx5_fpga_device_start(struct mlx5_core_dev *mdev)
 	}
 
 	goto out;
+
+err_shell_conn:
+	if (fdev->shell_conn) {
+		mlx5_fpga_conn_destroy(fdev->shell_conn);
+		fdev->shell_conn = NULL;
+	}
+
+err_trans:
+	mlx5_fpga_trans_device_cleanup(fdev);
 
 err_conn_init:
 	mlx5_fpga_conn_device_cleanup(fdev);
@@ -325,6 +357,11 @@ void mlx5_fpga_device_stop(struct mlx5_core_dev *mdev)
 	}
 	mutex_unlock(&mlx5_fpga_mutex);
 
+	if (fdev->shell_conn) {
+		mlx5_fpga_conn_destroy(fdev->shell_conn);
+		fdev->shell_conn = NULL;
+		mlx5_fpga_trans_device_cleanup(fdev);
+	}
 	mlx5_fpga_conn_device_cleanup(fdev);
 	max_num_qps = MLX5_CAP_FPGA(mdev, shell_caps.max_num_qps);
 	mlx5_core_unreserve_gids(mdev, max_num_qps);

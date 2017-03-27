@@ -36,6 +36,7 @@
 #ifdef CONFIG_MLX5_FPGA
 
 #include "fpga/cmd.h"
+#include "fpga/sdk.h"
 
 /* Represents client-specific and Innova device-specific information */
 struct mlx5_fpga_client_data {
@@ -64,6 +65,10 @@ struct mlx5_fpga_device {
 
 	struct list_head list;
 	struct list_head client_data_list;
+
+	/* Shell Transactions state */
+	struct mlx5_fpga_conn *shell_conn;
+	struct mlx5_fpga_trans_device_state *trans;
 };
 
 #define mlx5_fpga_dbg(__adev, format, ...) \

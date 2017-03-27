@@ -168,3 +168,15 @@ int mlx5_fpga_get_sbu_caps(struct mlx5_fpga_device *fdev, int size, void *buf)
 	return mlx5_fpga_sbu_caps(fdev->mdev, buf, size);
 }
 EXPORT_SYMBOL(mlx5_fpga_get_sbu_caps);
+
+u64 mlx5_fpga_ddr_size_get(struct mlx5_fpga_device *fdev)
+{
+	return (u64)MLX5_CAP_FPGA(fdev->mdev, fpga_ddr_size) << 10;
+}
+EXPORT_SYMBOL(mlx5_fpga_ddr_size_get);
+
+u64 mlx5_fpga_ddr_base_get(struct mlx5_fpga_device *fdev)
+{
+	return MLX5_CAP64_FPGA(fdev->mdev, fpga_ddr_start_addr);
+}
+EXPORT_SYMBOL(mlx5_fpga_ddr_base_get);

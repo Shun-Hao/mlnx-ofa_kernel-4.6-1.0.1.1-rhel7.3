@@ -477,6 +477,28 @@ struct mlx5_ifc_ipsec_counters_bits {
 };
 
 enum {
+	MLX5_FPGA_SHELL_QP_PACKET_TYPE_DDR_READ            = 0x0,
+	MLX5_FPGA_SHELL_QP_PACKET_TYPE_DDR_WRITE           = 0x1,
+	MLX5_FPGA_SHELL_QP_PACKET_TYPE_DDR_READ_RESPONSE   = 0x2,
+	MLX5_FPGA_SHELL_QP_PACKET_TYPE_DDR_WRITE_RESPONSE  = 0x3,
+};
+
+struct mlx5_ifc_fpga_shell_qp_packet_bits {
+	u8         version[0x4];
+	u8         syndrome[0x4];
+	u8         reserved_at_8[0x4];
+	u8         type[0x4];
+	u8         reserved_at_10[0x8];
+	u8         tid[0x8];
+
+	u8         len[0x20];
+
+	u8         address[0x40];
+
+	u8         data[0][0x8];
+};
+
+enum {
 	MLX5_FPGA_QP_ERROR_EVENT_SYNDROME_RETRY_COUNTER_EXPIRED  = 0x1,
 	MLX5_FPGA_QP_ERROR_EVENT_SYNDROME_RNR_EXPIRED            = 0x2,
 };

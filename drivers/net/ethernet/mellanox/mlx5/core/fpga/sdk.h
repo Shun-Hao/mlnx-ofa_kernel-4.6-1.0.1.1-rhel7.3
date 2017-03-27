@@ -259,4 +259,19 @@ int mlx5_fpga_mem_write(struct mlx5_fpga_device *fdev, size_t size, u64 addr,
  */
 int mlx5_fpga_get_sbu_caps(struct mlx5_fpga_device *fdev, int size, void *buf);
 
+/**
+ * mlx5_fpga_ddr_size_get() - Retrieve the size of FPGA DDR
+ * @fdev: The FPGA device
+ *
+ * Return: Size of DDR avaailable for FPGA, in bytes
+ */
+u64 mlx5_fpga_ddr_size_get(struct mlx5_fpga_device *fdev);
+
+/**
+ * mlx5_fpga_ddr_base_get() - Retrieve the base address of FPGA DDR
+ * @fdev: The FPGA device
+ *
+ * Return: Base address of DDR in FPGA address space
+ */
+u64 mlx5_fpga_ddr_base_get(struct mlx5_fpga_device *fdev);
 #endif /* MLX5_FPGA_SDK_H */
