@@ -66,7 +66,7 @@ static int get_user_data(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 	}
 	if ((is_exp) &&
 	    ((ucmd->size_of_prefix > sizeof(struct mlx5_ib_create_qp)) ||
-	     (ucmd->exp.comp_mask >= MLX5_EXP_CREATE_QP_MASK_RESERVED))) {
+	     (ucmd->exp.comp_mask >= MLX5_EXP_CREATE_QP_MASK_RESERVED) || ucmd->exp.reserved != 0)) {
 		mlx5_ib_dbg(dev, "Unrecognized driver data\n");
 		return -EINVAL;
 	}
@@ -2010,7 +2010,8 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 			qp->flags_en |= MLX5_QP_FLAG_TIR_ALLOW_SELF_LB_MC;
 		}
 
-		if (init_attr->create_flags & IB_QP_CREATE_SOURCE_QPN) {
+		if (init_attr->create_flags & IB_QP_CREATE_SOURCE_QPN ||
+		    (is_exp && ucmd.exp.comp_mask & MLX5_EXP_CREATE_QP_MASK_ASSOC_QPN)) {
 			if (init_attr->qp_type != IB_QPT_UD ||
 			    (MLX5_CAP_GEN(dev->mdev, port_type) !=
 			     MLX5_CAP_PORT_TYPE_IB) ||
@@ -2020,7 +2021,10 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 			}
 
 			qp->flags |= MLX5_IB_QP_UNDERLAY;
-			qp->underlay_qpn = init_attr->source_qpn;
+			if (is_exp)
+				qp->underlay_qpn = ucmd.exp.associated_qpn;
+			else
+				qp->underlay_qpn = init_attr->source_qpn;
 		}
 	} else {
 		qp->wq_sig = !!wq_signature;

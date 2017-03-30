@@ -127,7 +127,8 @@ enum mlx5_exp_ib_create_qp_mask {
 	MLX5_EXP_CREATE_QP_MASK_SQ_BUFF_ADD	= 1 << 1,
 	MLX5_EXP_CREATE_QP_MASK_WC_UAR_IDX	= 1 << 2,
 	MLX5_EXP_CREATE_QP_MASK_FLAGS_IDX	= 1 << 3,
-	MLX5_EXP_CREATE_QP_MASK_RESERVED	= 1 << 4,
+	MLX5_EXP_CREATE_QP_MASK_ASSOC_QPN	= 1 << 4,
+	MLX5_EXP_CREATE_QP_MASK_RESERVED	= 1 << 5,
 };
 
 struct mlx5_exp_ib_create_qp_data {
@@ -136,6 +137,8 @@ struct mlx5_exp_ib_create_qp_data {
 	__u64	sq_buf_addr;
 	__u32   wc_uar_index;
 	__u32   flags; /* use mlx5_exp_create_qp_flags */
+	__u32  associated_qpn;
+	__u32  reserved;
 };
 
 struct mlx5_exp_ib_create_qp {
