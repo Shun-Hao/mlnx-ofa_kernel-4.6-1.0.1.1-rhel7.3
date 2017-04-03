@@ -46,6 +46,13 @@
 #include "uverbs_exp.h"
 #include "core_priv.h"
 
+int ib_uverbs_exp_create_flow(struct ib_uverbs_file *file,
+			      struct ib_udata *ucore,
+			      struct ib_udata *uhw)
+{
+	return ib_uverbs_create_flow_common(file, file->ucontext->device, ucore, uhw, true);
+}
+
 int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
 			    struct ib_udata *ucore, struct ib_udata *uhw)
 {

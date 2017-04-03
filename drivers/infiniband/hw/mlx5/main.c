@@ -5792,7 +5792,8 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_QP)	|
 		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_CQ)	|
 		(1ull << IB_USER_VERBS_EXP_CMD_REG_MR)		|
-		(1ull << IB_USER_VERBS_EXP_CMD_MODIFY_QP);
+		(1ull << IB_USER_VERBS_EXP_CMD_MODIFY_QP)	|
+		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_FLOW);
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	dev->ib_dev.uverbs_exp_cmd_mask |=

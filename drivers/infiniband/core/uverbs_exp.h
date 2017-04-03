@@ -37,6 +37,7 @@ IB_UVERBS_DECLARE_EXP_CMD(query_dct);
 IB_UVERBS_DECLARE_EXP_CMD(arm_dct);
 IB_UVERBS_DECLARE_EXP_CMD(create_mr);
 IB_UVERBS_DECLARE_EXP_CMD(prefetch_mr);
+IB_UVERBS_DECLARE_EXP_CMD(create_flow);
 
 unsigned long ib_uverbs_exp_get_unmapped_area(struct file *filp,
 					      unsigned long addr,
@@ -51,4 +52,9 @@ void ib_uverbs_async_handler(struct ib_uverbs_file *file,
 			     u32 *counter);
 void ib_uverbs_dct_event_handler(struct ib_event *event, void *context_ptr);
 
+int ib_uverbs_create_flow_common(struct ib_uverbs_file *file,
+				 struct ib_device *ib_dev,
+				 struct ib_udata *ucore,
+				 struct ib_udata *uhw,
+				 bool is_exp);
 #endif

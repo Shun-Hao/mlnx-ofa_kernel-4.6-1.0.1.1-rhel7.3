@@ -152,6 +152,7 @@ static int (*uverbs_exp_cmd_table[])(struct ib_uverbs_file *file,
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	[IB_USER_VERBS_EXP_CMD_PREFETCH_MR]     = ib_uverbs_exp_prefetch_mr,
 #endif
+	[IB_USER_VERBS_EXP_CMD_CREATE_FLOW]	= ib_uverbs_exp_create_flow,
 };
 
 static void ib_uverbs_add_one(struct ib_device *device);
