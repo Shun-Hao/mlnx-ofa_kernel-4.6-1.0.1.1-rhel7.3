@@ -283,6 +283,15 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 				IB_EXP_DEVICE_SCATTER_FCS;
 	}
 
+	if (MLX5_CAP_GEN(dev->mdev, ipoib_enhanced_offloads)) {
+		if (MLX5_CAP_IPOIB_ENHANCED(dev->mdev, csum_cap)) {
+			props->device_cap_flags2 |=
+				IB_EXP_DEVICE_RX_CSUM_IP_PKT |
+				IB_EXP_DEVICE_RX_CSUM_TCP_UDP_PKT |
+				IB_EXP_DEVICE_RX_TCP_UDP_PKT_TYPE;
+		}
+	}
+
 	props->rx_pad_end_addr_align = MLX5_ADDR_ALIGN_0;
 	if (MLX5_CAP_GEN(dev->mdev, end_pad)) {
 		if (MLX5_CAP_GEN(dev->mdev, cache_line_128byte) &&
