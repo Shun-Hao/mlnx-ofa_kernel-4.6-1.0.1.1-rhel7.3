@@ -1094,7 +1094,7 @@ enum mlx5_cap_type {
 	MLX5_CAP_VECTOR_CALC,
 	MLX5_CAP_QOS,
 	MLX5_CAP_DEBUG,
-	MLX5_CAP_RESERVED_14,
+	MLX5_CAP_NVMF,
 	MLX5_CAP_DEV_MEM,
 	/* NUM OF CAP Types */
 	MLX5_CAP_NUM
@@ -1234,6 +1234,9 @@ enum mlx5_qcam_feature_groups {
 
 #define MLX5_CAP_DEBUG(mdev, cap)\
 	MLX5_GET(debug_cap, mdev->caps.hca_cur[MLX5_CAP_DEBUG], cap)
+
+#define MLX5_CAP_NVMF(mdev, cap)\
+	MLX5_GET(nvmf_cap, mdev->caps.hca_cur[MLX5_CAP_NVMF], cap)
 
 #define MLX5_CAP_PCAM_FEATURE(mdev, fld) \
 	MLX5_GET(pcam_reg, (mdev)->caps.pcam, feature_cap_mask.enhanced_features.fld)
