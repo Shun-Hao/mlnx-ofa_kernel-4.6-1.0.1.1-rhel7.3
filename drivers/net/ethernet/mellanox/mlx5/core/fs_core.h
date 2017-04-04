@@ -116,6 +116,10 @@ struct mlx5_flow_rule {
 	 */
 	struct list_head			next_ft;
 	u32					sw_action;
+	/* Increased when user (sniffer) calls to mlx5_get_flow_rule */
+	atomic_t				users_refcount;
+	/* Completed when users_refcount is decremented to zero */
+	struct completion			complete;
 };
 
 struct mlx5_flow_handle {

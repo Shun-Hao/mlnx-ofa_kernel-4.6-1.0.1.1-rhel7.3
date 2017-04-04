@@ -317,6 +317,27 @@ static int tree_remove_node(struct fs_node *node)
 	return 0;
 }
 
+static void tree_force_remove_node(struct fs_node *node)
+{
+	struct fs_node *parent_node = node->parent;
+
+	if (node->del_hw_func)
+		node->del_hw_func(node);
+	if (parent_node) {
+		/* Only root namespace doesn't have parent and we just
+		 * need to free its node.
+		 */
+		down_write_ref_node(parent_node);
+		list_del_init(&node->list);
+		if (node->del_sw_func)
+			node->del_sw_func(node);
+		up_write_ref_node(parent_node);
+	} else {
+		kfree(node);
+	}
+	node = NULL;
+}
+
 static struct fs_prio *find_prio(struct mlx5_flow_namespace *ns,
 				 unsigned int prio)
 {
@@ -1138,6 +1159,8 @@ static struct mlx5_flow_rule *alloc_rule(struct mlx5_flow_destination *dest)
 		return NULL;
 
 	INIT_LIST_HEAD(&rule->next_ft);
+	atomic_set(&rule->users_refcount, 1);
+	init_completion(&rule->complete);
 	rule->node.type = FS_TYPE_FLOW_DEST;
 	if (dest)
 		memcpy(&rule->dest_attr, dest, sizeof(*dest));
@@ -1859,10 +1882,16 @@ EXPORT_SYMBOL(mlx5_add_flow_rules);
 
 void mlx5_del_flow_rules(struct mlx5_flow_handle *handle)
 {
+	struct mlx5_flow_rule *rule;
 	int i;
 
-	for (i = handle->num_rules - 1; i >= 0; i--)
-		tree_remove_node(&handle->rule[i]->node);
+	for (i = handle->num_rules - 1; i >= 0; i--) {
+		rule = handle->rule[i];
+		if (atomic_dec_and_test(&rule->users_refcount))
+			complete(&rule->complete);
+		wait_for_completion(&rule->complete);
+		tree_remove_node(&rule->node);
+	}
 	kfree(handle);
 }
 EXPORT_SYMBOL(mlx5_del_flow_rules);
@@ -2361,7 +2390,7 @@ static void clean_tree(struct fs_node *node)
 		list_for_each_entry_safe(iter, temp, &node->children, list)
 			clean_tree(iter);
 		tree_put_node(node);
-		tree_remove_node(node);
+		tree_force_remove_node(node);
 	}
 }
 
@@ -2773,3 +2802,14 @@ out:
 	return err;
 }
 EXPORT_SYMBOL(mlx5_fs_remove_rx_underlay_qpn);
+
+void mlx5_get_flow_rule(struct mlx5_flow_rule *rule)
+{
+	atomic_inc(&rule->users_refcount);
+}
+
+void mlx5_put_flow_rule(struct mlx5_flow_rule *rule)
+{
+	if (atomic_dec_and_test(&rule->users_refcount))
+		complete(&rule->complete);
+}
