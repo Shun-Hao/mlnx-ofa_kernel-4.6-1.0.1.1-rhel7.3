@@ -13,6 +13,9 @@
  * See the GNU General Public License for more details, a copy of which
  * can be found in the file COPYING included with this package
  */
+#ifdef pr_fmt
+#undef pr_fmt
+#endif
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/module.h>
 #include <linux/parser.h>

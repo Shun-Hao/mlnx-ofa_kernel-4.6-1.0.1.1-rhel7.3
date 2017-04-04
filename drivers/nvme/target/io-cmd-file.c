@@ -4,6 +4,9 @@
  * Copyright (c) 2017-2018 Western Digital Corporation or its
  * affiliates.
  */
+#ifdef pr_fmt
+#undef pr_fmt
+#endif
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/uio.h>
 #include <linux/falloc.h>

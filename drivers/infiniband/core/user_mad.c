@@ -33,6 +33,9 @@
  * SOFTWARE.
  */
 
+#ifdef pr_fmt
+#undef pr_fmt
+#endif
 #define pr_fmt(fmt) "user_mad: " fmt
 
 #include <linux/module.h>
