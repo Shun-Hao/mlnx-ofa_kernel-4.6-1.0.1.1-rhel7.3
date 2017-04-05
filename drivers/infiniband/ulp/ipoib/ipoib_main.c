@@ -2363,7 +2363,7 @@ static ssize_t ipoib_set_mac_using_sysfs(struct device *dev,
 					 struct device_attribute *attr,
 					 const char *buf, size_t count)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(to_net_dev(dev));
+	struct ipoib_dev_priv *priv = ipoib_priv(to_net_dev(dev));
 	union ib_gid gid;
 
 	if (!in6_pton(buf, count, gid.raw, -1, NULL))

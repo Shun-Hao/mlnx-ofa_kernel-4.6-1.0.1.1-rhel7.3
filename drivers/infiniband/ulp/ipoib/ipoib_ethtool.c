@@ -115,7 +115,7 @@ static int ipoib_set_coalesce(struct net_device *dev,
 
 static int ipoib_get_settings(struct net_device *dev, struct ethtool_cmd *ecmd)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ib_port_attr attr;
 	char *speed = "";
 	int rate;/* in deci-Gb/sec */
