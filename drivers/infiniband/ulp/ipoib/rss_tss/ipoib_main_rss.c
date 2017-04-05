@@ -34,7 +34,7 @@
 
 int ipoib_set_mode_rss(struct net_device *dev, const char *buf)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_send_ring *send_ring;
 	int i;
 
@@ -85,7 +85,7 @@ static u16 ipoib_select_queue_sw_rss(struct net_device *dev, struct sk_buff *skb
 				     void *accel_priv,
 				     select_queue_fallback_t fallback)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_pseudo_header *phdr;
 	struct ipoib_header *header;
 
@@ -124,7 +124,7 @@ static u16 ipoib_select_queue_sw_rss(struct net_device *dev, struct sk_buff *skb
 
 static void ipoib_timeout_rss(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_send_ring *send_ring;
 	u16 index;
 
@@ -144,7 +144,7 @@ static void ipoib_timeout_rss(struct net_device *dev)
 
 static struct net_device_stats *ipoib_get_stats_rss(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct net_device_stats *stats = &dev->stats;
 	struct net_device_stats local_stats;
 	int i;
@@ -183,7 +183,7 @@ static struct net_device_stats *ipoib_get_stats_rss(struct net_device *dev)
 static struct ipoib_neigh *ipoib_neigh_ctor_rss(u8 *daddr,
 						struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_neigh *neigh;
 
 	neigh = kzalloc(sizeof *neigh, GFP_ATOMIC);
@@ -214,7 +214,7 @@ static struct ipoib_neigh *ipoib_neigh_ctor_rss(u8 *daddr,
 
 int ipoib_dev_init_rss(struct net_device *dev, struct ib_device *ca, int port)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_send_ring *send_ring;
 	struct ipoib_recv_ring *recv_ring;
 	int i, rx_allocated, tx_allocated;
@@ -305,7 +305,7 @@ out:
 
 void ipoib_dev_cleanup_rss(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev), *cpriv, *tcpriv;
+	struct ipoib_dev_priv *priv = ipoib_priv(dev), *cpriv, *tcpriv;
 	int i;
 	LIST_HEAD(head);
 
@@ -343,7 +343,7 @@ void ipoib_dev_cleanup_rss(struct net_device *dev)
 
 static int ipoib_start_xmit_rss(struct sk_buff *skb, struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_neigh *neigh;
 	struct ipoib_pseudo_header *phdr;
 	struct ipoib_header *header;

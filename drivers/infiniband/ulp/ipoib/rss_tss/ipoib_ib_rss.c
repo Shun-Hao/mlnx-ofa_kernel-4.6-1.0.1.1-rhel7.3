@@ -36,7 +36,7 @@
 static int ipoib_ib_post_receive_rss(struct net_device *dev,
 				     struct ipoib_recv_ring *recv_ring, int id)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ib_recv_wr *bad_wr;
 	int ret;
 
@@ -59,7 +59,7 @@ static struct sk_buff *ipoib_alloc_rx_skb_rss(struct net_device *dev,
 					      struct ipoib_recv_ring *recv_ring,
 					      int id)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct sk_buff *skb;
 	int buf_size;
 	u64 *mapping;
@@ -92,7 +92,7 @@ error:
 static int ipoib_ib_post_ring_receives_rss(struct net_device *dev,
 					   struct ipoib_recv_ring *recv_ring)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	int i;
 
 	for (i = 0; i < ipoib_recvq_size; ++i) {
@@ -115,7 +115,7 @@ static int ipoib_ib_post_ring_receives_rss(struct net_device *dev,
 
 static int ipoib_ib_post_receives_rss(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_recv_ring *recv_ring;
 	int err;
 	int i;
@@ -135,7 +135,7 @@ static void ipoib_ib_handle_rx_wc_rss(struct net_device *dev,
 				      struct ipoib_recv_ring *recv_ring,
 				      struct ib_wc *wc)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	unsigned int wr_id = wc->wr_id & ~IPOIB_OP_RECV;
 	struct sk_buff *skb;
 	u64 mapping[IPOIB_UD_RX_SG];
@@ -243,7 +243,7 @@ static void ipoib_ib_handle_tx_wc_rss(struct ipoib_send_ring *send_ring,
 				      struct ib_wc *wc)
 {
 	struct net_device *dev = send_ring->dev;
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	unsigned int wr_id = wc->wr_id;
 	struct ipoib_tx_buf *tx_req;
 	struct ipoib_ah *ah;
@@ -417,7 +417,7 @@ static inline int post_send_rss(struct ipoib_send_ring *send_ring,
 void ipoib_send_rss(struct net_device *dev, struct sk_buff *skb,
 		    struct ipoib_ah *address, u32 qpn)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_tx_buf *tx_req;
 	struct ipoib_send_ring *send_ring;
 	u16 queue_index;
@@ -536,7 +536,7 @@ static void ipoib_ib_tx_timer_func_rss(unsigned long ctx)
 
 static void ipoib_napi_enable(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_recv_ring *recv_ring;
 	int i;
 
@@ -551,7 +551,7 @@ static void ipoib_napi_enable(struct net_device *dev)
 
 static void ipoib_napi_disable(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	int i;
 
 	for (i = 0; i < priv->num_rx_queues; i++)
@@ -560,7 +560,7 @@ static void ipoib_napi_disable(struct net_device *dev)
 
 int ipoib_ib_dev_open_rss(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	int ret;
 
 	ipoib_pkey_dev_check_presence(dev);
@@ -606,7 +606,7 @@ dev_stop:
 
 static int recvs_pending_rss(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_recv_ring *recv_ring;
 	int pending = 0;
 	int i, j;
@@ -625,7 +625,7 @@ static int recvs_pending_rss(struct net_device *dev)
 
 static int sends_pending_rss(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_send_ring *send_ring;
 	int pending = 0;
 	int i;
@@ -715,7 +715,7 @@ static void drain_tx_rings(struct ipoib_dev_priv *priv)
 
 void ipoib_drain_cq_rss(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 
 	drain_rx_rings(priv);
 
@@ -834,7 +834,7 @@ static void set_rings_qp_state(struct ipoib_dev_priv *priv,
 
 int ipoib_ib_dev_stop_rss(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	unsigned long begin;
 	struct ipoib_recv_ring *recv_ring;
 	int i;
@@ -892,7 +892,7 @@ timeout:
 
 int ipoib_ib_dev_init_rss(struct net_device *dev, struct ib_device *ca, int port)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 
 	priv->ca = ca;
 	priv->port = port;

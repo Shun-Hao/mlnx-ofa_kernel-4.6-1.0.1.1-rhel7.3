@@ -60,7 +60,7 @@ static int set_qps_qkey_rss(struct ipoib_dev_priv *priv)
 
 int ipoib_mcast_attach_rss(struct net_device *dev, u16 mlid, union ib_gid *mgid, int set_qkey)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ib_qp_attr *qp_attr = NULL;
 	int ret;
 	u16 pkey_index;
@@ -142,7 +142,7 @@ out_fail:
 
 static int ipoib_init_rss_qps(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_recv_ring *recv_ring;
 	struct ib_qp_attr qp_attr;
 	int i;
@@ -176,7 +176,7 @@ out_free_reset_qp:
 
 static int ipoib_init_tss_qps(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_send_ring *send_ring;
 	struct ib_qp_attr qp_attr;
 	int i;
@@ -214,7 +214,7 @@ out_free_reset_qp:
 
 int ipoib_init_qp_rss(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ib_qp_attr qp_attr;
 	int ret, i, attr;
 
@@ -267,7 +267,7 @@ out_reset_tss_qp:
 static int ipoib_transport_cq_init_rss(struct net_device *dev,
 				       int size)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_recv_ring *recv_ring;
 	struct ipoib_send_ring *send_ring;
 	struct ib_cq *cq;
@@ -348,7 +348,7 @@ out_free_recv_cqs:
 static int ipoib_create_parent_qp(struct net_device *dev,
 				  struct ib_device *ca)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ib_exp_qp_init_attr init_attr = {
 		.sq_sig_type = IB_SIGNAL_ALL_WR,
 		.qp_type     = IB_EXP_UD_RSS_TSS
@@ -427,7 +427,7 @@ static struct ib_qp *ipoib_create_tss_qp(struct net_device *dev,
 					 struct ib_device *ca,
 					 int ind)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ib_exp_qp_init_attr init_attr = {
 		.cap = {
 			.max_send_wr  = ipoib_sendq_size,
@@ -464,7 +464,7 @@ static struct ib_qp *ipoib_create_rss_qp(struct net_device *dev,
 					 struct ib_device *ca,
 					 int ind)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ib_exp_qp_init_attr init_attr = {
 		.cap = {
 			.max_recv_wr  = ipoib_recvq_size,
@@ -492,7 +492,7 @@ static struct ib_qp *ipoib_create_rss_qp(struct net_device *dev,
 static int ipoib_create_other_qps(struct net_device *dev,
 				  struct ib_device *ca)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_send_ring *send_ring;
 	struct ipoib_recv_ring *recv_ring;
 	int i, rss_created, tss_created;
@@ -545,7 +545,7 @@ out_free_send_qp:
 
 int ipoib_transport_dev_init_rss(struct net_device *dev, struct ib_device *ca)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_send_ring *send_ring;
 	struct ipoib_recv_ring *recv_ring, *first_recv_ring;
 	int ret, size;
@@ -682,7 +682,7 @@ out_free_pd:
 
 static void ipoib_destroy_tx_qps(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_send_ring *send_ring;
 	int i;
 
@@ -709,7 +709,7 @@ static void ipoib_destroy_tx_qps(struct net_device *dev)
 
 static void ipoib_destroy_rx_qps(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_recv_ring *recv_ring;
 	int i;
 
@@ -729,7 +729,7 @@ static void ipoib_destroy_rx_qps(struct net_device *dev)
 
 static void ipoib_destroy_tx_cqs(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_send_ring *send_ring;
 	int i;
 
@@ -749,7 +749,7 @@ static void ipoib_destroy_tx_cqs(struct net_device *dev)
 
 static void ipoib_destroy_rx_cqs(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_recv_ring *recv_ring;
 	int i;
 
@@ -769,7 +769,7 @@ static void ipoib_destroy_rx_cqs(struct net_device *dev)
 
 void ipoib_transport_dev_cleanup_rss(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = netdev_priv(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	int ret;
 
 	ipoib_destroy_rx_qps(dev);
