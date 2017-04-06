@@ -36,6 +36,7 @@
 #include <linux/etherdevice.h>
 #include <linux/timecounter.h>
 #include <linux/net_tstamp.h>
+#include <linux/hashtable.h>
 #include <linux/ptp_clock_kernel.h>
 #include <linux/crash_dump.h>
 #include <linux/mlx5/driver.h>
@@ -381,6 +382,15 @@ struct mlx5e_sq_wqe_info {
 	u8  opcode;
 };
 
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+struct mlx5e_sq_flow_map {
+	struct hlist_node hlist;
+	u32               dst_ip;
+	u16               dst_port;
+	u16               queue_index;
+};
+#endif
+
 struct mlx5e_txqsq {
 	/* data path */
 
@@ -422,6 +432,9 @@ struct mlx5e_txqsq {
 		struct work_struct         recover_work;
 		u64                        last_recover;
 	} recover;
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+	struct mlx5e_sq_flow_map   flow_map;
+#endif
 } ____cacheline_aligned_in_smp;
 
 struct mlx5e_dma_info {
@@ -752,6 +765,9 @@ struct mlx5e_priv {
 	/* priv data path fields - start */
 	struct mlx5e_txqsq *txq2sq[MLX5E_MAX_NUM_CHANNELS * MLX5E_MAX_NUM_TC + MLX5E_MAX_RL_QUEUES];
 	int channel_tc2txq[MLX5E_MAX_NUM_CHANNELS][MLX5E_MAX_NUM_TC];
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+	DECLARE_HASHTABLE(flow_map_hash, ilog2(MLX5E_MAX_RL_QUEUES));
+#endif
 #ifdef CONFIG_MLX5_CORE_EN_DCB
 	struct mlx5e_dcbx_dp       dcbx_dp;
 #endif
@@ -873,6 +889,11 @@ void mlx5e_update_stats(struct mlx5e_priv *priv);
 
 int mlx5e_sysfs_create(struct net_device *dev);
 void mlx5e_sysfs_remove(struct net_device *dev);
+
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+int mlx5e_rl_init_sysfs(struct net_device *netdev, struct mlx5e_params params);
+void mlx5e_rl_remove_sysfs(struct net_device *netdev);
+#endif
 
 int mlx5e_setup_tc_mqprio(struct net_device *netdev,
 			  struct tc_mqprio_qopt *mqprio);
