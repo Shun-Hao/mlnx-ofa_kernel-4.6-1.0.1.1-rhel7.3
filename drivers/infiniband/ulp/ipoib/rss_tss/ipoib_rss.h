@@ -134,46 +134,33 @@ struct ipoib_func_pointers {
 
 	struct ib_qp * (*ipoib_cm_create_tx_qp)(struct net_device *dev, struct ipoib_cm_tx *tx);
 
+	void (*ipoib_cm_send)(struct net_device *dev, struct sk_buff *skb, struct ipoib_cm_tx *tx);
+
 	/* ipoib_main pointers */
 	int (*ipoib_set_mode)(struct net_device *dev, const char *buf);
 
 	struct ipoib_neigh * (*ipoib_neigh_ctor)(u8 *daddr, struct net_device *dev);
-
-	int (*ipoib_dev_init)(struct net_device *dev, struct ib_device *ca, int port);
 
 	void (*ipoib_dev_cleanup)(struct net_device *dev);
 
 	/* ipoib_ib pointers */
 	void (*ipoib_drain_cq)(struct net_device *dev);
 
-	int (*ipoib_ib_dev_stop)(struct net_device *dev);
-
-	int (*ipoib_ib_dev_open)(struct net_device *dev);
-
-	void (*ipoib_send)(struct net_device *dev, struct sk_buff *skb,
-			   struct ipoib_ah *address, u32 qpn);
-
-	/* ipoib_verbs */
-	void (*ipoib_transport_dev_cleanup)(struct net_device *dev);
-
-	int (*ipoib_mcast_attach)(struct net_device *dev, u16 mlid, union ib_gid *mgid, int set_qkey);
+	void (*__ipoib_reap_ah)(struct net_device *dev);
 };
 
 int ipoib_ib_dev_init_rss(struct net_device *dev, struct ib_device *ca, int port);
 void ipoib_send_comp_handler_rss(struct ib_cq *cq, void *ctx_ptr);
 
-int ipoib_ib_dev_open_rss(struct net_device *dev);
-int ipoib_ib_dev_stop_rss(struct net_device *dev);
-
-int ipoib_mcast_attach_rss(struct net_device *dev, u16 mlid,
-			   union ib_gid *mgid, int set_qkey);
+int ipoib_mcast_attach_rss(struct net_device *dev, struct ib_device *hca,
+			   union ib_gid *mgid, u16 mlid, int set_qkey, u32 qkey);
 
 int ipoib_init_qp_rss(struct net_device *dev);
 int ipoib_transport_dev_init_rss(struct net_device *dev, struct ib_device *ca);
 void ipoib_transport_dev_cleanup_rss(struct net_device *dev);
 
-void ipoib_send_rss(struct net_device *dev, struct sk_buff *skb,
-		    struct ipoib_ah *address, u32 qpn);
+int ipoib_send_rss(struct net_device *dev, struct sk_buff *skb,
+		   struct ib_ah *address, u32 dqpn);
 
 void ipoib_ib_completion_rss(struct ib_cq *cq, void *ctx_ptr);
 
@@ -185,14 +172,23 @@ void ipoib_ib_completion_rss(struct ib_cq *cq, void *ctx_ptr);
 void ipoib_cm_rss_init_fp(struct ipoib_dev_priv *priv);
 void ipoib_main_rss_init_fp(struct ipoib_dev_priv *priv);
 void ipoib_ib_rss_init_fp(struct ipoib_dev_priv *priv);
-void ipoib_multicast_rss_init_fp(struct ipoib_dev_priv *priv);
-void ipoib_verbs_rss_init_fp(struct ipoib_dev_priv *priv);
 
 void ipoib_select_netdev_ops(struct ipoib_dev_priv *priv);
 const struct net_device_ops *ipoib_get_netdev_ops(void);
 
 void ipoib_select_ethtool_ops(struct ipoib_dev_priv *priv);
 const struct ethtool_ops *ipoib_get_ethtool_ops(void);
+
+struct net_device *ipoib_create_netdev_default_rss(struct ib_device *hca,
+						   const char *name,
+						   void (*setup)(struct net_device *),
+						   struct ipoib_dev_priv *temp_priv);
+
+int ipoib_ib_dev_open_default_rss(struct net_device *dev);
+int ipoib_ib_dev_stop_default_rss(struct net_device *dev);
+
+void set_tx_poll_timers(struct ipoib_dev_priv *priv);
+void del_tx_poll_timers(struct ipoib_dev_priv *priv);
 
 #ifdef CONFIG_INFINIBAND_IPOIB_CM
 

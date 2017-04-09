@@ -58,7 +58,8 @@ static int set_qps_qkey_rss(struct ipoib_dev_priv *priv)
 	return ret;
 }
 
-int ipoib_mcast_attach_rss(struct net_device *dev, u16 mlid, union ib_gid *mgid, int set_qkey)
+int ipoib_mcast_attach_rss(struct net_device *dev, struct ib_device *hca,
+			   union ib_gid *mgid, u16 mlid, int set_qkey, u32 qkey)
 {
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ib_qp_attr *qp_attr = NULL;
@@ -247,18 +248,18 @@ out_reset_rss_qp:
 	for (i = 0; i < priv->rss_qp_num; i++) {
 		qp_attr.qp_state = IB_QPS_RESET;
 		if (ib_modify_qp(priv->recv_ring[i].recv_qp,
-				&qp_attr, IB_QP_STATE))
+				 &qp_attr, IB_QP_STATE))
 			ipoib_warn(priv,
-				"Failed to modify QP to RESET state\n");
+				   "Failed to modify QP to RESET state\n");
 	}
 
 out_reset_tss_qp:
 	for (i = 0; i < priv->tss_qp_num; i++) {
 		qp_attr.qp_state = IB_QPS_RESET;
 		if (ib_modify_qp(priv->send_ring[i].send_qp,
-				&qp_attr, IB_QP_STATE))
+				 &qp_attr, IB_QP_STATE))
 			ipoib_warn(priv,
-				"Failed to modify QP to RESET state\n");
+				   "Failed to modify QP to RESET state\n");
 	}
 
 	return ret;
@@ -557,22 +558,6 @@ int ipoib_transport_dev_init_rss(struct net_device *dev, struct ib_device *ca)
 	priv->max_send_sge = min_t(u32, priv->ca->attrs.max_sge,
 				   MAX_SKB_FRAGS + 1);
 
-	priv->pd = ib_alloc_pd(priv->ca, 0);
-	if (IS_ERR(priv->pd)) {
-		printk(KERN_WARNING "%s: failed to allocate PD\n", ca->name);
-		return -ENODEV;
-	}
-
-	/*
-	 * the various IPoIB tasks assume they will never race against
-	 * themselves, so always use a single thread workqueue
-	 */
-	priv->wq = alloc_ordered_workqueue("ipoib_wq", WQ_MEM_RECLAIM);
-	if (!priv->wq) {
-		printk(KERN_WARNING "ipoib: failed to allocate device WQ\n");
-		goto out_free_pd;
-	}
-
 	size = ipoib_recvq_size + 1;
 	ret = ipoib_cm_dev_init(dev);
 	if (!ret) {
@@ -583,7 +568,7 @@ int ipoib_transport_dev_init_rss(struct net_device *dev, struct ib_device *ca)
 			size += ipoib_recvq_size * ipoib_max_conn_qp;
 	} else
 		if (ret != -ENOSYS)
-			goto out_free_wq;
+			return -ENODEV;
 
 	/* Create CQ(s) */
 	ret = ipoib_transport_cq_init_rss(dev, size);
@@ -601,17 +586,6 @@ int ipoib_transport_dev_init_rss(struct net_device *dev, struct ib_device *ca)
 			printk(KERN_ERR "IPoIB ERROR - check send_queue_size module parameter\n");
 		goto out_free_cqs;
 	}
-
-	/*
-	* advertise that we are willing to accept from TSS sender
-	* note that this only indicates that this side is willing to accept
-	* TSS frames, it doesn't implies that it will use TSS since for
-	* transmission the peer should advertise TSS as well
-	*/
-	priv->dev->dev_addr[0] |= IPOIB_FLAGS_TSS;
-	priv->dev->dev_addr[1] = (priv->qp->qp_num >> 16) & 0xff;
-	priv->dev->dev_addr[2] = (priv->qp->qp_num >>  8) & 0xff;
-	priv->dev->dev_addr[3] = (priv->qp->qp_num      ) & 0xff;
 
 	/* create TSS & RSS QPs */
 	ret = ipoib_create_other_qps(dev, ca);
@@ -669,13 +643,6 @@ out_free_cqs:
 
 out_cm_dev_cleanup:
 	ipoib_cm_dev_cleanup(dev);
-
-out_free_wq:
-	destroy_workqueue(priv->wq);
-	priv->wq = NULL;
-
-out_free_pd:
-	ib_dealloc_pd(priv->pd);
 
 	return -ENODEV;
 }
@@ -783,30 +750,8 @@ void ipoib_transport_dev_cleanup_rss(struct net_device *dev)
 				   ret);
 
 		priv->qp = NULL;
-		clear_bit(IPOIB_PKEY_ASSIGNED, &priv->flags);
 	}
 
 	ipoib_destroy_rx_cqs(dev);
 	ipoib_destroy_tx_cqs(dev);
-
-	ipoib_cm_dev_cleanup(dev);
-
-	if (priv->wq) {
-		flush_workqueue(priv->wq);
-		destroy_workqueue(priv->wq);
-		priv->wq = NULL;
-	}
-
-	ib_dealloc_pd(priv->pd);
-}
-
-void ipoib_verbs_rss_init_fp(struct ipoib_dev_priv *priv)
-{
-	if (priv->hca_caps_exp & IB_EXP_DEVICE_UD_RSS) {
-		priv->fp.ipoib_transport_dev_cleanup = ipoib_transport_dev_cleanup_rss;
-		priv->fp.ipoib_mcast_attach = ipoib_mcast_attach_rss;
-	} else {
-		priv->fp.ipoib_transport_dev_cleanup = ipoib_transport_dev_cleanup;
-		priv->fp.ipoib_mcast_attach = ipoib_mcast_attach;
-	}
 }

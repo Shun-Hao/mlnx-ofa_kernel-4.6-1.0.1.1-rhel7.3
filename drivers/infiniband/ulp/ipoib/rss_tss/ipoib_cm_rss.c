@@ -532,7 +532,7 @@ static struct ib_qp *ipoib_cm_create_tx_qp_rss(struct net_device *dev, struct ip
 		index = 0;
 
 	priv->cm.tx_cq_ind = index + 1;
-	attr.send_cq = attr.recv_cq = priv->send_ring[index].send_cq;
+	attr.send_cq = attr.recv_cq = priv->recv_ring[index].recv_cq;
 
 	if (dev->features & NETIF_F_SG)
 		attr.cap.max_send_sge =
@@ -653,10 +653,12 @@ void ipoib_cm_rss_init_fp(struct ipoib_dev_priv *priv)
 		priv->fp.ipoib_cm_create_tx_qp = ipoib_cm_create_tx_qp_rss;
 		priv->fp.ipoib_cm_nonsrq_init_rx = ipoib_cm_nonsrq_init_rx_rss;
 		priv->fp.ipoib_cm_tx_destroy =ipoib_cm_tx_destroy_rss;
+		priv->fp.ipoib_cm_send = ipoib_cm_send_rss;
 	} else {
 		priv->fp.ipoib_cm_create_rx_qp = ipoib_cm_create_rx_qp;
 		priv->fp.ipoib_cm_create_tx_qp = ipoib_cm_create_tx_qp;
 		priv->fp.ipoib_cm_nonsrq_init_rx = ipoib_cm_nonsrq_init_rx;
 		priv->fp.ipoib_cm_tx_destroy =ipoib_cm_tx_destroy;
+		priv->fp.ipoib_cm_send = ipoib_cm_send;
 	}
 }

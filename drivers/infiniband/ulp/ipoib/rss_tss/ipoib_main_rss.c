@@ -212,9 +212,10 @@ static struct ipoib_neigh *ipoib_neigh_ctor_rss(u8 *daddr,
 	return neigh;
 }
 
-int ipoib_dev_init_rss(struct net_device *dev, struct ib_device *ca, int port)
+int ipoib_dev_init_default_rss(struct net_device *dev)
 {
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
+	struct ib_device *ca = priv->ca;
 	struct ipoib_send_ring *send_ring;
 	struct ipoib_recv_ring *recv_ring;
 	int i, rx_allocated, tx_allocated;
@@ -237,7 +238,7 @@ int ipoib_dev_init_rss(struct net_device *dev, struct ib_device *ca, int port)
 		recv_ring->rx_ring = kzalloc(alloc_size, GFP_KERNEL);
 		if (!recv_ring->rx_ring) {
 			pr_warn("%s: failed to allocate RX ring (%d entries)\n",
-				ca->name, ipoib_recvq_size);
+				priv->ca->name, ipoib_recvq_size);
 			goto out_recv_ring_cleanup;
 		}
 		recv_ring->dev = dev;
@@ -272,20 +273,25 @@ int ipoib_dev_init_rss(struct net_device *dev, struct ib_device *ca, int port)
 
 	/* priv->tx_head, tx_tail & tx_outstanding are already 0 */
 
-	if (ipoib_ib_dev_init_rss(dev, ca, port))
+	if (ipoib_transport_dev_init_rss(dev, priv->ca)) {
+		pr_warn("%s: ipoib_transport_dev_init_rss failed\n", priv->ca->name);
 		goto out_send_ring_cleanup;
+	}
 
 	/*
-	 * Must be after ipoib_ib_dev_init_rss so we can allocate a per
-	 * device wq there and use it here
-	 */
-	if (ipoib_neigh_hash_init(priv) < 0)
-		goto out_dev_uninit;
+	* advertise that we are willing to accept from TSS sender
+	* note that this only indicates that this side is willing to accept
+	* TSS frames, it doesn't implies that it will use TSS since for
+	* transmission the peer should advertise TSS as well
+	*/
+	priv->dev->dev_addr[0] |= IPOIB_FLAGS_TSS;
+	priv->dev->dev_addr[1] = (priv->qp->qp_num >> 16) & 0xff;
+	priv->dev->dev_addr[2] = (priv->qp->qp_num >>  8) & 0xff;
+	priv->dev->dev_addr[3] = (priv->qp->qp_num) & 0xff;
+
+	set_tx_poll_timers(priv);
 
 	return 0;
-
-out_dev_uninit:
-	ipoib_ib_dev_cleanup(dev);
 
 out_send_ring_cleanup:
 	for (i = 0; i < tx_allocated; i++)
@@ -306,7 +312,6 @@ out:
 void ipoib_dev_cleanup_rss(struct net_device *dev)
 {
 	struct ipoib_dev_priv *priv = ipoib_priv(dev), *cpriv, *tcpriv;
-	int i;
 	LIST_HEAD(head);
 
 	ASSERT_RTNL();
@@ -329,108 +334,12 @@ void ipoib_dev_cleanup_rss(struct net_device *dev)
 
 	ipoib_ib_dev_cleanup(dev);
 
-	for (i = 0; i < priv->num_tx_queues; i++)
-		vfree(priv->send_ring[i].tx_ring);
-	kfree(priv->send_ring);
-
-	for (i = 0; i < priv->num_rx_queues; i++)
-		kfree(priv->recv_ring[i].rx_ring);
-	kfree(priv->recv_ring);
-
-	priv->recv_ring = NULL;
-	priv->send_ring = NULL;
-}
-
-static int ipoib_start_xmit_rss(struct sk_buff *skb, struct net_device *dev)
-{
-	struct ipoib_dev_priv *priv = ipoib_priv(dev);
-	struct ipoib_neigh *neigh;
-	struct ipoib_pseudo_header *phdr;
-	struct ipoib_header *header;
-	unsigned long flags;
-
-	phdr = (struct ipoib_pseudo_header *) skb->data;
-	skb_pull(skb, sizeof(*phdr));
-	header = (struct ipoib_header *) skb->data;
-
-	if (unlikely(phdr->hwaddr[4] == 0xff)) {
-		/* multicast, arrange "if" according to probability */
-		if ((header->proto != htons(ETH_P_IP)) &&
-		    (header->proto != htons(ETH_P_IPV6)) &&
-		    (header->proto != htons(ETH_P_ARP)) &&
-		    (header->proto != htons(ETH_P_RARP)) &&
-		    (header->proto != htons(ETH_P_TIPC))) {
-			/* ethertype not supported by IPoIB */
-			++dev->stats.tx_dropped;
-			dev_kfree_skb_any(skb);
-			return NETDEV_TX_OK;
-		}
-		/* Add in the P_Key for multicast*/
-		phdr->hwaddr[8] = (priv->pkey >> 8) & 0xff;
-		phdr->hwaddr[9] = priv->pkey & 0xff;
-
-		neigh = ipoib_neigh_get(dev, phdr->hwaddr);
-		if (likely(neigh))
-			goto send_using_neigh;
-		ipoib_mcast_send(dev, phdr->hwaddr, skb);
-		return NETDEV_TX_OK;
+	/* no more works over the priv->wq */
+	if (priv->wq) {
+		flush_workqueue(priv->wq);
+		destroy_workqueue(priv->wq);
+		priv->wq = NULL;
 	}
-
-	/* unicast, arrange "switch" according to probability */
-	switch (header->proto) {
-	case htons(ETH_P_IP):
-	case htons(ETH_P_IPV6):
-	case htons(ETH_P_TIPC):
-		neigh = ipoib_neigh_get(dev, phdr->hwaddr);
-		if (unlikely(!neigh)) {
-			/* In TSS, Make sure that only one thread creates
-			 * the neigh structure, all the others should get the
-			 * neigh from the hash.
-			 */
-			neigh = neigh_add_path(skb, phdr->hwaddr, dev);
-			if (likely(!neigh))
-				return NETDEV_TX_OK;
-		}
-		break;
-	case htons(ETH_P_ARP):
-	case htons(ETH_P_RARP):
-		/* for unicast ARP and RARP should always perform path find */
-		unicast_arp_send(skb, dev, phdr);
-		return NETDEV_TX_OK;
-	default:
-		/* ethertype not supported by IPoIB */
-		++dev->stats.tx_dropped;
-		dev_kfree_skb_any(skb);
-		return NETDEV_TX_OK;
-	}
-
-send_using_neigh:
-	/* note we now hold a ref to neigh */
-	if (ipoib_cm_get(neigh)) {
-		if (ipoib_cm_up(neigh)) {
-			ipoib_cm_send_rss(dev, skb, ipoib_cm_get(neigh));
-			goto unref;
-		}
-	} else if (neigh->ah) {
-		ipoib_send_rss(dev, skb, neigh->ah, IPOIB_QPN(phdr->hwaddr));
-		goto unref;
-	}
-
-	if (skb_queue_len(&neigh->queue) < IPOIB_MAX_PATH_REC_QUEUE) {
-		/* put pseudoheader back on for next time */
-		skb_push(skb, sizeof(*phdr));
-		spin_lock_irqsave(&priv->lock, flags);
-		__skb_queue_tail(&neigh->queue, skb);
-		spin_unlock_irqrestore(&priv->lock, flags);
-	} else {
-		++dev->stats.tx_dropped;
-		dev_kfree_skb_any(skb);
-	}
-
-unref:
-	ipoib_neigh_put(neigh);
-
-	return NETDEV_TX_OK;
 }
 
 static int ipoib_get_hca_features(struct ipoib_dev_priv *priv,
@@ -481,13 +390,41 @@ static int ipoib_get_hca_features(struct ipoib_dev_priv *priv,
 	return 0;
 }
 
+void ipoib_dev_uninit_default_rss(struct net_device *dev)
+{
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
+	int i;
+
+	ipoib_transport_dev_cleanup_rss(dev);
+
+	ipoib_cm_dev_cleanup(dev);
+
+	for (i = 0; i < priv->num_tx_queues; i++)
+		vfree(priv->send_ring[i].tx_ring);
+	kfree(priv->send_ring);
+
+	for (i = 0; i < priv->num_rx_queues; i++)
+		kfree(priv->recv_ring[i].rx_ring);
+	kfree(priv->recv_ring);
+
+	priv->recv_ring = NULL;
+	priv->send_ring = NULL;
+}
+
+static const struct net_device_ops ipoib_netdev_default_pf_rss = {
+	.ndo_init		 = ipoib_dev_init_default_rss,
+	.ndo_uninit		 = ipoib_dev_uninit_default_rss,
+	.ndo_open		 = ipoib_ib_dev_open_default_rss,
+	.ndo_stop		 = ipoib_ib_dev_stop_default_rss,
+};
+
 static const struct net_device_ops ipoib_netdev_ops_pf_sw_tss = {
 	.ndo_uninit		 = ipoib_uninit,
 	.ndo_open		 = ipoib_open,
 	.ndo_stop		 = ipoib_stop,
 	.ndo_change_mtu		 = ipoib_change_mtu,
 	.ndo_fix_features	 = ipoib_fix_features,
-	.ndo_start_xmit		 = ipoib_start_xmit_rss,
+	.ndo_start_xmit		 = ipoib_start_xmit,
 	.ndo_select_queue	 = ipoib_select_queue_sw_rss,
 	.ndo_tx_timeout		 = ipoib_timeout_rss,
 	.ndo_get_stats		 = ipoib_get_stats_rss,
@@ -506,13 +443,45 @@ static const struct net_device_ops ipoib_netdev_ops_vf_sw_tss = {
 	.ndo_stop		 = ipoib_stop,
 	.ndo_change_mtu		 = ipoib_change_mtu,
 	.ndo_fix_features	 = ipoib_fix_features,
-	.ndo_start_xmit	 	 = ipoib_start_xmit_rss,
+	.ndo_start_xmit	 	 = ipoib_start_xmit,
 	.ndo_select_queue 	 = ipoib_select_queue_sw_rss,
 	.ndo_tx_timeout		 = ipoib_timeout_rss,
 	.ndo_get_stats		 = ipoib_get_stats_rss,
 	.ndo_set_rx_mode	 = ipoib_set_mcast_list,
 	.ndo_get_iflink		 = ipoib_get_iflink,
 };
+
+struct net_device *ipoib_create_netdev_default_rss(struct ib_device *hca,
+						   const char *name,
+						   void (*setup)(struct net_device *),
+						   struct ipoib_dev_priv *temp_priv)
+{
+	struct net_device *dev;
+	struct rdma_netdev *rn;
+
+	dev = alloc_netdev_mqs((int)sizeof(struct rdma_netdev), name,
+			       NET_NAME_UNKNOWN, setup,
+			       temp_priv->num_tx_queues,
+			       temp_priv->num_rx_queues);
+
+	if (!dev)
+		return NULL;
+
+	netif_set_real_num_tx_queues(dev, temp_priv->num_tx_queues);
+	netif_set_real_num_rx_queues(dev, temp_priv->num_rx_queues);
+
+	rn = netdev_priv(dev);
+
+	rn->send = ipoib_send_rss;
+	rn->attach_mcast = ipoib_mcast_attach_rss;
+	rn->detach_mcast = ipoib_mcast_detach;
+	rn->free_rdma_netdev = free_netdev;
+	rn->hca = hca;
+
+	dev->netdev_ops = &ipoib_netdev_default_pf_rss;
+
+	return dev;
+}
 
 static const struct net_device_ops *ipoib_netdev_ops_select;
 
@@ -536,12 +505,10 @@ void ipoib_main_rss_init_fp(struct ipoib_dev_priv *priv)
 	if (priv->hca_caps_exp & IB_EXP_DEVICE_UD_RSS) {
 		priv->fp.ipoib_set_mode = ipoib_set_mode_rss;
 		priv->fp.ipoib_neigh_ctor = ipoib_neigh_ctor_rss;
-		priv->fp.ipoib_dev_init = ipoib_dev_init_rss;
 		priv->fp.ipoib_dev_cleanup = ipoib_dev_cleanup_rss;
 	} else {
 		priv->fp.ipoib_set_mode = ipoib_set_mode;
 		priv->fp.ipoib_neigh_ctor = ipoib_neigh_ctor;
-		priv->fp.ipoib_dev_init = ipoib_dev_init;
 		priv->fp.ipoib_dev_cleanup = ipoib_dev_cleanup;
 	}
 }
