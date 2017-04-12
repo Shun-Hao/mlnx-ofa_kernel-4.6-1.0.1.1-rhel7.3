@@ -4382,16 +4382,49 @@ static u32 qp_attach_mbox_size(void *mbox)
 
 static int mlx4_do_mirror_rule(struct mlx4_dev *dev, struct res_fs_rule *fs_rule);
 
+static int validate_flow_steering_vf_spec(struct mlx4_dev *dev, int slave,
+					  struct _rule_hw  *rule_header,
+					  struct mlx4_vhcr *vhcr,
+					  struct mlx4_cmd_mailbox *inbox)
+{
+	struct mlx4_priv *priv = mlx4_priv(dev);
+	struct mlx4_resource_tracker *tracker = &priv->mfunc.master.res_tracker;
+	struct list_head *rlist = &tracker->slave_list[slave].res_list[RES_MAC];
+	int header_id;
+
+	header_id = map_hw_to_sw_id(be16_to_cpu(rule_header->id));
+
+	switch (header_id) {
+	case MLX4_NET_TRANS_RULE_ID_ETH:
+		if (validate_eth_header_mac(slave, rule_header, rlist))
+			return -EINVAL;
+		break;
+	case MLX4_NET_TRANS_RULE_ID_IB:
+		break;
+	case MLX4_NET_TRANS_RULE_ID_IPV4:
+	case MLX4_NET_TRANS_RULE_ID_TCP:
+	case MLX4_NET_TRANS_RULE_ID_UDP:
+		pr_warn("Can't attach FS rule without L2 headers, adding L2 header\n");
+		if (add_eth_header(dev, slave, inbox, rlist, header_id))
+			return -EINVAL;
+
+		vhcr->in_modifier +=
+			sizeof(struct mlx4_net_trans_rule_hw_eth) >> 2;
+		break;
+	default:
+		pr_err("Corrupted mailbox\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int mlx4_QP_FLOW_STEERING_ATTACH_wrapper(struct mlx4_dev *dev, int slave,
 					 struct mlx4_vhcr *vhcr,
 					 struct mlx4_cmd_mailbox *inbox,
 					 struct mlx4_cmd_mailbox *outbox,
 					 struct mlx4_cmd_info *cmd)
 {
-
-	struct mlx4_priv *priv = mlx4_priv(dev);
-	struct mlx4_resource_tracker *tracker = &priv->mfunc.master.res_tracker;
-	struct list_head *rlist = &tracker->slave_list[slave].res_list[RES_MAC];
 	int err;
 	int qpn;
 	struct res_qp *rqp;
@@ -4422,31 +4455,10 @@ int mlx4_QP_FLOW_STEERING_ATTACH_wrapper(struct mlx4_dev *dev, int slave,
 	if (header_id == MLX4_NET_TRANS_RULE_ID_ETH)
 		mlx4_handle_eth_header_mcast_prio(ctrl, rule_header);
 
-	switch (header_id) {
-	case MLX4_NET_TRANS_RULE_ID_ETH:
-		if (validate_eth_header_mac(slave, rule_header, rlist)) {
-			err = -EINVAL;
-			goto err_put_qp;
-		}
-		break;
-	case MLX4_NET_TRANS_RULE_ID_IB:
-		break;
-	case MLX4_NET_TRANS_RULE_ID_IPV4:
-	case MLX4_NET_TRANS_RULE_ID_TCP:
-	case MLX4_NET_TRANS_RULE_ID_UDP:
-		pr_warn("Can't attach FS rule without L2 headers, adding L2 header\n");
-		if (add_eth_header(dev, slave, inbox, rlist, header_id)) {
-			err = -EINVAL;
-			goto err_put_qp;
-		}
-		vhcr->in_modifier +=
-			sizeof(struct mlx4_net_trans_rule_hw_eth) >> 2;
-		break;
-	default:
-		pr_err("Corrupted mailbox\n");
-		err = -EINVAL;
+	err = validate_flow_steering_vf_spec(dev, slave, rule_header,
+					     vhcr, inbox);
+	if (err)
 		goto err_put_qp;
-	}
 
 	err = mlx4_cmd_imm(dev, inbox->dma, &vhcr->out_param,
 			   vhcr->in_modifier, 0,
