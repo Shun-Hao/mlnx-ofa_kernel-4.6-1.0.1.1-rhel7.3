@@ -1561,6 +1561,8 @@ enum {
 #define MLX4_EQ_ID_TO_UUID(id, port, n) (((unsigned int)id) << 31 | (port) << 24 | (n))
 #define MLX4_EQ_UUID_TO_ID(uuid)        ((uuid) >> 31)
 
+#define MLX4_NET_TRANS_PROMISC_MODE_OFFSET MLX4_FS_REGULAR
+
 int mlx4_flow_steer_promisc_add(struct mlx4_dev *dev, u8 port, u32 qpn,
 				enum mlx4_net_trans_promisc_mode mode);
 int mlx4_flow_steer_promisc_remove(struct mlx4_dev *dev, u8 port,
@@ -1642,6 +1644,7 @@ int mlx4_flow_attach(struct mlx4_dev *dev,
 int mlx4_flow_detach(struct mlx4_dev *dev, u64 reg_id);
 int mlx4_map_sw_to_hw_steering_mode(struct mlx4_dev *dev,
 				    enum mlx4_net_trans_promisc_mode flow_type);
+int mlx4_map_hw_to_sw_steering_mode(struct mlx4_dev *dev, u8 flow_type);
 int mlx4_map_sw_to_hw_steering_id(struct mlx4_dev *dev,
 				  enum mlx4_net_trans_rule_id id);
 int mlx4_hw_rule_sz(struct mlx4_dev *dev, enum mlx4_net_trans_rule_id id);

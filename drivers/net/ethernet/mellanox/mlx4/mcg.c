@@ -768,6 +768,22 @@ int mlx4_map_sw_to_hw_steering_mode(struct mlx4_dev *dev,
 }
 EXPORT_SYMBOL_GPL(mlx4_map_sw_to_hw_steering_mode);
 
+int mlx4_map_hw_to_sw_steering_mode(struct mlx4_dev *dev,
+				    u8 flow_type)
+{
+	u8 i;
+
+	for (i = MLX4_NET_TRANS_PROMISC_MODE_OFFSET;
+		i < ARRAY_SIZE(__promisc_mode) +
+		MLX4_NET_TRANS_PROMISC_MODE_OFFSET; i++) {
+		if (__promisc_mode[i] == flow_type)
+			return i;
+	}
+
+	return -1;
+}
+EXPORT_SYMBOL_GPL(mlx4_map_hw_to_sw_steering_mode);
+
 static void trans_rule_ctrl_to_hw(struct mlx4_net_trans_rule *ctrl,
 				  struct mlx4_net_trans_rule_hw_ctrl *hw)
 {

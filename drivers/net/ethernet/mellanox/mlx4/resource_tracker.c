@@ -4391,6 +4391,17 @@ static int validate_flow_steering_vf_spec(struct mlx4_dev *dev, int slave,
 	struct mlx4_resource_tracker *tracker = &priv->mfunc.master.res_tracker;
 	struct list_head *rlist = &tracker->slave_list[slave].res_list[RES_MAC];
 	int header_id;
+	enum mlx4_net_trans_promisc_mode rule_type;
+	struct mlx4_net_trans_rule_hw_ctrl *ctrl;
+
+	ctrl = (struct mlx4_net_trans_rule_hw_ctrl *)inbox->buf;
+	rule_type = mlx4_map_hw_to_sw_steering_mode(dev, ctrl->type);
+	if (slave != dev->caps.function &&
+	    rule_type != MLX4_FS_REGULAR && rule_type != MLX4_FS_MC_DEFAULT)
+		return -EPERM;
+
+	if (rule_type != MLX4_FS_REGULAR)
+		return 0;
 
 	header_id = map_hw_to_sw_id(be16_to_cpu(rule_header->id));
 
