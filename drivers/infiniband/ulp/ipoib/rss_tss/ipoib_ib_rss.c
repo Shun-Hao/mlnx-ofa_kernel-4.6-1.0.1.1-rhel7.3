@@ -263,8 +263,8 @@ static void ipoib_ib_handle_tx_wc_rss(struct ipoib_send_ring *send_ring,
 	}
 
 	tx_req = &send_ring->tx_ring[wr_id];
-
-	ipoib_dma_unmap_tx(priv, tx_req);
+	if (!tx_req->is_inline)
+		ipoib_dma_unmap_tx(priv, tx_req);
 
 	++send_ring->stats.tx_packets;
 	send_ring->stats.tx_bytes += tx_req->skb->len;
@@ -399,7 +399,13 @@ static inline int post_send_rss(struct ipoib_send_ring *send_ring,
 	struct ib_send_wr *bad_wr;
 	struct sk_buff *skb = tx_req->skb;
 
-	ipoib_build_sge_rss(send_ring, tx_req);
+	if (tx_req->is_inline) {
+		send_ring->tx_sge[0].addr	= (u64)skb->data;
+		send_ring->tx_sge[0].length	= skb->len;
+		send_ring->tx_wr.wr.num_sge	= 1;
+	} else {
+		ipoib_build_sge_rss(send_ring, tx_req);
+	}
 
 	send_ring->tx_wr.wr.wr_id	= wr_id;
 	send_ring->tx_wr.remote_qpn	= dqpn;
@@ -485,10 +491,19 @@ int ipoib_send_rss(struct net_device *dev, struct sk_buff *skb,
 	req_index = send_ring->tx_head & (ipoib_sendq_size - 1);
 	tx_req = &send_ring->tx_ring[req_index];
 	tx_req->skb = skb;
-	if (unlikely(ipoib_dma_map_tx(priv->ca, tx_req))) {
-		++send_ring->stats.tx_errors;
-		dev_kfree_skb_any(skb);
-		return -1;
+
+	if (skb->len < ipoib_inline_thold &&
+	    !skb_shinfo(skb)->nr_frags) {
+		tx_req->is_inline = 1;
+		send_ring->tx_wr.wr.send_flags |= IB_SEND_INLINE;
+	} else {
+		if (unlikely(ipoib_dma_map_tx(priv->ca, tx_req))) {
+			++send_ring->stats.tx_errors;
+			dev_kfree_skb_any(skb);
+			return -1;
+		}
+		tx_req->is_inline = 0;
+		send_ring->tx_wr.wr.send_flags &= ~IB_SEND_INLINE;
 	}
 
 	if (skb->ip_summed == CHECKSUM_PARTIAL)
@@ -512,7 +527,8 @@ int ipoib_send_rss(struct net_device *dev, struct sk_buff *skb,
 		ipoib_warn(priv, "post_send_rss failed, error %d\n", rc);
 		++send_ring->stats.tx_errors;
 		atomic_dec(&send_ring->tx_outstanding);
-		ipoib_dma_unmap_tx(priv, tx_req);
+		if (!tx_req->is_inline)
+			ipoib_dma_unmap_tx(priv, tx_req);
 		dev_kfree_skb_any(skb);
 		if (__netif_subqueue_stopped(dev, queue_index))
 			netif_wake_subqueue(dev, queue_index);
@@ -720,7 +736,8 @@ static void ipoib_ib_send_ring_stop(struct ipoib_dev_priv *priv)
 		while ((int) tx_ring->tx_tail - (int) tx_ring->tx_head < 0) {
 			tx_req = &tx_ring->tx_ring[tx_ring->tx_tail &
 				  (ipoib_sendq_size - 1)];
-			ipoib_dma_unmap_tx(priv, tx_req);
+			if (!tx_req->is_inline)
+				ipoib_dma_unmap_tx(priv, tx_req);
 			dev_kfree_skb_any(tx_req->skb);
 			++tx_ring->tx_tail;
 			atomic_dec(&tx_ring->tx_outstanding);

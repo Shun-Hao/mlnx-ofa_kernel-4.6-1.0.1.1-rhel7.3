@@ -404,10 +404,18 @@ void ipoib_cm_send_rss(struct net_device *dev, struct sk_buff *skb, struct ipoib
 	tx_req = &tx->tx_ring[tx->tx_head & (ipoib_sendq_size - 1)];
 	tx_req->skb = skb;
 
-	if (unlikely(ipoib_dma_map_tx(priv->ca, tx_req))) {
-		++send_ring->stats.tx_errors;
-		dev_kfree_skb_any(skb);
-		return;
+	if (skb->len < ipoib_inline_thold && !skb_shinfo(skb)->nr_frags) {
+		tx_req->mapping[0] = (u64)skb->data;
+		send_ring->tx_wr.wr.send_flags |= IB_SEND_INLINE;
+		tx_req->is_inline = 1;
+	} else {
+		if (unlikely(ipoib_dma_map_tx(priv->ca, tx_req))) {
+			++send_ring->stats.tx_errors;
+			dev_kfree_skb_any(skb);
+			return;
+		}
+		tx_req->is_inline = 0;
+		send_ring->tx_wr.wr.send_flags &= ~IB_SEND_INLINE;
 	}
 
 	skb_orphan(skb);
@@ -418,7 +426,8 @@ void ipoib_cm_send_rss(struct net_device *dev, struct sk_buff *skb, struct ipoib
 	if (unlikely(rc)) {
 		ipoib_warn(priv, "post_send_rss failed, error %d\n", rc);
 		++dev->stats.tx_errors;
-		ipoib_dma_unmap_tx(priv, tx_req);
+		if (!tx_req->is_inline)
+			ipoib_dma_unmap_tx(priv, tx_req);
 		dev_kfree_skb_any(skb);
 	} else {
 		netdev_get_tx_queue(dev, queue_index)->trans_start = jiffies;
@@ -461,7 +470,9 @@ void ipoib_cm_handle_tx_wc_rss(struct net_device *dev, struct ib_wc *wc)
 	queue_index = skb_get_queue_mapping(tx_req->skb);
 	send_ring = priv->send_ring + queue_index;
 
-	ipoib_dma_unmap_tx(priv, tx_req);
+	/* Checking whether inline send was used - nothing to unmap */
+	if (!tx_req->is_inline)
+		ipoib_dma_unmap_tx(priv, tx_req);
 
 	/* FIXME: is this right? Shouldn't we only increment on success? */
 	++send_ring->stats.tx_packets;
@@ -518,6 +529,7 @@ static struct ib_qp *ipoib_cm_create_tx_qp_rss(struct net_device *dev, struct ip
 		.srq			= priv->cm.srq,
 		.cap.max_send_wr	= ipoib_sendq_size,
 		.cap.max_send_sge	= 1,
+		.cap.max_inline_data    = IPOIB_MAX_INLINE_SIZE,
 		.sq_sig_type		= IB_SIGNAL_ALL_WR,
 		.qp_type		= IB_QPT_RC,
 		.qp_context		= tx,
@@ -625,7 +637,9 @@ timeout:
 		struct ipoib_send_ring *send_ring;
 		u16 queue_index;
 		tx_req = &p->tx_ring[p->tx_tail & (ipoib_sendq_size - 1)];
-		ipoib_dma_unmap_tx(priv, tx_req);
+		/* Checking whether inline was used - nothing to unmap */
+		if (!tx_req->is_inline)
+			ipoib_dma_unmap_tx(priv, tx_req);
 		dev_kfree_skb_any(tx_req->skb);
 		++p->tx_tail;
 		queue_index = skb_get_queue_mapping(tx_req->skb);

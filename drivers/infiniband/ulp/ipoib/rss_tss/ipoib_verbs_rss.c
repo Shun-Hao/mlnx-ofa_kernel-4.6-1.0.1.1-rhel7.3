@@ -352,7 +352,8 @@ static int ipoib_create_parent_qp(struct net_device *dev,
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ib_exp_qp_init_attr init_attr = {
 		.sq_sig_type = IB_SIGNAL_ALL_WR,
-		.qp_type     = IB_EXP_UD_RSS_TSS
+		.qp_type     = IB_EXP_UD_RSS_TSS,
+		.cap.max_inline_data    = IPOIB_MAX_INLINE_SIZE
 	};
 	struct ib_qp *qp;
 
@@ -403,6 +404,19 @@ static int ipoib_create_parent_qp(struct net_device *dev,
 
 	priv->qp = qp;
 
+	/* check inline availablilty */
+	if (!init_attr.cap.max_inline_data) {
+		/* mark it as not-available */
+		ipoib_inline_thold = 0;
+		pr_info("card: %s doesn't support inline for QP: 0x%x\n",
+			ca->name, priv->qp->qp_num);
+	} else {
+		ipoib_inline_thold = min(ipoib_inline_thold,
+					 init_attr.cap.max_inline_data);
+		pr_info("card: %s, QP: 0x%x, inline size: %d\n", ca->name,
+			priv->qp->qp_num, ipoib_inline_thold);
+	}
+
 	/* TSS is not supported in HW or NO TSS (tss_qp_num = 0) */
 	if (priv->num_tx_queues > priv->tss_qp_num)
 		priv->send_ring[priv->tss_qp_num].send_qp = qp;
@@ -435,6 +449,7 @@ static struct ib_qp *ipoib_create_tss_qp(struct net_device *dev,
 			.max_recv_wr  = ipoib_recvq_size,
 			.max_send_sge = min_t(u32, priv->ca->attrs.max_sge,
 					      MAX_SKB_FRAGS + 1),
+			.max_inline_data = IPOIB_MAX_INLINE_SIZE,
 		},
 		.sq_sig_type = IB_SIGNAL_ALL_WR,
 		.qp_type     = IB_EXP_UD_RSS_TSS
