@@ -375,6 +375,8 @@ int mlx4_en_DUMP_ETH_STATS(struct mlx4_en_dev *mdev, u8 port, u8 reset)
 	stats->rx_fifo_errors = be32_to_cpu(mlx4_en_stats->RdropOvflw);
 	stats->tx_dropped = be32_to_cpu(mlx4_en_stats->TDROP) +
 			    sw_tx_dropped;
+	if (priv->vgtp)
+		stats->tx_dropped += priv->vgtp->tx_dropped;
 
 	/* RX stats */
 	priv->pkstats.rx_multicast_packets = stats->multicast;

@@ -930,8 +930,9 @@ int mlx4_en_poll_rx_cq(struct napi_struct *napi, int budget)
 	if (priv->tx_ring_num[TX_XDP]) {
 		xdp_tx_cq = priv->tx_cq[TX_XDP][cq->ring];
 		if (xdp_tx_cq->xdp_busy) {
-			clean_complete = mlx4_en_process_tx_cq(dev, xdp_tx_cq,
-							       budget);
+			clean_complete = _mlx4_en_process_tx_cq(dev, xdp_tx_cq,
+							       budget,
+							       priv->tx_ring[TX_XDP][cq->ring]);
 			xdp_tx_cq->xdp_busy = !clean_complete;
 		}
 	}
@@ -1060,7 +1061,7 @@ static int mlx4_en_config_rss_qp(struct mlx4_en_priv *priv, int qpn,
 
 	memset(context, 0, sizeof(*context));
 	mlx4_en_fill_qp_context(priv, ring->actual_size, ring->stride, 0, 0,
-				qpn, ring->cqn, -1, context);
+				qpn, ring->cqn, -1, context, MLX4_EN_NO_VLAN);
 	context->db_rec_addr = cpu_to_be64(ring->wqres.db.dma);
 
 	/* Cancel FCS removal if FW allows */
@@ -1177,7 +1178,7 @@ int mlx4_en_config_rss_steer(struct mlx4_en_priv *priv)
 
 	rss_map->indir_qp->event = mlx4_en_sqp_event;
 	mlx4_en_fill_qp_context(priv, 0, 0, 0, 1, priv->base_qpn,
-				priv->rx_ring[0]->cqn, -1, &context);
+				priv->rx_ring[0]->cqn, -1, &context, MLX4_EN_NO_VLAN);
 
 	if (!priv->prof->rss_rings || priv->prof->rss_rings > priv->rx_ring_num)
 		rss_rings = priv->rx_ring_num;

@@ -603,6 +603,12 @@ int mlx4_ib_send_to_slave(struct mlx4_ib_dev *dev, int slave, u8 port,
 
 	if (is_eth) {
 		u16 vlan = 0;
+
+		/* In VGT+ mode drop mads if VLAN is not allowed */
+		ret = mlx4_vlan_blocked(dev->dev, port, slave, wc->vlan_id);
+		if (ret)
+			goto out;
+
 		if (mlx4_get_slave_default_vlan(dev->dev, port, slave, &vlan,
 						NULL)) {
 			/* VST mode */
@@ -611,7 +617,7 @@ int mlx4_ib_send_to_slave(struct mlx4_ib_dev *dev, int slave, u8 port,
 				 * Drop the packet.
 				 */
 				goto out;
-			 else
+			else
 				/* Remove the vlan tag before forwarding
 				 * the packet to the VF.
 				 */
@@ -1671,6 +1677,11 @@ static void mlx4_ib_multiplex_mad(struct mlx4_ib_demux_pv_ctx *ctx, struct ib_wc
 	if (dmac)
 		memcpy(dmac, tunnel->hdr.mac, ETH_ALEN);
 	vlan_id = be16_to_cpu(tunnel->hdr.vlan);
+
+	/* In VGT+ mode drop mads if VLAN is not allowed */
+	if (mlx4_vlan_blocked(dev->dev, ctx->port, slave, vlan_id))
+		return;
+
 	/* if slave have default vlan use it */
 	if (mlx4_get_slave_default_vlan(dev->dev, ctx->port, slave,
 					&vlan_id, &qos))

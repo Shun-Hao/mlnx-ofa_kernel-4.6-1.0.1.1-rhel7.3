@@ -375,14 +375,24 @@ static int mlx4_en_get_sset_count(struct net_device *dev, int sset)
 {
 	struct mlx4_en_priv *priv = netdev_priv(dev);
 	struct bitmap_iterator it;
+	int i, vgtp_count = 0, vgtp_on = 0;
 
 	bitmap_iterator_init(&it, priv->stats_bitmap.bitmap, NUM_ALL_STATS);
+
+	if (priv->vgtp) {
+		vgtp_on = 1;
+		for (i = 0; i <	MLX4_MAX_VLAN_SET_SIZE * MLX4_EN_MAX_TX_RING_P_UP; i++) {
+			if (priv->vgtp->rings[i].tx_ring)
+				vgtp_count++;
+		}
+	}
 
 	switch (sset) {
 	case ETH_SS_STATS:
 		return bitmap_iterator_count(&it) +
 			(priv->tx_ring_num[TX] * 2) +
-			(priv->rx_ring_num * (3 + NUM_XDP_STATS));
+			(priv->rx_ring_num * (3 + NUM_XDP_STATS)) +
+			(vgtp_count * 2 + vgtp_on * 1);
 	case ETH_SS_TEST:
 		return MLX4_EN_NUM_SELF_TEST - !(priv->mdev->dev->caps.flags
 					& MLX4_DEV_CAP_FLAG_UC_LOOPBACK) * 2;
@@ -466,6 +476,19 @@ static void mlx4_en_get_ethtool_stats(struct net_device *dev,
 		data[index++] = priv->tx_ring[TX][i]->packets;
 		data[index++] = priv->tx_ring[TX][i]->bytes;
 	}
+
+	/* VGT+ counters */
+	if (priv->vgtp) {
+		data[index++] = priv->vgtp->tx_dropped;
+		for (i = 0; i <
+		     MLX4_MAX_VLAN_SET_SIZE * MLX4_EN_MAX_TX_RING_P_UP; i++) {
+			if (!priv->vgtp->rings[i].tx_ring)
+				continue;
+			data[index++] = priv->vgtp->rings[i].tx_ring->packets;
+			data[index++] = priv->vgtp->rings[i].tx_ring->bytes;
+		}
+	}
+
 	for (i = 0; i < priv->rx_ring_num; i++) {
 		data[index++] = priv->rx_ring[i]->packets;
 		data[index++] = priv->rx_ring[i]->bytes;
@@ -565,6 +588,24 @@ static void mlx4_en_get_strings(struct net_device *dev,
 			sprintf(data + (index++) * ETH_GSTRING_LEN,
 				"tx%d_bytes", i);
 		}
+
+		/* VGT+ counters */
+		if (priv->vgtp) {
+			sprintf(data + (index++) * ETH_GSTRING_LEN,
+				"VGT+_tx_dropped");
+			for (i = 0; i < MLX4_MAX_VLAN_SET_SIZE *
+			      MLX4_EN_MAX_TX_RING_P_UP; i++) {
+				if (priv->vgtp->rings[i].tx_ring) {
+					sprintf(data + (index++) *
+						ETH_GSTRING_LEN,
+						"VGT+_tx%d_packets", i);
+					sprintf(data + (index++) *
+						ETH_GSTRING_LEN,
+						"VGT+_tx%d_bytes", i);
+				}
+			}
+		}
+
 		for (i = 0; i < priv->rx_ring_num; i++) {
 			sprintf(data + (index++) * ETH_GSTRING_LEN,
 				"rx%d_packets", i);
@@ -1897,7 +1938,7 @@ static int mlx4_en_set_channels(struct net_device *dev,
 
 	memcpy(&new_prof, priv->prof, sizeof(struct mlx4_en_port_profile));
 	new_prof.num_tx_rings_p_up = channel->tx_count;
-	new_prof.tx_ring_num[TX] = channel->tx_count * priv->prof->num_up;
+	new_prof.tx_ring_num[TX] = channel->tx_count * priv->num_up;
 	new_prof.tx_ring_num[TX_XDP] = xdp_count;
 	new_prof.rx_ring_num = channel->rx_count;
 

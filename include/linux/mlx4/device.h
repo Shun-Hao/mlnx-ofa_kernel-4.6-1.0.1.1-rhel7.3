@@ -277,6 +277,7 @@ enum {
 	MLX4_DEV_CAP_FLAG2_DISABLE_SIP_CHECK	= 1ULL << 44,
 	MLX4_DEV_CAP_FLAG2_SW_CQ_INIT           = 1ULL << 45,
 	MLX4_DEV_CAP_FLAG2_ROCEV2		= 1ULL << 46,
+	MLX4_DEV_CAP_FLAG2_DMFS_TAG_MODE	= 1ULL << 47,
 };
 
 enum {
@@ -748,6 +749,7 @@ struct mlx4_caps {
 	u32			vf_caps;
 	bool			wol_port[MLX4_MAX_PORTS + 1];
 	struct mlx4_rate_limit_caps rl_caps;
+	u8			force_vlan[MLX4_MAX_PORTS + 1];
 	u32			health_buffer_addrs;
 	u8			roce_addr_support;
 };
@@ -1485,7 +1487,7 @@ struct mlx4_net_trans_rule_hw_eth {
 	u8	src_mac[6];
 	u16	rsvd4;
 	u8	src_mac_msk[6];
-	u8      rsvd5;
+	u8      tag_mode;
 	u8      ether_type_enable;
 	__be16  ether_type;
 	__be16  vlan_tag_msk;

@@ -39,13 +39,14 @@
 
 void mlx4_en_fill_qp_context(struct mlx4_en_priv *priv, int size, int stride,
 			     int is_tx, int rss, int qpn, int cqn,
-			     int user_prio, struct mlx4_qp_context *context)
+			     int user_prio, struct mlx4_qp_context *context,
+			     int idx)
 {
 	struct mlx4_en_dev *mdev = priv->mdev;
 	struct net_device *dev = priv->dev;
 
 	memset(context, 0, sizeof(*context));
-	context->flags = cpu_to_be32(7 << 16 | rss << MLX4_RSS_QPC_FLAG_OFFSET);
+	context->flags = cpu_to_be32(MLX4_QP_ST_MLX << 16 | rss << MLX4_RSS_QPC_FLAG_OFFSET);
 	context->pd = cpu_to_be32(mdev->priv_pdn);
 	context->mtu_msgmax = 0xff;
 	if (!is_tx && !rss)
@@ -68,6 +69,12 @@ void mlx4_en_fill_qp_context(struct mlx4_en_priv *priv, int size, int stride,
 		context->pri_path.sched_queue |= user_prio << 3;
 		context->pri_path.feup = MLX4_FEUP_FORCE_ETH_UP;
 	}
+
+	if (idx != MLX4_EN_NO_VLAN) {
+		context->pri_path.fl |= MLX4_FL_CV;
+		context->pri_path.vlan_index = idx;
+	}
+
 	context->pri_path.counter_index = priv->counter_index;
 	context->cqn_send = cpu_to_be32(cqn);
 	context->cqn_recv = cpu_to_be32(cqn);

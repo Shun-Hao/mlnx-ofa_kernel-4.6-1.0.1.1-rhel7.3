@@ -525,12 +525,20 @@ struct mlx4_vport_state {
 	u32 link_state;
 	u8 qos_vport;
 	__be64 guid;
+	struct list_head vlan_set;
+	int vgt_policy;
+	int vlan_set_counter;
 };
 
 struct mlx4_vf_admin_state {
 	struct mlx4_vport_state vport[MLX4_MAX_PORTS + 1];
 	u8 enable_smi[MLX4_MAX_PORTS + 1];
 };
+
+static inline int list_is_full(struct mlx4_vport_state *state)
+{
+	return !(state->vlan_set_counter < MLX4_MAX_VLAN_SET_SIZE);
+}
 
 struct mlx4_vport_oper_state {
 	struct mlx4_vport_state state;
@@ -614,6 +622,8 @@ struct mlx4_mfunc_master_ctx {
 	struct mlx4_slave_event_eq slave_eq;
 	struct mutex		gen_eqe_mutex[MLX4_MFUNC_MAX];
 	struct mlx4_qos_manager qos_ctl[MLX4_MAX_PORTS + 1];
+	/* mutex for accessing VLAN set */
+	struct mutex		vlan_set_lock[MLX4_MFUNC_MAX];
 };
 
 struct mlx4_mfunc {

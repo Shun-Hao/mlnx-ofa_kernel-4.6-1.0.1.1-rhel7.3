@@ -87,6 +87,10 @@
 #define MLX4_EN_FILTER_HASH_SHIFT 4
 #define MLX4_EN_FILTER_EXPIRY_QUOTA 60
 
+/* vlan valid range */
+#define VLAN_MIN_VALUE		1
+#define VLAN_MAX_VALUE		4094
+
 /* Typical TSO descriptor with 16 gather entries is 352 bytes... */
 #define MAX_DESC_SIZE		512
 #define MAX_DESC_TXBBS		(MAX_DESC_SIZE / TXBB_SIZE)
@@ -130,6 +134,8 @@
 #define MLX4_EN_DEF_TX_RING_SIZE	MLX4_EN_DEF_RX_RING_SIZE
 #define MAX_TX_RINGS			(MLX4_EN_MAX_TX_RING_P_UP * \
 					 MLX4_EN_NUM_UP_HIGH)
+
+#define MLX4_EN_NO_VLAN			0xffff
 
 #define MLX4_EN_DEFAULT_TX_WORK		256
 
@@ -547,6 +553,20 @@ struct en_port {
 	u8			vport_num;
 };
 
+struct mlx4_en_vgtp_ring {
+	struct mlx4_en_tx_ring *tx_ring;
+	struct mlx4_en_cq *cq;
+	u64 reg_id;
+};
+
+struct mlx4_en_vgtp {
+	void				*bitmap;
+	int				tx_map[VLAN_N_VID];
+	struct mlx4_en_vgtp_ring	rings[MLX4_MAX_VLAN_SET_SIZE *
+					      MLX4_EN_MAX_TX_RING_P_UP];
+	unsigned long tx_dropped;
+};
+
 struct mlx4_en_priv {
 	struct mlx4_en_dev *mdev;
 	struct mlx4_en_port_profile *prof;
@@ -664,6 +684,8 @@ struct mlx4_en_priv {
 	u32 pflags;
 	u8 rss_key[MLX4_EN_RSS_KEY_SIZE];
 	u8 rss_hash_fn;
+	struct mlx4_en_vgtp *vgtp;
+	u8 num_up;
 };
 
 enum mlx4_en_wol {
@@ -718,7 +740,7 @@ int mlx4_en_create_cq(struct mlx4_en_priv *priv, struct mlx4_en_cq **pcq,
 		      int entries, int ring, enum cq_type mode, int node);
 void mlx4_en_destroy_cq(struct mlx4_en_priv *priv, struct mlx4_en_cq **pcq);
 int mlx4_en_activate_cq(struct mlx4_en_priv *priv, struct mlx4_en_cq *cq,
-			int cq_idx);
+			int cq_idx, bool vgtp_cq);
 void mlx4_en_deactivate_cq(struct mlx4_en_priv *priv, struct mlx4_en_cq **pcq);
 int mlx4_en_set_cq_moder(struct mlx4_en_priv *priv, struct mlx4_en_cq *cq);
 void mlx4_en_arm_cq(struct mlx4_en_priv *priv, struct mlx4_en_cq *cq);
@@ -728,6 +750,7 @@ u16 mlx4_en_select_queue(struct net_device *dev, struct sk_buff *skb,
 			 struct net_device *sb_dev,
 			 select_queue_fallback_t fallback);
 netdev_tx_t mlx4_en_xmit(struct sk_buff *skb, struct net_device *dev);
+netdev_tx_t mlx4_en_vgtp_xmit(struct sk_buff *skb, struct net_device *dev);
 netdev_tx_t mlx4_en_xmit_frame(struct mlx4_en_rx_ring *rx_ring,
 			       struct mlx4_en_rx_alloc *frame,
 			       struct mlx4_en_priv *priv, unsigned int length,
@@ -746,7 +769,8 @@ void mlx4_en_init_tx_xdp_ring_descs(struct mlx4_en_priv *priv,
 				    struct mlx4_en_tx_ring *ring);
 int mlx4_en_activate_tx_ring(struct mlx4_en_priv *priv,
 			     struct mlx4_en_tx_ring *ring,
-			     int cq, int user_prio);
+			     int cq, int user_prio,
+			     int idx);
 void mlx4_en_deactivate_tx_ring(struct mlx4_en_priv *priv,
 				struct mlx4_en_tx_ring *ring);
 void mlx4_en_set_num_rx_rings(struct mlx4_en_dev *mdev);
@@ -765,8 +789,10 @@ int mlx4_en_process_rx_cq(struct net_device *dev,
 			  int budget);
 int mlx4_en_poll_rx_cq(struct napi_struct *napi, int budget);
 int mlx4_en_poll_tx_cq(struct napi_struct *napi, int budget);
-bool mlx4_en_process_tx_cq(struct net_device *dev,
-			   struct mlx4_en_cq *cq, int napi_budget);
+bool _mlx4_en_process_tx_cq(struct net_device *dev,
+			   struct mlx4_en_cq *cq, int napi_budget,
+			   struct mlx4_en_tx_ring *ring);
+int mlx4_en_vgtp_poll_tx_cq(struct napi_struct *napi, int budget);
 u32 mlx4_en_free_tx_desc(struct mlx4_en_priv *priv,
 			 struct mlx4_en_tx_ring *ring,
 			 int index, u64 timestamp,
@@ -777,7 +803,7 @@ u32 mlx4_en_recycle_tx_desc(struct mlx4_en_priv *priv,
 			    int napi_mode);
 void mlx4_en_fill_qp_context(struct mlx4_en_priv *priv, int size, int stride,
 		int is_tx, int rss, int qpn, int cqn, int user_prio,
-		struct mlx4_qp_context *context);
+		struct mlx4_qp_context *context, int idx);
 void mlx4_en_sqp_event(struct mlx4_qp *qp, enum mlx4_event event);
 int mlx4_en_change_mcast_lb(struct mlx4_en_priv *priv, struct mlx4_qp *qp,
 			    int loopback);

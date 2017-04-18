@@ -156,8 +156,7 @@ struct mlx4_qp_path {
 	u8			sched_queue;
 	u8			vlan_index;
 	u8			feup;
-	u8			fvl_rx;
-	u8			reserved4[2];
+	u8			reserved4[3];
 	u8			dmac[ETH_ALEN];
 };
 
@@ -185,11 +184,8 @@ enum { /* vlan_control */
 enum { /* feup */
 	MLX4_FEUP_FORCE_ETH_UP          = 1 << 6, /* force Eth UP */
 	MLX4_FSM_FORCE_ETH_SRC_MAC      = 1 << 5, /* force Source MAC */
-	MLX4_FVL_FORCE_ETH_VLAN         = 1 << 3  /* force Eth vlan */
-};
-
-enum { /* fvl_rx */
-	MLX4_FVL_RX_FORCE_ETH_VLAN      = 1 << 0 /* enforce Eth rx vlan */
+	MLX4_FVL_FORCE_ETH_VLAN         = 1 << 3,  /* force Eth vlan */
+	MLX4_FVL_RX_FORCE_ETH_VLAN      = 1 << 2, /* enforce Eth rx vlan */
 };
 
 struct mlx4_qp_context {

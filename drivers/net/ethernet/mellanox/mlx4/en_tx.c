@@ -183,7 +183,7 @@ void mlx4_en_destroy_tx_ring(struct mlx4_en_priv *priv,
 
 int mlx4_en_activate_tx_ring(struct mlx4_en_priv *priv,
 			     struct mlx4_en_tx_ring *ring,
-			     int cq, int user_prio)
+			     int cq, int user_prio, int idx)
 {
 	struct mlx4_en_dev *mdev = priv->mdev;
 	int err;
@@ -201,7 +201,7 @@ int mlx4_en_activate_tx_ring(struct mlx4_en_priv *priv,
 	ring->mr_key = cpu_to_be32(mdev->mr.key);
 
 	mlx4_en_fill_qp_context(priv, ring->size, ring->sp_stride, 1, 0, ring->qpn,
-				ring->sp_cqn, user_prio, &ring->sp_context);
+				ring->sp_cqn, user_prio, &ring->sp_context, idx);
 	if (ring->bf_alloced)
 		ring->sp_context.usr_page =
 			cpu_to_be32(mlx4_to_hw_uar_index(mdev->dev,
@@ -385,12 +385,12 @@ int mlx4_en_free_tx_buf(struct net_device *dev, struct mlx4_en_tx_ring *ring)
 	return cnt;
 }
 
-bool mlx4_en_process_tx_cq(struct net_device *dev,
-			   struct mlx4_en_cq *cq, int napi_budget)
+bool _mlx4_en_process_tx_cq(struct net_device *dev,
+			    struct mlx4_en_cq *cq, int napi_budget,
+			    struct mlx4_en_tx_ring *ring)
 {
 	struct mlx4_en_priv *priv = netdev_priv(dev);
 	struct mlx4_cq *mcq = &cq->mcq;
-	struct mlx4_en_tx_ring *ring = priv->tx_ring[cq->type][cq->ring];
 	struct mlx4_cqe *cqe;
 	u16 index, ring_index, stamp_index;
 	u32 txbbs_skipped = 0;
@@ -515,9 +515,29 @@ int mlx4_en_poll_tx_cq(struct napi_struct *napi, int budget)
 	struct mlx4_en_cq *cq = container_of(napi, struct mlx4_en_cq, napi);
 	struct net_device *dev = cq->dev;
 	struct mlx4_en_priv *priv = netdev_priv(dev);
+	struct mlx4_en_tx_ring *ring = priv->tx_ring[TX][cq->ring];
 	bool clean_complete;
 
-	clean_complete = mlx4_en_process_tx_cq(dev, cq, budget);
+	clean_complete = _mlx4_en_process_tx_cq(dev, cq, budget, ring);
+	if (!clean_complete)
+		return budget;
+
+	napi_complete(napi);
+	mlx4_en_arm_cq(priv, cq);
+
+	return 0;
+}
+
+/* TX VGT+ CQ polling - called by NAPI */
+int mlx4_en_vgtp_poll_tx_cq(struct napi_struct *napi, int budget)
+{
+	struct mlx4_en_cq *cq = container_of(napi, struct mlx4_en_cq, napi);
+	struct net_device *dev = cq->dev;
+	struct mlx4_en_priv *priv = netdev_priv(dev);
+	struct mlx4_en_tx_ring *ring = priv->vgtp->rings[cq->ring].tx_ring;
+	int clean_complete;
+
+	clean_complete = _mlx4_en_process_tx_cq(dev, cq, budget, ring);
 	if (!clean_complete)
 		return budget;
 
@@ -827,16 +847,17 @@ tx_drop_unmap:
 	return false;
 }
 
-netdev_tx_t mlx4_en_xmit(struct sk_buff *skb, struct net_device *dev)
+static inline netdev_tx_t __mlx4_en_xmit(struct sk_buff *skb,
+					 struct net_device *dev,
+					 struct mlx4_en_tx_ring *ring,
+					 int tx_ind)
 {
 	struct skb_shared_info *shinfo = skb_shinfo(skb);
 	struct mlx4_en_priv *priv = netdev_priv(dev);
 	union mlx4_wqe_qpn_vlan	qpn_vlan = {};
-	struct mlx4_en_tx_ring *ring;
 	struct mlx4_en_tx_desc *tx_desc;
 	struct mlx4_wqe_data_seg *data;
 	struct mlx4_en_tx_info *tx_info;
-	int tx_ind;
 	int nr_txbb;
 	int desc_size;
 	int real_size;
@@ -851,9 +872,6 @@ netdev_tx_t mlx4_en_xmit(struct sk_buff *skb, struct net_device *dev)
 	u8 data_offset;
 	u32 ring_cons;
 	bool bf_ok;
-
-	tx_ind = skb_get_queue_mapping(skb);
-	ring = priv->tx_ring[TX][tx_ind];
 
 	if (unlikely(!priv->port_up))
 		goto tx_drop;
@@ -1081,6 +1099,39 @@ tx_drop_count:
 	ring->tx_dropped++;
 tx_drop:
 	dev_kfree_skb_any(skb);
+	return NETDEV_TX_OK;
+}
+
+netdev_tx_t mlx4_en_xmit(struct sk_buff *skb, struct net_device *dev)
+{
+	struct mlx4_en_priv *priv = netdev_priv(dev);
+	int tx_ind = skb_get_queue_mapping(skb);
+
+	return __mlx4_en_xmit(skb, dev, priv->tx_ring[TX][tx_ind], tx_ind);
+}
+
+netdev_tx_t mlx4_en_vgtp_xmit(struct sk_buff *skb, struct net_device *dev)
+{
+	int offset;
+	struct mlx4_en_priv *priv = netdev_priv(dev);
+	struct mlx4_en_vgtp *vgtp = priv->vgtp;
+	struct mlx4_en_tx_ring *ring;
+	int vid = 0;
+	int tx_ind = skb_get_queue_mapping(skb);
+
+	if (skb_vlan_tag_present(skb)) {
+		vid = skb_vlan_tag_get(skb);
+		offset = vgtp->tx_map[vid];
+		if (unlikely(offset < 0))
+			goto tx_drop;
+		ring = vgtp->rings[offset + tx_ind].tx_ring;
+	} else {
+		ring = priv->tx_ring[TX][tx_ind];
+	}
+	return __mlx4_en_xmit(skb, dev, ring, tx_ind);
+tx_drop:
+	dev_kfree_skb_any(skb);
+	vgtp->tx_dropped++;
 	return NETDEV_TX_OK;
 }
 

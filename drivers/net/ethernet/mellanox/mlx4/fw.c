@@ -180,6 +180,7 @@ static void dump_dev_cap_flags2(struct mlx4_dev *dev, u64 flags)
 		[44] = "Optimized steering table for non source IP rules",
 		[45] = "SW CQ initialization support",
 		[46] = "RoCEv2 support",
+		[47] = "Device managed flow steering VLAN tag mode support",
 	};
 	int i;
 
@@ -433,6 +434,8 @@ int mlx4_QUERY_FUNC_CAP_wrapper(struct mlx4_dev *dev, int slave,
 			MLX4_PUT(outbox->buf, qkey,
 				 QUERY_FUNC_CAP_PRIV_VF_QKEY_OFFSET);
 		}
+		if (priv->mfunc.master.vf_oper[slave].vport[port].state.vgt_policy)
+			field |= QUERY_FUNC_CAP_FLAGS1_FORCE_VLAN;
 		MLX4_PUT(outbox->buf, field, QUERY_FUNC_CAP_FLAGS1_OFFSET);
 
 		/* size is now the QP number */
@@ -674,11 +677,8 @@ int mlx4_QUERY_FUNC_CAP(struct mlx4_dev *dev, u8 gen_or_port,
 
 	MLX4_GET(func_cap->flags1, outbox, QUERY_FUNC_CAP_FLAGS1_OFFSET);
 	if (dev->caps.port_type[gen_or_port] == MLX4_PORT_TYPE_ETH) {
-		if (func_cap->flags1 & QUERY_FUNC_CAP_FLAGS1_FORCE_VLAN) {
-			mlx4_err(dev, "VLAN is enforced on this port\n");
-			err = -EPROTONOSUPPORT;
-			goto out;
-		}
+		if (func_cap->flags1 & QUERY_FUNC_CAP_FLAGS1_FORCE_VLAN)
+			func_cap->fvl = 1;
 
 		if (func_cap->flags1 & QUERY_FUNC_CAP_FLAGS1_FORCE_MAC) {
 			mlx4_err(dev, "Force mac is enabled on this port\n");
@@ -935,6 +935,8 @@ int mlx4_QUERY_DEV_CAP(struct mlx4_dev *dev, struct mlx4_dev_cap *dev_cap)
 		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_DISABLE_SIP_CHECK;
 	if (field & 0x80)
 		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_DMFS_IPOIB;
+	if (field & 0x40)
+		dev_cap->flags2 |= MLX4_DEV_CAP_FLAG2_DMFS_TAG_MODE;
 	MLX4_GET(field, outbox, QUERY_DEV_CAP_FLOW_STEERING_MAX_QP_OFFSET);
 	dev_cap->fs_max_num_qp_per_entry = field;
 	MLX4_GET(field, outbox, QUERY_DEV_CAP_SL2VL_EVENT_OFFSET);

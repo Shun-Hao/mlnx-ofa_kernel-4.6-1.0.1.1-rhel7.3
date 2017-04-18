@@ -266,6 +266,12 @@ struct mlx4_cmd_mailbox {
 	dma_addr_t		dma;
 };
 
+struct mlx4_vlan_set_node {
+	struct list_head		list;
+	u16				vlan_idx;
+	u16				vlan_id;
+};
+
 int __mlx4_cmd(struct mlx4_dev *dev, u64 in_param, u64 *out_param,
 	       int out_is_imm, u32 in_modifier, u8 op_modifier,
 	       u16 op, unsigned long timeout, int native);
@@ -310,6 +316,14 @@ int mlx4_get_vf_stats(struct mlx4_dev *dev, int port, int vf_idx,
 		      struct ifla_vf_stats *vf_stats);
 int mlx4_get_vf_stats_netdev(struct mlx4_dev *dev, int port, int vf_idx,
 			     struct net_device_stats *vf_stats);
+
+#define MLX4_MAX_VLAN_SET_SIZE	128
+
+ssize_t mlx4_get_vf_vlan_set(struct mlx4_dev *dev, int port, int vf, char *buf);
+int mlx4_set_vf_vlan_next(struct mlx4_dev *dev, int port, int vf, u16 vlan_id);
+int mlx4_reset_vlan_policy(struct mlx4_dev *dev, int port, int vf);
+int mlx4_vlan_index_exists(struct list_head *vlan_list, u16 vlan_id);
+int mlx4_vlan_blocked(struct mlx4_dev *dev, int port, int vf, u16 vlan_id);
 
 u32 mlx4_comm_get_version(void);
 int mlx4_set_vf_mac(struct mlx4_dev *dev, int port, int vf, u8 *mac);

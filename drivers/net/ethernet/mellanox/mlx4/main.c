@@ -1487,6 +1487,7 @@ static int mlx4_slave_special_qp_cap(struct mlx4_dev *dev)
 				 i, err);
 			goto err_mem;
 		}
+		caps->force_vlan[i - 1] = func_cap->fvl;
 		caps->spec_qps[i - 1] = func_cap->spec_qps;
 		caps->port_mask[i] = caps->port_type[i];
 		caps->phys_port_id[i] = func_cap->phys_port_id;

@@ -113,7 +113,7 @@ static void mlx4_en_cq_eq_cb(unsigned int vector, u32 uuid, void *data)
 }
 
 int mlx4_en_activate_cq(struct mlx4_en_priv *priv, struct mlx4_en_cq *cq,
-			int cq_idx)
+			int cq_idx, bool vgtp_cq)
 {
 	struct mlx4_en_dev *mdev = priv->mdev;
 	int err = 0;
@@ -190,7 +190,9 @@ int mlx4_en_activate_cq(struct mlx4_en_priv *priv, struct mlx4_en_cq *cq,
 	switch (cq->type) {
 	case TX:
 		cq->mcq.comp = mlx4_en_tx_irq;
-		netif_tx_napi_add(cq->dev, &cq->napi, mlx4_en_poll_tx_cq,
+		netif_tx_napi_add(cq->dev, &cq->napi,
+				  vgtp_cq ? mlx4_en_vgtp_poll_tx_cq :
+				  mlx4_en_poll_tx_cq,
 				  NAPI_POLL_WEIGHT);
 		napi_enable(&cq->napi);
 		break;

@@ -61,11 +61,20 @@ MODULE_PARM_DESC(udev_dev_port_dev_id, "Work with dev_id or dev_port when"
 		 "\t\t1: Work only with dev_id regardless of dev_port support.\n"
 		 "\t\t2: Work with both of dev_id and dev_port (if dev_port is supported by the kernel).");
 
+static int mlx4_en_uc_steer_add(struct mlx4_en_priv *priv,
+				unsigned char *mac, int *qpn,
+				u64 *reg_id, u16 vlan);
+static void mlx4_en_uc_steer_release(struct mlx4_en_priv *priv,
+				     unsigned char *mac, int qpn, u64 reg_id);
+
 int mlx4_en_setup_tc(struct net_device *dev, u8 up)
 {
 	struct mlx4_en_priv *priv = netdev_priv(dev);
 	int i;
 	unsigned int offset = 0;
+
+	if (priv->vgtp)
+		return -ENOTSUPP;
 
 	if (up && up != MLX4_EN_NUM_UP_HIGH)
 		return -EINVAL;
@@ -467,13 +476,190 @@ static void mlx4_en_filter_rfs_expire(struct mlx4_en_priv *priv)
 }
 #endif
 
+static void mlx4_en_remove_tx_rings_per_vlan(struct mlx4_en_priv *priv, int vid)
+{
+	struct mlx4_en_vgtp *vgtp = priv->vgtp;
+	int i;
+	int tx_ring = vgtp->tx_map[vid];
+
+	if (tx_ring == -1)
+		return;
+
+	for (i = tx_ring; i <  tx_ring + priv->num_tx_rings_p_up; i++) {
+		mlx4_en_deactivate_tx_ring(priv, vgtp->rings[i].tx_ring);
+		mlx4_en_deactivate_cq(priv, &vgtp->rings[i].cq);
+		mlx4_en_destroy_tx_ring(priv, &vgtp->rings[i].tx_ring);
+		mlx4_en_destroy_cq(priv, &vgtp->rings[i].cq);
+	}
+
+	vgtp->tx_map[vid] = -1;
+}
+
+int mlx4_en_vgtp_find_free_ix(struct mlx4_en_priv *priv)
+{
+	struct mlx4_en_vgtp *vgtp = priv->vgtp;
+	int i;
+
+	for (i = 0; i < MLX4_MAX_VLAN_SET_SIZE * MLX4_EN_MAX_TX_RING_P_UP;
+	     i += priv->num_tx_rings_p_up) {
+		if (!vgtp->rings[i].tx_ring)
+			return i;
+	}
+
+	return -ENOMEM; /* FULL */
+}
+
+static int mlx4_en_add_tx_rings_per_vlan(struct mlx4_en_priv *priv,
+					 u16 vid, int idx)
+{
+	struct net_device *dev = priv->dev;
+	struct mlx4_en_port_profile *prof = priv->prof;
+	struct mlx4_en_cq *cq;
+	struct mlx4_en_tx_ring *tx_ring;
+	struct mlx4_en_vgtp *vgtp = priv->vgtp;
+	int err = 0;
+	int i, j;
+	int free_ix = mlx4_en_vgtp_find_free_ix(priv);
+
+	if (free_ix < 0)
+		return free_ix;
+
+	en_dbg(HW, priv, "VGT+: Tx RINGs(%d) offset for VID(%d) = [%d]\n",
+	       priv->num_tx_rings_p_up, vid, free_ix);
+
+	for (i = 0; i < priv->num_tx_rings_p_up; i++) {
+		int node = cpu_to_node(i % num_online_cpus());
+		int ring_ix = free_ix + i;
+
+		if (mlx4_en_create_cq(priv, &vgtp->rings[ring_ix].cq,
+				      prof->tx_ring_size, ring_ix, TX, node)) {
+			en_err(priv, "Failed to create Tx CQ\n");
+			goto err;
+		}
+
+		if (mlx4_en_create_tx_ring(priv, &priv->vgtp->rings[ring_ix].tx_ring,
+					   prof->tx_ring_size, TXBB_SIZE,
+					   node, i)) {
+			en_err(priv, "Failed to create Tx Ring\n");
+			goto ring_err;
+		}
+
+		/* Configure cq */
+		cq = vgtp->rings[ring_ix].cq;
+		err = mlx4_en_activate_cq(priv, cq, i, true);
+		if (err) {
+			en_err(priv, "Failed to activate Tx CQ\n");
+			goto tx_err;
+		}
+		err = mlx4_en_set_cq_moder(priv, cq);
+		if (err) {
+			en_err(priv, "Failed setting cq moderation parameters");
+			goto cq_err;
+		}
+		en_dbg(DRV, priv,
+		       "Resetting index of collapsed CQ:%d to -1\n", i);
+		cq->buf->wqe_index = cpu_to_be16(0xffff);
+
+		/* Configure ring */
+		tx_ring = vgtp->rings[ring_ix].tx_ring;
+
+		err = mlx4_en_activate_tx_ring(priv, tx_ring,
+					       cq->mcq.cqn, 0, idx);
+		if (err) {
+			en_err(priv, "Failed allocating Tx ring\n");
+			goto cq_err;
+		}
+		tx_ring->tx_queue = netdev_get_tx_queue(dev, i);
+
+		/* Arm CQ for TX completions */
+		mlx4_en_arm_cq(priv, cq);
+
+		/* Set initial ownership of all Tx TXBBs to SW (1) */
+		for (j = 0; j < tx_ring->buf_size; j += STAMP_STRIDE)
+			*((u32 *)(tx_ring->buf + j)) = 0xffffffff;
+	}
+
+	vgtp->tx_map[vid] = free_ix;
+	return 0;
+
+cq_err:
+	mlx4_en_deactivate_cq(priv, &priv->vgtp->rings[free_ix + i].cq);
+
+tx_err:
+	mlx4_en_destroy_tx_ring(priv, &priv->vgtp->rings[free_ix + i].tx_ring);
+
+ring_err:
+	mlx4_en_destroy_cq(priv, &priv->vgtp->rings[free_ix + i].cq);
+
+err:
+	en_err(priv, "Failed to allocate NIC resources per VLAN\n");
+	for (j = 0; j < i; j++) {
+		int ring_ix = free_ix + j;
+
+		mlx4_en_deactivate_tx_ring(priv, priv->vgtp->rings[ring_ix].tx_ring);
+		mlx4_en_deactivate_cq(priv, &priv->vgtp->rings[ring_ix].cq);
+		if (priv->vgtp->rings[ring_ix].tx_ring)
+			mlx4_en_destroy_tx_ring(priv, &priv->vgtp->rings[ring_ix].tx_ring);
+		if (priv->vgtp->rings[ring_ix].cq)
+			mlx4_en_destroy_cq(priv, &priv->vgtp->rings[ring_ix].cq);
+	}
+	return -ENOMEM;
+}
+
+static int mlx4_en_vgtp_add_vid(struct net_device *dev, unsigned short vid)
+{
+	struct mlx4_en_priv *priv = netdev_priv(dev);
+	struct mlx4_en_dev *mdev = priv->mdev;
+	int *qpn = &priv->base_qpn;
+	u64 reg_id;
+	int err;
+	int vlan_idx;
+
+	en_dbg(HW, priv, "VGT+: adding VLAN:%d\n", vid);
+	if (!vid || !mdev->device_up || !priv->port_up)
+		return 0;
+
+	err = mlx4_register_vlan(mdev->dev, priv->port, vid, &vlan_idx);
+	if (err) {
+		en_err(priv,
+		       "Failed to add VLAN %d due to VLAN policy\n",
+		       vid);
+		clear_bit(vid, priv->vgtp->bitmap);
+		return err;
+	}
+
+	err = mlx4_en_uc_steer_add(priv, priv->dev->dev_addr,
+				   qpn, &reg_id, vid);
+	if (err) {
+		en_err(priv, "Failed to open VLAN %hu\n", vid);
+		goto uc_steer_add_err;
+	}
+	err = mlx4_en_add_tx_rings_per_vlan(priv, vid, vlan_idx);
+	if (err) {
+		en_err(priv, "Failed to create rings per VLAN\n");
+		goto add_tx_rings_per_vlan_err;
+	}
+	priv->vgtp->rings[priv->vgtp->tx_map[vid]].reg_id = reg_id;
+
+	return 0;
+
+add_tx_rings_per_vlan_err:
+	mlx4_en_uc_steer_release(priv, priv->dev->dev_addr, *qpn, reg_id);
+
+uc_steer_add_err:
+	mlx4_unregister_vlan(mdev->dev, priv->port, vid);
+	clear_bit(vid, priv->vgtp->bitmap);
+
+	return err;
+}
+
 static int mlx4_en_vlan_rx_add_vid(struct net_device *dev,
 				   __be16 proto, u16 vid)
 {
 	struct mlx4_en_priv *priv = netdev_priv(dev);
 	struct mlx4_en_dev *mdev = priv->mdev;
-	int err;
-	int idx;
+	int err = 0;
+	int vlan_idx;
 
 	en_dbg(HW, priv, "adding VLAN:%d\n", vid);
 
@@ -488,7 +674,14 @@ static int mlx4_en_vlan_rx_add_vid(struct net_device *dev,
 			goto out;
 		}
 	}
-	err = mlx4_register_vlan(mdev->dev, priv->port, vid, &idx);
+
+	/* VGT+ */
+	if (priv->vgtp && !test_and_set_bit(vid, priv->vgtp->bitmap)) {
+		err = mlx4_en_vgtp_add_vid(priv->dev, vid);
+		goto out;
+	}
+
+	err = mlx4_register_vlan(mdev->dev, priv->port, vid, &vlan_idx);
 	if (err)
 		en_dbg(HW, priv, "Failed adding vlan %d\n", vid);
 
@@ -497,11 +690,28 @@ out:
 	return err;
 }
 
+static int mlx4_en_vgtp_kill_vid(struct net_device *dev, unsigned short vid)
+{
+	struct mlx4_en_priv *priv = netdev_priv(dev);
+	struct mlx4_en_dev *mdev = priv->mdev;
+
+	en_dbg(HW, priv, "VGT+: Killing VID:%d\n", vid);
+
+	if (!vid)
+		return 0;
+
+	mlx4_unregister_vlan(mdev->dev, priv->port, vid);
+	mlx4_en_remove_tx_rings_per_vlan(priv, vid);
+
+	return 0;
+}
+
 static int mlx4_en_vlan_rx_kill_vid(struct net_device *dev,
 				    __be16 proto, u16 vid)
 {
 	struct mlx4_en_priv *priv = netdev_priv(dev);
 	struct mlx4_en_dev *mdev = priv->mdev;
+	struct mlx4_en_vgtp *vgtp = priv->vgtp;
 	int err = 0;
 
 	en_dbg(HW, priv, "Killing VID:%d\n", vid);
@@ -514,12 +724,61 @@ static int mlx4_en_vlan_rx_kill_vid(struct net_device *dev,
 
 	if (mdev->device_up && priv->port_up) {
 		err = mlx4_SET_VLAN_FLTR(mdev->dev, priv);
-		if (err)
+		if (err) {
 			en_err(priv, "Failed configuring VLAN filter\n");
+			goto out;
+		}
 	}
+
+	/* VGT+ */
+	if (priv->vgtp && mdev->device_up && priv->port_up) {
+		int qpn = priv->base_qpn;
+		u64 reg_id = priv->vgtp->rings[priv->vgtp->tx_map[vid]].reg_id;
+
+		if (!test_and_clear_bit(vid, vgtp->bitmap)) {
+			en_dbg(HW, priv,
+			       "VGT+ trying to kill vid %d that doesn't exist\n", vid);
+			goto out;
+		}
+		mlx4_en_remove_tx_rings_per_vlan(priv, vid);
+		mlx4_en_uc_steer_release(priv, priv->dev->dev_addr,
+					 qpn, reg_id);
+	}
+
+out:
 	mutex_unlock(&mdev->state_lock);
 
 	return err;
+}
+
+int mlx4_en_vgtp_alloc_res(struct mlx4_en_priv *priv)
+{
+	struct mlx4_en_vgtp *vgtp = priv->vgtp;
+	int i;
+
+	for (i = 0; i < VLAN_N_VID; i++) {
+		if (!test_bit(i, vgtp->bitmap))
+			continue;
+
+		mlx4_en_vgtp_add_vid(priv->dev, i);
+	}
+
+	return 0;
+}
+
+int mlx4_en_vgtp_destroy_res(struct mlx4_en_priv *priv)
+{
+	struct mlx4_en_vgtp *vgtp = priv->vgtp;
+	int i;
+
+	for (i = 0; i < VLAN_N_VID; i++) {
+		if (!test_bit(i, vgtp->bitmap))
+			continue;
+
+		mlx4_en_vgtp_kill_vid(priv->dev, i);
+	}
+
+	return 0;
 }
 
 static void mlx4_en_u64_to_mac(unsigned char dst_mac[ETH_ALEN + 2], u64 src_mac)
@@ -531,7 +790,6 @@ static void mlx4_en_u64_to_mac(unsigned char dst_mac[ETH_ALEN + 2], u64 src_mac)
 	}
 	memset(&dst_mac[ETH_ALEN], 0, 2);
 }
-
 
 static int mlx4_en_tunnel_steer_add(struct mlx4_en_priv *priv, unsigned char *addr,
 				    int qpn, u64 *reg_id)
@@ -552,9 +810,9 @@ static int mlx4_en_tunnel_steer_add(struct mlx4_en_priv *priv, unsigned char *ad
 	return 0;
 }
 
-
 static int mlx4_en_uc_steer_add(struct mlx4_en_priv *priv,
-				unsigned char *mac, int *qpn, u64 *reg_id)
+				unsigned char *mac, int *qpn,
+				u64 *reg_id, u16 vlan)
 {
 	struct mlx4_en_dev *mdev = priv->mdev;
 	struct mlx4_dev *dev = mdev->dev;
@@ -565,6 +823,11 @@ static int mlx4_en_uc_steer_add(struct mlx4_en_priv *priv,
 		struct mlx4_qp qp;
 		u8 gid[16] = {0};
 
+		if (vlan != MLX4_EN_NO_VLAN) {
+			en_err(priv, "Invalid parameter for current steering mode\n");
+			err = -EINVAL;
+			break;
+		}
 		qp.qpn = *qpn;
 		memcpy(&gid[10], mac, ETH_ALEN);
 		gid[5] = priv->port;
@@ -591,6 +854,10 @@ static int mlx4_en_uc_steer_add(struct mlx4_en_priv *priv,
 		spec_eth.id = MLX4_NET_TRANS_RULE_ID_ETH;
 		memcpy(spec_eth.eth.dst_mac, mac, ETH_ALEN);
 		memcpy(spec_eth.eth.dst_mac_msk, &mac_mask, ETH_ALEN);
+		if (vlan != MLX4_EN_NO_VLAN) {
+			spec_eth.eth.vlan_id = cpu_to_be16(vlan);
+			spec_eth.eth.vlan_id_msk = cpu_to_be16(0xfff);
+		}
 		list_add_tail(&spec_eth.list, &rule.list);
 
 		err = mlx4_flow_attach(dev, &rule, reg_id);
@@ -719,10 +986,14 @@ static int mlx4_en_replace_mac(struct mlx4_en_priv *priv, int qpn,
 				mac_hash = new_mac[MLX4_EN_MAC_HASH_IDX];
 				hlist_add_head_rcu(&entry->hlist,
 						   &priv->mac_hash[mac_hash]);
-				mlx4_register_mac(dev, priv->port, new_mac_u64);
+				err = mlx4_register_mac(dev, priv->port,
+							new_mac_u64);
+				if (err < 0)
+					return err;
 				err = mlx4_en_uc_steer_add(priv, new_mac,
 							   &qpn,
-							   &entry->reg_id);
+							   &entry->reg_id,
+							   MLX4_EN_NO_VLAN);
 				if (err)
 					return err;
 				if (priv->tunnel_reg_id) {
@@ -1259,7 +1530,8 @@ static void mlx4_en_do_uc_filter(struct mlx4_en_priv *priv,
 			}
 			err = mlx4_en_uc_steer_add(priv, ha->addr,
 						   &priv->base_qpn,
-						   &entry->reg_id);
+						   &entry->reg_id,
+						   MLX4_EN_NO_VLAN);
 			if (err) {
 				en_err(priv, "Failed adding MAC %pM on port %d: %d\n",
 				       ha->addr, priv->port, err);
@@ -1345,7 +1617,8 @@ static int mlx4_en_set_rss_steer_rules(struct mlx4_en_priv *priv)
 	int *qpn = &priv->base_qpn;
 	struct mlx4_mac_entry *entry;
 
-	err = mlx4_en_uc_steer_add(priv, priv->dev->dev_addr, qpn, &reg_id);
+	err = mlx4_en_uc_steer_add(priv, priv->dev->dev_addr,
+				   qpn, &reg_id, MLX4_EN_NO_VLAN);
 	if (err)
 		return err;
 
@@ -1703,7 +1976,7 @@ int mlx4_en_start_port(struct net_device *dev)
 			goto cq_err;
 		}
 
-		err = mlx4_en_activate_cq(priv, cq, i);
+		err = mlx4_en_activate_cq(priv, cq, i, false);
 		if (err) {
 			en_err(priv, "Failed activating Rx CQ\n");
 			mlx4_en_free_affinity_hint(priv, i);
@@ -1760,7 +2033,7 @@ int mlx4_en_start_port(struct net_device *dev)
 		for (i = 0; i < priv->tx_ring_num[t]; i++) {
 			/* Configure cq */
 			cq = priv->tx_cq[t][i];
-			err = mlx4_en_activate_cq(priv, cq, i);
+			err = mlx4_en_activate_cq(priv, cq, i, false);
 			if (err) {
 				en_err(priv, "Failed allocating Tx CQ\n");
 				goto tx_err;
@@ -1779,7 +2052,8 @@ int mlx4_en_start_port(struct net_device *dev)
 			tx_ring = priv->tx_ring[t][i];
 			err = mlx4_en_activate_tx_ring(priv, tx_ring,
 						       cq->mcq.cqn,
-						       i / num_tx_rings_p_up);
+						       i / num_tx_rings_p_up,
+						       MLX4_EN_NO_VLAN);
 			if (err) {
 				en_err(priv, "Failed allocating Tx ring\n");
 				mlx4_en_deactivate_cq(priv, &cq);
@@ -1883,6 +2157,10 @@ int mlx4_en_start_port(struct net_device *dev)
 
 	netif_tx_start_all_queues(dev);
 	netif_device_attach(dev);
+
+	/* VGT+ */
+	if (priv->vgtp)
+		mlx4_en_vgtp_alloc_res(priv);
 
 	return 0;
 
@@ -2023,6 +2301,10 @@ void mlx4_en_stop_port(struct net_device *dev, int detach)
 
 		mlx4_en_free_affinity_hint(priv, i);
 	}
+
+	/* VGT+ */
+	if (priv->vgtp)
+		mlx4_en_vgtp_destroy_res(priv);
 }
 
 static void mlx4_en_restart(struct work_struct *work)
@@ -2255,8 +2537,70 @@ static const struct sysfs_ops en_port_vf_ops = {
 	.store = en_port_store,
 };
 
+static ssize_t mlx4_en_show_vlan_set(struct en_port *en_p,
+				     struct en_port_attribute *attr,
+				     char *buf)
+{
+	return mlx4_get_vf_vlan_set(en_p->dev, en_p->port_num,
+				    en_p->vport_num, buf);
+}
+
+static ssize_t mlx4_en_store_vlan_set(struct en_port *en_p,
+				      struct en_port_attribute *attr,
+				      const char *buf, size_t count)
+{
+	int err;
+	u16 vlan;
+	struct mlx4_dev *dev = en_p->dev;
+	int port = en_p->port_num;
+	int vf = en_p->vport_num;
+	char save;
+
+	/* Max symbols per VLAN 4 * MAX_VLANS + (MAX_VLANS - 1) for spaces */
+	if (count > MLX4_MAX_VLAN_SET_SIZE * 4 + (MLX4_MAX_VLAN_SET_SIZE - 1))
+		return -EINVAL;
+
+	err = mlx4_reset_vlan_policy(dev, port, vf);
+	if (err)
+		return err;
+
+	do {
+		int len;
+
+		len = strcspn(buf, " ");
+
+		/* nul-terminate and parse */
+		save = buf[len];
+		((char *)buf)[len] = '\0';
+
+		if (sscanf(buf, "%hu", &vlan) != 1 ||
+		    vlan > VLAN_MAX_VALUE) {
+			if (!strcmp(buf, "\n"))
+				err = 1;
+			else
+				err = -EINVAL;
+			return err;
+		}
+		err = mlx4_set_vf_vlan_next(dev, port, vf, vlan);
+		if (err) {
+			mlx4_reset_vlan_policy(dev, port, vf);
+			return err;
+		}
+
+		buf += len+1;
+	} while (save == ' ');
+
+	return count;
+}
+
+struct en_port_attribute en_port_attr_vlan_set = __ATTR(vlan_set,
+						S_IRUGO | S_IWUSR,
+						mlx4_en_show_vlan_set,
+						mlx4_en_store_vlan_set);
+
 static struct attribute *vf_attrs[] = {
 	&en_port_attr_link_state.attr,
+	&en_port_attr_vlan_set.attr,
 	&en_port_attr_tx_rate.attr,
 	NULL
 };
@@ -2287,6 +2631,10 @@ static void mlx4_en_clear_stats(struct net_device *dev)
 	memset(&priv->tx_priority_flowstats, 0,
 	       sizeof(priv->tx_priority_flowstats));
 	memset(&priv->pf_stats, 0, sizeof(priv->pf_stats));
+
+	/* clear tx dropped counter for vgtp */
+	if (priv->vgtp)
+		priv->vgtp->tx_dropped = 0;
 
 	tx_ring = priv->tx_ring[TX];
 	for (i = 0; i < priv->tx_ring_num[TX]; i++) {
@@ -2608,6 +2956,12 @@ void mlx4_en_destroy_netdev(struct net_device *dev)
 #endif
 
 	mlx4_en_free_resources(priv);
+
+	if (priv->vgtp) {
+		kfree(priv->vgtp->bitmap);
+		kfree(priv->vgtp);
+	}
+
 	mutex_unlock(&mdev->state_lock);
 
 	free_netdev(dev);
@@ -3189,7 +3543,7 @@ static int mlx4_xdp(struct net_device *dev, struct netdev_bpf *xdp)
 	}
 }
 
-static const struct net_device_ops mlx4_netdev_base_ops = {
+static struct net_device_ops mlx4_netdev_base_ops = {
 	.ndo_open		= mlx4_en_open,
 	.ndo_stop		= mlx4_en_close,
 	.ndo_start_xmit		= mlx4_en_xmit,
@@ -3501,6 +3855,9 @@ static void mlx4_en_set_netdev_ops(struct mlx4_en_priv *priv)
 		priv->dev_ops.ndo_do_ioctl = mlx4_en_ioctl;
 	}
 
+	if (priv->mdev->dev->caps.force_vlan[priv->port - 1])
+		priv->dev_ops.ndo_start_xmit = mlx4_en_vgtp_xmit;
+
 	priv->dev->netdev_ops = &priv->dev_ops;
 }
 
@@ -3570,7 +3927,9 @@ int mlx4_en_init_netdev(struct mlx4_en_dev *mdev, int port,
 	priv->pflags = MLX4_EN_PRIV_FLAGS_BLUEFLAME;
 	priv->ctrl_flags = cpu_to_be32(MLX4_WQE_CTRL_CQ_UPDATE |
 			MLX4_WQE_CTRL_SOLICITED);
-	priv->num_tx_rings_p_up = mdev->profile.max_num_tx_rings_p_up;
+	priv->num_tx_rings_p_up =
+		mdev->profile.prof[priv->port].num_tx_rings_p_up;
+	priv->num_up = prof->num_up;
 	priv->tx_work_limit = MLX4_EN_DEFAULT_TX_WORK;
 	netdev_rss_key_fill(priv->rss_key, sizeof(priv->rss_key));
 
@@ -3689,6 +4048,26 @@ int mlx4_en_init_netdev(struct mlx4_en_dev *mdev, int port,
 	 * Initialize netdev entry points
 	 */
 	mlx4_en_set_netdev_ops(priv);
+
+	priv->vgtp = 0;
+	if (mdev->dev->caps.force_vlan[priv->port - 1]) {
+		priv->vgtp = kmalloc(sizeof(*priv->vgtp), GFP_KERNEL);
+		if (!priv->vgtp)
+			en_err(priv, "Failed to allocate VGT+ resources for port (%d)\n",
+			       priv->port);
+		priv->vgtp->bitmap = kcalloc(BITS_TO_LONGS(VLAN_N_VID),
+					     sizeof(uintptr_t), GFP_KERNEL);
+		if (!priv->vgtp->bitmap) {
+			en_err(priv, "Failed to allocate VGT+ resources for port (%d)\n",
+			       priv->port);
+			kfree(priv->vgtp);
+			priv->vgtp = NULL;
+		}
+		memset(priv->vgtp->rings, 0, sizeof(priv->vgtp->rings));
+		for (i = 0; i < VLAN_N_VID; i++)
+			priv->vgtp->tx_map[i] = -1;
+		priv->vgtp->tx_dropped = 0;
+	}
 
 	dev->watchdog_timeo = MLX4_EN_WATCHDOG_TIMEOUT;
 	netif_set_real_num_tx_queues(dev, priv->tx_ring_num[TX]);
