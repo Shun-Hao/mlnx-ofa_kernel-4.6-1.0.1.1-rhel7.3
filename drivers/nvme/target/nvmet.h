@@ -147,6 +147,7 @@ struct nvmet_port {
 	enum nvme_ana_state		*ana_state;
 	void				*priv;
 	bool				enabled;
+	bool				offload;
 	int				inline_data_size;
 };
 
@@ -402,7 +403,7 @@ void nvmet_port_send_ana_event(struct nvmet_port *port);
 int nvmet_register_transport(const struct nvmet_fabrics_ops *ops);
 void nvmet_unregister_transport(const struct nvmet_fabrics_ops *ops);
 
-int nvmet_enable_port(struct nvmet_port *port);
+int nvmet_enable_port(struct nvmet_port *port, bool offloadble);
 void nvmet_disable_port(struct nvmet_port *port);
 
 void nvmet_referral_enable(struct nvmet_port *parent, struct nvmet_port *port);

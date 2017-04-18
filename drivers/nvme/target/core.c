@@ -248,7 +248,23 @@ void nvmet_unregister_transport(const struct nvmet_fabrics_ops *ops)
 }
 EXPORT_SYMBOL_GPL(nvmet_unregister_transport);
 
-int nvmet_enable_port(struct nvmet_port *port)
+static bool nvmet_peer_to_peer_capable(struct nvmet_port *port)
+{
+	const struct nvmet_fabrics_ops *ops;
+
+	lockdep_assert_held(&nvmet_config_sem);
+
+	ops = nvmet_transports[port->disc_addr.trtype];
+	if (ops->peer_to_peer_capable &&
+	    ops->install_offload_queue &&
+	    ops->create_offload_ctrl &&
+	    ops->destroy_offload_ctrl)
+		return ops->peer_to_peer_capable(port);
+
+	return false;
+}
+
+int nvmet_enable_port(struct nvmet_port *port, bool offloadble)
 {
 	const struct nvmet_fabrics_ops *ops;
 	int ret;
@@ -272,17 +288,27 @@ int nvmet_enable_port(struct nvmet_port *port)
 		return -EINVAL;
 
 	ret = ops->add_port(port);
-	if (ret) {
-		module_put(ops->owner);
-		return ret;
-	}
+	if (ret)
+		goto out_module_put;
 
+	if (offloadble && !nvmet_peer_to_peer_capable(port)) {
+		ret = -EINVAL;
+		goto out_remove_port;
+	}
 	/* If the transport didn't set inline_data_size, then disable it. */
 	if (port->inline_data_size < 0)
 		port->inline_data_size = 0;
 
 	port->enabled = true;
+	port->offload = offloadble;
 	return 0;
+
+out_remove_port:
+	ops->remove_port(port);
+out_module_put:
+	module_put(ops->owner);
+
+	return ret;
 }
 
 void nvmet_disable_port(struct nvmet_port *port)
@@ -296,6 +322,8 @@ void nvmet_disable_port(struct nvmet_port *port)
 	ops = nvmet_transports[port->disc_addr.trtype];
 	ops->remove_port(port);
 	module_put(ops->owner);
+
+	port->offload = false;
 }
 
 static void nvmet_keep_alive_timer(struct work_struct *work)
