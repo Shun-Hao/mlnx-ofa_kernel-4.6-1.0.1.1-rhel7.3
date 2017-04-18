@@ -307,7 +307,7 @@ static int ipoib_transport_cq_init_rss(struct net_device *dev,
 	req_vec = (priv->port - 1) * roundup_pow_of_two(num_online_cpus());
 	send_ring = priv->send_ring;
 	for (i = 0; i < priv->num_tx_queues; i++) {
-		cq_attr.cqe = ipoib_sendq_size;
+		cq_attr.cqe = priv->sendq_size;
 		cq_attr.comp_vector = req_vec % priv->ca->num_comp_vectors;
 		cq = ib_create_cq(priv->ca,
 				  ipoib_send_comp_handler_rss, NULL,
@@ -384,13 +384,13 @@ static int ipoib_create_parent_qp(struct net_device *dev,
 	 * parent QP is used for ARP and friend transmission
 	 */
 	if (priv->num_tx_queues > priv->tss_qp_num) {
-		init_attr.cap.max_send_wr  = ipoib_sendq_size;
+		init_attr.cap.max_send_wr  = priv->sendq_size;
 		init_attr.cap.max_send_sge = 1;
 	}
 
 	/* No RSS parent QP will be used for RX */
 	if (priv->rss_qp_num == 0) {
-		init_attr.cap.max_recv_wr  = ipoib_recvq_size;
+		init_attr.cap.max_recv_wr  = priv->recvq_size;
 		init_attr.cap.max_recv_sge = IPOIB_UD_RX_SG;
 	}
 
@@ -445,8 +445,8 @@ static struct ib_qp *ipoib_create_tss_qp(struct net_device *dev,
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ib_exp_qp_init_attr init_attr = {
 		.cap = {
-			.max_send_wr  = ipoib_sendq_size,
-			.max_recv_wr  = ipoib_recvq_size,
+			.max_send_wr  = priv->sendq_size,
+			.max_recv_wr  = priv->recvq_size,
 			.max_send_sge = min_t(u32, priv->ca->attrs.max_sge,
 					      MAX_SKB_FRAGS + 1),
 			.max_inline_data = IPOIB_MAX_INLINE_SIZE,
@@ -483,7 +483,7 @@ static struct ib_qp *ipoib_create_rss_qp(struct net_device *dev,
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ib_exp_qp_init_attr init_attr = {
 		.cap = {
-			.max_recv_wr  = ipoib_recvq_size,
+			.max_recv_wr  = priv->recvq_size,
 			.max_recv_sge = IPOIB_UD_RX_SG
 		},
 		.sq_sig_type = IB_SIGNAL_ALL_WR,
@@ -573,14 +573,14 @@ int ipoib_transport_dev_init_rss(struct net_device *dev, struct ib_device *ca)
 	priv->max_send_sge = min_t(u32, priv->ca->attrs.max_sge,
 				   MAX_SKB_FRAGS + 1);
 
-	size = ipoib_recvq_size + 1;
+	size = priv->recvq_size + 1;
 	ret = ipoib_cm_dev_init(dev);
 	if (!ret) {
-		size += ipoib_sendq_size;
+		size += priv->sendq_size;
 		if (ipoib_cm_has_srq(dev))
-			size += ipoib_recvq_size + 1; /* 1 extra for rx_drain_qp */
+			size += priv->recvq_size + 1; /* 1 extra for rx_drain_qp */
 		else
-			size += ipoib_recvq_size * ipoib_max_conn_qp;
+			size += priv->recvq_size * ipoib_max_conn_qp;
 	} else
 		if (ret != -ENOSYS)
 			return -ENODEV;

@@ -106,7 +106,7 @@ static struct ib_qp *ipoib_cm_create_rx_qp_rss(struct net_device *dev,
 	int index;
 
 	if (!ipoib_cm_has_srq(dev)) {
-		attr.cap.max_recv_wr  = ipoib_recvq_size;
+		attr.cap.max_recv_wr  = priv->recvq_size;
 		attr.cap.max_recv_sge = IPOIB_CM_RX_SG;
 	}
 
@@ -153,10 +153,10 @@ static int ipoib_cm_nonsrq_init_rx_rss(struct net_device *dev, struct ib_cm_id *
 	int ret;
 	int i;
 
-	rx->rx_ring = vzalloc(ipoib_recvq_size * sizeof *rx->rx_ring);
+	rx->rx_ring = vzalloc(priv->recvq_size * sizeof(*rx->rx_ring));
 	if (!rx->rx_ring) {
 		printk(KERN_WARNING "%s: failed to allocate CM non-SRQ ring (%d entries)\n",
-		       priv->ca->name, ipoib_recvq_size);
+		       priv->ca->name, priv->recvq_size);
 		return -ENOMEM;
 	}
 
@@ -172,7 +172,7 @@ static int ipoib_cm_nonsrq_init_rx_rss(struct net_device *dev, struct ib_cm_id *
 
 	spin_unlock_irq(&priv->lock);
 
-	for (i = 0; i < ipoib_recvq_size; ++i) {
+	for (i = 0; i < priv->recvq_size; ++i) {
 		if (!ipoib_cm_alloc_rx_skb(dev, rx->rx_ring, i, IPOIB_CM_RX_SG - 1,
 					   rx->rx_ring[i].mapping,
 					   GFP_KERNEL)) {
@@ -189,7 +189,7 @@ static int ipoib_cm_nonsrq_init_rx_rss(struct net_device *dev, struct ib_cm_id *
 		}
 	}
 
-	rx->recv_count = ipoib_recvq_size;
+	rx->recv_count = priv->recvq_size;
 
 	return 0;
 
@@ -220,7 +220,7 @@ void ipoib_cm_handle_rx_wc_rss(struct net_device *dev, struct ib_wc *wc)
 	ipoib_dbg_data(priv, "cm recv completion: id %d, status: %d\n",
 		       wr_id, wc->status);
 
-	if (unlikely(wr_id >= ipoib_recvq_size)) {
+	if (unlikely(wr_id >= priv->recvq_size)) {
 		if (wr_id == (IPOIB_CM_RX_DRAIN_WRID & ~(IPOIB_OP_CM | IPOIB_OP_RECV))) {
 			spin_lock_irqsave(&priv->lock, flags);
 			list_splice_init(&priv->cm.rx_drain_list, &priv->cm.rx_reap_list);
@@ -229,7 +229,7 @@ void ipoib_cm_handle_rx_wc_rss(struct net_device *dev, struct ib_wc *wc)
 			spin_unlock_irqrestore(&priv->lock, flags);
 		} else
 			ipoib_warn(priv, "cm recv completion event with wrid %d (> %d)\n",
-				   wr_id, ipoib_recvq_size);
+				   wr_id, priv->recvq_size);
 		return;
 	}
 
@@ -401,7 +401,7 @@ void ipoib_cm_send_rss(struct net_device *dev, struct sk_buff *skb, struct ipoib
 	 * means we have to make sure everything is properly recorded and
 	 * our state is consistent before we call post_send().
 	 */
-	tx_req = &tx->tx_ring[tx->tx_head & (ipoib_sendq_size - 1)];
+	tx_req = &tx->tx_ring[tx->tx_head & (priv->sendq_size - 1)];
 	tx_req->skb = skb;
 
 	if (skb->len < ipoib_inline_thold && !skb_shinfo(skb)->nr_frags) {
@@ -421,8 +421,8 @@ void ipoib_cm_send_rss(struct net_device *dev, struct sk_buff *skb, struct ipoib
 	skb_orphan(skb);
 	skb_dst_drop(skb);
 
-	rc = post_send_rss(priv, tx, tx->tx_head & (ipoib_sendq_size - 1), tx_req,
-		       send_ring);
+	rc = post_send_rss(priv, tx, tx->tx_head & (priv->sendq_size - 1), tx_req,
+			   send_ring);
 	if (unlikely(rc)) {
 		ipoib_warn(priv, "post_send_rss failed, error %d\n", rc);
 		++dev->stats.tx_errors;
@@ -433,7 +433,7 @@ void ipoib_cm_send_rss(struct net_device *dev, struct sk_buff *skb, struct ipoib
 		netdev_get_tx_queue(dev, queue_index)->trans_start = jiffies;
 		++tx->tx_head;
 
-		if (atomic_inc_return(&send_ring->tx_outstanding) == ipoib_sendq_size) {
+		if (atomic_inc_return(&send_ring->tx_outstanding) == priv->sendq_size) {
 			ipoib_dbg(priv, "TX ring 0x%x full, stopping kernel net queue\n",
 				  tx->qp->qp_num);
 			netif_stop_subqueue(dev, queue_index);
@@ -460,9 +460,9 @@ void ipoib_cm_handle_tx_wc_rss(struct net_device *dev, struct ib_wc *wc)
 	ipoib_dbg_data(priv, "cm send completion: id %d, status: %d\n",
 		       wr_id, wc->status);
 
-	if (unlikely(wr_id >= ipoib_sendq_size)) {
+	if (unlikely(wr_id >= priv->sendq_size)) {
 		ipoib_warn(priv, "cm send completion event with wrid %d (> %d)\n",
-			   wr_id, ipoib_sendq_size);
+			   wr_id, priv->sendq_size);
 		return;
 	}
 
@@ -483,7 +483,7 @@ void ipoib_cm_handle_tx_wc_rss(struct net_device *dev, struct ib_wc *wc)
 	netif_tx_lock(dev);
 
 	++tx->tx_tail;
-	if (unlikely(atomic_dec_return(&send_ring->tx_outstanding) == ipoib_sendq_size >> 1) &&
+	if (unlikely(atomic_dec_return(&send_ring->tx_outstanding) == priv->sendq_size >> 1) &&
 	    __netif_subqueue_stopped(dev, queue_index) &&
 	    test_bit(IPOIB_FLAG_ADMIN_UP, &priv->flags))
 		netif_wake_subqueue(dev, queue_index);
@@ -527,7 +527,7 @@ static struct ib_qp *ipoib_cm_create_tx_qp_rss(struct net_device *dev, struct ip
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ib_qp_init_attr attr = {
 		.srq			= priv->cm.srq,
-		.cap.max_send_wr	= ipoib_sendq_size,
+		.cap.max_send_wr	= priv->sendq_size,
 		.cap.max_send_sge	= 1,
 		.cap.max_inline_data    = IPOIB_MAX_INLINE_SIZE,
 		.sq_sig_type		= IB_SIGNAL_ALL_WR,
@@ -636,7 +636,7 @@ timeout:
 	while ((int) p->tx_tail - (int) p->tx_head < 0) {
 		struct ipoib_send_ring *send_ring;
 		u16 queue_index;
-		tx_req = &p->tx_ring[p->tx_tail & (ipoib_sendq_size - 1)];
+		tx_req = &p->tx_ring[p->tx_tail & (priv->sendq_size - 1)];
 		/* Checking whether inline was used - nothing to unmap */
 		if (!tx_req->is_inline)
 			ipoib_dma_unmap_tx(priv, tx_req);
@@ -646,7 +646,7 @@ timeout:
 		send_ring = priv->send_ring + queue_index;
 		netif_tx_lock_bh(p->dev);
 		if (unlikely(atomic_dec_return(&send_ring->tx_outstanding) ==
-				(ipoib_sendq_size >> 1)) &&
+				(priv->sendq_size >> 1)) &&
 				__netif_subqueue_stopped(p->dev, queue_index) &&
 		    test_bit(IPOIB_FLAG_ADMIN_UP, &priv->flags))
 			netif_wake_subqueue(p->dev, queue_index);

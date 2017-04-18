@@ -231,14 +231,14 @@ int ipoib_dev_init_default_rss(struct net_device *dev)
 		goto out;
 	}
 
-	alloc_size = ipoib_recvq_size * sizeof(*recv_ring->rx_ring);
+	alloc_size = priv->recvq_size * sizeof(*recv_ring->rx_ring);
 	rx_allocated = 0;
 	recv_ring = priv->recv_ring;
 	for (i = 0; i < priv->num_rx_queues; i++) {
 		recv_ring->rx_ring = kzalloc(alloc_size, GFP_KERNEL);
 		if (!recv_ring->rx_ring) {
 			pr_warn("%s: failed to allocate RX ring (%d entries)\n",
-				priv->ca->name, ipoib_recvq_size);
+				priv->ca->name, priv->recvq_size);
 			goto out_recv_ring_cleanup;
 		}
 		recv_ring->dev = dev;
@@ -255,14 +255,14 @@ int ipoib_dev_init_default_rss(struct net_device *dev)
 		goto out_recv_ring_cleanup;
 	}
 
-	alloc_size = ipoib_sendq_size * sizeof(*send_ring->tx_ring);
+	alloc_size = priv->sendq_size * sizeof(*send_ring->tx_ring);
 	tx_allocated = 0;
 	send_ring = priv->send_ring;
 	for (i = 0; i < priv->num_tx_queues; i++) {
 		send_ring->tx_ring = vzalloc(alloc_size);
 		if (!send_ring->tx_ring) {
 			pr_warn("%s: failed to allocate TX ring (%d entries)\n",
-				ca->name, ipoib_sendq_size);
+				ca->name, priv->sendq_size);
 			goto out_send_ring_cleanup;
 		}
 		send_ring->dev = dev;

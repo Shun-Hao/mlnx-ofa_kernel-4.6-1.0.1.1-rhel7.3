@@ -153,6 +153,8 @@ static const struct ethtool_ops ipoib_ethtool_ops_rss = {
 	.get_strings		= ipoib_get_strings_rss,
 	.get_ethtool_stats	= ipoib_get_ethtool_stats_rss,
 	.get_sset_count		= ipoib_get_sset_count_rss,
+	.set_ringparam		= ipoib_set_ring_param,
+	.get_ringparam		= ipoib_get_ring_param,
 };
 
 static const struct ethtool_ops *ipoib_ethtool_ops_select;
