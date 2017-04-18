@@ -476,6 +476,25 @@ struct mlx5_ifc_ipsec_counters_bits {
 	u8         dropped_cmd[0x40];
 };
 
+struct mlx5_ifc_fpga_shell_counters_bits {
+	u8         reserved_0[0x20];
+
+	u8         clear[0x1];
+	u8         reserved_1[0x1f];
+
+	u8         reserved_2[0x40];
+
+	u8         ddr_read_requests[0x40];
+
+	u8         ddr_write_requests[0x40];
+
+	u8         ddr_read_bytes[0x40];
+
+	u8         ddr_write_bytes[0x40];
+
+	u8         reserved_3[0x200];
+};
+
 enum {
 	MLX5_FPGA_SHELL_QP_PACKET_TYPE_DDR_READ            = 0x0,
 	MLX5_FPGA_SHELL_QP_PACKET_TYPE_DDR_WRITE           = 0x1,

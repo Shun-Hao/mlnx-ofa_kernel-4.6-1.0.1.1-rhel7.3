@@ -67,6 +67,8 @@ static void client_context_destroy(struct mlx5_fpga_device *fdev,
 {
 	mlx5_fpga_dbg(fdev, "Deleting client context %p of client %p\n",
 		      context, context->client);
+	if (context->client->destroy)
+		context->client->destroy(fdev);
 	list_del(&context->list);
 	kfree(context);
 }
@@ -89,6 +91,9 @@ static int client_context_create(struct mlx5_fpga_device *fdev,
 	mlx5_fpga_dbg(fdev, "Adding client context %p client %p\n",
 		      context, client);
 
+	if (client->create)
+		client->create(fdev);
+
 	if (pctx)
 		*pctx = context;
 	return 0;
@@ -103,6 +108,7 @@ static struct mlx5_fpga_device *mlx5_fpga_device_alloc(void)
 		return NULL;
 
 	spin_lock_init(&fdev->state_lock);
+	init_completion(&fdev->load_event);
 	fdev->state = MLX5_FPGA_STATUS_NONE;
 	INIT_LIST_HEAD(&fdev->client_data_list);
 	return fdev;
@@ -434,6 +440,12 @@ void mlx5_fpga_event(struct mlx5_core_dev *mdev, u8 event, void *data)
 	case MLX5_FPGA_STATUS_SUCCESS:
 		mlx5_fpga_warn(fdev, "Error %u: %s\n", syndrome, event_name);
 		teardown = true;
+		break;
+	case MLX5_FPGA_STATUS_IN_PROGRESS:
+		if (syndrome != MLX5_FPGA_ERROR_EVENT_SYNDROME_IMAGE_CHANGED)
+			mlx5_fpga_warn(fdev, "Error while loading %u: %s\n",
+				       syndrome, event_name);
+		complete(&fdev->load_event);
 		break;
 	default:
 		mlx5_fpga_warn_ratelimited(fdev, "Unexpected error event %u: %s\n",

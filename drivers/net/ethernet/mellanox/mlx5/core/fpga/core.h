@@ -49,6 +49,7 @@ struct mlx5_fpga_client_data {
 /* Represents an Innova device */
 struct mlx5_fpga_device {
 	struct mlx5_core_dev *mdev;
+	struct completion load_event;
 	spinlock_t state_lock; /* Protects state transitions */
 	enum mlx5_fpga_status state;
 	enum mlx5_fpga_image last_admin_image;

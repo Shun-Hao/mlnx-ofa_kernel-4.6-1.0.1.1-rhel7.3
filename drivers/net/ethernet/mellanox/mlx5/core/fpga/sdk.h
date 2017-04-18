@@ -34,9 +34,12 @@
 #ifndef MLX5_FPGA_SDK_H
 #define MLX5_FPGA_SDK_H
 
+#include <linux/mlx5/driver.h>
 #include <linux/types.h>
 #include <linux/list.h>
 #include <linux/dma-direction.h>
+
+#include "fpga/cmd.h"
 
 /**
  * DOC: Innova SDK
@@ -54,8 +57,11 @@
 enum mlx5_fpga_access_type {
 	/** Use the slow CX-FPGA I2C bus */
 	MLX5_FPGA_ACCESS_TYPE_I2C = 0x0,
+	/** Use the fast 'shell QP' */
+	MLX5_FPGA_ACCESS_TYPE_RDMA,
 	/** Use the fastest available method */
-	MLX5_FPGA_ACCESS_TYPE_DONTCARE = 0x0,
+	MLX5_FPGA_ACCESS_TYPE_DONTCARE,
+	MLX5_FPGA_ACCESS_TYPE_MAX = MLX5_FPGA_ACCESS_TYPE_DONTCARE,
 };
 
 struct mlx5_fpga_conn;
@@ -65,6 +71,13 @@ struct mlx5_fpga_device;
  * struct mlx5_fpga_client - Describes an Innova client driver
  */
 struct mlx5_fpga_client {
+	/**
+	 * @create: Informs the client that an Innova device was created.
+	 * The device is not yet operational at this stage
+	 * This callback is optional
+	 * @fdev: The FPGA device
+	 */
+	void (*create)(struct mlx5_fpga_device *fdev);
 	/**
 	 * @add: Informs the client that a core device is ready and operational.
 	 * @fdev: The FPGA device
@@ -82,7 +95,12 @@ struct mlx5_fpga_client {
 	 * This callback is called once for every successful call to add()
 	 */
 	void (*remove)(struct mlx5_fpga_device *fdev);
-
+	/**
+	 * @destroy: Informs the client that a core device is being destroyed.
+	 * @fdev: The FPGA device
+	 * The device is not operational at this stage
+	 */
+	void (*destroy)(struct mlx5_fpga_device *fdev);
 	/** The name of this client driver */
 	char name[MLX5_FPGA_CLIENT_NAME_MAX];
 	/** For use by core. A link in the list of client drivers */
@@ -165,6 +183,36 @@ void mlx5_fpga_client_register(struct mlx5_fpga_client *client);
  * created/added devices in the system, to clean up their state.
  */
 void mlx5_fpga_client_unregister(struct mlx5_fpga_client *client);
+
+/**
+ * mlx5_fpga_device_reload() - Force the FPGA to reload its synthesis from flash
+ * @fdev: The FPGA device
+ * @image: Which flash image to load
+ *
+ * This routine attempts graceful teardown of all device resources before
+ * loading. This includes a callback to client driver delete().
+ * Calls client driver add() once device is operational again.
+ * Blocks until the new synthesis is loaded, and the device is fully
+ * initialized.
+ *
+ * Return: 0 if successful, or a negative error value otherwise
+ */
+int mlx5_fpga_device_reload(struct mlx5_fpga_device *fdev,
+			    enum mlx5_fpga_image image);
+
+/**
+ * mlx5_fpga_flash_select() - Select the current active flash
+ * @fdev: The FPGA device
+ * @image: Which flash image will be active
+ *
+ * This routine selects the active flash by programming the relevant MUX.
+ * Useful prior to burning a new image on flash.
+ * This setting is volatile and is reset upon reboot or power-cycle
+ *
+ * Return: 0 if successful, or a negative error value otherwise
+ */
+int mlx5_fpga_flash_select(struct mlx5_fpga_device *fdev,
+			   enum mlx5_fpga_image image);
 
 /**
  * mlx5_fpga_sbu_conn_create() - Initialize a new FPGA SBU connection
@@ -301,4 +349,24 @@ void mlx5_fpga_client_data_set(struct mlx5_fpga_device *fdev,
  */
 void *mlx5_fpga_client_data_get(struct mlx5_fpga_device *fdev,
 				struct mlx5_fpga_client *client);
+
+/**
+ * mlx5_fpga_device_query() - Query FPGA device state information
+ * @fdev: The FPGA device
+ * @query: Returns the device state
+ *
+ * Queries the device state and returns it in *query
+ */
+void mlx5_fpga_device_query(struct mlx5_fpga_device *fdev,
+			    struct mlx5_fpga_query *query);
+
+/**
+ * mlx5_fpga_dev() - Retrieve FPGA device structure
+ * @fdev: The FPGA device
+
+ * Return: A pointer to a struct device, which may be used with dev_* logging,
+ *         sysfs extensions, etc.
+ */
+struct device *mlx5_fpga_dev(struct mlx5_fpga_device *fdev);
+
 #endif /* MLX5_FPGA_SDK_H */

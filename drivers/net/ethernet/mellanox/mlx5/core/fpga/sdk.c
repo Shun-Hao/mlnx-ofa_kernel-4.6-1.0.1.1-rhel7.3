@@ -31,11 +31,25 @@
  *
  */
 
+#include <linux/errno.h>
+#include <linux/err.h>
+#include <linux/completion.h>
 #include <linux/mlx5/device.h>
 
 #include "fpga/core.h"
 #include "fpga/conn.h"
 #include "fpga/sdk.h"
+#include "fpga/xfer.h"
+#include "mlx5_core.h"
+#include "accel/ipsec.h"
+
+#define MLX5_FPGA_LOAD_TIMEOUT 25000 /* msec */
+
+struct mem_transfer {
+	struct mlx5_fpga_transaction t;
+	struct completion comp;
+	u8 status;
+};
 
 struct mlx5_fpga_conn *
 mlx5_fpga_sbu_conn_create(struct mlx5_fpga_device *fdev,
@@ -57,6 +71,50 @@ int mlx5_fpga_sbu_conn_sendmsg(struct mlx5_fpga_conn *conn,
 	return mlx5_fpga_conn_send(conn, buf);
 }
 EXPORT_SYMBOL(mlx5_fpga_sbu_conn_sendmsg);
+
+static void mem_complete(const struct mlx5_fpga_transaction *complete,
+			 u8 status)
+{
+	struct mem_transfer *xfer;
+
+	mlx5_fpga_dbg(complete->conn->fdev,
+		      "transaction %p complete status %u", complete, status);
+
+	xfer = container_of(complete, struct mem_transfer, t);
+	xfer->status = status;
+	complete_all(&xfer->comp);
+}
+
+static int mem_transaction(struct mlx5_fpga_device *fdev, size_t size, u64 addr,
+			   void *buf, enum mlx5_fpga_direction direction)
+{
+	int ret;
+	struct mem_transfer xfer;
+
+	if (!fdev->shell_conn) {
+		ret = -ENOTCONN;
+		goto out;
+	}
+
+	xfer.t.data = buf;
+	xfer.t.size = size;
+	xfer.t.addr = addr;
+	xfer.t.conn = fdev->shell_conn;
+	xfer.t.direction = direction;
+	xfer.t.complete = mem_complete;
+	init_completion(&xfer.comp);
+	ret = mlx5_fpga_xfer_exec(&xfer.t);
+	if (ret) {
+		mlx5_fpga_dbg(fdev, "Transfer execution failed: %d\n", ret);
+		goto out;
+	}
+	wait_for_completion(&xfer.comp);
+	if (xfer.status != 0)
+		ret = -EIO;
+
+out:
+	return ret;
+}
 
 static int mlx5_fpga_mem_read_i2c(struct mlx5_fpga_device *fdev, size_t size,
 				  u64 addr, u8 *buf)
@@ -126,7 +184,19 @@ int mlx5_fpga_mem_read(struct mlx5_fpga_device *fdev, size_t size, u64 addr,
 {
 	int ret;
 
+	if (access_type == MLX5_FPGA_ACCESS_TYPE_DONTCARE)
+		access_type = fdev->shell_conn ? MLX5_FPGA_ACCESS_TYPE_RDMA :
+						 MLX5_FPGA_ACCESS_TYPE_I2C;
+
+	mlx5_fpga_dbg(fdev, "Reading %zu bytes at 0x%llx over %s",
+		      size, addr, access_type ? "RDMA" : "I2C");
+
 	switch (access_type) {
+	case MLX5_FPGA_ACCESS_TYPE_RDMA:
+		ret = mem_transaction(fdev, size, addr, buf, MLX5_FPGA_READ);
+		if (ret)
+			return ret;
+		break;
 	case MLX5_FPGA_ACCESS_TYPE_I2C:
 		ret = mlx5_fpga_mem_read_i2c(fdev, size, addr, buf);
 		if (ret)
@@ -147,7 +217,19 @@ int mlx5_fpga_mem_write(struct mlx5_fpga_device *fdev, size_t size, u64 addr,
 {
 	int ret;
 
+	if (access_type == MLX5_FPGA_ACCESS_TYPE_DONTCARE)
+		access_type = fdev->shell_conn ? MLX5_FPGA_ACCESS_TYPE_RDMA :
+						 MLX5_FPGA_ACCESS_TYPE_I2C;
+
+	mlx5_fpga_dbg(fdev, "Writing %zu bytes at 0x%llx over %s",
+		      size, addr, access_type ? "RDMA" : "I2C");
+
 	switch (access_type) {
+	case MLX5_FPGA_ACCESS_TYPE_RDMA:
+		ret = mem_transaction(fdev, size, addr, buf, MLX5_FPGA_WRITE);
+		if (ret)
+			return ret;
+		break;
 	case MLX5_FPGA_ACCESS_TYPE_I2C:
 		ret = mlx5_fpga_mem_write_i2c(fdev, size, addr, buf);
 		if (ret)
@@ -215,3 +297,138 @@ out:
 	return ret;
 }
 EXPORT_SYMBOL(mlx5_fpga_client_data_get);
+
+void mlx5_fpga_device_query(struct mlx5_fpga_device *fdev,
+			    struct mlx5_fpga_query *query)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&fdev->state_lock, flags);
+	query->status = fdev->state;
+	query->admin_image = fdev->last_admin_image;
+	query->oper_image = fdev->last_oper_image;
+	spin_unlock_irqrestore(&fdev->state_lock, flags);
+}
+EXPORT_SYMBOL(mlx5_fpga_device_query);
+
+int mlx5_fpga_device_reload(struct mlx5_fpga_device *fdev,
+			    enum mlx5_fpga_image image)
+{
+	struct mlx5_core_dev *mdev = fdev->mdev;
+	unsigned long timeout;
+	unsigned long flags;
+	int err = 0;
+
+	spin_lock_irqsave(&fdev->state_lock, flags);
+	switch (fdev->state) {
+	case MLX5_FPGA_STATUS_NONE:
+		err = -ENODEV;
+		break;
+	case MLX5_FPGA_STATUS_IN_PROGRESS:
+		err = -EBUSY;
+		break;
+	case MLX5_FPGA_STATUS_SUCCESS:
+	case MLX5_FPGA_STATUS_FAILURE:
+		break;
+	}
+	spin_unlock_irqrestore(&fdev->state_lock, flags);
+	if (err)
+		return err;
+
+	mutex_lock(&mdev->intf_state_mutex);
+	clear_bit(MLX5_INTERFACE_STATE_UP, &mdev->intf_state);
+
+	mlx5_unregister_device(mdev);
+	mlx5_accel_ipsec_cleanup(mdev);
+	mlx5_fpga_device_stop(mdev);
+
+	fdev->state = MLX5_FPGA_STATUS_IN_PROGRESS;
+	reinit_completion(&fdev->load_event);
+
+	if (image <= MLX5_FPGA_IMAGE_MAX) {
+		mlx5_fpga_info(fdev, "Loading from flash\n");
+		err = mlx5_fpga_load(mdev, image);
+		if (err) {
+			mlx5_fpga_err(fdev, "Failed to request load: %d\n",
+				      err);
+			goto out;
+		}
+	} else {
+		mlx5_fpga_info(fdev, "Resetting\n");
+		err = mlx5_fpga_ctrl_op(mdev, MLX5_FPGA_CTRL_OPERATION_RESET);
+		if (err) {
+			mlx5_fpga_err(fdev, "Failed to request reset: %d\n",
+				      err);
+			goto out;
+		}
+	}
+
+	timeout = jiffies + msecs_to_jiffies(MLX5_FPGA_LOAD_TIMEOUT);
+	err = wait_for_completion_timeout(&fdev->load_event, timeout - jiffies);
+	if (err < 0) {
+		mlx5_fpga_err(fdev, "Failed waiting for FPGA load: %d\n", err);
+		fdev->state = MLX5_FPGA_STATUS_FAILURE;
+		goto out;
+	}
+
+	err = mlx5_fpga_device_start(mdev);
+	if (err) {
+		mlx5_core_err(mdev, "fpga device start failed %d\n", err);
+		goto out;
+	}
+	err = mlx5_accel_ipsec_init(mdev);
+	if (err) {
+		mlx5_core_err(mdev, "IPSec device start failed %d\n", err);
+		goto err_fpga;
+	}
+
+	err = mlx5_register_device(mdev);
+	if (err) {
+		mlx5_core_err(mdev, "mlx5_register_device failed %d\n", err);
+		fdev->state = MLX5_FPGA_STATUS_FAILURE;
+		goto err_ipsec;
+	}
+
+	set_bit(MLX5_INTERFACE_STATE_UP, &mdev->intf_state);
+	goto out;
+
+err_ipsec:
+	mlx5_accel_ipsec_cleanup(mdev);
+err_fpga:
+	mlx5_fpga_device_stop(mdev);
+out:
+	mutex_unlock(&mdev->intf_state_mutex);
+	return err;
+}
+EXPORT_SYMBOL(mlx5_fpga_device_reload);
+
+int mlx5_fpga_flash_select(struct mlx5_fpga_device *fdev,
+			   enum mlx5_fpga_image image)
+{
+	unsigned long flags;
+	int err;
+
+	spin_lock_irqsave(&fdev->state_lock, flags);
+	switch (fdev->state) {
+	case MLX5_FPGA_STATUS_NONE:
+		spin_unlock_irqrestore(&fdev->state_lock, flags);
+		return -ENODEV;
+	case MLX5_FPGA_STATUS_IN_PROGRESS:
+	case MLX5_FPGA_STATUS_SUCCESS:
+	case MLX5_FPGA_STATUS_FAILURE:
+		break;
+	}
+	spin_unlock_irqrestore(&fdev->state_lock, flags);
+
+	err = mlx5_fpga_image_select(fdev->mdev, image);
+	if (err)
+		mlx5_fpga_err(fdev, "Failed to select flash image: %d\n", err);
+	return err;
+}
+EXPORT_SYMBOL(mlx5_fpga_flash_select);
+
+struct device *mlx5_fpga_dev(struct mlx5_fpga_device *fdev)
+{
+	return &fdev->mdev->pdev->dev;
+}
+EXPORT_SYMBOL(mlx5_fpga_dev);
