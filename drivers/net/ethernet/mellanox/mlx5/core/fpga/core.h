@@ -42,6 +42,7 @@
 struct mlx5_fpga_client_data {
 	struct list_head  list;
 	struct mlx5_fpga_client *client;
+	void *data;
 	bool added;
 };
 

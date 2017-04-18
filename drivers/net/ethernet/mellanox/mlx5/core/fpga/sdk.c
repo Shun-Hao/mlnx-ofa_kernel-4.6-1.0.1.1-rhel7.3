@@ -180,3 +180,38 @@ u64 mlx5_fpga_ddr_base_get(struct mlx5_fpga_device *fdev)
 	return MLX5_CAP64_FPGA(fdev->mdev, fpga_ddr_start_addr);
 }
 EXPORT_SYMBOL(mlx5_fpga_ddr_base_get);
+
+void mlx5_fpga_client_data_set(struct mlx5_fpga_device *fdev,
+			       struct mlx5_fpga_client *client, void *data)
+{
+	struct mlx5_fpga_client_data *context;
+
+	list_for_each_entry(context, &fdev->client_data_list, list) {
+		if (context->client != client)
+			continue;
+		context->data = data;
+		return;
+	}
+
+	mlx5_fpga_warn(fdev, "No client context found for %s\n", client->name);
+}
+EXPORT_SYMBOL(mlx5_fpga_client_data_set);
+
+void *mlx5_fpga_client_data_get(struct mlx5_fpga_device *fdev,
+				struct mlx5_fpga_client *client)
+{
+	struct mlx5_fpga_client_data *context;
+	void *ret = NULL;
+
+	list_for_each_entry(context, &fdev->client_data_list, list) {
+		if (context->client != client)
+			continue;
+		ret = context->data;
+		goto out;
+	}
+	mlx5_fpga_warn(fdev, "No client context found for %s\n", client->name);
+
+out:
+	return ret;
+}
+EXPORT_SYMBOL(mlx5_fpga_client_data_get);

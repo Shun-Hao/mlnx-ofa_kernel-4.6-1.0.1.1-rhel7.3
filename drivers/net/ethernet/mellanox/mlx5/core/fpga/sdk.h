@@ -274,4 +274,31 @@ u64 mlx5_fpga_ddr_size_get(struct mlx5_fpga_device *fdev);
  * Return: Base address of DDR in FPGA address space
  */
 u64 mlx5_fpga_ddr_base_get(struct mlx5_fpga_device *fdev);
+
+/**
+ * mlx5_fpga_client_data_set() - Attach client-defined private value to a device
+ * @fdev: The FPGA device
+ * @client: The client driver
+ * @data: Opaque private value
+ *
+ * Client driver may use the private value for storing device-specific
+ * state and configuration information, and may retrieve it with a call to
+ * mlx5_fpga_client_data_get().
+ */
+void mlx5_fpga_client_data_set(struct mlx5_fpga_device *fdev,
+			       struct mlx5_fpga_client *client,
+			       void *data);
+
+/**
+ * mlx5_fpga_client_data_get() - Retrieve client-defined private value
+ * @fdev: The FPGA device
+ * @client: The client driver
+ *
+ * Client driver may use the private value for storing device-specific
+ * state and configuration information by calling mlx5_fpga_client_data_set()
+ *
+ * Return: The private value
+ */
+void *mlx5_fpga_client_data_get(struct mlx5_fpga_device *fdev,
+				struct mlx5_fpga_client *client);
 #endif /* MLX5_FPGA_SDK_H */

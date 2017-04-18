@@ -82,6 +82,7 @@ static int client_context_create(struct mlx5_fpga_device *fdev,
 		return -ENOMEM;
 
 	context->client = client;
+	context->data = NULL;
 	context->added  = false;
 	list_add(&context->list, &fdev->client_data_list);
 
