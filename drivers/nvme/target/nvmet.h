@@ -82,6 +82,8 @@ struct nvmet_ns {
 	mempool_t		*bvec_pool;
 	struct kmem_cache	*bvec_cache;
 
+	bool			offloadble;
+
 	int			use_p2pmem;
 	struct pci_dev		*p2p_dev;
 };
@@ -226,6 +228,8 @@ struct nvmet_subsys {
 
 	struct config_group	namespaces_group;
 	struct config_group	allowed_hosts_group;
+
+	bool			offloadble;
 };
 
 static inline struct nvmet_subsys *to_subsys(struct config_item *item)

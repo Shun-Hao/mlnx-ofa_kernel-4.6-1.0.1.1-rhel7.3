@@ -480,6 +480,9 @@ int nvmet_ns_enable(struct nvmet_ns *ns)
 				ret = -EINVAL;
 				goto out_dev_put;
 			}
+			ns->offloadble = true;
+	} else {
+		ns->offloadble = false;
 	}
 
 	ret = nvmet_p2pmem_ns_enable(ns);
@@ -494,15 +497,13 @@ int nvmet_ns_enable(struct nvmet_ns *ns)
 	if (ret)
 		goto out_dev_put;
 
-	if (ns->nsid > subsys->max_nsid)
-		subsys->max_nsid = ns->nsid;
-
 	/*
 	 * The namespaces list needs to be sorted to simplify the implementation
 	 * of the Identify Namepace List subcommand.
 	 */
 	if (list_empty(&subsys->namespaces)) {
 		list_add_tail_rcu(&ns->dev_link, &subsys->namespaces);
+		subsys->offloadble = ns->offloadble;
 	} else {
 		struct nvmet_ns *old;
 
@@ -512,8 +513,20 @@ int nvmet_ns_enable(struct nvmet_ns *ns)
 				break;
 		}
 
-		list_add_tail_rcu(&ns->dev_link, &old->dev_link);
+		if (subsys->offloadble == ns->offloadble) {
+			/*
+			 * Subsystem must have the same offloadble polarity as
+			 * all it's namespaces.
+			 */
+			list_add_tail_rcu(&ns->dev_link, &old->dev_link);
+		} else {
+			ret = -EINVAL;
+			goto out_kill_ref;
+		}
 	}
+	if (ns->nsid > subsys->max_nsid)
+		subsys->max_nsid = ns->nsid;
+
 	subsys->nr_namespaces++;
 
 	nvmet_ns_changed(subsys, ns->nsid);
@@ -522,10 +535,16 @@ int nvmet_ns_enable(struct nvmet_ns *ns)
 out_unlock:
 	mutex_unlock(&subsys->lock);
 	return ret;
+out_kill_ref:
+	percpu_ref_kill(&ns->ref);
+	synchronize_rcu();
+	wait_for_completion(&ns->disable_done);
+	percpu_ref_exit(&ns->ref);
 out_dev_put:
 	if (ns->pdev) {
 		pci_dev_put(ns->pdev);
 		ns->pdev = NULL;
+		ns->offloadble = false;
 	}
 
 	list_for_each_entry(ctrl, &subsys->ctrls, subsys_entry)
