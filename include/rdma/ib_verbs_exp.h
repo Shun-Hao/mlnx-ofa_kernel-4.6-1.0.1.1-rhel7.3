@@ -236,6 +236,12 @@ struct ib_exp_sw_parsing_caps {
 	u32 supported_qpts;
 };
 
+struct ib_exp_context_attr {
+	u64	peer_id;
+	u8     *peer_name;
+	u32	comp_mask;
+};
+
 struct ib_exp_device_attr {
 	struct ib_device_attr	base;
 	/* Use IB_EXP_DEVICE_ATTR_... for exp_comp_mask */

@@ -33,6 +33,7 @@ enum {
 	IB_USER_VERBS_EXP_CMD_CREATE_RWQ_IND_TBL,
 	IB_USER_VERBS_EXP_CMD_DESTROY_RWQ_IND_TBL,
 	IB_USER_VERBS_EXP_CMD_CREATE_FLOW = 19,
+	IB_USER_VERBS_EXP_CMD_SET_CTX_ATTR,
 };
 
 enum ib_uverbs_exp_modify_qp_comp_mask {
@@ -516,6 +517,18 @@ struct ib_uverbs_exp_flow_spec {
 		struct ib_uverbs_flow_spec_tcp_udp tcp_udp;
 		struct ib_uverbs_flow_spec_ipv6    ipv6;
 	};
+};
+
+enum ib_uverbs_exp_set_context_attr_comp_mask {
+	IB_UVERBS_EXP_SET_CONTEXT_PEER_INFO	= (1UL << 0),
+	IB_UVERBS_EXP_SET_CONTEXT_ATTR_RESERVED	= (1UL << 1),
+};
+
+struct ib_uverbs_exp_set_context_attr {
+	__u64	peer_id;
+	__u8	peer_name[64];
+	__u32	comp_mask;
+	__u32	reserved;
 };
 
 #endif

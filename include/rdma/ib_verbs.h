@@ -81,6 +81,7 @@ struct ib_exp_device_attr;
 struct ib_dct_attr;
 struct ib_dct_init_attr;
 struct ib_mkey_attr;
+struct ib_exp_context_attr;
 
 union ib_gid {
 	u8	raw[16];
@@ -1495,6 +1496,10 @@ enum ib_mr_rereg_flags {
 	IB_MR_REREG_SUPPORTED	= ((IB_MR_REREG_ACCESS << 1) - 1)
 };
 
+enum ib_ucontext_flags {
+	IB_UCONTEXT_LOCAL_PEER_ALLOC	= 1
+};
+
 struct ib_fmr_attr {
 	int	max_pages;
 	int	max_maps;
@@ -1546,6 +1551,7 @@ struct ib_ucontext {
 
 	void		*peer_mem_private_data;
 	char		*peer_mem_name;
+	u32		flags; /* use ib_ucontext_flags enum */
 };
 
 struct ib_uobject {
@@ -2367,7 +2373,9 @@ struct ib_device {
 							    unsigned long len,
 							    unsigned long pgoff,
 							    unsigned long flags);
-
+	int			(*exp_set_context_attr)(struct ib_device *device,
+							struct ib_ucontext *context,
+							struct ib_exp_context_attr *attr);
 
 	/**
 	 * alloc_hw_stats - Allocate a struct rdma_hw_stats and fill in the

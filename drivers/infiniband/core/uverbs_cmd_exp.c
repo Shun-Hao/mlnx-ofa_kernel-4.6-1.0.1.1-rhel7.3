@@ -1325,3 +1325,44 @@ int ib_uverbs_exp_destroy_rwq_ind_table(struct ib_uverbs_file *file,
 	return ib_uverbs_ex_destroy_rwq_ind_table(file, ucore, uhw);
 }
 
+
+int ib_uverbs_exp_set_context_attr(struct ib_uverbs_file *file,
+				  struct ib_udata *ucore, struct ib_udata *uhw)
+{
+	struct ib_uverbs_exp_set_context_attr cmd = {};
+	struct ib_device *device;
+	struct ib_exp_context_attr attr = {};
+	size_t required_cmd_sz;
+	int ret;
+
+	device = file->device->ib_dev;
+	required_cmd_sz = offsetof(typeof(cmd), peer_name) + sizeof(cmd.peer_name);
+
+	if (ucore->inlen < required_cmd_sz)
+		return -EINVAL;
+
+	if (ucore->inlen > sizeof(cmd) &&
+	    !ib_is_udata_cleared(ucore, sizeof(cmd),
+				 ucore->inlen - sizeof(cmd)))
+		return -EOPNOTSUPP;
+
+	ret = ib_copy_from_udata(&cmd, ucore, min(sizeof(cmd), ucore->inlen));
+	if (ret)
+		return ret;
+
+	if (!cmd.comp_mask)
+		return -EINVAL;
+
+	if (cmd.comp_mask >= IB_UVERBS_EXP_SET_CONTEXT_ATTR_RESERVED)
+		return -ENOSYS;
+
+	attr.comp_mask = cmd.comp_mask;
+	if (attr.comp_mask & IB_UVERBS_EXP_SET_CONTEXT_PEER_INFO) {
+		attr.peer_id = cmd.peer_id;
+		attr.peer_name = cmd.peer_name;
+	}
+
+	ret = device->exp_set_context_attr(device, file->ucontext, &attr);
+
+	return ret;
+}
