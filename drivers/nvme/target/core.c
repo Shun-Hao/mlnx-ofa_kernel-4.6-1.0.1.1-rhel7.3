@@ -1302,6 +1302,9 @@ static void nvmet_ctrl_free(struct kref *ref)
 	list_del(&ctrl->subsys_entry);
 	mutex_unlock(&subsys->lock);
 
+	if (subsys->offloadble)
+		ctrl->ops->destroy_offload_ctrl(ctrl);
+
 	nvmet_stop_keep_alive_timer(ctrl);
 
 	flush_work(&ctrl->async_event_work);
