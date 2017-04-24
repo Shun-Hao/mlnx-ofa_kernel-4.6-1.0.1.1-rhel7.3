@@ -372,8 +372,12 @@ int mlx5e_add_sqs_fwd_rules(struct mlx5e_priv *priv)
 	int n, tc, num_sqs = 0;
 	int err = -ENOMEM;
 	u32 *sqs;
+	int num_txqs = priv->channels.params.num_channels * priv->channels.params.num_tc;
 
-	sqs = kcalloc(priv->channels.num * priv->channels.params.num_tc, sizeof(*sqs), GFP_KERNEL);
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+	num_txqs += priv->channels.params.num_rl_txqs;
+#endif
+	sqs = kcalloc(num_txqs, sizeof(*sqs), GFP_KERNEL);
 	if (!sqs)
 		goto out;
 
@@ -381,6 +385,10 @@ int mlx5e_add_sqs_fwd_rules(struct mlx5e_priv *priv)
 		c = priv->channels.c[n];
 		for (tc = 0; tc < c->num_tc; tc++)
 			sqs[num_sqs++] = c->sq[tc].sqn;
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+		for (tc = 0; tc < c->num_special_sq; tc++)
+			sqs[num_sqs++] = c->special_sq[tc].sqn;
+#endif
 	}
 
 	err = mlx5e_sqs2vport_start(esw, rep, sqs, num_sqs);

@@ -322,6 +322,10 @@ void mlx5e_ethtool_get_channels(struct mlx5e_priv *priv,
 {
 	ch->max_combined   = mlx5e_get_netdev_max_channels(priv->netdev);
 	ch->combined_count = priv->channels.params.num_channels;
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+	ch->max_other      = MLX5E_MAX_RL_QUEUES;
+	ch->other_count    = priv->channels.params.num_rl_txqs;
+#endif
 }
 
 static void mlx5e_get_channels(struct net_device *dev,
@@ -336,6 +340,7 @@ int mlx5e_ethtool_set_channels(struct mlx5e_priv *priv,
 			       struct ethtool_channels *ch)
 {
 	unsigned int count = ch->combined_count;
+	int ncv = mlx5e_get_max_num_channels(priv->mdev);
 	struct mlx5e_channels new_channels = {};
 	bool arfs_enabled;
 	int err = 0;
@@ -346,13 +351,39 @@ int mlx5e_ethtool_set_channels(struct mlx5e_priv *priv,
 		return -EINVAL;
 	}
 
+	if (ch->rx_count || ch->tx_count) {
+		netdev_info(priv->netdev, "%s: separate rx/tx count not supported\n",
+			    __func__);
+		return -EINVAL;
+	}
+
+	if (count > ncv) {
+		netdev_info(priv->netdev, "%s: count (%d) > max (%d)\n",
+			    __func__, count, ncv);
+		return -EINVAL;
+	}
+
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+	if (ch->other_count > MLX5E_MAX_RL_QUEUES) {
+		netdev_info(priv->netdev, "%s: other_count (%d) > max (%d)\n",
+			    __func__, ch->other_count, MLX5E_MAX_RL_QUEUES);
+		return -EINVAL;
+	}
+
+	if (priv->channels.params.num_channels == count &&
+	    priv->channels.params.num_rl_txqs == ch->other_count)
+#else
 	if (priv->channels.params.num_channels == count)
+#endif
 		return 0;
 
 	mutex_lock(&priv->state_lock);
 
 	new_channels.params = priv->channels.params;
 	new_channels.params.num_channels = count;
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+	new_channels.params.num_rl_txqs = ch->other_count;
+#endif
 	if (!netif_is_rxfh_configured(priv->netdev))
 		mlx5e_build_default_indir_rqt(new_channels.params.indirection_rqt,
 					      MLX5E_INDIR_RQT_SIZE, count);

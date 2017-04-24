@@ -140,6 +140,13 @@ struct page_pool;
 #define MLX5E_MIN_NUM_CHANNELS         0x1
 #define MLX5E_MAX_NUM_CHANNELS         (MLX5E_INDIR_RQT_SIZE >> 1)
 #define MLX5E_MAX_NUM_SQS              (MLX5E_MAX_NUM_CHANNELS * MLX5E_MAX_NUM_TC)
+
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+#define MLX5E_MAX_RL_QUEUES            512
+#else
+#define MLX5E_MAX_RL_QUEUES            0
+#endif
+
 #define MLX5E_TX_CQ_POLL_BUDGET        128
 #define MLX5E_SQ_RECOVER_MIN_INTERVAL  500 /* msecs */
 
@@ -251,6 +258,9 @@ struct mlx5e_params {
 	u8  log_rq_mtu_frames;
 	u16 num_channels;
 	u8  num_tc;
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+	u16 num_rl_txqs;
+#endif
 	bool rx_cqe_compress_def;
 	struct net_dim_cq_moder rx_cq_moderation;
 	struct net_dim_cq_moder tx_cq_moderation;
@@ -623,6 +633,10 @@ struct mlx5e_channel {
 	/* data path */
 	struct mlx5e_rq            rq;
 	struct mlx5e_txqsq         sq[MLX5E_MAX_NUM_TC];
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+	struct mlx5e_txqsq         *special_sq;
+	u16			   num_special_sq;
+#endif
 	struct mlx5e_icosq         icosq;   /* internal control operations */
 	bool                       xdp;
 	struct napi_struct         napi;
@@ -736,7 +750,7 @@ struct mlx5e_ecn_enable_ctx {
 
 struct mlx5e_priv {
 	/* priv data path fields - start */
-	struct mlx5e_txqsq *txq2sq[MLX5E_MAX_NUM_CHANNELS * MLX5E_MAX_NUM_TC];
+	struct mlx5e_txqsq *txq2sq[MLX5E_MAX_NUM_CHANNELS * MLX5E_MAX_NUM_TC + MLX5E_MAX_RL_QUEUES];
 	int channel_tc2txq[MLX5E_MAX_NUM_CHANNELS][MLX5E_MAX_NUM_TC];
 #ifdef CONFIG_MLX5_CORE_EN_DCB
 	struct mlx5e_dcbx_dp       dcbx_dp;
@@ -754,7 +768,7 @@ struct mlx5e_priv {
 	struct mlx5e_tir           indir_tir[MLX5E_NUM_INDIR_TIRS];
 	struct mlx5e_tir           inner_indir_tir[MLX5E_NUM_INDIR_TIRS];
 	struct mlx5e_tir           direct_tir[MLX5E_MAX_NUM_CHANNELS];
-	u32                        tx_rates[MLX5E_MAX_NUM_SQS];
+	u32                        tx_rates[MLX5E_MAX_NUM_SQS + MLX5E_MAX_RL_QUEUES];
 
 	struct mlx5e_flow_steering fs;
 
