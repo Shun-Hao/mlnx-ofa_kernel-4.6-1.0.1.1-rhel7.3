@@ -1904,6 +1904,8 @@ static int mlx5_ib_dealloc_ucontext(struct ib_ucontext *ibcontext)
 		mlx5_ib_devx_destroy(dev, context->devx_uid);
 
 	deallocate_uars(dev, context);
+	if (ibcontext->peer_mem_private_data)
+		ib_put_peer_private_data(ibcontext);
 	kfree(bfregi->sys_pages);
 	kfree(bfregi->count);
 	kfree(context);
@@ -5847,6 +5849,8 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 			(1ull << IB_USER_VERBS_EXP_CMD_ARM_DCT);
 	}
 	dev->ib_dev.uverbs_exp_cmd_mask |= (1ull << IB_USER_VERBS_EXP_CMD_CREATE_MR);
+	dev->ib_dev.uverbs_exp_cmd_mask	|= (1ull << IB_USER_VERBS_EXP_CMD_SET_CTX_ATTR);
+
 	dev->ib_dev.query_device	= mlx5_ib_query_device;
 	dev->ib_dev.get_link_layer	= mlx5_ib_port_link_layer;
 	dev->ib_dev.query_gid		= mlx5_ib_query_gid;
@@ -5879,6 +5883,7 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 	dev->ib_dev.create_cq		= mlx5_ib_create_cq;
 	dev->ib_dev.modify_cq		= mlx5_ib_modify_cq;
 	/* Add EXP verbs here to minimize conflicts via rebase */
+	dev->ib_dev.exp_set_context_attr = mlx5_ib_exp_set_context_attr;
 	dev->ib_dev.exp_modify_cq	= mlx5_ib_exp_modify_cq;
 	dev->ib_dev.exp_query_device	= mlx5_ib_exp_query_device;
 	dev->ib_dev.exp_query_mkey      = mlx5_ib_exp_query_mkey;

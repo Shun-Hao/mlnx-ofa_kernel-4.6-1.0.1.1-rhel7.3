@@ -35,6 +35,9 @@
 #endif
 #include <linux/highmem.h>
 #include <rdma/ib_cache.h>
+#include <rdma/ib_umem.h>
+#include <rdma/ib_user_verbs.h>
+#include <rdma/ib_user_verbs_exp.h>
 #include "mlx5_ib.h"
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
@@ -1281,6 +1284,24 @@ int alloc_and_map_wc(struct mlx5_ib_dev *dev,
 */
 	rdma_user_mmap_io(&context->ibucontext, vma, pfn, map_size, pgprot_writecombine(vma->vm_page_prot),vma_prv);
 //	mlx5_ib_set_vma_data(vma, context, vma_prv);
+
+	return 0;
+}
+
+int mlx5_ib_exp_set_context_attr(struct ib_device *device,
+				 struct ib_ucontext *context,
+				 struct ib_exp_context_attr *attr)
+{
+	int ret;
+
+	if (attr->comp_mask & IB_UVERBS_EXP_SET_CONTEXT_PEER_INFO) {
+		ret = ib_get_peer_private_data(context, attr->peer_id,
+					       attr->peer_name);
+		if (ret)
+			return ret;
+	} else {
+		return -EINVAL;
+	}
 
 	return 0;
 }

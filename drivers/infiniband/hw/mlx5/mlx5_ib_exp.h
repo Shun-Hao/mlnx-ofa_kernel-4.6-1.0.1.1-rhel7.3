@@ -158,6 +158,10 @@ void mlx5_ib_exp_get_hash_parameters(struct ib_qp_init_attr *init_attr,
 				     u8 *rx_key_len);
 bool mlx5_ib_exp_is_rss(struct ib_qp_init_attr *init_attr);
 
+int mlx5_ib_exp_set_context_attr(struct ib_device *device,
+				 struct ib_ucontext *context,
+				 struct ib_exp_context_attr *attr);
+
 enum {
 	MLX5_MAX_SINGLE_STRIDE_LOG_NUM_BYTES	= 13,
 	MLX5_MIN_SINGLE_STRIDE_LOG_NUM_BYTES	= 6,
