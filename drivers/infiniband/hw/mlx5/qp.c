@@ -128,6 +128,10 @@ enum raw_qp_set_mask_map {
 	MLX5_RAW_QP_RATE_LIMIT			= 1UL << 1,
 };
 
+enum {
+	MLX5_QP_OOO_ATTR	= 25,
+};
+
 struct mlx5_modify_raw_qp_param {
 	u16 operation;
 
@@ -3613,6 +3617,30 @@ static int __mlx5_ib_modify_qp(struct ib_qp *ibqp,
 
 	if (qp->flags & MLX5_IB_QP_SQPN_QP1)
 		context->deth_sqpn = cpu_to_be32(1);
+
+	if (attr_mask & IB_EXP_QP_OOO_RW_DATA_PLACEMENT) {
+		/* currently only RC QP supported */
+		if (ibqp->qp_type == IB_QPT_RC) {
+			if (MLX5_CAP_GEN(dev->mdev, multipath_rc_qp))
+				context->flags_pd |=
+					cpu_to_be32(1 << MLX5_QP_OOO_ATTR);
+			else
+				goto out;
+		} else if (ibqp->qp_type == IB_QPT_XRC_INI ||
+			   ibqp->qp_type == IB_QPT_XRC_TGT) {
+			if (MLX5_CAP_GEN(dev->mdev, multipath_xrc_qp))
+				context->flags_pd |=
+					cpu_to_be32(1 << MLX5_QP_OOO_ATTR);
+			else
+				goto out;
+		} else if (ibqp->qp_type == IB_EXP_QPT_DC_INI) {
+			if (MLX5_CAP_GEN(dev->mdev, multipath_dc_qp))
+				context->flags_pd |=
+					cpu_to_be32(1 << MLX5_QP_OOO_ATTR);
+			else
+				goto out;
+		}
+	}
 
 	mlx5_cur = to_mlx5_state(cur_state);
 	mlx5_new = to_mlx5_state(new_state);

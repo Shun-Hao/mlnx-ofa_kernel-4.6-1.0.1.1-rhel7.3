@@ -180,6 +180,25 @@ enum mlx5_addr_align {
 	MLX5_ADDR_ALIGN_128	= 128,
 };
 
+static void mlx5_update_ooo_cap(struct mlx5_ib_dev *dev,
+				struct ib_exp_device_attr *props)
+{
+	if (MLX5_CAP_GEN(dev->mdev, multipath_rc_qp))
+		props->ooo_caps.rc_caps |=
+			IB_EXP_DEVICE_OOO_RW_DATA_PLACEMENT;
+	if (MLX5_CAP_GEN(dev->mdev, multipath_xrc_qp))
+		props->ooo_caps.xrc_caps |=
+			IB_EXP_DEVICE_OOO_RW_DATA_PLACEMENT;
+	if (MLX5_CAP_GEN(dev->mdev, multipath_dc_qp))
+		props->ooo_caps.dc_caps |=
+			IB_EXP_DEVICE_OOO_RW_DATA_PLACEMENT;
+
+	if (MLX5_CAP_GEN(dev->mdev, multipath_rc_qp) ||
+	    MLX5_CAP_GEN(dev->mdev, multipath_xrc_qp) ||
+	    MLX5_CAP_GEN(dev->mdev, multipath_dc_qp))
+		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_OOO_CAPS;
+}
+
 int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			     struct ib_exp_device_attr *props,
 			     struct ib_udata *uhw)
@@ -354,6 +373,8 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		(1 << (MLX5_CAP_GEN(dev->mdev, uar_sz) + 20 - PAGE_SHIFT))
 		/ (MLX5_DEF_TOT_BFREGS / MLX5_NUM_DRIVER_UARS)
 		- MLX5_NUM_DRIVER_UARS;
+
+	mlx5_update_ooo_cap(dev, props);
 
 	return 0;
 }

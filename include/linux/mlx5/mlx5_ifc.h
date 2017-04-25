@@ -980,7 +980,10 @@ struct mlx5_ifc_cmd_hca_cap_bits {
 	u8         pps[0x1];
 	u8         pps_modify[0x1];
 	u8         log_max_msg[0x5];
-	u8         reserved_at_1c8[0x4];
+	u8         multipath_xrc_qp[0x1];
+	u8         multipath_dc_qp[0x1];
+	u8         multipath_rc_qp[0x1];
+	u8         reserved_at_1c8[0x1];
 	u8         max_tc[0x4];
 	u8         temp_warn_event[0x1];
 	u8         dcbx[0x1];
@@ -3077,7 +3080,8 @@ struct mlx5_ifc_dctc_bits {
 	u8         latency_sensitive[0x1];
 	u8         rlky[0x1];
 	u8         free_ar[0x1];
-	u8         reserved_at_73[0xd];
+	u8         multipath[0x1];
+	u8         reserved_at_73[0xc];
 
 	u8         reserved_at_80[0x8];
 	u8         cs_res[0x8];
