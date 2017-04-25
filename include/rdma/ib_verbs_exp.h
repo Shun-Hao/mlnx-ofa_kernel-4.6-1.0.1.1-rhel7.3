@@ -145,6 +145,7 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_RX_PAD_END_ALIGN	= 1ULL << 20,
 	IB_EXP_DEVICE_ATTR_TSO_CAPS		= 1ULL << 21,
 	IB_EXP_DEVICE_ATTR_PACKET_PACING_CAPS	= 1ULL << 22,
+	IB_EXP_DEVICE_ATTR_OOO_CAPS		= 1ULL << 24,
 };
 
 enum ib_exp_device_cap_flags2 {
@@ -207,6 +208,22 @@ struct ib_exp_ec_caps {
 	uint32_t	max_ec_calc_inflight_calcs;
 };
 
+enum ib_exp_ooo_flags {
+	/*
+	 * Device should set IB_EXP_DEVICE_OOO_RW_DATA_PLACEMENT
+	 * capability, when it supports handling RDMA reads and writes
+	 * received out of order.
+	 */
+	IB_EXP_DEVICE_OOO_RW_DATA_PLACEMENT	= (1 << 0),
+};
+
+struct ib_exp_ooo_caps {
+	u32 rc_caps;
+	u32 xrc_caps;
+	u32 dc_caps;
+	u32 ud_caps;
+};
+
 struct ib_exp_device_attr {
 	struct ib_device_attr	base;
 	/* Use IB_EXP_DEVICE_ATTR_... for exp_comp_mask */
@@ -250,10 +267,13 @@ struct ib_exp_device_attr {
 	u16				rx_pad_end_addr_align;
 	struct ib_exp_tso_caps		tso_caps;
 	struct ib_exp_packet_pacing_caps packet_pacing_caps;
+	struct ib_exp_ooo_caps		ooo_caps;
 };
 
-enum {
-	IB_DCT_CREATE_FLAGS_MASK		= 0,
+enum ib_dct_create_flags {
+	IB_EXP_DCT_OOO_RW_DATA_PLACEMENT	= 1 << 0,
+	IB_DCT_CREATE_FLAGS_MASK		=
+				IB_EXP_DCT_OOO_RW_DATA_PLACEMENT,
 };
 
 struct ib_dct_init_attr {
