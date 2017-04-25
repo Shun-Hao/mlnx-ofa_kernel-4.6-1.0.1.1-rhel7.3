@@ -48,7 +48,8 @@ enum ibv_exp_qp_attr_mask {
 	IBV_EXP_QP_DC_KEY	= IB_QP_DC_KEY,
 	IBV_EXP_QP_FLOW_ENTROPY = IB_QP_FLOW_ENTROPY,
 	IBV_EXP_QP_ATTR_MASK	= IB_QP_GROUP_RSS | IB_QP_FLOW_ENTROPY |
-	                          IB_QP_DC_KEY,
+				  IB_QP_DC_KEY |
+				  IB_EXP_QP_OOO_RW_DATA_PLACEMENT,
 	IBV_EXP_QP_ATTR_FIRST = IB_QP_GROUP_RSS,
 	IBV_EXP_ATTR_MASK_SHIFT = 0x06,
 };
@@ -273,6 +274,13 @@ struct ib_uverbs_exp_packet_pacing_caps {
 	__u32 reserved;
 };
 
+struct ib_uverbs_exp_ooo_caps {
+	__u32 rc_caps;
+	__u32 xrc_caps;
+	__u32 dc_caps;
+	__u32 ud_caps;
+};
+
 struct ib_uverbs_exp_query_device_resp {
 	__u64					comp_mask;
 	struct ib_uverbs_query_device_resp	base;
@@ -303,6 +311,7 @@ struct ib_uverbs_exp_query_device_resp {
 	__u8					reserved2[6];
 	struct ib_uverbs_exp_tso_caps		tso_caps;
 	struct ib_uverbs_exp_packet_pacing_caps packet_pacing_caps;
+	struct ib_uverbs_exp_ooo_caps		ooo_caps;
 };
 
 enum ib_uverbs_exp_create_cq_comp_mask {
