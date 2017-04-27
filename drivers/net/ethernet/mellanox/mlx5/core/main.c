@@ -79,7 +79,7 @@ MODULE_PARM_DESC(debug_mask, "debug mask: 1 = dump cmd data, 2 = dump cmd exec t
 #define MLX5_DEFAULT_PROF	2
 static unsigned int prof_sel = MLX5_DEFAULT_PROF;
 module_param_named(prof_sel, prof_sel, uint, 0444);
-MODULE_PARM_DESC(prof_sel, "profile selector. Valid range 0 - 2");
+MODULE_PARM_DESC(prof_sel, "profile selector. Valid range 0 - 3");
 
 static bool probe_vf = 1;
 module_param_named(probe_vf, probe_vf, bool, 0644);
@@ -108,6 +108,97 @@ static struct mlx5_profile profile[] = {
 				  MLX5_PROF_MASK_DCT,
 		.log_max_qp	= 18,
 		.dct_enable	= 1,
+		.mr_cache[0]	= {
+			.size	= 500,
+			.limit	= 250
+		},
+		.mr_cache[1]	= {
+			.size	= 500,
+			.limit	= 250
+		},
+		.mr_cache[2]	= {
+			.size	= 500,
+			.limit	= 250
+		},
+		.mr_cache[3]	= {
+			.size	= 500,
+			.limit	= 250
+		},
+		.mr_cache[4]	= {
+			.size	= 500,
+			.limit	= 250
+		},
+		.mr_cache[5]	= {
+			.size	= 500,
+			.limit	= 250
+		},
+		.mr_cache[6]	= {
+			.size	= 500,
+			.limit	= 250
+		},
+		.mr_cache[7]	= {
+			.size	= 500,
+			.limit	= 250
+		},
+		.mr_cache[8]	= {
+			.size	= 500,
+			.limit	= 250
+		},
+		.mr_cache[9]	= {
+			.size	= 500,
+			.limit	= 250
+		},
+		.mr_cache[10]	= {
+			.size	= 500,
+			.limit	= 250
+		},
+		.mr_cache[11]	= {
+			.size	= 500,
+			.limit	= 250
+		},
+		.mr_cache[12]	= {
+			.size	= 64,
+			.limit	= 32
+		},
+		.mr_cache[13]	= {
+			.size	= 32,
+			.limit	= 16
+		},
+		.mr_cache[14]	= {
+			.size	= 16,
+			.limit	= 8
+		},
+		.mr_cache[15]	= {
+			.size	= 8,
+			.limit	= 4
+		},
+		.mr_cache[16]	= {
+			.size	= 8,
+			.limit	= 4
+		},
+		.mr_cache[17]	= {
+			.size	= 8,
+			.limit	= 4
+		},
+		.mr_cache[18]	= {
+			.size	= 8,
+			.limit	= 4
+		},
+		.mr_cache[19]	= {
+			.size	= 4,
+			.limit	= 2
+		},
+		.mr_cache[20]	= {
+			.size	= 4,
+			.limit	= 2
+		},
+	},
+	[3] = {
+		.mask		= MLX5_PROF_MASK_QP_SIZE  |
+				  MLX5_PROF_MASK_MR_CACHE |
+				  MLX5_PROF_MASK_DCT,
+		.log_max_qp	= 18,
+		.dct_enable	= 0,
 		.mr_cache[0]	= {
 			.size	= 500,
 			.limit	= 250
