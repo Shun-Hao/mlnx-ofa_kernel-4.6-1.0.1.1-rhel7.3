@@ -306,6 +306,33 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		if (MLX5_CAP_ETH(dev->mdev, scatter_fcs))
 			props->device_cap_flags2 |=
 				IB_EXP_DEVICE_SCATTER_FCS;
+
+		if (MLX5_CAP_ETH(dev->mdev, swp)) {
+			props->sw_parsing_caps.sw_parsing_offloads |=
+				IB_RAW_PACKET_QP_SW_PARSING;
+			props->sw_parsing_caps.supported_qpts |=
+				BIT(IB_QPT_RAW_PACKET);
+			props->exp_comp_mask |=
+				IB_EXP_DEVICE_ATTR_SW_PARSING_CAPS;
+		}
+
+		if (MLX5_CAP_ETH(dev->mdev, swp_csum)) {
+			props->sw_parsing_caps.sw_parsing_offloads |=
+				IB_RAW_PACKET_QP_SW_PARSING_CSUM;
+			props->sw_parsing_caps.supported_qpts |=
+				BIT(IB_QPT_RAW_PACKET);
+			props->exp_comp_mask |=
+				IB_EXP_DEVICE_ATTR_SW_PARSING_CAPS;
+		}
+
+		if (MLX5_CAP_ETH(dev->mdev, swp_lso)) {
+			props->sw_parsing_caps.sw_parsing_offloads |=
+				IB_RAW_PACKET_QP_SW_PARSING_LSO;
+			props->sw_parsing_caps.supported_qpts |=
+				BIT(IB_QPT_RAW_PACKET);
+			props->exp_comp_mask |=
+				IB_EXP_DEVICE_ATTR_SW_PARSING_CAPS;
+		}
 	}
 
 	if (MLX5_CAP_GEN(dev->mdev, ipoib_enhanced_offloads)) {

@@ -281,6 +281,11 @@ struct ib_uverbs_exp_ooo_caps {
 	__u32 ud_caps;
 };
 
+struct ib_uverbs_exp_sw_parsing_caps {
+	__u32 sw_parsing_offloads;
+	__u32 supported_qpts;
+};
+
 struct ib_uverbs_exp_query_device_resp {
 	__u64					comp_mask;
 	struct ib_uverbs_query_device_resp	base;
@@ -312,6 +317,7 @@ struct ib_uverbs_exp_query_device_resp {
 	struct ib_uverbs_exp_tso_caps		tso_caps;
 	struct ib_uverbs_exp_packet_pacing_caps packet_pacing_caps;
 	struct ib_uverbs_exp_ooo_caps		ooo_caps;
+	struct ib_uverbs_exp_sw_parsing_caps	sw_parsing_caps;
 };
 
 enum ib_uverbs_exp_create_cq_comp_mask {

@@ -146,6 +146,7 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_TSO_CAPS		= 1ULL << 21,
 	IB_EXP_DEVICE_ATTR_PACKET_PACING_CAPS	= 1ULL << 22,
 	IB_EXP_DEVICE_ATTR_OOO_CAPS		= 1ULL << 24,
+	IB_EXP_DEVICE_ATTR_SW_PARSING_CAPS	= 1ULL << 25,
 };
 
 enum ib_exp_device_cap_flags2 {
@@ -224,6 +225,17 @@ struct ib_exp_ooo_caps {
 	u32 ud_caps;
 };
 
+enum ib_exp_sw_parsing_offloads {
+	IB_RAW_PACKET_QP_SW_PARSING	 = (1 << 0),
+	IB_RAW_PACKET_QP_SW_PARSING_CSUM = (1 << 1),
+	IB_RAW_PACKET_QP_SW_PARSING_LSO	 = (1 << 2),
+};
+
+struct ib_exp_sw_parsing_caps {
+	u32 sw_parsing_offloads;
+	u32 supported_qpts;
+};
+
 struct ib_exp_device_attr {
 	struct ib_device_attr	base;
 	/* Use IB_EXP_DEVICE_ATTR_... for exp_comp_mask */
@@ -268,6 +280,7 @@ struct ib_exp_device_attr {
 	struct ib_exp_tso_caps		tso_caps;
 	struct ib_exp_packet_pacing_caps packet_pacing_caps;
 	struct ib_exp_ooo_caps		ooo_caps;
+	struct ib_exp_sw_parsing_caps	sw_parsing_caps;
 };
 
 enum ib_dct_create_flags {
