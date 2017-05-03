@@ -5911,7 +5911,8 @@ static int  create_rq(struct mlx5_ib_rwq *rwq, struct ib_pd *pd,
 		}
 		MLX5_SET(rqc, rqc, scatter_fcs, 1);
 	}
-	if (init_attr->create_flags & IB_WQ_FLAGS_DELAY_DROP) {
+	if (init_attr->create_flags & IB_WQ_FLAGS_DELAY_DROP ||
+	    rwq->flags & MLX5_EXP_WQ_FLAG_DELAY_DROP) {
 		if (!(dev->ib_dev.attrs.raw_packet_caps &
 		      IB_RAW_PACKET_CAP_DELAY_DROP)) {
 			mlx5_ib_dbg(dev, "Delay drop is not supported\n");
@@ -5924,7 +5925,8 @@ static int  create_rq(struct mlx5_ib_rwq *rwq, struct ib_pd *pd,
 	mlx5_ib_populate_pas(dev, rwq->umem, rwq->page_shift, rq_pas0, 0);
 	mlx5_ib_exp_set_rqc(rqc, rwq);
 	err = mlx5_core_create_rq_tracked(dev->mdev, in, inlen, &rwq->core_qp);
-	if (!err && init_attr->create_flags & IB_WQ_FLAGS_DELAY_DROP) {
+	if (!err && (init_attr->create_flags & IB_WQ_FLAGS_DELAY_DROP ||
+		     rwq->flags & MLX5_EXP_WQ_FLAG_DELAY_DROP)) {
 		err = set_delay_drop(dev);
 		if (err) {
 			mlx5_ib_warn(dev, "Failed to enable delay drop err=%d\n",

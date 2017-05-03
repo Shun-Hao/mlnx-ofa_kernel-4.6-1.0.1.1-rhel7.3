@@ -91,6 +91,11 @@ int mlx5_ib_exp_get_cmd_data(struct mlx5_ib_dev *dev,
 	     !MLX5_CAP_ETH(dev->mdev, scatter_fcs)))
 		return -EOPNOTSUPP;
 
+	if ((ucmd.flags & MLX5_EXP_WQ_FLAG_DELAY_DROP) &&
+	    !(MLX5_CAP_GEN(dev->mdev, rq_delay_drop) &&
+	      MLX5_CAP_GEN(dev->mdev, general_notification_event)))
+		return -EOPNOTSUPP;
+
 	return 0;
 }
 
@@ -137,6 +142,9 @@ void mlx5_ib_exp_set_rqc(void *rqc, struct mlx5_ib_rwq *rwq)
 
 	if (rwq->flags & MLX5_EXP_WQ_FLAG_SCATTER_FCS)
 		MLX5_SET(rqc, rqc, scatter_fcs, 1);
+
+	if (rwq->flags & MLX5_EXP_WQ_FLAG_DELAY_DROP)
+		MLX5_SET(rqc, rqc, delay_drop_en, 1);
 }
 
 void mlx5_ib_exp_get_hash_parameters(struct ib_qp_init_attr *init_attr,

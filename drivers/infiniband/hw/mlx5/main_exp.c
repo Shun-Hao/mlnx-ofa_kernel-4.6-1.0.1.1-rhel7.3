@@ -404,6 +404,10 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		/ (MLX5_DEF_TOT_BFREGS / MLX5_NUM_DRIVER_UARS)
 		- MLX5_NUM_DRIVER_UARS;
 
+	if (MLX5_CAP_GEN(dev->mdev, rq_delay_drop) &&
+	    MLX5_CAP_GEN(dev->mdev, general_notification_event))
+		props->device_cap_flags2 |= IB_EXP_DEVICE_DELAY_DROP;
+
 	mlx5_update_ooo_cap(dev, props);
 
 	return 0;
