@@ -35,6 +35,7 @@
 #define MLX5_FPGA_SDK_H
 
 #include <linux/types.h>
+#include <linux/list.h>
 #include <linux/dma-direction.h>
 
 /**
@@ -43,6 +44,8 @@
  */
 #define SBU_QP_QUEUE_SIZE 8
 #define MLX5_FPGA_CMD_TIMEOUT_MSEC (60 * 1000)
+
+#define MLX5_FPGA_CLIENT_NAME_MAX 64
 
 /**
  * enum mlx5_fpga_access_type - Enumerated the different methods possible for
@@ -57,6 +60,34 @@ enum mlx5_fpga_access_type {
 
 struct mlx5_fpga_conn;
 struct mlx5_fpga_device;
+
+/**
+ * struct mlx5_fpga_client - Describes an Innova client driver
+ */
+struct mlx5_fpga_client {
+	/**
+	 * @add: Informs the client that a core device is ready and operational.
+	 * @fdev: The FPGA device
+	 * @param vid SBU Vendor ID
+	 * @param pid SBU Product ID
+	 * Any SBU-specific initialization should happen at this stage
+	 * Return: 0 on success, nonzero error value otherwise
+	 */
+	int  (*add)(struct mlx5_fpga_device *fdev, u32 vid, u16 pid);
+	/**
+	 * @remove: Informs the client that a core device is not operational
+	 *          anymore.
+	 * @fdev: The FPGA device
+	 * SBU-specific cleanup should happen at this stage
+	 * This callback is called once for every successful call to add()
+	 */
+	void (*remove)(struct mlx5_fpga_device *fdev);
+
+	/** The name of this client driver */
+	char name[MLX5_FPGA_CLIENT_NAME_MAX];
+	/** For use by core. A link in the list of client drivers */
+	struct list_head list;
+};
 
 /**
  * struct mlx5_fpga_dma_entry - A scatter-gather DMA entry
@@ -115,6 +146,25 @@ struct mlx5_fpga_conn_attr {
 	void (*recv_cb)(void *cb_arg, struct mlx5_fpga_dma_buf *buf);
 	void *cb_arg;
 };
+
+/**
+ * mlx5_fpga_client_register() - Register a client driver
+ * @client: The properties of the client driver
+ *
+ * Should be called from a client driver's module init routine.
+ * Note: The core will immediately callback create() and add() for any existing
+ * devices in the system, as well as new ones added later on.
+ */
+void mlx5_fpga_client_register(struct mlx5_fpga_client *client);
+/**
+ * mlx5_fpga_client_unregister() - Unregister a client driver
+ * @client: The client driver to unregister
+ *
+ * Should be called from a client driver's module exit routine.
+ * Note: The core will immediately callback delete() and destroy() for any
+ * created/added devices in the system, to clean up their state.
+ */
+void mlx5_fpga_client_unregister(struct mlx5_fpga_client *client);
 
 /**
  * mlx5_fpga_sbu_conn_create() - Initialize a new FPGA SBU connection

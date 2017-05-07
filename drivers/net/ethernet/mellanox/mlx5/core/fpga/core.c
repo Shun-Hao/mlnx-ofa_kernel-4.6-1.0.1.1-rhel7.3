@@ -39,6 +39,11 @@
 #include "fpga/core.h"
 #include "fpga/conn.h"
 
+static LIST_HEAD(mlx5_fpga_devices);
+static LIST_HEAD(mlx5_fpga_clients);
+/* protects access between client un/registration and device add/remove calls */
+static DEFINE_MUTEX(mlx5_fpga_mutex);
+
 static const char *const mlx5_fpga_error_strings[] = {
 	"Null Syndrome",
 	"Corrupted DDR",
@@ -55,6 +60,38 @@ static const char * const mlx5_fpga_qp_error_strings[] = {
 	"Retry Counter Expired",
 	"RNR Expired",
 };
+
+static void client_context_destroy(struct mlx5_fpga_device *fdev,
+				   struct mlx5_fpga_client_data *context)
+{
+	mlx5_fpga_dbg(fdev, "Deleting client context %p of client %p\n",
+		      context, context->client);
+	list_del(&context->list);
+	kfree(context);
+}
+
+static int client_context_create(struct mlx5_fpga_device *fdev,
+				 struct mlx5_fpga_client *client,
+				 struct mlx5_fpga_client_data **pctx)
+{
+	struct mlx5_fpga_client_data *context;
+
+	context = kmalloc(sizeof(*context), GFP_KERNEL);
+	if (!context)
+		return -ENOMEM;
+
+	context->client = client;
+	context->added  = false;
+	list_add(&context->list, &fdev->client_data_list);
+
+	mlx5_fpga_dbg(fdev, "Adding client context %p client %p\n",
+		      context, client);
+
+	if (pctx)
+		*pctx = context;
+	return 0;
+}
+
 static struct mlx5_fpga_device *mlx5_fpga_device_alloc(void)
 {
 	struct mlx5_fpga_device *fdev = NULL;
@@ -65,6 +102,7 @@ static struct mlx5_fpga_device *mlx5_fpga_device_alloc(void)
 
 	spin_lock_init(&fdev->state_lock);
 	fdev->state = MLX5_FPGA_STATUS_NONE;
+	INIT_LIST_HEAD(&fdev->client_data_list);
 	return fdev;
 }
 
@@ -147,10 +185,13 @@ static int mlx5_fpga_device_brb(struct mlx5_fpga_device *fdev)
 
 int mlx5_fpga_device_start(struct mlx5_core_dev *mdev)
 {
+	struct mlx5_fpga_client_data *client_context;
 	struct mlx5_fpga_device *fdev = mdev->fpga;
 	unsigned int max_num_qps;
 	unsigned long flags;
 	u32 fpga_device_id;
+	u32 vid;
+	u16 pid;
 	int err;
 
 	if (!fdev)
@@ -193,6 +234,17 @@ int mlx5_fpga_device_start(struct mlx5_core_dev *mdev)
 		err = mlx5_fpga_device_brb(fdev);
 		if (err)
 			goto err_conn_init;
+
+		vid = MLX5_CAP_FPGA(fdev->mdev, ieee_vendor_id);
+		pid = MLX5_CAP_FPGA(fdev->mdev, sandbox_product_id);
+		mutex_lock(&mlx5_fpga_mutex);
+		list_for_each_entry(client_context, &fdev->client_data_list,
+				    list) {
+			if (client_context->client->add(fdev, vid, pid))
+				continue;
+			client_context->added = true;
+		}
+		mutex_unlock(&mlx5_fpga_mutex);
 	}
 
 	goto out;
@@ -212,6 +264,7 @@ out:
 int mlx5_fpga_init(struct mlx5_core_dev *mdev)
 {
 	struct mlx5_fpga_device *fdev = NULL;
+	struct mlx5_fpga_client *client;
 
 	if (!MLX5_CAP_GEN(mdev, fpga)) {
 		mlx5_core_dbg(mdev, "FPGA capability not present\n");
@@ -227,11 +280,19 @@ int mlx5_fpga_init(struct mlx5_core_dev *mdev)
 	fdev->mdev = mdev;
 	mdev->fpga = fdev;
 
+	mutex_lock(&mlx5_fpga_mutex);
+
+	list_add_tail(&fdev->list, &mlx5_fpga_devices);
+	list_for_each_entry(client, &mlx5_fpga_clients, list)
+		client_context_create(fdev, client, NULL);
+
+	mutex_unlock(&mlx5_fpga_mutex);
 	return 0;
 }
 
 void mlx5_fpga_device_stop(struct mlx5_core_dev *mdev)
 {
+	struct mlx5_fpga_client_data *client_context;
 	struct mlx5_fpga_device *fdev = mdev->fpga;
 	unsigned int max_num_qps;
 	unsigned long flags;
@@ -255,6 +316,15 @@ void mlx5_fpga_device_stop(struct mlx5_core_dev *mdev)
 				      err);
 	}
 
+	mutex_lock(&mlx5_fpga_mutex);
+	list_for_each_entry(client_context, &fdev->client_data_list, list) {
+		if (!client_context->added)
+			continue;
+		client_context->client->remove(fdev);
+		client_context->added = false;
+	}
+	mutex_unlock(&mlx5_fpga_mutex);
+
 	mlx5_fpga_conn_device_cleanup(fdev);
 	max_num_qps = MLX5_CAP_FPGA(mdev, shell_caps.max_num_qps);
 	mlx5_core_unreserve_gids(mdev, max_num_qps);
@@ -262,11 +332,24 @@ void mlx5_fpga_device_stop(struct mlx5_core_dev *mdev)
 
 void mlx5_fpga_cleanup(struct mlx5_core_dev *mdev)
 {
+	struct mlx5_fpga_client_data *context, *tmp;
 	struct mlx5_fpga_device *fdev = mdev->fpga;
 
+	if (!fdev)
+		return;
+
+	mutex_lock(&mlx5_fpga_mutex);
+
 	mlx5_fpga_device_stop(mdev);
+
+	list_for_each_entry_safe(context, tmp, &fdev->client_data_list, list)
+		client_context_destroy(fdev, context);
+
+	list_del(&fdev->list);
 	kfree(fdev);
 	mdev->fpga = NULL;
+
+	mutex_unlock(&mlx5_fpga_mutex);
 }
 
 static const char *mlx5_fpga_syndrome_to_string(u8 syndrome)
@@ -327,3 +410,67 @@ void mlx5_fpga_event(struct mlx5_core_dev *mdev, u8 event, void *data)
 	if (teardown)
 		mlx5_trigger_health_work(fdev->mdev);
 }
+
+void mlx5_fpga_client_register(struct mlx5_fpga_client *client)
+{
+	struct mlx5_fpga_client_data *context;
+	struct mlx5_fpga_device *fdev;
+	bool call_add = false;
+	unsigned long flags;
+	u32 vid;
+	u16 pid;
+	int err;
+
+	pr_debug("Client register %s\n", client->name);
+
+	mutex_lock(&mlx5_fpga_mutex);
+
+	list_add_tail(&client->list, &mlx5_fpga_clients);
+
+	list_for_each_entry(fdev, &mlx5_fpga_devices, list) {
+		err = client_context_create(fdev, client, &context);
+		if (err)
+			continue;
+
+		spin_lock_irqsave(&fdev->state_lock, flags);
+		call_add = (fdev->state == MLX5_FPGA_STATUS_SUCCESS);
+		spin_unlock_irqrestore(&fdev->state_lock, flags);
+
+		if (call_add) {
+			vid = MLX5_CAP_FPGA(fdev->mdev, ieee_vendor_id);
+			pid = MLX5_CAP_FPGA(fdev->mdev, sandbox_product_id);
+			if (!client->add(fdev, vid, pid))
+				context->added = true;
+		}
+	}
+
+	mutex_unlock(&mlx5_fpga_mutex);
+}
+EXPORT_SYMBOL(mlx5_fpga_client_register);
+
+void mlx5_fpga_client_unregister(struct mlx5_fpga_client *client)
+{
+	struct mlx5_fpga_client_data *context, *tmp_context;
+	struct mlx5_fpga_device *fdev;
+
+	pr_debug("Client unregister %s\n", client->name);
+
+	mutex_lock(&mlx5_fpga_mutex);
+
+	list_for_each_entry(fdev, &mlx5_fpga_devices, list) {
+		list_for_each_entry_safe(context, tmp_context,
+					 &fdev->client_data_list,
+					 list) {
+			if (context->client != client)
+				continue;
+			if (context->added)
+				client->remove(fdev);
+			client_context_destroy(fdev, context);
+			break;
+		}
+	}
+
+	list_del(&client->list);
+	mutex_unlock(&mlx5_fpga_mutex);
+}
+EXPORT_SYMBOL(mlx5_fpga_client_unregister);
