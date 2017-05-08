@@ -826,16 +826,15 @@ err:
 	return err;
 }
 
-void mlx5e_rl_remove_sysfs(struct net_device *netdev)
+void mlx5e_rl_remove_sysfs(struct mlx5e_priv *priv)
 {
-	struct mlx5e_priv *priv = netdev_priv(netdev);
 	struct netdev_queue *txq;
 	int q_ix;
 	int i;
 
 	for (i = 0; i < priv->channels.params.num_rl_txqs; i++) {
 		q_ix = i + priv->channels.params.num_channels * priv->channels.params.num_tc;
-		txq = netdev_get_tx_queue(netdev, q_ix);
+		txq = netdev_get_tx_queue(priv->netdev, q_ix);
 		sysfs_remove_group(&txq->kobj, &mlx5e_txmap_attr);
 	}
 }

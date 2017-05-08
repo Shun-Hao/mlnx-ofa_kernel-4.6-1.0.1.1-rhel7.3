@@ -892,7 +892,7 @@ void mlx5e_sysfs_remove(struct net_device *dev);
 
 #ifdef CONFIG_MLX5_EN_SPECIAL_SQ
 int mlx5e_rl_init_sysfs(struct net_device *netdev, struct mlx5e_params params);
-void mlx5e_rl_remove_sysfs(struct net_device *netdev);
+void mlx5e_rl_remove_sysfs(struct mlx5e_priv *priv);
 #endif
 
 int mlx5e_setup_tc_mqprio(struct net_device *netdev,
