@@ -2355,26 +2355,21 @@ static int use_klm(int order)
 }
 
 enum {
-	MLX5_MAX_REG_ORDER = MAX_MR_CACHE_ENTRIES + 1,
 	MLX5_MAX_REG_SIZE = 2ul * 1024 * 1024 * 1024,
 };
 
-static u64 get_lsize(int page_shift)
+static u32 get_lsize(struct mlx5_ib_dev *dev, int page_shift)
 {
-	u64 l1;
-	u64 l2;
+	u64 umr_limit;
 
-	l1 = (u64)1 << (page_shift + MLX5_MAX_REG_ORDER);
-	l2 = MLX5_MAX_REG_SIZE;
+	umr_limit = (u64)1 << (page_shift + mr_cache_max_order(dev));
 
-	if (l1 > l2)
-		return l2;
-
-	return l1;
+	BUILD_BUG_ON(MLX5_MAX_REG_SIZE > (size_t)UINT_MAX);
+	return min_t(u64, umr_limit, MLX5_MAX_REG_SIZE);
 }
 
 static int alloc_mrs(struct mlx5_ib_dev *dev, struct mlx5_ib_mr **lmr, int n,
-		     int order, u64 size, int nchild, int sorder, u64 len,
+		     int order, u32 size, int nchild, int sorder, u64 len,
 		     u64 off, int npages)
 {
 	int err = 0;
@@ -2516,12 +2511,12 @@ static void populate_klm(void *dma, struct mlx5_ib_mr **lmr, int n, u64 off)
 	}
 }
 
-static int get_nchild(int npages, int page_shift, u64 *maxorder, int *sorder, int *quot)
+static int get_nchild(int npages, u32 lsize, int page_shift, u64 *maxorder, int *sorder, int *quot)
 {
 	int res;
-	int denom;
+	u32 denom;
 
-	denom = min_t(int, 1 << MLX5_MAX_REG_ORDER, MLX5_MAX_REG_SIZE >> page_shift);
+	denom = lsize >> page_shift;
 	res = npages % denom;
 	*quot = npages / denom;
 	*maxorder = ilog2(denom);
@@ -2539,7 +2534,7 @@ static struct mlx5_ib_mr *reg_klm(struct ib_pd *pd, struct ib_umem *umem,
 	int err = -ENOMEM;
 	int nchild;
 	int sorder;
-	u64 lsize;
+	u32 lsize;
 	int i = 0;
 	int err1;
 	int quot;
@@ -2548,8 +2543,8 @@ static struct mlx5_ib_mr *reg_klm(struct ib_pd *pd, struct ib_umem *umem,
 
 	mlx5_ib_dbg(dev, "addr 0x%llx, len 0x%llx, npages %d, page_shift %d, order %d, access_flags 0x%x\n",
 		    virt_addr, len, npages, page_shift, order, access_flags);
-	lsize = get_lsize(page_shift);
-	nchild = get_nchild(npages, page_shift, &maxorder, &sorder, &quot);
+	lsize = get_lsize(dev, page_shift);
+	nchild = get_nchild(npages, lsize, page_shift, &maxorder, &sorder, &quot);
 	off = (virt_addr & ((1 << page_shift) - 1));
 	lmr = kcalloc(nchild, sizeof(*lmr), GFP_KERNEL);
 	if (!lmr) {
