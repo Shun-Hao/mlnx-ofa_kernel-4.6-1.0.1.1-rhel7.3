@@ -66,7 +66,7 @@ static struct mlx5_ib_mr *reg_klm(struct ib_pd *pd, struct ib_umem *umem,
 				  u64 virt_addr, u64 len, int npages,
 				  int page_shift, int order, int access_flags);
 static int use_klm(int order);
-static void populate_klm(void *dma, struct mlx5_ib_mr **lmr, int n, u64 off);
+static void populate_klm(void *dma, struct mlx5_ib_mr **lmr, int n);
 
 static bool umr_can_modify_entity_size(struct mlx5_ib_dev *dev)
 {
@@ -858,8 +858,7 @@ static inline int populate_xlt(struct mlx5_ib_mr *mr, int idx, int npages,
 	if (flags & MLX5_IB_UPD_XLT_INDIRECT) {
 		if (!umr_can_use_indirect_mkey(dev))
 			return -EPERM;
-		populate_klm(xlt, mr->children, mr->nchild,
-			     mr->mmkey.iova & ((1 << page_shift) - 1));
+		populate_klm(xlt, mr->children, mr->nchild);
 		return mr->nchild;
 	}
 
@@ -2399,6 +2398,9 @@ again:
 		k = 0;
 	}
 
+	lmr[0]->mmkey.iova = off;
+	lmr[0]->size = size - off;
+
 	if (nchild == n)
 		return 0;
 
@@ -2472,7 +2474,6 @@ static int reg_mrs(struct ib_pd *pd, struct mlx5_ib_mr **mrs, int n,
 		mrs[i]->umem = umem;
 		mrs[i]->access_flags = access_flags;
 		mrs[i]->mmkey.type = MLX5_MKEY_MR;
-		mrs[i]->mmkey.iova = 0;
 		mrs[i]->mmkey.size = mrs[i]->size;
 		mrs[i]->mmkey.pd = to_mpd(pd)->pdn;
 
@@ -2494,20 +2495,15 @@ out:
 	return err;
 }
 
-static void populate_klm(void *dma, struct mlx5_ib_mr **lmr, int n, u64 off)
+static void populate_klm(void *dma, struct mlx5_ib_mr **lmr, int n)
 {
 	struct mlx5_wqe_data_seg *dseg = dma;
 	int i;
 
 	for (i = 0; i < n; i++) {
 		dseg[i].lkey = cpu_to_be32(lmr[i]->mmkey.key);
-		if (!i) {
-			dseg[i].byte_count = cpu_to_be32((u32)(lmr[i]->size - off));
-			dseg[0].addr = cpu_to_be64(off);
-		} else {
-			dseg[i].byte_count = cpu_to_be32((u32)(lmr[i]->size));
-			dseg[i].addr = 0;
-		}
+		dseg[i].byte_count = cpu_to_be32((u32)(lmr[i]->size));
+		dseg[i].addr = cpu_to_be64(lmr[i]->mmkey.iova);
 	}
 }
 
