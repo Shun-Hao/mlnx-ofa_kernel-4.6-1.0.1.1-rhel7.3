@@ -267,8 +267,9 @@ static ssize_t mlx5e_show_link_down_reason(struct device *device,
 					    struct device_attribute *attr,
 					    char *buf)
 {
+	u8 status_message[MLX5_FLD_SZ_BYTES(troubleshooting_info_page_layout,
+					    status_message)];
 	struct mlx5e_priv *priv = netdev_priv(to_net_dev(device));
-	u8 status_message[ETH_GSTRING_LEN];
 	u16 monitor_opcode;
 	int len = 0;
 	int err;

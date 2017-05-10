@@ -903,9 +903,9 @@ int mlx5_query_pddr_troubleshooting_info(struct mlx5_core_dev *mdev,
 					   page_data.troubleshooting_info_page.status_opcode.monitor_opcodes);
 
 	if (status_message)
-		memcpy(status_message,
-		       MLX5_ADDR_OF(pddr_reg, out, page_data.troubleshooting_info_page.status_message),
-		       ETH_GSTRING_LEN);
+		strncpy(status_message,
+			MLX5_ADDR_OF(pddr_reg, out, page_data.troubleshooting_info_page.status_message),
+			MLX5_FLD_SZ_BYTES(troubleshooting_info_page_layout, status_message));
 
 	return 0;
 }
