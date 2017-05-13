@@ -471,6 +471,16 @@ int nvmet_ns_enable(struct nvmet_ns *ns)
 		ret = nvmet_file_ns_enable(ns);
 	if (ret)
 		goto out_unlock;
+	
+	if (ns->pdev) {
+		 if (!ns->pdev->driver ||
+		     strcmp(ns->pdev->driver->name, "nvme") ||
+		     !nvme_pdev_is_bdev(ns->pdev, ns->bdev)) {
+				pr_err("P2P pdev doesn't match to the ns bdev\n");
+				ret = -EINVAL;
+				goto out_dev_put;
+			}
+	}
 
 	ret = nvmet_p2pmem_ns_enable(ns);
 	if (ret)
@@ -513,6 +523,11 @@ out_unlock:
 	mutex_unlock(&subsys->lock);
 	return ret;
 out_dev_put:
+	if (ns->pdev) {
+		pci_dev_put(ns->pdev);
+		ns->pdev = NULL;
+	}
+
 	list_for_each_entry(ctrl, &subsys->ctrls, subsys_entry)
 		pci_dev_put(radix_tree_delete(&ctrl->p2p_ns_map, ns->nsid));
 
