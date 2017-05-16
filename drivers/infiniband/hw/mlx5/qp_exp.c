@@ -551,3 +551,21 @@ void mlx5_ib_set_mlx_seg(struct mlx5_mlx_seg *seg, struct mlx5_mlx_wr *wr)
 	seg->dlid = cpu_to_be16(wr->dlid);
 	seg->flags = wr->icrc ? 8 : 0;
 }
+
+int mlx5_ib_set_qp_offload_type(struct mlx5_qp_context *context, struct ib_qp *qp,
+				enum ib_qp_offload_type offload_type)
+{
+	switch (offload_type) {
+	case IB_QP_OFFLOAD_NVMF:
+		if (qp->srq &&
+		    qp->srq->srq_type == IB_EXP_SRQT_NVMF) {
+			context->flags |= cpu_to_be32(MLX5_QPC_OFFLOAD_TYPE_NVMF << 4);
+			break;
+		}
+	/* Fall through */
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
