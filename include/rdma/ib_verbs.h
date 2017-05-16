@@ -1265,7 +1265,8 @@ enum ib_qp_attr_mask {
 	IB_QP_RESERVED1			= (1<<21),
 	IB_QP_RESERVED2			= (1<<22),
 	IB_QP_RESERVED3			= (1<<23),
-	IB_QP_RESERVED4			= (1<<24),
+	/* we might need to update this bit after upstream rebase */
+	IB_QP_OFFLOAD_TYPE		= (1<<24),
 	IB_QP_RATE_LIMIT		= (1<<25),
 
 	/* EXP stuff with shift of 0x06 to support both user and kernel masks */
@@ -1326,6 +1327,7 @@ struct ib_qp_attr {
 	u64			dct_key;
 	u32			rate_limit;
 	u32			flow_entropy;
+	enum ib_qp_offload_type	offload_type;
 };
 
 enum ib_wr_opcode {

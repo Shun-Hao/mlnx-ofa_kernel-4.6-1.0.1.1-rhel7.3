@@ -54,6 +54,10 @@ struct ib_nvmf_caps {
 	u8  max_data_offset;
 };
 
+enum ib_qp_offload_type {
+	IB_QP_OFFLOAD_NVMF = 1,
+};
+
 struct ib_odp_statistics {
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 

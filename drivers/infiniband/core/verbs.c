@@ -1388,7 +1388,8 @@ static const struct {
 						 IB_QP_ALT_PATH			|
 						 IB_QP_ACCESS_FLAGS		|
 						 IB_QP_MIN_RNR_TIMER		|
-						 IB_QP_PATH_MIG_STATE),
+						 IB_QP_PATH_MIG_STATE		|
+						 IB_QP_OFFLOAD_TYPE),
 				 [IB_EXP_QPT_DC_INI] = (IB_QP_CUR_STATE		|
 							IB_QP_ALT_PATH		|
 							IB_QP_MIN_RNR_TIMER	|
@@ -1426,7 +1427,8 @@ static const struct {
 						IB_QP_ACCESS_FLAGS		|
 						IB_QP_ALT_PATH			|
 						IB_QP_PATH_MIG_STATE		|
-						IB_QP_MIN_RNR_TIMER),
+						IB_QP_MIN_RNR_TIMER		|
+						IB_QP_OFFLOAD_TYPE),
 				[IB_EXP_QPT_DC_INI]  = (IB_QP_CUR_STATE		|
 							IB_QP_ALT_PATH		|
 							IB_QP_PATH_MIG_STATE	|
