@@ -5950,8 +5950,14 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 
 	dev->ib_dev.disassociate_ucontext = mlx5_ib_disassociate_ucontext;
 
-	if (MLX5_CAP_GEN(mdev, nvmf_target_offload))
+	if (MLX5_CAP_GEN(mdev, nvmf_target_offload)) {
+		dev->ib_dev.create_nvmf_backend_ctrl  = mlx5_ib_create_nvmf_backend_ctrl;
+		dev->ib_dev.destroy_nvmf_backend_ctrl = mlx5_ib_destroy_nvmf_backend_ctrl;
+		dev->ib_dev.attach_nvmf_ns            = mlx5_ib_attach_nvmf_ns;
+		dev->ib_dev.detach_nvmf_ns            = mlx5_ib_detach_nvmf_ns;
+
 		mlx5_ib_internal_fill_nvmf_caps(dev);
+	}
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	dev->ib_dev.exp_prefetch_mr	= mlx5_ib_prefetch_mr;

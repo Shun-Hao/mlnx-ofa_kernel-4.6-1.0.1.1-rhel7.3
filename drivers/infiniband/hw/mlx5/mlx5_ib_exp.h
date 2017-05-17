@@ -33,6 +33,7 @@
 #ifndef MLX5_IB_EXP_H
 #define MLX5_IB_EXP_H
 
+#include <linux/mlx5/nvmf.h>
 #include <rdma/ib_verbs.h>
 
 struct mlx5_ib_dev;
@@ -235,9 +236,37 @@ int mlx5_ib_exp_create_srq_user(struct mlx5_ib_dev *dev,
 				struct ib_udata *udata,
 				struct mlx5_ib_create_srq *ucmd);
 
+/* NVMEoF target offload */
 void mlx5_ib_internal_fill_nvmf_caps(struct mlx5_ib_dev *dev);
 int mlx5_ib_exp_set_nvmf_srq_attrs(struct mlx5_nvmf_attr *nvmf,
 				   struct ib_srq_init_attr *init_attr);
+
+struct mlx5_ib_nvmf_be_ctrl {
+	struct ib_nvmf_ctrl		ibctrl;
+	struct mlx5_core_nvmf_be_ctrl	mctrl;
+};
+
+struct mlx5_ib_nvmf_ns {
+	struct ib_nvmf_ns		ibns;
+	struct mlx5_core_nvmf_ns	mns;
+};
+
+static inline struct mlx5_ib_nvmf_be_ctrl *to_mctrl(struct ib_nvmf_ctrl *ibctrl)
+{
+	return container_of(ibctrl, struct mlx5_ib_nvmf_be_ctrl, ibctrl);
+}
+
+static inline struct mlx5_ib_nvmf_ns *to_mns(struct ib_nvmf_ns *ibns)
+{
+	return container_of(ibns, struct mlx5_ib_nvmf_ns, ibns);
+}
+
+struct ib_nvmf_ctrl *mlx5_ib_create_nvmf_backend_ctrl(struct ib_srq *srq,
+		struct ib_nvmf_backend_ctrl_init_attr *init_attr);
+int mlx5_ib_destroy_nvmf_backend_ctrl(struct ib_nvmf_ctrl *ctrl);
+struct ib_nvmf_ns *mlx5_ib_attach_nvmf_ns(struct ib_nvmf_ctrl *ctrl,
+		struct ib_nvmf_ns_init_attr *init_attr);
+int mlx5_ib_detach_nvmf_ns(struct ib_nvmf_ns *ns);
 
 struct mlx5_ib_ucontext;
 struct mlx5_ib_vma_private_data;
