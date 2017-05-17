@@ -2360,6 +2360,12 @@ struct ib_device {
 	struct kobject		      *mad_sa_cc_kobj;
 
 	/* EXP APIs will be added below to minimize conflicts via upstream rebase */
+	struct ib_nvmf_ctrl *   (*create_nvmf_backend_ctrl)(struct ib_srq *srq,
+				struct ib_nvmf_backend_ctrl_init_attr *init_attr);
+	int                     (*destroy_nvmf_backend_ctrl)(struct ib_nvmf_ctrl *ctrl);
+	struct ib_nvmf_ns *     (*attach_nvmf_ns)(struct ib_nvmf_ctrl *ctrl,
+				struct ib_nvmf_ns_init_attr *init_attr);
+	int                     (*detach_nvmf_ns)(struct ib_nvmf_ns *ns);
 	int                     (*exp_ioctl)(struct ib_ucontext *context, unsigned int cmd,
 					     unsigned long arg);
 	int			(*exp_query_device)(struct ib_device *device,

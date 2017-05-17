@@ -391,4 +391,12 @@ int ib_exp_query_dct(struct ib_dct *dct, struct ib_dct_attr *attr);
 
 int ib_exp_query_mkey(struct ib_mr *mr, u64 mkey_attr_mask,
 		  struct ib_mkey_attr *mkey_attr);
+/* NVMEoF target offload EXP API */
+struct ib_nvmf_ctrl *ib_create_nvmf_backend_ctrl(struct ib_srq *srq,
+		struct ib_nvmf_backend_ctrl_init_attr *init_attr);
+int ib_destroy_nvmf_backend_ctrl(struct ib_nvmf_ctrl *ctrl);
+struct ib_nvmf_ns *ib_attach_nvmf_ns(struct ib_nvmf_ctrl *ctrl,
+			struct ib_nvmf_ns_init_attr *init_attr);
+int ib_detach_nvmf_ns(struct ib_nvmf_ns *ns);
+
 #endif
