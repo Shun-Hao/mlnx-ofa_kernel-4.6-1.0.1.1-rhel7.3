@@ -252,6 +252,8 @@ enum ib_device_cap_flags {
 	IB_DEVICE_RDMA_NETDEV_OPA_VNIC		= (1ULL << 35),
 	/* The device supports padding incoming writes to cacheline. */
 	IB_DEVICE_PCI_WRITE_END_PADDING		= (1ULL << 36),
+	/* Jump to this value to minimize conflicts with upstream */
+	IB_DEVICE_NVMF_TARGET_OFFLOAD		= (1ULL << 60),
 };
 
 enum ib_signature_prot_cap {
@@ -397,6 +399,7 @@ struct ib_device_attr {
 	int			sig_prot_cap;
 	int			sig_guard_cap;
 	struct ib_odp_caps	odp_caps;
+	struct ib_nvmf_caps	nvmf_caps;
 	uint64_t		timestamp_mask;
 	uint64_t		hca_core_clock; /* in KHZ */
 	struct ib_rss_caps	rss_caps;

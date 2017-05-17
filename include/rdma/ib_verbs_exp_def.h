@@ -39,6 +39,21 @@ struct ib_nvmf_init_data {
 	u64				*staging_buffer_pas;
 };
 
+struct ib_nvmf_caps {
+	u32 offload_type_dc; /* bitmap of ib_nvmf_offload_type enum */
+	u32 offload_type_rc; /* bitmap of ib_nvmf_offload_type enum */
+	u32 max_namespace;
+	u32 max_staging_buffer_sz;
+	u32 min_staging_buffer_sz;
+	u32 max_io_sz;
+	u32 max_be_ctrl;
+	u32 max_queue_sz;
+	u32 min_queue_sz;
+	u32 min_cmd_size;
+	u32 max_cmd_size;
+	u8  max_data_offset;
+};
+
 struct ib_odp_statistics {
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 
