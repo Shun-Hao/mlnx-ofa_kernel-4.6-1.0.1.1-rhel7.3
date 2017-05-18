@@ -4144,6 +4144,36 @@ static int mlx5e_set_vf_vlan(struct net_device *dev, int vf, u16 vlan, u8 qos,
 					   vlan, qos);
 }
 
+#ifdef HAVE_NETDEV_OPS_NDO_SET_VF_TRUNK_RANGE
+static int mlx5e_add_vf_vlan_trunk_range(struct net_device *dev, int vf,
+					 u16 start_vid, u16 end_vid,
+					 __be16 vlan_proto)
+{
+	struct mlx5e_priv *priv = netdev_priv(dev);
+	struct mlx5_core_dev *mdev = priv->mdev;
+
+	if (vlan_proto != htons(ETH_P_8021Q))
+		return -EPROTONOSUPPORT;
+
+	return mlx5_eswitch_add_vport_trunk_range(mdev->priv.eswitch, vf + 1,
+						  start_vid, end_vid);
+}
+
+static int mlx5e_del_vf_vlan_trunk_range(struct net_device *dev, int vf,
+					 u16 start_vid, u16 end_vid,
+					 __be16 vlan_proto)
+{
+	struct mlx5e_priv *priv = netdev_priv(dev);
+	struct mlx5_core_dev *mdev = priv->mdev;
+
+	if (vlan_proto != htons(ETH_P_8021Q))
+		return -EPROTONOSUPPORT;
+
+	return mlx5_eswitch_del_vport_trunk_range(mdev->priv.eswitch, vf + 1,
+						  start_vid, end_vid);
+}
+#endif
+
 static int mlx5e_set_vf_spoofchk(struct net_device *dev, int vf, bool setting)
 {
 	struct mlx5e_priv *priv = netdev_priv(dev);
@@ -4604,6 +4634,13 @@ const struct net_device_ops mlx5e_netdev_ops = {
 	/* SRIOV E-Switch NDOs */
 	.ndo_set_vf_mac          = mlx5e_set_vf_mac,
 	.ndo_set_vf_vlan         = mlx5e_set_vf_vlan,
+
+	/* these ndo's are not upstream yet */
+#ifdef HAVE_NETDEV_OPS_NDO_SET_VF_TRUNK_RANGE
+	.ndo_add_vf_vlan_trunk_range = mlx5e_add_vf_vlan_trunk_range,
+	.ndo_del_vf_vlan_trunk_range = mlx5e_del_vf_vlan_trunk_range,
+#endif
+
 	.ndo_set_vf_spoofchk     = mlx5e_set_vf_spoofchk,
 	.ndo_set_vf_trust        = mlx5e_set_vf_trust,
 	.ndo_set_vf_rate         = mlx5e_set_vf_rate,
