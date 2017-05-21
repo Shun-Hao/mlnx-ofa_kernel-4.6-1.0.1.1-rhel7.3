@@ -42,6 +42,7 @@ struct xfer_state {
 	unsigned int error_count;
 	u8 status;
 	/* Inflight transactions */
+	unsigned int budget;
 	unsigned int inflight_count;
 	/* Chunking state */
 	size_t pos;
@@ -73,14 +74,12 @@ static int exec_more(struct xfer_state *xfer_state)
 	u64 pos_addr, ddr_base;
 	u8 *pos_data;
 	int ret = 0;
-	bool more;
 
 	ddr_base = mlx5_fpga_ddr_base_get(xfer_state->xfer->conn->fdev);
 	page_size = (xfer_state->xfer->addr + xfer_state->pos < ddr_base) ?
 		    sizeof(u32) : (1 << MLX5_FPGA_TRANSACTION_SEND_PAGE_BITS);
 
 	do {
-		more = false;
 		if (xfer_state->status != IB_WC_SUCCESS) {
 			ret = -EIO;
 			break;
@@ -141,8 +140,9 @@ static int exec_more(struct xfer_state *xfer_state)
 			break;
 		}
 		xfer_state->pos += cur_size;
-		more = (cur_size != left);
-	} while (more);
+		if (xfer_state->inflight_count >= xfer_state->budget)
+			break;
+	} while (cur_size != left);
 
 	return ret;
 }
@@ -227,6 +227,7 @@ int mlx5_fpga_xfer_exec(const struct mlx5_fpga_transaction *xfer)
 	xfer_state = kzalloc(sizeof(*xfer_state), GFP_KERNEL);
 	xfer_state->xfer = xfer;
 	xfer_state->status = IB_WC_SUCCESS;
+	xfer_state->budget = 7;
 	spin_lock_init(&xfer_state->lock);
 	spin_lock_irqsave(&xfer_state->lock, flags);
 
