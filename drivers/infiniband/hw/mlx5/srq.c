@@ -313,6 +313,14 @@ struct ib_srq *mlx5_ib_create_srq(struct ib_pd *pd,
 	else
 		in.xrcd = to_mxrcd(dev->devr.x0)->xrcdn;
 
+	if (init_attr->srq_type == IB_EXP_SRQT_NVMF) {
+		err = mlx5_ib_exp_set_nvmf_srq_attrs(&in.nvmf, init_attr);
+		if (err) {
+			mlx5_ib_warn(dev, "setting nvmf srq attrs failed, err %d\n", err);
+			goto err_usr_kern_srq;
+		}
+	}
+
 	if (init_attr->srq_type == IB_SRQT_TM) {
 		in.tm_log_list_size =
 			ilog2(init_attr->ext.tag_matching.max_num_tags) + 1;

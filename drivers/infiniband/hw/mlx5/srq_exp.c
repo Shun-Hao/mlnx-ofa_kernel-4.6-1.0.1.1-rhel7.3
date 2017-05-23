@@ -73,3 +73,58 @@ int mlx5_ib_exp_create_srq_user(struct mlx5_ib_dev *dev,
 	return 0;
 }
 
+static int mlx5_ib_check_nvmf_srq_attrs(struct ib_srq_init_attr *init_attr)
+{
+	switch (init_attr->ext.nvmf.type) {
+	case IB_NVMF_WRITE_OFFLOAD:
+	case IB_NVMF_READ_OFFLOAD:
+	case IB_NVMF_READ_WRITE_OFFLOAD:
+	case IB_NVMF_READ_WRITE_FLUSH_OFFLOAD:
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/* Must be called after checking that offload type values are valid */
+static enum mlx5_nvmf_offload_type to_mlx5_nvmf_offload_type(enum ib_nvmf_offload_type type)
+{
+	switch (type) {
+	case IB_NVMF_WRITE_OFFLOAD:
+		return MLX5_NVMF_WRITE_OFFLOAD;
+	case IB_NVMF_READ_OFFLOAD:
+		return MLX5_NVMF_READ_OFFLOAD;
+	case IB_NVMF_READ_WRITE_OFFLOAD:
+		return MLX5_NVMF_READ_WRITE_OFFLOAD;
+	case IB_NVMF_READ_WRITE_FLUSH_OFFLOAD:
+		return MLX5_NVMF_READ_WRITE_FLUSH_OFFLOAD;
+	default:
+		return -EINVAL;
+	}
+}
+
+int mlx5_ib_exp_set_nvmf_srq_attrs(struct mlx5_nvmf_attr *nvmf,
+				   struct ib_srq_init_attr *init_attr)
+{
+	int err;
+
+	err = mlx5_ib_check_nvmf_srq_attrs(init_attr);
+	if (err)
+		return -EINVAL;
+
+	nvmf->type = to_mlx5_nvmf_offload_type(init_attr->ext.nvmf.type);
+	nvmf->log_max_namespace = init_attr->ext.nvmf.log_max_namespace;
+	nvmf->ioccsz = init_attr->ext.nvmf.cmd_size;
+	nvmf->icdoff = init_attr->ext.nvmf.data_offset;
+	nvmf->log_max_io_size = init_attr->ext.nvmf.log_max_io_size;
+	nvmf->nvme_memory_log_page_size = init_attr->ext.nvmf.nvme_memory_log_page_size;
+	nvmf->staging_buffer_log_page_size = init_attr->ext.nvmf.staging_buffer_log_page_size;
+	nvmf->staging_buffer_number_of_pages = init_attr->ext.nvmf.staging_buffer_number_of_pages;
+	nvmf->staging_buffer_page_offset = init_attr->ext.nvmf.staging_buffer_page_offset;
+	nvmf->nvme_queue_size = init_attr->ext.nvmf.nvme_queue_size;
+	nvmf->staging_buffer_pas = init_attr->ext.nvmf.staging_buffer_pas;
+
+	return err;
+}

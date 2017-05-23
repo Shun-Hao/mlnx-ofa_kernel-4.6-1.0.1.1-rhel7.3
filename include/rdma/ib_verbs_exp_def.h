@@ -27,7 +27,6 @@ enum ib_nvmf_offload_type {
 struct ib_nvmf_init_data {
 	enum ib_nvmf_offload_type	type;
 	u8				log_max_namespace;
-	u32				offloaded_capsules_count;
 	u32				cmd_size;
 	u8				data_offset;
 	u8				log_max_io_size;

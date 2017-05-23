@@ -236,6 +236,8 @@ int mlx5_ib_exp_create_srq_user(struct mlx5_ib_dev *dev,
 				struct mlx5_ib_create_srq *ucmd);
 
 void mlx5_ib_internal_fill_nvmf_caps(struct mlx5_ib_dev *dev);
+int mlx5_ib_exp_set_nvmf_srq_attrs(struct mlx5_nvmf_attr *nvmf,
+				   struct ib_srq_init_attr *init_attr);
 
 struct mlx5_ib_ucontext;
 struct mlx5_ib_vma_private_data;
