@@ -3102,6 +3102,10 @@ enum {
 };
 
 enum {
+	MLX5_DCTC_OFFLOAD_TYPE_RNDV  = 0x1,
+};
+
+enum {
 	MLX5_DCTC_CS_RES_DISABLE    = 0x0,
 	MLX5_DCTC_CS_RES_NA         = 0x1,
 	MLX5_DCTC_CS_RES_UP_TO_64B  = 0x2,
@@ -3118,7 +3122,9 @@ enum {
 struct mlx5_ifc_dctc_bits {
 	u8         reserved_at_0[0x4];
 	u8         state[0x4];
-	u8         reserved_at_8[0x18];
+	u8         reserved_at_8[0x10];
+	u8         offload_type[0x4];
+	u8         reserved_at_1c[0x4];
 
 	u8         reserved_at_20[0x8];
 	u8         user_index[0x18];
