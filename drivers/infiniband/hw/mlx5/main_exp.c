@@ -208,6 +208,30 @@ static void mlx5_update_ooo_cap(struct mlx5_ib_dev *dev,
 		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_OOO_CAPS;
 }
 
+static void mlx5_update_tm_cap(struct mlx5_ib_dev *dev,
+			       struct ib_exp_device_attr *props)
+{
+	if (!MLX5_CAP_GEN(dev->mdev, tag_matching))
+		return;
+
+	if (MLX5_CAP_GEN(dev->mdev, rndv_offload_rc))
+		props->tm_caps.capability_flags |= IB_EXP_TM_CAP_RC;
+	if (MLX5_CAP_GEN(dev->mdev, rndv_offload_dc))
+		props->tm_caps.capability_flags |= IB_EXP_TM_CAP_DC;
+
+	if (!props->tm_caps.capability_flags)
+		return;
+
+	props->tm_caps.max_rndv_hdr_size = MLX5_TM_MAX_RNDV_MSG_SIZE;
+	props->tm_caps.max_num_tags =
+		(1 << MLX5_CAP_GEN(dev->mdev,
+				   log_tag_matching_list_sz)) - 1;
+	props->tm_caps.max_ops =
+		1 << MLX5_CAP_GEN(dev->mdev, log_max_qp_sz);
+	props->tm_caps.max_sge = MLX5_TM_MAX_SGE;
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_TM_CAPS;
+}
+
 int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			     struct ib_exp_device_attr *props,
 			     struct ib_udata *uhw)
@@ -416,18 +440,7 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		props->device_cap_flags2 |= IB_EXP_DEVICE_DELAY_DROP;
 
 	mlx5_update_ooo_cap(dev, props);
-
-	if (MLX5_CAP_GEN(dev->mdev, tag_matching)) {
-		props->tm_caps.max_rndv_hdr_size = MLX5_TM_MAX_RNDV_MSG_SIZE;
-		props->tm_caps.max_num_tags =
-			(1 << MLX5_CAP_GEN(dev->mdev,
-					   log_tag_matching_list_sz)) - 1;
-		props->tm_caps.capability_flags = IB_TM_CAP_RC;
-		props->tm_caps.max_ops =
-			1 << MLX5_CAP_GEN(dev->mdev, log_max_qp_sz);
-		props->tm_caps.max_sge = MLX5_TM_MAX_SGE;
-		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_TM_CAPS;
-	}
+	mlx5_update_tm_cap(dev, props);
 
 	return 0;
 }

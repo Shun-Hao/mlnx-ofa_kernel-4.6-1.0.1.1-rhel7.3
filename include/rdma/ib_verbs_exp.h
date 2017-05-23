@@ -246,12 +246,19 @@ struct ib_exp_context_attr {
 	u32	comp_mask;
 };
 
+enum ib_exp_tm_cap_flags {
+	/*  Support tag matching on RC transport */
+	IB_EXP_TM_CAP_RC	    = IB_TM_CAP_RC,
+	/*  Support tag matching on DC transport */
+	IB_EXP_TM_CAP_DC	    = 1 << 1,
+};
+
 struct ib_exp_tm_caps {
 	/* Max size of RNDV header */
 	u32 max_rndv_hdr_size;
 	/* Max number of entries in a tag matching list */
 	u32 max_num_tags;
-	/* TM capabilities mask - from enum ib_tm_cap_flags */
+	/* TM capabilities mask - from enum ib_exp_tm_cap_flags */
 	u32 capability_flags;
 	/* Max number of outstanding list operations */
 	u32 max_ops;
