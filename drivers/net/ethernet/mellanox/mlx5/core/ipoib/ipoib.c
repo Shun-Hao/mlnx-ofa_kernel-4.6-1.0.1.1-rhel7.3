@@ -409,6 +409,11 @@ static void mlx5i_cleanup_rx(struct mlx5e_priv *priv)
 	mlx5e_destroy_q_counters(priv);
 }
 
+static void mlx5i_update_stats(struct mlx5e_priv *priv)
+{
+	mlx5e_grp_sw_update_stats(priv);
+}
+
 static const struct mlx5e_profile mlx5i_nic_profile = {
 	.init		   = mlx5i_init,
 	.cleanup	   = mlx5i_cleanup,
@@ -418,7 +423,7 @@ static const struct mlx5e_profile mlx5i_nic_profile = {
 	.cleanup_rx	   = mlx5i_cleanup_rx,
 	.enable		   = NULL, /* mlx5i_enable */
 	.disable	   = NULL, /* mlx5i_disable */
-	.update_stats	   = NULL, /* mlx5i_update_stats */
+	.update_stats	   = mlx5i_update_stats,
 	.update_carrier    = NULL, /* no HW update in IB link */
 	.rx_handlers.handle_rx_cqe       = mlx5i_handle_rx_cqe,
 	.rx_handlers.handle_rx_cqe_mpwqe = NULL, /* Not supported */
