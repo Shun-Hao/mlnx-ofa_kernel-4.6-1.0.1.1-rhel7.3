@@ -234,6 +234,33 @@ static int mlx5i_get_link_ksettings(struct net_device *netdev,
 	return 0;
 }
 
+static int mlx5i_get_settings(struct net_device *netdev,
+			      struct ethtool_cmd *ecmd)
+{
+	u16 ib_link_width_oper;
+	u16 ib_proto_oper;
+	int speed, ret;
+
+	ret = mlx5i_get_port_settings(netdev,
+				      &ib_link_width_oper,
+				      &ib_proto_oper);
+	if (ret)
+		return ret;
+
+	speed = mlx5i_get_speed_settings(ib_link_width_oper, ib_proto_oper);
+	if (speed < 0)
+		return -EINVAL;
+
+	ecmd->duplex = DUPLEX_FULL;
+	ecmd->port = PORT_OTHER;/* till define IB port type */
+	ecmd->phy_address = 255;
+	ecmd->autoneg = AUTONEG_DISABLE;
+
+	ethtool_cmd_speed_set(ecmd, speed);
+
+	return 0;
+}
+
 const struct ethtool_ops mlx5i_ethtool_ops = {
 	.get_drvinfo        = mlx5i_get_drvinfo,
 	.get_strings        = mlx5i_get_strings,
@@ -249,6 +276,7 @@ const struct ethtool_ops mlx5i_ethtool_ops = {
 	.get_ts_info        = mlx5i_get_ts_info,
 	.get_link_ksettings = mlx5i_get_link_ksettings,
 	.get_link           = ethtool_op_get_link,
+//	.get_settings       = mlx5i_get_settings,
 };
 
 const struct ethtool_ops mlx5i_pkey_ethtool_ops = {
