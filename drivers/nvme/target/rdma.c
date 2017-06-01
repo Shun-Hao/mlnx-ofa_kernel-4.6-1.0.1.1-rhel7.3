@@ -1714,7 +1714,6 @@ static struct ib_client nvmet_rdma_ib_client = {
 static int __init nvmet_rdma_init(void)
 {
 	struct nvmet_rdma_staging_buf *st, *tmp;
-	int i;
 	int ret;
 
 	memset(&nvmet_rdma_st_pool, 0,
@@ -1725,23 +1724,12 @@ static int __init nvmet_rdma_init(void)
 	if (nvmet_rdma_offload_mem_start && nvmet_rdma_offload_mem_size &&
 	    nvmet_rdma_offload_buffer_size &&
 	    nvmet_rdma_offload_mem_size >= nvmet_rdma_offload_buffer_size) {
-		nvmet_rdma_st_pool.size = nvmet_rdma_offload_mem_size / nvmet_rdma_offload_buffer_size;
-
-		pr_info("offload_mem_start=0x%llx pool_size=%d, buf_size=%u\n",
-			nvmet_rdma_offload_mem_start,
-			nvmet_rdma_st_pool.size,
-			nvmet_rdma_offload_buffer_size);
-
-		for (i = 0; i < nvmet_rdma_st_pool.size; i++) {
-			st = nvmet_rdma_alloc_st_buff(1, nvmet_rdma_offload_buffer_size, false);
-			if (!st) {
-				ret = -ENOMEM;
-				goto error;
-			}
-			st->staging_dma_addrs[0] = nvmet_rdma_offload_mem_start + i * nvmet_rdma_offload_buffer_size * 1024 * 1024;
-			pr_debug("pool_entry=%d staging_buffer_address=0x%llx\n", i, st->staging_dma_addrs[0]);
-			list_add_tail(&st->entry, &nvmet_rdma_st_pool.list);
-		}
+		ret = nvmet_rdma_init_st_pool(&nvmet_rdma_st_pool,
+					      nvmet_rdma_offload_mem_start,
+					      nvmet_rdma_offload_mem_size,
+					      nvmet_rdma_offload_buffer_size);
+		if (ret)
+			return ret;
 	}
 
 	ret = ib_register_client(&nvmet_rdma_ib_client);

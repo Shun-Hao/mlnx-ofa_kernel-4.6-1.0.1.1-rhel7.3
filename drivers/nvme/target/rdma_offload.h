@@ -76,8 +76,6 @@ struct nvmet_rdma_xrq {
 };
 
 static void nvmet_rdma_free_st_buff(struct nvmet_rdma_staging_buf *st);
-static struct nvmet_rdma_staging_buf *nvmet_rdma_alloc_st_buff(u16 num_pages,
-		unsigned int page_size_mb, bool dynamic);
 static void nvmet_rdma_destroy_xrq(struct kref *ref);
 static int nvmet_rdma_find_get_xrq(struct nvmet_rdma_device *ndev,
 				   struct nvmet_rdma_queue *queue);
@@ -86,5 +84,9 @@ static int nvmet_rdma_install_offload_queue(struct nvmet_ctrl *ctrl,
 static int nvmet_rdma_create_offload_ctrl(struct nvmet_ctrl *ctrl);
 static void nvmet_rdma_destroy_offload_ctrl(struct nvmet_ctrl *ctrl);
 static bool nvmet_rdma_peer_to_peer_capable(struct nvmet_port *port);
+static int nvmet_rdma_init_st_pool(struct nvmet_rdma_staging_buf_pool *pool,
+				   unsigned long long mem_start,
+				   unsigned int mem_size,
+				   unsigned int buffer_size);
 
 #endif /* _RDMA_OFFLOAD_H */

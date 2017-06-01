@@ -502,3 +502,42 @@ static bool nvmet_rdma_peer_to_peer_capable(struct nvmet_port *port)
 	return cm_id->device->attrs.device_cap_flags & IB_DEVICE_NVMF_TARGET_OFFLOAD;
 }
 
+static int nvmet_rdma_init_st_pool(struct nvmet_rdma_staging_buf_pool *pool,
+				   unsigned long long mem_start,
+				   unsigned int mem_size,
+				   unsigned int buffer_size)
+{
+	struct nvmet_rdma_staging_buf *st, *tmp;
+	int i, err;
+	int size = mem_size / buffer_size;
+
+	if (!PAGE_ALIGNED(mem_start))
+		return -EINVAL;
+
+	for (i = 0; i < size; i++) {
+		st = nvmet_rdma_alloc_st_buff(1, buffer_size, false);
+		if (!st) {
+			err = -ENOMEM;
+			goto error;
+		}
+		st->staging_dma_addrs[0] = mem_start + i * buffer_size * 1024 * 1024;
+		pr_debug("pool_entry=%d staging_buffer_address=0x%llx\n", i, st->staging_dma_addrs[0]);
+		list_add_tail(&st->entry, &pool->list);
+		pool->size++;
+	}
+
+	pr_info("offload_mem_start=0x%llx pool_size=%d, buf_size=%u\n",
+		mem_start,
+		pool->size,
+		buffer_size);
+
+	return 0;
+
+error:
+	list_for_each_entry_safe(st, tmp, &pool->list, entry) {
+		list_del(&st->entry);
+		nvmet_rdma_free_st_buff(st);
+	}
+	return err;
+}
+
