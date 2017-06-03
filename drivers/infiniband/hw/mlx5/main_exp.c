@@ -526,6 +526,16 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 	props->pci_atomic_caps.compare_swap = MLX5_CAP_ATOMIC(dev->mdev, compare_swap_pci_atomic);
 	props->exp_comp_mask_2 |= IB_EXP_DEVICE_ATTR_PCI_ATOMIC_CAPS;
 
+	if (MLX5_CAP_GEN(dev->mdev, sho)) {
+		props->device_cap_flags2 |= IB_EXP_DEVICE_SIGNATURE_HANDOVER;
+		props->sig_caps.prot_cap = IB_PROT_T10DIF_TYPE_1 |
+					   IB_PROT_T10DIF_TYPE_2 |
+					   IB_PROT_T10DIF_TYPE_3;
+		props->sig_caps.guard_cap = IB_GUARD_T10DIF_CRC |
+					    IB_GUARD_T10DIF_CSUM;
+		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_SIG_CAPS;
+	}
+
 	return 0;
 }
 
