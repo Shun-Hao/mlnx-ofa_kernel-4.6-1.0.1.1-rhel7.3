@@ -83,7 +83,7 @@ static struct nvmet_rdma_staging_buf *nvmet_rdma_alloc_st_buff(u16 num_pages,
 	}
 
 	st->num_pages = num_pages;
-	st->page_size = page_size_mb * 1024 * 1024;
+	st->page_size = page_size_mb * SZ_1M;
 	st->dynamic = dynamic;
 
 	return st;
@@ -528,7 +528,7 @@ static int nvmet_rdma_init_st_pool(struct nvmet_rdma_staging_buf_pool *pool,
 			err = -ENOMEM;
 			goto error;
 		}
-		st->staging_dma_addrs[0] = mem_start + i * buffer_size * 1024 * 1024;
+		st->staging_dma_addrs[0] = mem_start + i * buffer_size * SZ_1M;
 		pr_debug("pool_entry=%d staging_buffer_address=0x%llx\n", i, st->staging_dma_addrs[0]);
 		list_add_tail(&st->entry, &pool->list);
 		pool->size++;
