@@ -3296,8 +3296,13 @@ enum ib_pd_flags {
 
 struct ib_pd *__ib_alloc_pd(struct ib_device *device, unsigned int flags,
 		const char *caller);
-#define ib_alloc_pd(device, flags) \
-	__ib_alloc_pd((device), (flags), KBUILD_MODNAME)
+
+/* Part of Lustre compatibility patch */
+#define ib_alloc_pd(device, ...) ib_alloc_pd_(device, ##__VA_ARGS__, 2, 1)
+#define ib_alloc_pd_(device, flags, n, ...) ib_alloc_pd_##n(device, flags)
+#define ib_alloc_pd_1(device, ...) __ib_alloc_pd(device, 0, KBUILD_MODNAME)
+#define ib_alloc_pd_2(device, flags) __ib_alloc_pd(device, flags, KBUILD_MODNAME)
+
 void ib_dealloc_pd(struct ib_pd *pd);
 
 /**
@@ -3706,6 +3711,18 @@ static inline int ib_req_ncomp_notif(struct ib_cq *cq, int wc_cnt)
 		cq->device->req_ncomp_notif(cq, wc_cnt) :
 		-ENOSYS;
 }
+
+/**
+ * ib_get_dma_mr - Returns a memory region for system memory that is
+ *   usable for DMA.
+ * @pd: The protection domain associated with the memory region.
+ * @mr_access_flags: Specifies the memory access rights.
+ *
+ * Note that the ib_dma_*() functions defined below must be used
+ * to create/destroy addresses used with the Lkey or Rkey returned
+ * by ib_get_dma_mr().
+ */
+struct ib_mr *ib_get_dma_mr(struct ib_pd *pd, int mr_access_flags);
 
 /**
  * ib_dma_mapping_error - check a DMA addr for error

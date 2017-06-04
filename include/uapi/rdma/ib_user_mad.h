@@ -36,7 +36,12 @@
 #define IB_USER_MAD_H
 
 #include <linux/types.h>
+
+#ifdef __KERNEL__
+#include <uapi/rdma/rdma_user_ioctl.h>
+#else
 #include <rdma/rdma_user_ioctl.h>
+#endif
 
 /*
  * Increment this value if any changes that break userspace ABI

@@ -131,6 +131,29 @@ int ib_exp_query_mkey(struct ib_mr *mr, u64 mkey_attr_mask,
 }
 EXPORT_SYMBOL(ib_exp_query_mkey);
 
+struct ib_mr *ib_get_dma_mr(struct ib_pd *pd, int mr_access_flags)
+{
+	struct ib_mr *mr;
+	int err;
+
+	err = ib_check_mr_access(mr_access_flags);
+	if (err)
+		return ERR_PTR(err);
+
+	mr = pd->device->get_dma_mr(pd, mr_access_flags);
+
+	if (!IS_ERR(mr)) {
+		mr->device  = pd->device;
+		mr->pd      = pd;
+		mr->uobject = NULL;
+		atomic_inc(&pd->usecnt);
+		mr->need_inval = false;
+	}
+
+	return mr;
+}
+EXPORT_SYMBOL(ib_get_dma_mr);
+
 /* NVMEoF target offload */
 
 struct ib_nvmf_ctrl *ib_create_nvmf_backend_ctrl(struct ib_srq *srq,

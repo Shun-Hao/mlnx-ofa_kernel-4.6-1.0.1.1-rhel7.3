@@ -35,7 +35,13 @@
 #define RDMA_USER_IOCTL_H
 
 #include <rdma/ib_user_mad.h>
+
+#ifdef __KERNEL__
+#include <uapi/rdma/hfi/hfi1_ioctl.h>
+#else
 #include <rdma/hfi/hfi1_ioctl.h>
+#endif
+
 #include <rdma/rdma_user_ioctl_cmds.h>
 
 /* Legacy name, for user space application which already use it */
