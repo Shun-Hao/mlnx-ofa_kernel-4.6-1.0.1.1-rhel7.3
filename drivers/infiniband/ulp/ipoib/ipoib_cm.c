@@ -44,7 +44,7 @@
 #include "ipoib.h"
 
 int ipoib_max_conn_qp = 128;
-u32 ipoib_inline_thold = IPOIB_INLINE_THOLD;
+u32 ipoib_inline_thold = IPOIB_MAX_INLINE_SIZE;
 
 module_param_named(max_nonsrq_conn_qp, ipoib_max_conn_qp, int, 0444);
 MODULE_PARM_DESC(max_nonsrq_conn_qp,
