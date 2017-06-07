@@ -140,14 +140,14 @@ MODULE_PARM_DESC(offload_mem_start,
 		 "Start address of the memory dedicated for P2P data transfer. If not set, the driver will allocate 1MB staging buffer per offload context."
 		 "Using bigger staging buffer will improve performance. Must be contiguous and aligned to" __stringify(PAGE_SIZE) "(default:0)");
 
-static unsigned int nvmet_rdma_offload_mem_size = 0;
-module_param_named(offload_mem_size, nvmet_rdma_offload_mem_size, uint, 0444);
-MODULE_PARM_DESC(offload_mem_size, "Total dedicated memory size in MB for P2P data transfers. The result of (offload_buffer_size * number offload context created) must not"
+static unsigned int nvmet_rdma_offload_mem_size_mb = 0;
+module_param_named(offload_mem_size, nvmet_rdma_offload_mem_size_mb, uint, 0444);
+MODULE_PARM_DESC(offload_mem_size, "Total dedicated memory size (in MiB) for P2P data transfers. The result of (offload_buffer_size * number offload context created) must not"
 		 " exceed this value. Only used if offload_mem_start param is set (default:0)");
 
-static unsigned int nvmet_rdma_offload_buffer_size = 128;
-module_param_named(offload_buffer_size, nvmet_rdma_offload_buffer_size, uint, 0444);
-MODULE_PARM_DESC(offload_buffer_size, "Staging buffer size in MB per offload context. The result of (offload_buffer_size * number offload context created) must not exceed"
+static unsigned int nvmet_rdma_offload_buffer_size_mb = 128;
+module_param_named(offload_buffer_size, nvmet_rdma_offload_buffer_size_mb, uint, 0444);
+MODULE_PARM_DESC(offload_buffer_size, "Static staging buffer size (in MiB) per offload context. The result of (offload_buffer_size * number offload context created) must not exceed"
 		 " offload_mem_size. Only used if offload_mem_start and offload_mem_size params are set (default:128)");
 
 static DEFINE_IDA(nvmet_rdma_queue_ida);
@@ -1721,13 +1721,13 @@ static int __init nvmet_rdma_init(void)
 
 	INIT_LIST_HEAD(&nvmet_rdma_st_pool.list);
 
-	if (nvmet_rdma_offload_mem_start && nvmet_rdma_offload_mem_size &&
-	    nvmet_rdma_offload_buffer_size &&
-	    nvmet_rdma_offload_mem_size >= nvmet_rdma_offload_buffer_size) {
+	if (nvmet_rdma_offload_mem_start && nvmet_rdma_offload_mem_size_mb &&
+	    nvmet_rdma_offload_buffer_size_mb &&
+	    nvmet_rdma_offload_mem_size_mb >= nvmet_rdma_offload_buffer_size_mb) {
 		ret = nvmet_rdma_init_st_pool(&nvmet_rdma_st_pool,
 					      nvmet_rdma_offload_mem_start,
-					      nvmet_rdma_offload_mem_size,
-					      nvmet_rdma_offload_buffer_size);
+					      nvmet_rdma_offload_mem_size_mb,
+					      nvmet_rdma_offload_buffer_size_mb);
 		if (ret)
 			return ret;
 	}
