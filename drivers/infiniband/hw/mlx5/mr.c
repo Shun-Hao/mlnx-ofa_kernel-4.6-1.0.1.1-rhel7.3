@@ -2476,6 +2476,8 @@ static int reg_mrs(struct ib_pd *pd, struct mlx5_ib_mr **mrs, int n,
 		mrs[i]->mmkey.type = MLX5_MKEY_MR;
 		mrs[i]->mmkey.size = mrs[i]->size;
 		mrs[i]->mmkey.pd = to_mpd(pd)->pdn;
+		if (i)
+			mrs[i]->mmkey.iova = 0;
 
 		err = mlx5_ib_update_xlt(mrs[i], 0, i * npages,
 					 mrs[i]->page_count,
