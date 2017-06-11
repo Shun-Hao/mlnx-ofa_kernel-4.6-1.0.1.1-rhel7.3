@@ -63,6 +63,7 @@ MODULE_LICENSE("Dual BSD/GPL");
 
 int ipoib_sendq_size __read_mostly = IPOIB_TX_RING_SIZE;
 int ipoib_recvq_size __read_mostly = IPOIB_RX_RING_SIZE;
+int ipoib_enhanced_enabled = 1;
 
 module_param_named(send_queue_size, ipoib_sendq_size, int, 0444);
 MODULE_PARM_DESC(send_queue_size, "Number of descriptors in send queue");
@@ -75,6 +76,9 @@ int ipoib_debug_level;
 module_param_named(debug_level, ipoib_debug_level, int, 0644);
 MODULE_PARM_DESC(debug_level, "Enable debug tracing if > 0");
 #endif
+
+module_param_named(ipoib_enhanced, ipoib_enhanced_enabled, int, 0444);
+MODULE_PARM_DESC(ipoib_enhanced, "Enable IPoIB enhanced for capable devices (default = 1) (0-1)");
 
 #define		IPOIB_MAX_NEIGH_TIME  (240UL * HZ)
 #define		IPOIB_MIN_NEIGH_TIME  (30UL * HZ)
@@ -2206,7 +2210,7 @@ static const struct net_device_ops ipoib_netdev_default_pf = {
 static struct net_device *ipoib_alloc_netdev(struct ib_device *hca, u8 port,
 					     const char *name)
 {
-	struct net_device *dev;
+	struct net_device *dev = NULL;
 
 	dev = rdma_alloc_netdev(hca, port, RDMA_NETDEV_IPOIB, name,
 				NET_NAME_UNKNOWN, ipoib_setup_common);
