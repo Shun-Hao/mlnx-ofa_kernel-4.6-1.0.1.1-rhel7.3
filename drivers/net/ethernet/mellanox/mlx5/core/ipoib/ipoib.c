@@ -38,6 +38,8 @@
 #define IB_DEFAULT_Q_KEY   0xb1b
 #define MLX5I_PARAMS_DEFAULT_LOG_RQ_SIZE 9
 
+#define MLX5I_MAX_NUM_CHANNELS           16
+
 static int mlx5i_open(struct net_device *netdev);
 static int mlx5i_close(struct net_device *netdev);
 static int mlx5i_change_mtu(struct net_device *netdev, int new_mtu);
@@ -412,6 +414,14 @@ static void mlx5i_cleanup_rx(struct mlx5e_priv *priv)
 static void mlx5i_update_stats(struct mlx5e_priv *priv)
 {
 	mlx5e_grp_sw_update_stats(priv);
+}
+
+static inline int mlx5i_get_max_num_channels(struct mlx5_core_dev *mdev)
+{
+	return is_kdump_kernel() ?
+		MLX5E_MIN_NUM_CHANNELS :
+		min_t(int, mdev->priv.eq_table.num_comp_vectors,
+		      MLX5I_MAX_NUM_CHANNELS);
 }
 
 static const struct mlx5e_profile mlx5i_nic_profile = {
