@@ -539,17 +539,23 @@ int ipoib_set_mode(struct net_device *dev, const char *buf)
 	}
 
 	/* flush paths if we switch modes so that connections are restarted */
-	if (IPOIB_CM_SUPPORTED(dev->dev_addr) && !strcmp(buf, "connected\n")) {
-		set_bit(IPOIB_FLAG_ADMIN_CM, &priv->flags);
-		ipoib_warn(priv, "enabling connected mode "
-			   "will cause multicast packet drops\n");
-		netdev_update_features(dev);
-		dev_set_mtu(dev, ipoib_cm_max_mtu(dev));
-		rtnl_unlock();
-		priv->tx_wr.wr.send_flags &= ~IB_SEND_IP_CSUM;
+	if (!strcmp(buf, "connected\n")) {
+		if (IPOIB_CM_SUPPORTED(dev->dev_addr)) {
+			set_bit(IPOIB_FLAG_ADMIN_CM, &priv->flags);
+			ipoib_warn(priv, "enabling connected mode "
+				   "will cause multicast packet drops\n");
+			netdev_update_features(dev);
+			dev_set_mtu(dev, ipoib_cm_max_mtu(dev));
+			rtnl_unlock();
+			priv->tx_wr.wr.send_flags &= ~IB_SEND_IP_CSUM;
 
-		ipoib_flush_paths(dev);
-		return (!rtnl_trylock()) ? -EBUSY : 0;
+			ipoib_flush_paths(dev);
+			return (!rtnl_trylock()) ? -EBUSY : 0;
+		} else {
+			ipoib_warn(priv, "Setting Connected Mode failed, "
+				   "not supported by this device");
+			return -EINVAL;
+		}
 	}
 
 	if (!strcmp(buf, "datagram\n")) {
