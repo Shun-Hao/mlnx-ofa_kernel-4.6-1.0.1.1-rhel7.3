@@ -630,7 +630,8 @@ struct mlx5_ifc_nvmf_cap_bits {
 	u8	log_max_io_size[0x5];
 	u8	reserved_at_48[0x3];
 	u8	log_max_backend_controller[0x5];
-	u8	reserved_at_50[0x8];
+	u8	reserved_at_50[0x3];
+	u8	log_max_backend_controller_per_xrq[0x5];
 	u8	max_icdoff[0x8];
 
 	u8	reserved_at_60[0x13];
