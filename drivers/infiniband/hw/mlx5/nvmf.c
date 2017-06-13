@@ -70,7 +70,7 @@ void mlx5_ib_internal_fill_nvmf_caps(struct mlx5_ib_dev *dev)
 		1 << MLX5_CAP_NVMF(mdev, log_min_staging_buffer_size);
 	caps->max_io_sz = 1 << MLX5_CAP_NVMF(mdev, log_max_io_size);
 	caps->max_be_ctrl =
-		1 << MLX5_CAP_NVMF(mdev, log_max_backend_controller);
+		1 << MLX5_CAP_NVMF(mdev, log_max_backend_controller_per_xrq);
 	caps->max_queue_sz =
 		1 << MLX5_CAP_NVMF(mdev, log_max_queue_size);
 	caps->min_queue_sz =
