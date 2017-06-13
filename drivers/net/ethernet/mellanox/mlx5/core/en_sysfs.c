@@ -606,7 +606,6 @@ static DEVICE_ATTR(vf_roce, S_IRUGO | S_IWUSR,
 #endif
 
 static struct attribute *mlx5e_settings_attrs[] = {
-	&dev_attr_vf_roce.attr,
 	NULL,
 };
 
@@ -637,6 +636,23 @@ static struct attribute_group debug_group = {
 	.attrs = mlx5e_debug_group_attrs,
 };
 
+static int update_settings_sysfs(struct net_device *dev,
+				 struct mlx5_core_dev *mdev)
+{
+	int err = 0;
+
+#ifdef CONFIG_MLX5_ESWITCH
+	if (MLX5_CAP_GEN(mdev, vport_group_manager) &&
+	    MLX5_CAP_GEN(mdev, port_type) == MLX5_CAP_PORT_TYPE_ETH) {
+		err = sysfs_add_file_to_group(&dev->dev.kobj,
+					      &dev_attr_vf_roce.attr,
+					      "settings");
+	}
+#endif
+
+	return err;
+}
+
 int mlx5e_sysfs_create(struct net_device *dev)
 {
 	struct mlx5e_priv *priv = netdev_priv(dev);
@@ -653,6 +669,10 @@ int mlx5e_sysfs_create(struct net_device *dev)
 	}
 
 	err = sysfs_create_group(&dev->dev.kobj, &settings_group);
+	if (err)
+		return err;
+
+	err = update_settings_sysfs(dev, priv->mdev);
 	if (err)
 		return err;
 
