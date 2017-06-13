@@ -2440,7 +2440,8 @@ struct ib_device {
 	int                        (*exp_memcpy_dm)(struct ib_dm *dm,
 						    struct ib_exp_memcpy_dm_attr *attr);
 	struct ib_mr *             (*exp_alloc_mr)(struct ib_pd *pd,
-						   struct ib_mr_init_attr *attr);
+						   struct ib_mr_init_attr *attr,
+						   struct ib_udata *udata);
 	int			(*exp_invalidate_range)(struct ib_device *device,
 							struct ib_mr *ibmr,
 							u64 start,
@@ -2604,7 +2605,8 @@ struct ib_device {
 	int                        (*dereg_mr)(struct ib_mr *mr);
 	struct ib_mr *		   (*alloc_mr)(struct ib_pd *pd,
 					       enum ib_mr_type mr_type,
-					       u32 max_num_sg);
+					       u32 max_num_sg,
+					       struct ib_udata *udata);
 	int (*advise_mr)(struct ib_pd *pd,
 			 enum ib_uverbs_advise_mr_advice advice, u32 flags,
 			 struct ib_sge *sg_list, u32 num_sge,

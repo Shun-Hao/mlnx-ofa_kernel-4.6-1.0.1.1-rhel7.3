@@ -388,6 +388,11 @@ enum mlx5_ib_create_wq_mask {
 	MLX5_IB_CREATE_WQ_STRIDING_RQ	= (1 << 0),
 };
 
+struct mlx5_ib_create_mr_resp {
+	__u32	psv_mem_idx;
+	__u32	psv_wire_idx;
+};
+
 struct mlx5_ib_create_wq {
 	__aligned_u64 buf_addr;
 	__aligned_u64 db_addr;

@@ -336,8 +336,9 @@ int mlx5_ib_exp_create_srq_user(struct mlx5_ib_dev *dev,
 struct ib_mr *mlx5_ib_get_dma_mr_ex(struct ib_pd *pd, int acc,
 				    u64 start_addr, u64 length);
 
-struct ib_mr *mlx5_ib_exp_alloc_mr(struct ib_pd *pd, struct ib_mr_init_attr *attr);
-
+struct ib_mr *mlx5_ib_exp_alloc_mr(struct ib_pd *pd,
+				   struct ib_mr_init_attr *attr,
+				   struct ib_udata *udata);
 /* NVMEoF target offload */
 void mlx5_ib_internal_fill_nvmf_caps(struct mlx5_ib_dev *dev);
 int mlx5_ib_exp_set_nvmf_srq_attrs(struct mlx5_nvmf_attr *nvmf,
