@@ -1192,7 +1192,7 @@ static struct mlx5_flow_rule *alloc_rule(struct mlx5_flow_destination *dest)
 		return NULL;
 
 	INIT_LIST_HEAD(&rule->next_ft);
-	atomic_set(&rule->users_refcount, 1);
+	atomic_set(&rule->users_refcount, 0);
 	init_completion(&rule->complete);
 	rule->node.type = FS_TYPE_FLOW_DEST;
 	INIT_LIST_HEAD(&rule->clients_data);
@@ -2036,8 +2036,9 @@ void mlx5_del_flow_rules(struct mlx5_flow_handle *handle)
 		ns = get_ns(&rule->node);
 		if (ns)
 			down_read(&ns->ns_rw_sem);
+		init_completion(&rule->complete);
 		notify_del_rule(rule);
-		if (atomic_dec_and_test(&rule->users_refcount))
+		if (atomic_read(&rule->users_refcount) == 0)
 			complete(&rule->complete);
 		wait_for_completion(&rule->complete);
 		tree_remove_node(&rule->node);
