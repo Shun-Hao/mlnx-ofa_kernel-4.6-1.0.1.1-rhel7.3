@@ -2484,6 +2484,12 @@ static void mlx5e_build_channel_param(struct mlx5e_priv *priv,
 }
 
 #ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+static void mlx5e_rl_cleanup(struct mlx5e_priv *priv)
+{
+	mlx5e_rl_remove_sysfs(priv);
+	hash_init(priv->flow_map_hash);
+}
+
 static int mlx5e_rl_init(struct mlx5e_priv *priv,
 			 struct mlx5e_params params)
 {
@@ -2493,15 +2499,12 @@ static int mlx5e_rl_init(struct mlx5e_priv *priv,
 	if (!err) {
 		WARN_ON(!hash_empty(priv->flow_map_hash));
 		hash_init(priv->flow_map_hash);
+	} else {
+		mlx5e_rl_cleanup(priv);
+		mlx5_core_err(priv->mdev, "failed to init rate limit\n");
 	}
 
 	return err;
-}
-
-static void mlx5e_rl_cleanup(struct mlx5e_priv *priv)
-{
-	mlx5e_rl_remove_sysfs(priv);
-	hash_init(priv->flow_map_hash);
 }
 #endif
 
@@ -3090,19 +3093,10 @@ void mlx5e_activate_priv_channels(struct mlx5e_priv *priv)
 	mlx5e_wait_channels_min_rx_wqes(&priv->channels);
 	mlx5e_redirect_rqts_to_channels(priv, &priv->channels);
 
-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-	if (mlx5e_rl_init(priv, priv->channels.params)) {
-		mlx5e_rl_cleanup(priv);
-		mlx5_core_err(priv->mdev, "failed to init rate limit\n");
-	}
-#endif
 }
 
 void mlx5e_deactivate_priv_channels(struct mlx5e_priv *priv)
 {
-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-	mlx5e_rl_cleanup(priv);
-#endif
 	mlx5e_redirect_rqts_to_drop(priv);
 
 	if (MLX5_ESWITCH_MANAGER(priv->mdev))
@@ -3120,11 +3114,20 @@ void mlx5e_switch_priv_channels(struct mlx5e_priv *priv,
 				struct mlx5e_channels *new_chs,
 				mlx5e_fp_hw_modify hw_modify)
 {
+	int new_num_txqs = new_chs->num * new_chs->params.num_tc;
 	struct net_device *netdev = priv->netdev;
 	int carrier_ok;
 
 	carrier_ok = netif_carrier_ok(netdev);
 	netif_carrier_off(netdev);
+
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+	mlx5e_rl_cleanup(priv);
+	new_num_txqs += new_chs->params.num_rl_txqs;
+#endif
+
+	if (new_num_txqs < netdev->real_num_tx_queues)
+		netif_set_real_num_tx_queues(netdev, new_num_txqs);
 
 	mlx5e_deactivate_priv_channels(priv);
 	mlx5e_close_channels(&priv->channels);
@@ -3137,6 +3140,10 @@ void mlx5e_switch_priv_channels(struct mlx5e_priv *priv,
 
 	mlx5e_refresh_tirs(priv, false);
 	mlx5e_activate_priv_channels(priv);
+
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+	mlx5e_rl_init(priv, priv->channels.params);
+#endif
 
 	/* return carrier back if needed */
 	if (carrier_ok)
@@ -3162,6 +3169,11 @@ int mlx5e_open_locked(struct net_device *netdev)
 
 	mlx5e_refresh_tirs(priv, false);
 	mlx5e_activate_priv_channels(priv);
+
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+	mlx5e_rl_init(priv, priv->channels.params);
+#endif
+
 	mlx5e_create_debugfs(priv);
 	if (priv->profile->update_carrier)
 		priv->profile->update_carrier(priv);
@@ -3210,6 +3222,9 @@ int mlx5e_close_locked(struct net_device *netdev)
 
 	netif_carrier_off(priv->netdev);
 	mlx5e_destroy_debugfs(priv);
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+	mlx5e_rl_cleanup(priv);
+#endif
 	mlx5e_deactivate_priv_channels(priv);
 	mlx5e_close_channels(&priv->channels);
 
