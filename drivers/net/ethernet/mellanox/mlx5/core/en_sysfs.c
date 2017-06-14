@@ -263,6 +263,80 @@ bad_input:
 static DEVICE_ATTR(lro_timeout, S_IRUGO | S_IWUSR,
 		  mlx5e_show_lro_timeout, mlx5e_store_lro_timeout);
 
+#ifdef ETH_SS_RSS_HASH_FUNCS
+#define MLX5E_HFUNC_TOP ETH_RSS_HASH_TOP
+#define MLX5E_HFUNC_XOR ETH_RSS_HASH_XOR
+#else
+#define MLX5E_HFUNC_TOP 1
+#define MLX5E_HFUNC_XOR 2
+#endif
+
+static ssize_t mlx5e_show_hfunc(struct device *device,
+				struct device_attribute *attr,
+				char *buf)
+{
+	struct mlx5e_priv *priv = netdev_priv(to_net_dev(device));
+	int len = 0;
+
+	rtnl_lock();
+
+	len += sprintf(buf + len, "Operational hfunc: %s\n",
+		       priv->channels.params.rss_hfunc == MLX5E_HFUNC_XOR ?
+		       "xor" : "toeplitz");
+
+	len += sprintf(buf + len, "Supported hfuncs: xor toeplitz\n");
+
+	rtnl_unlock();
+
+	return len;
+}
+
+static ssize_t mlx5e_store_hfunc(struct device *device,
+				 struct device_attribute *attr,
+				 const char *buf, size_t count)
+{
+	struct mlx5e_priv *priv = netdev_priv(to_net_dev(device));
+	u32 in[MLX5_ST_SZ_DW(modify_tir_in)] = {0};
+	struct net_device *netdev = priv->netdev;
+	char hfunc[ETH_GSTRING_LEN];
+	u8 ethtool_hfunc;
+	int err;
+
+	err = sscanf(buf, "%31s", hfunc);
+
+	if (err != 1)
+		goto bad_input;
+
+	if (!strcmp(hfunc, "xor"))
+		ethtool_hfunc = MLX5E_HFUNC_XOR;
+	else if (!strcmp(hfunc, "toeplitz"))
+		ethtool_hfunc = MLX5E_HFUNC_TOP;
+	else
+		goto bad_input;
+
+	rtnl_lock();
+	mutex_lock(&priv->state_lock);
+
+	if (priv->channels.params.rss_hfunc == ethtool_hfunc)
+		goto unlock;
+
+	priv->channels.params.rss_hfunc = ethtool_hfunc;
+	mlx5e_sysfs_modify_tirs_hash(priv, in, sizeof(in));
+
+unlock:
+	mutex_unlock(&priv->state_lock);
+	rtnl_unlock();
+
+	return count;
+
+bad_input:
+	netdev_err(netdev, "Bad Input\n");
+	return -EINVAL;
+}
+
+static DEVICE_ATTR(hfunc, S_IRUGO | S_IWUSR,
+		  mlx5e_show_hfunc, mlx5e_store_hfunc);
+
 static ssize_t mlx5e_show_link_down_reason(struct device *device,
 					    struct device_attribute *attr,
 					    char *buf)
@@ -606,6 +680,7 @@ static DEVICE_ATTR(vf_roce, S_IRUGO | S_IWUSR,
 #endif
 
 static struct attribute *mlx5e_settings_attrs[] = {
+	&dev_attr_hfunc.attr,
 	NULL,
 };
 
