@@ -134,9 +134,10 @@ static void ipoib_timeout_rss(struct net_device *dev)
 	for (index = 0; index < priv->num_tx_queues; index++) {
 		if (__netif_subqueue_stopped(dev, index)) {
 			send_ring = priv->send_ring + index;
-			ipoib_warn(priv, "queue (%d) stopped, tx_head %u, tx_tail %u\n",
-				   index,
-				   send_ring->tx_head, send_ring->tx_tail);
+			ipoib_warn(priv, "queue (%d) stopped, tx_head %u, tx_tail %u tx_outstanding: %d\n",
+				   index, send_ring->tx_head,
+				   send_ring->tx_tail,
+				   atomic_read(&send_ring->tx_outstanding));
 		}
 	}
 	/* XXX reset QP, etc. */
