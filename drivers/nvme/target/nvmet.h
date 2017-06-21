@@ -200,6 +200,8 @@ struct nvmet_ctrl {
 	char			subsysnqn[NVMF_NQN_FIELD_LEN];
 	char			hostnqn[NVMF_NQN_FIELD_LEN];
 
+	unsigned int		sqe_inline_size;
+
 	struct device *p2p_client;
 	struct radix_tree_root p2p_ns_map;
 };

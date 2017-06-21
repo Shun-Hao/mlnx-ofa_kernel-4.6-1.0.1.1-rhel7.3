@@ -356,14 +356,14 @@ static void nvmet_execute_identify_ctrl(struct nvmet_req *req)
 	id->sgls = cpu_to_le32(1 << 0);	/* we always support SGLs */
 	if (ctrl->ops->has_keyed_sgls)
 		id->sgls |= cpu_to_le32(1 << 2);
-	if (req->port->inline_data_size)
+	if (ctrl->sqe_inline_size)
 		id->sgls |= cpu_to_le32(1 << 20);
 
 	strlcpy(id->subnqn, ctrl->subsys->subsysnqn, sizeof(id->subnqn));
 
 	/* Max command capsule size is sqe + single page of in-capsule data */
 	id->ioccsz = cpu_to_le32((sizeof(struct nvme_command) +
-				  req->port->inline_data_size) / 16);
+				  ctrl->sqe_inline_size) / 16);
 	/* Max response capsule size is cqe */
 	id->iorcsz = cpu_to_le32(sizeof(struct nvme_completion) / 16);
 
