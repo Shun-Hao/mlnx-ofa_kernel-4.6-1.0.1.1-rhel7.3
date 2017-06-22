@@ -745,17 +745,35 @@ int mlx5e_sysfs_create(struct net_device *dev)
 
 	err = sysfs_create_group(&dev->dev.kobj, &settings_group);
 	if (err)
-		return err;
+		goto remove_attributes;
 
 	err = update_settings_sysfs(dev, priv->mdev);
 	if (err)
-		return err;
+		goto remove_settings_group;
 
 	err = sysfs_create_group(&dev->dev.kobj, &qos_group);
 	if (err)
-		return err;
+		goto remove_settings_group;
 
 	err = sysfs_create_group(&dev->dev.kobj, &debug_group);
+
+	if (err)
+		goto remove_qos_group;
+
+	return 0;
+
+remove_qos_group:
+	sysfs_remove_group(&dev->dev.kobj, &qos_group);
+remove_settings_group:
+	sysfs_remove_group(&dev->dev.kobj, &settings_group);
+remove_attributes:
+	for (i = 1; i < MLX5E_CONG_PROTOCOL_NUM; i++) {
+		mlx5e_remove_attributes(priv, i);
+		kobject_put(priv->ecn_ctx[i].ecn_proto_kobj);
+	}
+
+	kobject_put(priv->ecn_root_kobj);
+
 	return err;
 }
 
