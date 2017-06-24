@@ -2414,6 +2414,8 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 	else
 		MLX5_SET(qpc, qpc, latency_sensitive, 1);
 
+	if (init_attr->create_flags & IB_QP_CREATE_SIGNATURE_PIPELINE)
+		MLX5_SET(qpc, qpc, drain_sigerr, 1);
 
 	if (qp->wq_sig)
 		MLX5_SET(qpc, qpc, wq_signature, 1);
@@ -6008,8 +6010,8 @@ static int query_raw_packet_qp_state(struct mlx5_ib_dev *dev,
 				      raw_packet_qp_state);
 }
 
-static int query_qp_attr(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
-			 struct ib_qp_attr *qp_attr)
+static void *query_qp_attr(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
+			   struct ib_qp_attr *qp_attr)
 {
 	int outlen = MLX5_ST_SZ_BYTES(query_qp_out);
 	struct mlx5_qp_context *context;
@@ -6019,7 +6021,7 @@ static int query_qp_attr(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 
 	outb = kzalloc(outlen, GFP_KERNEL);
 	if (!outb)
-		return -ENOMEM;
+		return ERR_PTR(-ENOMEM);
 
 	err = mlx5_core_qp_query(dev->mdev, &qp->trans_qp.base.mqp, outb,
 				 outlen);
@@ -6068,9 +6070,11 @@ static int query_qp_attr(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 	qp_attr->rnr_retry	    = (be32_to_cpu(context->params1) >> 13) & 0x7;
 	qp_attr->alt_timeout	    = context->alt_path.ackto_lt >> 3;
 
+	return outb;
+
 out:
 	kfree(outb);
-	return err;
+	return ERR_PTR(err);
 }
 
 static int mlx5_ib_dct_query_qp(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *mqp,
@@ -6138,41 +6142,47 @@ out:
 	return err;
 }
 
-int mlx5_ib_query_qp(struct ib_qp *ibqp, struct ib_qp_attr *qp_attr,
-		     int qp_attr_mask, struct ib_qp_init_attr *qp_init_attr)
+void *__mlx5_ib_query_qp(struct ib_qp *ibqp, struct ib_qp_attr *qp_attr,
+			 int qp_attr_mask,
+			 struct ib_qp_init_attr *qp_init_attr)
 {
 	struct mlx5_ib_dev *dev = to_mdev(ibqp->device);
 	struct mlx5_ib_qp *qp = to_mqp(ibqp);
-	int err = 0;
+	void *cmd_out = NULL;
 	u8 raw_packet_qp_state;
 
 	if (ibqp->rwq_ind_tbl)
-		return -ENOSYS;
+		return ERR_PTR(-ENOSYS);
 
 	if (unlikely(ibqp->qp_type == IB_QPT_GSI))
-		return mlx5_ib_gsi_query_qp(ibqp, qp_attr, qp_attr_mask,
-					    qp_init_attr);
+		return ERR_PTR(mlx5_ib_gsi_query_qp(ibqp, qp_attr, qp_attr_mask,
+						    qp_init_attr));
 
 	/* Not all of output fields are applicable, make sure to zero them */
 	memset(qp_init_attr, 0, sizeof(*qp_init_attr));
 	memset(qp_attr, 0, sizeof(*qp_attr));
 
 	if (unlikely(qp->qp_sub_type == MLX5_IB_QPT_DCT))
-		return mlx5_ib_dct_query_qp(dev, qp, qp_attr,
-					    qp_attr_mask, qp_init_attr);
+		return ERR_PTR(mlx5_ib_dct_query_qp(dev, qp, qp_attr,
+						    qp_attr_mask,
+						    qp_init_attr));
 
 	mutex_lock(&qp->mutex);
 
 	if (qp->ibqp.qp_type == IB_QPT_RAW_PACKET ||
 	    qp->flags & MLX5_IB_QP_UNDERLAY) {
+		int err;
+
 		err = query_raw_packet_qp_state(dev, qp, &raw_packet_qp_state);
-		if (err)
+		if (err) {
+			cmd_out = ERR_PTR(err);
 			goto out;
+		}
 		qp->state = raw_packet_qp_state;
 		qp_attr->port_num = 1;
 	} else {
-		err = query_qp_attr(dev, qp, qp_attr);
-		if (err)
+		cmd_out = query_qp_attr(dev, qp, qp_attr);
+		if (IS_ERR(cmd_out))
 			goto out;
 	}
 
@@ -6215,10 +6225,22 @@ int mlx5_ib_query_qp(struct ib_qp *ibqp, struct ib_qp_attr *qp_attr,
 
 	qp_init_attr->sq_sig_type = qp->sq_signal_bits & MLX5_WQE_CTRL_CQ_UPDATE ?
 		IB_SIGNAL_ALL_WR : IB_SIGNAL_REQ_WR;
-
 out:
 	mutex_unlock(&qp->mutex);
-	return err;
+	return cmd_out;
+}
+
+int mlx5_ib_query_qp(struct ib_qp *ibqp, struct ib_qp_attr *qp_attr,
+		     int qp_attr_mask, struct ib_qp_init_attr *qp_init_attr)
+{
+	void *cmd_out = __mlx5_ib_query_qp(ibqp, qp_attr, qp_attr_mask,
+					   qp_init_attr);
+
+	if (IS_ERR(cmd_out))
+		return PTR_ERR(cmd_out);
+
+	kfree(cmd_out);
+	return 0;
 }
 
 struct ib_xrcd *mlx5_ib_alloc_xrcd(struct ib_device *ibdev,

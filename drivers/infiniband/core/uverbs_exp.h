@@ -48,6 +48,7 @@ IB_UVERBS_DECLARE_EXP_CMD(set_context_attr);
 IB_UVERBS_DECLARE_EXP_CMD(create_srq);
 IB_UVERBS_DECLARE_EXP_CMD(alloc_dm);
 IB_UVERBS_DECLARE_EXP_CMD(free_dm);
+IB_UVERBS_DECLARE_EXP_CMD(query_qp);
 
 unsigned long ib_uverbs_exp_get_unmapped_area(struct file *filp,
 					      unsigned long addr,

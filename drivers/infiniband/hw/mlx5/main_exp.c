@@ -536,6 +536,9 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_SIG_CAPS;
 	}
 
+	if (MLX5_CAP_GEN(dev->mdev, drain_sigerr))
+		props->device_cap_flags2 |= IB_EXP_DEVICE_SIGNATURE_PIPELINE;
+
 	return 0;
 }
 

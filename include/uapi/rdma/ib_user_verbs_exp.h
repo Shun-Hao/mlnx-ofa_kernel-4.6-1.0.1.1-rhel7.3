@@ -37,6 +37,7 @@ enum {
 	IB_USER_VERBS_EXP_CMD_CREATE_SRQ,
 	IB_USER_VERBS_EXP_CMD_ALLOC_DM,
 	IB_USER_VERBS_EXP_CMD_FREE_DM,
+	IB_USER_VERBS_EXP_CMD_QUERY_QP,
 };
 
 enum ib_uverbs_exp_modify_qp_comp_mask {
@@ -57,6 +58,46 @@ enum ibv_exp_qp_attr_mask {
 				  IB_EXP_QP_OOO_RW_DATA_PLACEMENT,
 	IBV_EXP_QP_ATTR_FIRST = IB_QP_GROUP_RSS,
 	IBV_EXP_ATTR_MASK_SHIFT = 0x06,
+};
+
+struct ib_uverbs_exp_query_qp {
+	__u32 comp_mask;
+	__u32 qp_handle;
+	__u64 attr_mask;
+};
+
+struct ib_uverbs_exp_query_qp_resp {
+	struct ib_uverbs_qp_dest dest;
+	struct ib_uverbs_qp_dest alt_dest;
+	__u32 max_send_wr;
+	__u32 max_recv_wr;
+	__u32 max_send_sge;
+	__u32 max_recv_sge;
+	__u32 max_inline_data;
+	__u32 qkey;
+	__u32 rq_psn;
+	__u32 sq_psn;
+	__u32 dest_qp_num;
+	__u32 qp_access_flags;
+	__u16 pkey_index;
+	__u16 alt_pkey_index;
+	__u8  qp_state;
+	__u8  cur_qp_state;
+	__u8  path_mtu;
+	__u8  path_mig_state;
+	__u8  sq_draining;
+	__u8  max_rd_atomic;
+	__u8  max_dest_rd_atomic;
+	__u8  min_rnr_timer;
+	__u8  port_num;
+	__u8  timeout;
+	__u8  retry_cnt;
+	__u8  rnr_retry;
+	__u8  alt_port_num;
+	__u8  alt_timeout;
+	__u8  sq_sig_all;
+	__u8  reserved[5];
+	__u64 driver_data[0];
 };
 
 struct ib_uverbs_exp_modify_qp {
@@ -106,6 +147,7 @@ enum {
 	IB_QP_EXP_USER_CREATE_SCATTER_FCS = (1 << 12),
 	IB_QP_EXP_USER_CREATE_TUNNEL_OFFLOADS = (1 << 13),
 	IB_QP_EXP_USER_CREATE_PACKET_BASED_CREDIT_MODE = (1 << 16),
+	IB_QP_EXP_USER_CREATE_SIGNATURE_PIPELINE = (1 << 18),
 };
 
 enum ib_uverbs_exp_create_qp_flags {
@@ -116,7 +158,8 @@ enum ib_uverbs_exp_create_qp_flags {
 					 IB_QP_EXP_USER_CREATE_RX_END_PADDING |
 					 IB_QP_EXP_USER_CREATE_SCATTER_FCS |
 					 IB_QP_EXP_USER_CREATE_TUNNEL_OFFLOADS |
-					 IB_QP_EXP_USER_CREATE_PACKET_BASED_CREDIT_MODE
+					 IB_QP_EXP_USER_CREATE_PACKET_BASED_CREDIT_MODE |
+					 IB_QP_EXP_USER_CREATE_SIGNATURE_PIPELINE
 };
 
 enum ib_uverbs_exp_create_qp_comp_mask {

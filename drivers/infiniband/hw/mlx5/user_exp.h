@@ -209,6 +209,11 @@ struct mlx5_exp_ib_create_qp_resp {
 	struct mlx5_exp_ib_create_qp_resp_data exp;
 };
 
+struct mlx5_ib_exp_query_qp_resp {
+	__u32   sq_wqe_counter;
+	__u32	reserved0;
+};
+
 struct mlx5_ib_create_dct {
 	__u32   uidx;
 	__u32   reserved;

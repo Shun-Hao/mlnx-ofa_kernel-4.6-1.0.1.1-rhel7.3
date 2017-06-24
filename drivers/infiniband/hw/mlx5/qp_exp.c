@@ -310,6 +310,33 @@ static void mlx5_ib_dct_event(struct mlx5_core_qp *qp, int type)
 	}
 }
 
+int mlx5_ib_exp_query_qp(struct ib_qp *ibqp, struct ib_qp_attr *attr,
+			 u64 attr_mask, struct ib_qp_init_attr *init_attr,
+			 struct ib_udata *udata)
+{
+	struct mlx5_ib_exp_query_qp_resp resp = {};
+	int ret = 0;
+	u32 *outb;
+
+	outb = __mlx5_ib_query_qp(ibqp, attr, attr_mask, init_attr);
+
+	if (IS_ERR(outb))
+		return PTR_ERR(outb);
+
+	if (attr_mask & IB_EXP_QP_SQ_WQE_COUNT) {
+		if (!udata || udata->outlen < sizeof(resp))
+			return -EINVAL;
+
+		resp.sq_wqe_counter =
+			MLX5_GET(query_qp_out, outb, qpc.hw_sq_wqebb_counter);
+
+		ret = ib_copy_to_udata(udata, &resp, sizeof(resp));
+	}
+
+	kfree(outb);
+	return ret;
+}
+
 static struct mlx5_ib_qp *dct_create_qp(struct ib_pd *pd,
                                    struct ib_dct_init_attr *attr,
                                    u32 uidx)
