@@ -297,11 +297,7 @@ int mlx5e_ethtool_set_ringparam(struct mlx5e_priv *priv,
 		goto unlock;
 	}
 
-	err = mlx5e_open_channels(priv, &new_channels);
-	if (err)
-		goto unlock;
-
-	mlx5e_switch_priv_channels(priv, &new_channels, NULL);
+	err = mlx5e_switch_priv_channels(priv, &new_channels, NULL);
 
 unlock:
 	mutex_unlock(&priv->state_lock);
@@ -393,23 +389,20 @@ int mlx5e_ethtool_set_channels(struct mlx5e_priv *priv,
 		goto out;
 	}
 
-	/* Create fresh channels with new parameters */
-	err = mlx5e_open_channels(priv, &new_channels);
-	if (err)
-		goto out;
-
 	arfs_enabled = priv->netdev->features & NETIF_F_NTUPLE;
 	if (arfs_enabled)
 		mlx5e_arfs_disable(priv);
 
 	/* Switch to new channels, set new parameters and close old ones */
-	mlx5e_switch_priv_channels(priv, &new_channels, NULL);
+	err = mlx5e_switch_priv_channels(priv, &new_channels, NULL);
 
 	if (arfs_enabled) {
-		err = mlx5e_arfs_enable(priv);
-		if (err)
+		int err2 = mlx5e_arfs_enable(priv);
+
+		err |= err2;
+		if (err2)
 			netdev_err(priv->netdev, "%s: mlx5e_arfs_enable failed: %d\n",
-				   __func__, err);
+				   __func__, err2);
 	}
 
 out:
@@ -535,12 +528,7 @@ int mlx5e_ethtool_set_coalesce(struct mlx5e_priv *priv,
 		goto out;
 	}
 
-	/* open fresh channels with new coal parameters */
-	err = mlx5e_open_channels(priv, &new_channels);
-	if (err)
-		goto out;
-
-	mlx5e_switch_priv_channels(priv, &new_channels, NULL);
+	err = mlx5e_switch_priv_channels(priv, &new_channels, NULL);
 
 out:
 	mutex_unlock(&priv->state_lock);
@@ -1595,12 +1583,9 @@ static int set_pflag_cqe_based_moder(struct net_device *netdev, bool enable,
 		return 0;
 	}
 
-	err = mlx5e_open_channels(priv, &new_channels);
-	if (err)
-		return err;
+	err = mlx5e_switch_priv_channels(priv, &new_channels, NULL);
 
-	mlx5e_switch_priv_channels(priv, &new_channels, NULL);
-	return 0;
+	return err;
 }
 
 static int set_pflag_tx_cqe_based_moder(struct net_device *netdev, bool enable)
@@ -1633,16 +1618,13 @@ int mlx5e_modify_rx_cqe_compression_locked(struct mlx5e_priv *priv, bool new_val
 		return 0;
 	}
 
-	err = mlx5e_open_channels(priv, &new_channels);
-	if (err)
-		return err;
-
-	mlx5e_switch_priv_channels(priv, &new_channels, NULL);
-	mlx5e_dbg(DRV, priv, "MLX5E: RxCqeCmprss was turned %s\n",
+	err = mlx5e_switch_priv_channels(priv, &new_channels, NULL);
+	mlx5e_dbg(DRV, priv, "MLX5E: RxCqeCmprss was turned %s err=%d\n",
 		  MLX5E_GET_PFLAG(&priv->channels.params,
-				  MLX5E_PFLAG_RX_CQE_COMPRESS) ? "ON" : "OFF");
+				  MLX5E_PFLAG_RX_CQE_COMPRESS) ? "ON" : "OFF",
+				  err);
 
-	return 0;
+	return err;
 }
 
 static int set_pflag_rx_cqe_compress(struct net_device *netdev,

@@ -461,11 +461,9 @@ static int mlx5i_change_mtu(struct net_device *netdev, int new_mtu)
 
 	new_channels.params = *params;
 	new_channels.params.sw_mtu = new_mtu;
-	err = mlx5e_open_channels(priv, &new_channels);
-	if (err)
+	err = mlx5e_switch_priv_channels(priv, &new_channels, NULL);
+	if (err) 
 		goto out;
-
-	mlx5e_switch_priv_channels(priv, &new_channels, NULL);
 	netdev->mtu = new_channels.params.sw_mtu;
 
 out:
