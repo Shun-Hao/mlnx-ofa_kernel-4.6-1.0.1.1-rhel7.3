@@ -626,8 +626,8 @@ int mlx5_pagealloc_start(struct mlx5_core_dev *dev)
 
 void mlx5_pagealloc_stop(struct mlx5_core_dev *dev)
 {
-	dev->priv.gc_allowed = false;
 	cancel_delayed_work(&dev->priv.gc_dwork);
+	queue_delayed_work(dev->priv.pg_wq, &dev->priv.gc_dwork, 0);
 	destroy_workqueue(dev->priv.pg_wq);
 }
 
