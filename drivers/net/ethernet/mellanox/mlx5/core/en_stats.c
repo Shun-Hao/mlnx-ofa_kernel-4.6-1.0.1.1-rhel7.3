@@ -1253,10 +1253,12 @@ static const struct counter_desc ch_stats_desc[] = {
 #define NUM_XDPSQ_STATS			ARRAY_SIZE(xdpsq_stats_desc)
 #define NUM_RQ_XDPSQ_STATS		ARRAY_SIZE(rq_xdpsq_stats_desc)
 #define NUM_CH_STATS			ARRAY_SIZE(ch_stats_desc)
+#define MLX5E_PER_CHANNEL_STATS(priv) \
+	(priv->channels.num * MLX5E_GET_PFLAG(&(priv)->channels.params, MLX5E_PFLAG_PER_CH_STATS))
 
 static int mlx5e_grp_channels_get_num_stats(struct mlx5e_priv *priv)
 {
-	int max_nch = mlx5e_get_netdev_max_channels(priv->netdev);
+	int max_nch = MLX5E_PER_CHANNEL_STATS(priv);
 
 	return (NUM_RQ_STATS * max_nch) +
 	       (NUM_CH_STATS * max_nch) +
@@ -1266,7 +1268,7 @@ static int mlx5e_grp_channels_get_num_stats(struct mlx5e_priv *priv)
 	       (NUM_XDPSQ_STATS * max_nch);
 #else
 		(NUM_SQ_STATS * (max_nch * priv->max_opened_tc +
-		priv->channels.params.num_rl_txqs));
+		priv->channels.params.num_rl_txqs * MLX5E_GET_PFLAG(&(priv)->channels.params, MLX5E_PFLAG_PER_CH_STATS)));
 #endif /*CONFIG_MLX5_EN_SPECIAL_SQ*/
 }
 
@@ -1304,7 +1306,7 @@ static int mlx5e_grp_channels_fill_strings(struct mlx5e_priv *priv, u8 *data,
 
 #ifdef CONFIG_MLX5_EN_SPECIAL_SQ
 	/* Special TX queue counters */
-	for (i = 0; i < priv->channels.params.num_rl_txqs; i++)
+	for (i = 0; i < priv->channels.params.num_rl_txqs * MLX5E_GET_PFLAG(&(priv)->channels.params, MLX5E_PFLAG_PER_CH_STATS); i++)
 		for (j = 0; j < NUM_SQ_STATS; j++)
 			sprintf(data + (idx++) * ETH_GSTRING_LEN,
 				sq_stats_desc[j].format,

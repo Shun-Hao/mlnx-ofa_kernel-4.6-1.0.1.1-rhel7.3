@@ -4916,6 +4916,7 @@ void mlx5e_build_nic_params(struct mlx5_core_dev *mdev,
 
 	/* Sniffer is off by default - performance wise */
 	MLX5E_SET_PFLAG(params, MLX5E_PFLAG_SNIFFER, 0);
+	MLX5E_SET_PFLAG(params, MLX5E_PFLAG_PER_CH_STATS, true);
 }
 
 static void mlx5e_set_netdev_dev_addr(struct net_device *netdev)

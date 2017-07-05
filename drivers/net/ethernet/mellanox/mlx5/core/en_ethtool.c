@@ -143,6 +143,7 @@ static const char mlx5e_priv_flags[][ETH_GSTRING_LEN] = {
 	"rx_no_csum_complete",
 	"sniffer",
 	"dropless_rq",
+	"per_channel_stats",
 };
 
 int mlx5e_ethtool_get_sset_count(struct mlx5e_priv *priv, int sset)
@@ -1750,7 +1751,7 @@ static int mlx5e_handle_pflag(struct net_device *netdev,
 	if (!(changes & flag))
 		return 0;
 
-	err = pflag_handler(netdev, enable);
+	err = pflag_handler ? pflag_handler(netdev, enable) : 0;
 	if (err) {
 		netdev_err(netdev, "%s private flag 0x%x failed err %d\n",
 			   enable ? "Enable" : "Disable", flag, err);
@@ -1797,6 +1798,10 @@ static int mlx5e_set_priv_flags(struct net_device *netdev, u32 pflags)
 	if (err)
 		goto out;
 
+	err = mlx5e_handle_pflag(netdev, pflags, MLX5E_PFLAG_PER_CH_STATS, NULL);
+
+	if (err)
+		goto out;
 	err = mlx5e_handle_pflag(netdev, pflags,
 				 MLX5E_PFLAG_SNIFFER,
 				 set_pflag_sniffer);
