@@ -69,6 +69,7 @@ static struct mlx5e_ethtool_table *get_flow_table(struct mlx5e_priv *priv,
 	case UDP_V4_FLOW:
 #ifdef CONFIG_MLX5_EN_IPSEC
 	case ESP_V4_FLOW:
+	case ESP_V6_FLOW:
 #endif
 	case TCP_V6_FLOW:
 	case UDP_V6_FLOW:
@@ -341,6 +342,7 @@ static int set_flow_attrs(u32 *match_c, u32 *match_v,
 		break;
 #ifdef CONFIG_MLX5_EN_IPSEC
 	case ESP_V4_FLOW:
+	case ESP_V6_FLOW:
 		err = mlx5e_ipsec_set_flow_attrs(priv, match_c, match_v, fs);
 		if (err)
 			return err;
@@ -645,6 +647,7 @@ static int validate_flow(struct mlx5e_priv *priv,
 		break;
 #ifdef CONFIG_MLX5_EN_IPSEC
 	case ESP_V4_FLOW:
+	case ESP_V6_FLOW:
 		if (fs->m_u.esp_ip4_spec.tos)
 			return -EINVAL;
 		ipsec4_mask = &fs->m_u.esp_ip4_spec;

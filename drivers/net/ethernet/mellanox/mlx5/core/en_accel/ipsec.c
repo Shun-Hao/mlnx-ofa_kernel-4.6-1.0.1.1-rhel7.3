@@ -75,20 +75,36 @@ struct xfrm_state *mlx5e_ipsec_sadb_rx_lookup(struct mlx5e_ipsec *ipsec,
 	return ret;
 }
 
+#define ipv6_equal(a, b) (memcmp(&(a), &(b), sizeof(a)) == 0)
+
+static inline bool mlx5e_ipsec_sa_fs_equal(struct mlx5e_ipsec_sa_entry *sa_entry,
+					   struct ethtool_rx_flow_spec *fs)
+{
+	if ((fs->flow_type & ~(FLOW_EXT | FLOW_MAC_EXT)) == ESP_V4_FLOW)
+		return ((sa_entry->x->props.family == AF_INET) &&
+			(fs->h_u.esp_ip4_spec.ip4dst == sa_entry->x->id.daddr.a4) &&
+			(fs->h_u.esp_ip4_spec.ip4src == sa_entry->x->props.saddr.a4) &&
+			(fs->h_u.esp_ip4_spec.spi == sa_entry->x->id.spi));
+
+	return ((sa_entry->x->props.family == AF_INET6) &&
+		ipv6_equal(fs->h_u.esp_ip6_spec.ip6dst, sa_entry->x->id.daddr.a6) &&
+		ipv6_equal(fs->h_u.esp_ip6_spec.ip6src, sa_entry->x->props.saddr.a6) &&
+		(fs->h_u.esp_ip6_spec.spi == sa_entry->x->id.spi));
+}
+
 int mlx5e_ipsec_sadb_rx_lookup_rev(struct mlx5e_ipsec *ipsec,
 				   struct ethtool_rx_flow_spec *fs, u32 *handle)
 {
 	struct mlx5e_ipsec_sa_entry *sa_entry;
 	unsigned int temp;
 
-	if ((fs->flow_type & ~(FLOW_EXT | FLOW_MAC_EXT)) != ESP_V4_FLOW)
+	if (((fs->flow_type & ~(FLOW_EXT | FLOW_MAC_EXT)) != ESP_V4_FLOW) &&
+	    ((fs->flow_type & ~(FLOW_EXT | FLOW_MAC_EXT)) != ESP_V6_FLOW))
 		return -ENOENT;
 
 	rcu_read_lock();
 	hash_for_each_rcu(ipsec->sadb_rx, temp, sa_entry, hlist)
-		if ((fs->h_u.esp_ip4_spec.ip4dst == sa_entry->x->id.daddr.a4) &&
-		    (fs->h_u.esp_ip4_spec.ip4src == sa_entry->x->props.saddr.a4) &&
-		    (fs->h_u.esp_ip4_spec.spi == sa_entry->x->id.spi)) {
+		if (mlx5e_ipsec_sa_fs_equal(sa_entry, fs)) {
 			*handle = sa_entry->handle;
 			return 0;
 		}
