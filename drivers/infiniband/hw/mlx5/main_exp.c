@@ -675,7 +675,7 @@ static int reduce_tx_pending(struct mlx5_dc_data *dcd, int num)
 			polled = send_completed - dcd->last_send_completed;
 			dcd->tx_pending = (unsigned int)(dcd->cur_send - send_completed);
 			num -= polled;
-			dcd->cnaks += polled;
+			dcd->dev->dc_stats[dcd->port - 1].cnaks += polled;
 			dcd->last_send_completed = send_completed;
 		}
 	}
@@ -800,13 +800,13 @@ static void dc_cnack_rcv_comp_handler(struct ib_cq *cq, void *cq_context)
 				mlx5_ib_warn(dev, "DC cnak: completed with error, status = %d vendor_err = %d\n",
 					     wc[i].status, wc[i].vendor_err);
 			} else {
-				dcd->connects++;
+				dcd->dev->dc_stats[dcd->port - 1].connects++;
 				if (unlikely(send_cnak(dcd, &mlx_wr, wc[i].wr_id)))
 					mlx5_ib_warn(dev, "DC cnak: failed to allocate send buf - dropped\n");
 			}
 
 			if (unlikely(mlx5_post_one_rxdc(dcd, wc[i].wr_id))) {
-				dcd->discards++;
+				dcd->dev->dc_stats[dcd->port - 1].discards++;
 				mlx5_ib_warn(dev, "DC cnak: repost rx failed, will leak rx queue\n");
 			}
 		}
@@ -906,43 +906,43 @@ static void free_dc_tx_buf(struct mlx5_dc_data *dcd)
 
 struct dc_attribute {
 	struct attribute attr;
-	ssize_t (*show)(struct mlx5_dc_data *, struct dc_attribute *, char *buf);
-	ssize_t (*store)(struct mlx5_dc_data *, struct dc_attribute *,
+	ssize_t (*show)(struct mlx5_dc_stats *, struct dc_attribute *, char *buf);
+	ssize_t (*store)(struct mlx5_dc_stats *, struct dc_attribute *,
 			 const char *buf, size_t count);
 };
 
 #define DC_ATTR(_name, _mode, _show, _store) \
 struct dc_attribute dc_attr_##_name = __ATTR(_name, _mode, _show, _store)
 
-static ssize_t rx_connect_show(struct mlx5_dc_data *dcd,
+static ssize_t rx_connect_show(struct mlx5_dc_stats *dc_stats,
 			       struct dc_attribute *unused,
 			       char *buf)
 {
 	unsigned long num;
 
-	num = dcd->connects;
+	num = dc_stats->connects;
 
 	return sprintf(buf, "%lu\n", num);
 }
 
-static ssize_t tx_cnak_show(struct mlx5_dc_data *dcd,
+static ssize_t tx_cnak_show(struct mlx5_dc_stats *dc_stats,
 			    struct dc_attribute *unused,
 			    char *buf)
 {
 	unsigned long num;
 
-	num = dcd->cnaks;
+	num = dc_stats->cnaks;
 
 	return sprintf(buf, "%lu\n", num);
 }
 
-static ssize_t tx_discard_show(struct mlx5_dc_data *dcd,
+static ssize_t tx_discard_show(struct mlx5_dc_stats *dc_stats,
 			       struct dc_attribute *unused,
 			       char *buf)
 {
 	unsigned long num;
 
-	num = dcd->discards;
+	num = dc_stats->discards;
 
 	return sprintf(buf, "%lu\n", num);
 }
@@ -965,7 +965,7 @@ static ssize_t dc_attr_show(struct kobject *kobj,
 			    struct attribute *attr, char *buf)
 {
 	struct dc_attribute *dc_attr = container_of(attr, struct dc_attribute, attr);
-	struct mlx5_dc_data *d = container_of(kobj, struct mlx5_dc_data, kobj);
+	struct mlx5_dc_stats *d = container_of(kobj, struct mlx5_dc_stats, kobj);
 
 	if (!dc_attr->show)
 		return -EIO;
@@ -1003,15 +1003,25 @@ static void cleanup_sysfs(struct mlx5_ib_dev *dev)
 	}
 }
 
-static int init_port_sysfs(struct mlx5_dc_data *dcd)
+static int init_port_sysfs(struct mlx5_dc_stats *dc_stats,
+			   struct mlx5_ib_dev *dev, int port)
 {
-	return kobject_init_and_add(&dcd->kobj, &dc_type, dcd->dev->dc_kobj,
-				    "%d", dcd->port);
+	int ret;
+
+	dc_stats->dev = dev;
+	dc_stats->port = port;
+	ret = kobject_init_and_add(&dc_stats->kobj, &dc_type,
+				   dc_stats->dev->dc_kobj, "%d", dc_stats->port);
+	if (!ret)
+		dc_stats->initialized = 1;
+	return ret;
 }
 
-static void cleanup_port_sysfs(struct mlx5_dc_data *dcd)
+static void cleanup_port_sysfs(struct mlx5_dc_stats *dc_stats)
 {
-	kobject_put(&dcd->kobj);
+	if (!dc_stats->initialized)
+		return;
+	kobject_put(&dc_stats->kobj);
 }
 
 static int init_driver_cnak(struct mlx5_ib_dev *dev, int port)
@@ -1137,12 +1147,6 @@ static int init_driver_cnak(struct mlx5_ib_dev *dev, int port)
 			goto error7;
 	}
 
-	err = init_port_sysfs(dcd);
-	if (err) {
-		mlx5_ib_warn(dev, "failed to initialize DC cnak sysfs\n");
-		goto error7;
-	}
-
 	dcd->initialized = 1;
 	return 0;
 
@@ -1171,8 +1175,6 @@ static void cleanup_driver_cnak(struct mlx5_ib_dev *dev, int port)
 
 	if (!dcd->initialized)
 		return;
-
-	cleanup_port_sysfs(dcd);
 
 	if (ib_destroy_qp(dcd->dcqp))
 		mlx5_ib_warn(dev, "destroy qp failed\n");
@@ -1211,13 +1213,20 @@ int mlx5_ib_init_dc_improvements(struct mlx5_ib_dev *dev)
 		err = init_driver_cnak(dev, port);
 		if (err)
 			goto out;
+		err = init_port_sysfs(&dev->dc_stats[port - 1], dev, port);
+		if (err) {
+			mlx5_ib_warn(dev, "failed to initialize DC cnak sysfs\n");
+			goto out;
+		}
 	}
 
 	return 0;
 
 out:
-	for (port--; port >= 1; port--)
+	for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
+		cleanup_port_sysfs(&dev->dc_stats[port - 1]);
 		cleanup_driver_cnak(dev, port);
+	}
 	cleanup_sysfs(dev);
 
 	return err;
@@ -1227,8 +1236,10 @@ void mlx5_ib_cleanup_dc_improvements(struct mlx5_ib_dev *dev)
 {
 	int port;
 
-	for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++)
+	for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
 		cleanup_driver_cnak(dev, port);
+		cleanup_port_sysfs(&dev->dc_stats[port - 1]);
+	}
 	cleanup_sysfs(dev);
 
 	mlx5_ib_disable_dc_tracer(dev);
