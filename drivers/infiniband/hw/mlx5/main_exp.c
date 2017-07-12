@@ -675,7 +675,7 @@ static int reduce_tx_pending(struct mlx5_dc_data *dcd, int num)
 			polled = send_completed - dcd->last_send_completed;
 			dcd->tx_pending = (unsigned int)(dcd->cur_send - send_completed);
 			num -= polled;
-			dcd->dev->dc_stats[dcd->port - 1].cnaks += polled;
+			atomic64_add(polled, &dcd->dev->dc_stats[dcd->port - 1].cnaks);
 			dcd->last_send_completed = send_completed;
 		}
 	}
@@ -788,7 +788,8 @@ static void dc_cnack_rcv_comp_handler(struct ib_cq *cq, void *cq_context)
 	n = ib_poll_cq(cq, MLX5_CNAK_RX_POLL_CQ_QUOTA, wc);
 	if (unlikely(n < 0)) {
 		/* mlx5 never returns negative values but leave a message just in case */
-		mlx5_ib_warn(dev, "failed to poll cq (%d), aborting\n", n);
+		mlx5_ib_warn(dev, "DC cnak[%d]: failed to poll cq (%d), aborting\n",
+			     dcd->index, n);
 		return;
 	}
 	if (likely(n > 0)) {
@@ -797,24 +798,28 @@ static void dc_cnack_rcv_comp_handler(struct ib_cq *cq, void *cq_context)
 				return;
 
 			if (unlikely(wc[i].status != IB_WC_SUCCESS)) {
-				mlx5_ib_warn(dev, "DC cnak: completed with error, status = %d vendor_err = %d\n",
-					     wc[i].status, wc[i].vendor_err);
+				mlx5_ib_warn(dev, "DC cnak[%d]: completed with error, status = %d vendor_err = %d\n",
+					     wc[i].status, wc[i].vendor_err, dcd->index);
 			} else {
-				dcd->dev->dc_stats[dcd->port - 1].connects++;
+				atomic64_inc(&dcd->dev->dc_stats[dcd->port - 1].connects);
+				dev->dc_stats[dcd->port - 1].rx_scatter[dcd->index]++;
 				if (unlikely(send_cnak(dcd, &mlx_wr, wc[i].wr_id)))
-					mlx5_ib_warn(dev, "DC cnak: failed to allocate send buf - dropped\n");
+					mlx5_ib_warn(dev, "DC cnak[%d]: failed to allocate send buf - dropped\n",
+						     dcd->index);
 			}
 
 			if (unlikely(mlx5_post_one_rxdc(dcd, wc[i].wr_id))) {
-				dcd->dev->dc_stats[dcd->port - 1].discards++;
-				mlx5_ib_warn(dev, "DC cnak: repost rx failed, will leak rx queue\n");
+				atomic64_inc(&dcd->dev->dc_stats[dcd->port - 1].discards);
+				mlx5_ib_warn(dev, "DC cnak[%d]: repost rx failed, will leak rx queue\n",
+					     dcd->index);
 			}
 		}
 	}
 
 	err = ib_req_notify_cq(cq, IB_CQ_NEXT_COMP);
 	if (unlikely(err))
-		mlx5_ib_warn(dev, "DC cnak: failed to re-arm receive cq (%d)\n", err);
+		mlx5_ib_warn(dev, "DC cnak[%d]: failed to re-arm receive cq (%d)\n",
+			     dcd->index, err);
 }
 
 static int alloc_dc_buf(struct mlx5_dc_data *dcd, int rx)
@@ -920,7 +925,7 @@ static ssize_t rx_connect_show(struct mlx5_dc_stats *dc_stats,
 {
 	unsigned long num;
 
-	num = dc_stats->connects;
+	num = atomic64_read(&dc_stats->connects);
 
 	return sprintf(buf, "%lu\n", num);
 }
@@ -931,7 +936,7 @@ static ssize_t tx_cnak_show(struct mlx5_dc_stats *dc_stats,
 {
 	unsigned long num;
 
-	num = dc_stats->cnaks;
+	num = atomic64_read(&dc_stats->cnaks);
 
 	return sprintf(buf, "%lu\n", num);
 }
@@ -942,7 +947,7 @@ static ssize_t tx_discard_show(struct mlx5_dc_stats *dc_stats,
 {
 	unsigned long num;
 
-	num = dc_stats->discards;
+	num = atomic64_read(&dc_stats->discards);
 
 	return sprintf(buf, "%lu\n", num);
 }
@@ -1024,9 +1029,16 @@ static void cleanup_port_sysfs(struct mlx5_dc_stats *dc_stats)
 	kobject_put(&dc_stats->kobj);
 }
 
-static int init_driver_cnak(struct mlx5_ib_dev *dev, int port)
+static int comp_vector(struct ib_device *dev, int port, int index)
 {
-	struct mlx5_dc_data *dcd = &dev->dcd[port - 1];
+	int comp_per_port = dev->num_comp_vectors / dev->phys_port_cnt;
+
+	return (port - 1) * comp_per_port + (index % comp_per_port);
+}
+
+static int init_driver_cnak(struct mlx5_ib_dev *dev, int port, int index)
+{
+	struct mlx5_dc_data *dcd = &dev->dcd[port - 1][index];
 	struct mlx5_ib_resources *devr = &dev->devr;
 	struct ib_cq_init_attr cq_attr = {};
 	struct ib_qp_init_attr init_attr;
@@ -1039,6 +1051,7 @@ static int init_driver_cnak(struct mlx5_ib_dev *dev, int port)
 
 	dcd->dev = dev;
 	dcd->port = port;
+	dcd->index = index;
 	dcd->mr = pd->device->get_dma_mr(pd,  IB_ACCESS_LOCAL_WRITE);
 	if (IS_ERR(dcd->mr)) {
 		mlx5_ib_warn(dev, "failed to create dc DMA MR\n");
@@ -1063,6 +1076,7 @@ static int init_driver_cnak(struct mlx5_ib_dev *dev, int port)
 	}
 
 	cq_attr.cqe = ncqe;
+	cq_attr.comp_vector = comp_vector(&dev->ib_dev, port, index);
 	dcd->rcq = ib_create_cq(&dev->ib_dev, dc_cnack_rcv_comp_handler, NULL,
 				dcd, &cq_attr);
 	if (IS_ERR(dcd->rcq)) {
@@ -1169,9 +1183,9 @@ error1:
 	return err;
 }
 
-static void cleanup_driver_cnak(struct mlx5_ib_dev *dev, int port)
+static void cleanup_driver_cnak(struct mlx5_ib_dev *dev, int port, int index)
 {
-	struct mlx5_dc_data *dcd = &dev->dcd[port - 1];
+	struct mlx5_dc_data *dcd = &dev->dcd[port - 1][index];
 
 	if (!dcd->initialized)
 		return;
@@ -1195,6 +1209,10 @@ int mlx5_ib_init_dc_improvements(struct mlx5_ib_dev *dev)
 {
 	int port;
 	int err;
+	int i;
+	struct mlx5_core_dev *mdev = dev->mdev;
+	int max_dc_cnak_qps;
+	int ini_dc_cnak_qps;
 
 	if (!mlx5_core_is_pf(dev->mdev) ||
 	    !(MLX5_CAP_GEN(dev->mdev, dc_cnak_trace)))
@@ -1202,6 +1220,8 @@ int mlx5_ib_init_dc_improvements(struct mlx5_ib_dev *dev)
 
 	mlx5_ib_enable_dc_tracer(dev);
 
+	max_dc_cnak_qps = min_t(int, 1 << MLX5_CAP_GEN(mdev, log_max_dc_cnak_qps),
+			      dev->ib_dev.num_comp_vectors / MLX5_CAP_GEN(mdev, num_ports));
 	err = init_sysfs(dev);
 	if (err)
 		return err;
@@ -1209,23 +1229,46 @@ int mlx5_ib_init_dc_improvements(struct mlx5_ib_dev *dev)
 	if (!MLX5_CAP_GEN(dev->mdev, dc_connect_qp))
 		return 0;
 
+	/* start with 25% of maximum CNAK QPs */
+	ini_dc_cnak_qps = DIV_ROUND_UP(max_dc_cnak_qps, 4);
+
 	for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
-		err = init_driver_cnak(dev, port);
-		if (err)
-			goto out;
+		dev->dcd[port - 1] =
+			kcalloc(max_dc_cnak_qps, sizeof(struct mlx5_dc_data), GFP_KERNEL);
+		if (!dev->dcd[port - 1]) {
+			err = -ENOMEM;
+			goto err;
+		}
+		dev->dc_stats[port - 1].rx_scatter =
+			kcalloc(max_dc_cnak_qps, sizeof(int), GFP_KERNEL);
+		if (!dev->dc_stats[port - 1].rx_scatter) {
+			err = -ENOMEM;
+			goto err;
+		}
+		for (i = 0; i < ini_dc_cnak_qps; i++) {
+			err = init_driver_cnak(dev, port, i);
+			if (err)
+				goto err;
+		}
 		err = init_port_sysfs(&dev->dc_stats[port - 1], dev, port);
 		if (err) {
 			mlx5_ib_warn(dev, "failed to initialize DC cnak sysfs\n");
-			goto out;
+			goto err;
 		}
 	}
+	dev->num_dc_cnak_qps = ini_dc_cnak_qps;
+	dev->max_dc_cnak_qps = max_dc_cnak_qps;
+
 
 	return 0;
 
-out:
+err:
 	for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
+		for (i = 0; i < ini_dc_cnak_qps; i++)
+			cleanup_driver_cnak(dev, port, i);
 		cleanup_port_sysfs(&dev->dc_stats[port - 1]);
-		cleanup_driver_cnak(dev, port);
+		kfree(dev->dc_stats[port - 1].rx_scatter);
+		kfree(dev->dcd[port - 1]);
 	}
 	cleanup_sysfs(dev);
 
@@ -1235,10 +1278,14 @@ out:
 void mlx5_ib_cleanup_dc_improvements(struct mlx5_ib_dev *dev)
 {
 	int port;
+	int i;
 
 	for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
-		cleanup_driver_cnak(dev, port);
+		for (i = 0; i < dev->num_dc_cnak_qps; i++)
+			cleanup_driver_cnak(dev, port, i);
 		cleanup_port_sysfs(&dev->dc_stats[port - 1]);
+		kfree(dev->dc_stats[port - 1].rx_scatter);
+		kfree(dev->dcd[port - 1]);
 	}
 	cleanup_sysfs(dev);
 

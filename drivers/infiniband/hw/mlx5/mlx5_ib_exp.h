@@ -79,9 +79,10 @@ struct mlx5_dc_stats {
 	struct kobject		kobj;
 	struct mlx5_ib_dev	*dev;
 	int			port;
-	unsigned long		connects;
-	unsigned long		cnaks;
-	unsigned long		discards;
+	atomic64_t		connects;
+	atomic64_t		cnaks;
+	atomic64_t		discards;
+	int			*rx_scatter;
 	int			initialized;
 };
 
@@ -101,6 +102,7 @@ struct mlx5_dc_data {
 	struct mlx5_ib_dev	*dev;
 	int			port;
 	int			initialized;
+	int			index;
 	struct ib_wc		wc_tbl[MLX5_CNAK_RX_POLL_CQ_QUOTA];
 };
 
