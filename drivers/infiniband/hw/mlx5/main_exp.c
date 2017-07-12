@@ -57,6 +57,10 @@ enum {
 	MLX5_ATOMIC_SIZE_QP_8BYTES = 1 << 3,
 };
 
+static unsigned int dc_cnak_qp_depth = MLX5_DC_CONNECT_QP_DEPTH;
+module_param_named(dc_cnak_qp_depth, dc_cnak_qp_depth, uint, 0444);
+MODULE_PARM_DESC(dc_cnak_qp_depth, "DC CNAK QP depth");
+
 enum {
 	MLX5_STANDARD_ATOMIC_SIZE = 0x8,
 };
@@ -1037,10 +1041,17 @@ static int init_driver_cnak(struct mlx5_ib_dev *dev, int port)
 	dcd->mr->uobject     = NULL;
 	dcd->mr->need_inval  = false;
 
-	ncqe = min_t(int, MLX5_DC_CONNECT_QP_DEPTH,
+	ncqe = min_t(int, dc_cnak_qp_depth,
 		     BIT(MLX5_CAP_GEN(dev->mdev, log_max_cq_sz)));
 	nwr = min_t(int, ncqe,
 		    BIT(MLX5_CAP_GEN(dev->mdev, log_max_qp_sz)));
+
+	if (dc_cnak_qp_depth > nwr) {
+		mlx5_ib_warn(dev, "Can't set DC CNAK QP size to %d. Set to default %d\n",
+			     dc_cnak_qp_depth, nwr);
+		dc_cnak_qp_depth = nwr;
+	}
+
 	cq_attr.cqe = ncqe;
 	dcd->rcq = ib_create_cq(&dev->ib_dev, dc_cnack_rcv_comp_handler, NULL,
 				dcd, &cq_attr);
