@@ -916,8 +916,54 @@ struct dc_attribute {
 			 const char *buf, size_t count);
 };
 
+static ssize_t qp_count_show(struct mlx5_dc_stats *dc_stats,
+			     struct dc_attribute *unused,
+			     char *buf)
+{
+	return sprintf(buf, "%u\n", dc_stats->dev->num_dc_cnak_qps);
+}
+
+static int init_driver_cnak(struct mlx5_ib_dev *dev, int port, int index);
+static ssize_t qp_count_store(struct mlx5_dc_stats *dc_stats,
+			      struct dc_attribute *unused,
+			      const char *buf, size_t count)
+{
+	struct mlx5_ib_dev *dev = dc_stats->dev;
+	int port = dc_stats->port;
+	unsigned long var;
+	int i;
+	int err = 0;
+	int qp_add = 0;
+
+	if (kstrtol(buf, 0, &var)) {
+		err = -EINVAL;
+		goto err;
+	}
+	if ((var > dev->max_dc_cnak_qps) ||
+	    (dev->num_dc_cnak_qps >= var)) {
+		err = -EINVAL;
+		goto err;
+	}
+
+	for (i = dev->num_dc_cnak_qps; i < var; i++) {
+		err = init_driver_cnak(dev, port, i);
+		if (err) {
+			mlx5_ib_warn(dev, "Fail to set %ld CNAK QPs. Only %d were added\n",
+				     var, qp_add);
+			break;
+		}
+		dev->num_dc_cnak_qps++;
+		qp_add++;
+	}
+err:
+
+	return err ? err : count;
+}
+
 #define DC_ATTR(_name, _mode, _show, _store) \
 struct dc_attribute dc_attr_##_name = __ATTR(_name, _mode, _show, _store)
+
+static DC_ATTR(qp_count, 0644, qp_count_show, qp_count_store);
 
 static ssize_t rx_connect_show(struct mlx5_dc_stats *dc_stats,
 			       struct dc_attribute *unused,
@@ -952,17 +998,45 @@ static ssize_t tx_discard_show(struct mlx5_dc_stats *dc_stats,
 	return sprintf(buf, "%lu\n", num);
 }
 
+static ssize_t rx_scatter_show(struct mlx5_dc_stats *dc_stats,
+			       struct dc_attribute *unused,
+			       char *buf)
+{
+	int i;
+	int ret;
+	int res = 0;
+
+	buf[0] = 0;
+
+	for (i = 0; i < dc_stats->dev->max_dc_cnak_qps ; i++) {
+		unsigned long num = dc_stats->rx_scatter[i];
+
+		if (!dc_stats->dev->dcd[dc_stats->port - 1][i].initialized)
+			continue;
+		ret = sprintf(buf + strlen(buf), "%d:%lu\n", i, num);
+		if (ret < 0) {
+			res = ret;
+			break;
+		}
+		res += ret;
+	}
+	return res;
+}
+
 #define DC_ATTR_RO(_name) \
 struct dc_attribute dc_attr_##_name = __ATTR_RO(_name)
 
 static DC_ATTR_RO(rx_connect);
 static DC_ATTR_RO(tx_cnak);
 static DC_ATTR_RO(tx_discard);
+static DC_ATTR_RO(rx_scatter);
 
 static struct attribute *dc_attrs[] = {
 	&dc_attr_rx_connect.attr,
 	&dc_attr_tx_cnak.attr,
 	&dc_attr_tx_discard.attr,
+	&dc_attr_rx_scatter.attr,
+	&dc_attr_qp_count.attr,
 	NULL
 };
 
@@ -978,8 +1052,21 @@ static ssize_t dc_attr_show(struct kobject *kobj,
 	return dc_attr->show(d, dc_attr, buf);
 }
 
+static ssize_t dc_attr_store(struct kobject *kobj,
+			     struct attribute *attr, const char *buf, size_t size)
+{
+	struct dc_attribute *dc_attr = container_of(attr, struct dc_attribute, attr);
+	struct mlx5_dc_stats *d = container_of(kobj, struct mlx5_dc_stats, kobj);
+
+	if (!dc_attr->store)
+		return -EIO;
+
+	return dc_attr->store(d, dc_attr, buf, size);
+}
+
 static const struct sysfs_ops dc_sysfs_ops = {
-	.show = dc_attr_show
+	.show = dc_attr_show,
+	.store = dc_attr_store
 };
 
 static struct kobj_type dc_type = {
