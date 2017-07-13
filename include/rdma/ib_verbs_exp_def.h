@@ -76,4 +76,17 @@ struct ib_odp_statistics {
 #endif
 };
 
+enum ibv_exp_dm_memcpy_dir {
+	IBV_EXP_DM_CPY_TO_DEVICE,
+	IBV_EXP_DM_CPY_TO_HOST
+};
+
+struct ib_exp_memcpy_dm_attr {
+	enum ibv_exp_dm_memcpy_dir memcpy_dir;
+	void *host_addr;
+	uint64_t dm_offset;
+	size_t length;
+	uint32_t comp_mask;
+};
+
 #endif

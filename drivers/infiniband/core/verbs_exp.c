@@ -229,3 +229,49 @@ int ib_detach_nvmf_ns(struct ib_nvmf_ns *ns)
 	return ret;
 }
 EXPORT_SYMBOL_GPL(ib_detach_nvmf_ns);
+
+struct ib_dm *ib_exp_alloc_dm(struct ib_device *device, u64 length)
+{
+	struct ib_dm *dm;
+
+	if (!device->exp_alloc_dm)
+		return ERR_PTR(-ENOSYS);
+
+	dm = device->exp_alloc_dm(device, NULL, length, 0, NULL);
+	if (!IS_ERR(dm)) {
+		dm->device = device;
+		dm->length = length;
+		dm->uobject = NULL;
+	}
+
+	return dm;
+}
+EXPORT_SYMBOL_GPL(ib_exp_alloc_dm);
+
+int ib_exp_free_dm(struct ib_dm *dm)
+{
+	int err;
+
+	if (!dm->device->exp_free_dm)
+		return -ENOSYS;
+
+	WARN_ON(atomic_read(&dm->usecnt));
+
+	err = dm->device->exp_free_dm(dm);
+
+	return err;
+}
+EXPORT_SYMBOL_GPL(ib_exp_free_dm);
+
+int ib_exp_memcpy_dm(struct ib_dm *dm, struct ib_exp_memcpy_dm_attr *attr)
+{
+	int err;
+
+	if (!dm->device->exp_memcpy_dm)
+		return -ENOSYS;
+
+	err = dm->device->exp_memcpy_dm(dm, attr);
+
+	return err;
+}
+EXPORT_SYMBOL_GPL(ib_exp_memcpy_dm);

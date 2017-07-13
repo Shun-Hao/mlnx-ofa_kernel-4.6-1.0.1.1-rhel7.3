@@ -1864,6 +1864,7 @@ struct ib_qp {
 
 struct ib_dm {
 	struct ib_device  *device;
+	phys_addr_t	   dev_addr;
 	u32		   length;
 	u32		   flags;
 	struct ib_uobject *uobject;
@@ -2402,6 +2403,13 @@ struct ib_device {
 	int			(*exp_set_context_attr)(struct ib_device *device,
 							struct ib_ucontext *context,
 							struct ib_exp_context_attr *attr);
+	struct ib_dm *             (*exp_alloc_dm)(struct ib_device *device,
+						   struct ib_ucontext *context,
+						   u64 length, u64 uaddr,
+						   struct ib_udata *udata);
+	int                        (*exp_free_dm)(struct ib_dm *dm);
+	int                        (*exp_memcpy_dm)(struct ib_dm *dm,
+						    struct ib_exp_memcpy_dm_attr *attr);
 
 	/**
 	 * alloc_hw_stats - Allocate a struct rdma_hw_stats and fill in the

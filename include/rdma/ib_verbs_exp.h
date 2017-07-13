@@ -322,6 +322,7 @@ struct ib_exp_device_attr {
 	struct ib_exp_sw_parsing_caps	sw_parsing_caps;
 	struct ib_exp_tm_caps		tm_caps;
 	u32				tunnel_offloads_caps; /* ib_exp_tunnel_offloads_caps */
+	u64			max_dm_size;
 };
 
 enum ib_dct_create_flags {
@@ -450,5 +451,7 @@ int ib_destroy_nvmf_backend_ctrl(struct ib_nvmf_ctrl *ctrl);
 struct ib_nvmf_ns *ib_attach_nvmf_ns(struct ib_nvmf_ctrl *ctrl,
 			struct ib_nvmf_ns_init_attr *init_attr);
 int ib_detach_nvmf_ns(struct ib_nvmf_ns *ns);
-
+struct ib_dm *ib_exp_alloc_dm(struct ib_device *device, u64 length);
+int ib_exp_free_dm(struct ib_dm *dm);
+int ib_exp_memcpy_dm(struct ib_dm *dm, struct ib_exp_memcpy_dm_attr *attr);
 #endif
