@@ -645,6 +645,11 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_TUNNEL_OFFLOADS_CAPS;
 	}
 
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_MAX_DM_SIZE) {
+		resp->max_dm_size = exp_attr->max_dm_size;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_MAX_DM_SIZE;
+	}
+
 	ret = ib_copy_to_udata(ucore, resp, min_t(size_t, sizeof(*resp), ucore->outlen));
 out:
 	kfree(exp_attr);
@@ -1452,3 +1457,91 @@ int ib_uverbs_exp_create_srq_resp(struct ib_uverbs_create_srq_resp *resp,
 	return ib_copy_to_udata(ucore, &resp_exp, resp_exp.response_length);
 }
 
+int ib_uverbs_exp_alloc_dm(struct ib_uverbs_file *file,
+			   struct ib_device *ib_dev,
+			   struct ib_udata *ucore, struct ib_udata *uhw)
+{
+	int out_len = ucore->outlen + uhw->outlen;
+	struct ib_uverbs_exp_alloc_dm      cmd;
+	struct ib_uverbs_exp_alloc_dm_resp resp;
+	struct ib_uobject *uobj;
+	struct ib_dm *dm;
+	int ret;
+
+	if (ucore->inlen < sizeof(cmd))
+		return -EINVAL;
+
+	if (out_len < sizeof(resp))
+		return -ENOSPC;
+
+	ret = ib_copy_from_udata(&cmd, ucore, sizeof(cmd));
+	if (ret)
+		return ret;
+
+	if (cmd.uaddr & ~PAGE_MASK)
+		return -EINVAL;
+
+	if (cmd.comp_mask)
+		return -EINVAL;
+
+	uobj = uobj_alloc(UVERBS_OBJECT_DM, file->ucontext);
+	if (IS_ERR(uobj))
+		return PTR_ERR(uobj);
+
+	dm = ib_dev->exp_alloc_dm(ib_dev, file->ucontext,
+				  cmd.length, cmd.uaddr, uhw);
+	if (IS_ERR(dm)) {
+		ret = PTR_ERR(dm);
+		goto err_alloc;
+	}
+
+	dm->device  = ib_dev;
+	dm->length  = cmd.length;
+	dm->uobject = uobj;
+
+	uobj->object = dm;
+
+	memset(&resp, 0, sizeof(resp));
+	resp.start_offset = dm->dev_addr & ~PAGE_MASK;
+	resp.dm_handle = uobj->id;
+	resp.response_length = sizeof(resp);
+
+	ret = ib_copy_to_udata(ucore, &resp, sizeof(resp));
+	if (ret)
+		goto err_copy;
+
+	uobj_alloc_commit(uobj);
+
+	return ret;
+
+err_copy:
+	ib_exp_free_dm(dm);
+
+err_alloc:
+	uobj_alloc_abort(uobj);
+
+	return ret;
+}
+
+int ib_uverbs_exp_free_dm(struct ib_uverbs_file *file,
+			  struct ib_device *ib_dev,
+			  struct ib_udata *ucore, struct ib_udata *uhw)
+{
+	struct ib_uverbs_exp_free_dm  cmd;
+	struct ib_uobject	 *uobj;
+	int    ret;
+
+	if (ucore->inlen < sizeof(cmd))
+		return -EINVAL;
+
+	ret = ib_copy_from_udata(&cmd, ucore, sizeof(cmd));
+	if (ret)
+		return ret;
+
+	uobj = uobj_get_write(UVERBS_OBJECT_DM, cmd.dm_handle,
+		file->ucontext);
+	if (IS_ERR(uobj))
+		return PTR_ERR(uobj);
+
+	return uobj_remove_commit(uobj);
+}

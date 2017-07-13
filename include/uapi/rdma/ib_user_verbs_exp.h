@@ -35,6 +35,8 @@ enum {
 	IB_USER_VERBS_EXP_CMD_CREATE_FLOW = 19,
 	IB_USER_VERBS_EXP_CMD_SET_CTX_ATTR,
 	IB_USER_VERBS_EXP_CMD_CREATE_SRQ,
+	IB_USER_VERBS_EXP_CMD_ALLOC_DM,
+	IB_USER_VERBS_EXP_CMD_FREE_DM,
 };
 
 enum ib_uverbs_exp_modify_qp_comp_mask {
@@ -340,6 +342,7 @@ struct ib_uverbs_exp_query_device_resp {
 	struct ib_uverbs_exp_tm_caps		tm_caps;
 	__u32					tunnel_offloads_caps;
 	__u8					reserved3[4];
+	__u64 					max_dm_size;
 };
 
 enum ib_uverbs_exp_create_cq_comp_mask {
@@ -522,6 +525,27 @@ struct ib_uverbs_exp_create_srq_resp {
 	struct ib_uverbs_create_srq_resp base;
 	__u32  comp_mask;
 	__u32  response_length;
+};
+
+struct ib_uverbs_exp_alloc_dm {
+	__u32 comp_mask;
+	__u32 reserved;
+	__u64 uaddr;
+	__u64 length;
+	__u64 driver_data[0];
+};
+
+struct ib_uverbs_exp_alloc_dm_resp {
+	__u32 comp_mask;
+	__u32 response_length;
+	__u32 dm_handle;
+	__u32 reserved;
+	__u64 start_offset;
+};
+
+struct ib_uverbs_exp_free_dm {
+	__u32 dm_handle;
+	__u32 reserved;
 };
 
 struct ib_uverbs_exp_kern_ib_filter {

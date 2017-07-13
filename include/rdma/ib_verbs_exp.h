@@ -152,6 +152,7 @@ enum ib_exp_device_attr_comp_mask {
 	IB_EXP_DEVICE_ATTR_ODP_MAX_SIZE		= 1ULL << 26,
 	IB_EXP_DEVICE_ATTR_TM_CAPS		= 1ULL << 27,
 	IB_EXP_DEVICE_ATTR_TUNNEL_OFFLOADS_CAPS	= 1ULL << 28,
+	IB_EXP_DEVICE_ATTR_MAX_DM_SIZE		= 1ULL << 29,
 };
 
 enum ib_exp_device_cap_flags2 {
