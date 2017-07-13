@@ -462,6 +462,12 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 
 	props->device_cap_flags2 |= IB_EXP_DEVICE_PHYSICAL_RANGE_MR;
 
+	if (MLX5_CAP_DEVICE_MEM(dev->mdev, memic)) {
+		props->max_dm_size =
+			MLX5_CAP_DEVICE_MEM(dev->mdev, max_memic_size);
+		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_MAX_DM_SIZE;
+	}
+
 	return 0;
 }
 
@@ -1611,6 +1617,110 @@ int alloc_and_map_wc(struct mlx5_ib_dev *dev,
 */
 	rdma_user_mmap_io(&context->ibucontext, vma, pfn, map_size, pgprot_writecombine(vma->vm_page_prot),vma_prv);
 //	mlx5_ib_set_vma_data(vma, context, vma_prv);
+
+	return 0;
+}
+
+struct ib_dm *mlx5_ib_exp_alloc_dm(struct ib_device *ibdev,
+				   struct ib_ucontext *context,
+				   u64 length, u64 uaddr,
+				   struct ib_udata *uhw)
+{
+	u32 map_size = DIV_ROUND_UP(length, PAGE_SIZE) * PAGE_SIZE;
+	phys_addr_t memic_addr, memic_pfn;
+	struct vm_area_struct *vma;
+	struct mlx5_ib_dm *dm;
+	pgprot_t prot;
+	int ret;
+
+	dm = kzalloc(sizeof(*dm), GFP_KERNEL);
+	if (!dm)
+		return ERR_PTR(-ENOMEM);
+
+	if (mlx5_core_alloc_memic(to_mdev(ibdev)->mdev, &memic_addr, length)) {
+		ret = -EFAULT;
+		goto err_free;
+	}
+
+	if (context) {
+		down_read(&current->mm->mmap_sem);
+		vma = find_vma(current->mm, uaddr & PAGE_MASK);
+		if (!vma || (vma->vm_end - vma->vm_start < map_size)) {
+			ret = -EINVAL;
+			goto err_vma;
+		}
+
+		if (vma->vm_flags & VM_LOCKED) {
+			ret = -EACCES;
+			goto err_vma;
+		}
+
+		prot = pgprot_writecombine(vma->vm_page_prot);
+		vma->vm_page_prot = prot;
+		memic_pfn = memic_addr >> PAGE_SHIFT;
+		if (io_remap_pfn_range(vma, vma->vm_start,
+				       memic_pfn, map_size,
+				       vma->vm_page_prot)) {
+			ret = -EAGAIN;
+			goto err_vma;
+		}
+
+		up_read(&current->mm->mmap_sem);
+	} else {
+		dm->dm_base_addr = ioremap(memic_addr, length);
+		if (!dm->dm_base_addr) {
+			ret = -ENOMEM;
+			goto err_map;
+		}
+	}
+
+	dm->ibdm.dev_addr = memic_addr;
+
+	return &dm->ibdm;
+
+err_vma:
+	up_read(&current->mm->mmap_sem);
+
+err_map:
+	mlx5_core_dealloc_memic(to_mdev(ibdev)->mdev, memic_addr, length);
+
+err_free:
+	kfree(dm);
+
+	return ERR_PTR(ret);
+}
+
+int mlx5_ib_exp_free_dm(struct ib_dm *ibdm)
+{
+	struct mlx5_ib_dev *dev = to_mdev(ibdm->device);
+	struct mlx5_ib_dm *dm = to_mdm(ibdm);
+	int ret;
+
+	if (dm->dm_base_addr)
+		iounmap(dm->dm_base_addr);
+
+	ret = mlx5_core_dealloc_memic(dev->mdev, ibdm->dev_addr, ibdm->length);
+
+	kfree(dm);
+
+	return ret;
+}
+
+int mlx5_ib_exp_memcpy_dm(struct ib_dm *ibdm,
+			  struct ib_exp_memcpy_dm_attr *attr)
+{
+	struct mlx5_ib_dm *dm = to_mdm(ibdm);
+	uint64_t dm_addr = (uint64_t)dm->dm_base_addr + attr->dm_offset;
+
+	if ((attr->dm_offset + attr->length > ibdm->length) || (dm_addr & 0x3))
+		return -EINVAL;
+
+	if (attr->memcpy_dir == IBV_EXP_DM_CPY_TO_DEVICE)
+		memcpy_toio((void *)dm_addr, attr->host_addr, attr->length);
+	else
+		memcpy_fromio(attr->host_addr, (void *)dm_addr, attr->length);
+
+	mb();
 
 	return 0;
 }

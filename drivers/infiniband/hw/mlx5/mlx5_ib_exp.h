@@ -286,6 +286,16 @@ static inline struct mlx5_ib_nvmf_ns *to_mns(struct ib_nvmf_ns *ibns)
 	return container_of(ibns, struct mlx5_ib_nvmf_ns, ibns);
 }
 
+struct ib_dm *mlx5_ib_exp_alloc_dm(struct ib_device *ibdev,
+				   struct ib_ucontext *context,
+				   u64 length, u64 uaddr,
+				   struct ib_udata *uhw);
+
+int mlx5_ib_exp_free_dm(struct ib_dm *dm);
+
+int mlx5_ib_exp_memcpy_dm(struct ib_dm *dm,
+			  struct ib_exp_memcpy_dm_attr *attr);
+
 struct ib_nvmf_ctrl *mlx5_ib_create_nvmf_backend_ctrl(struct ib_srq *srq,
 		struct ib_nvmf_backend_ctrl_init_attr *init_attr);
 int mlx5_ib_destroy_nvmf_backend_ctrl(struct ib_nvmf_ctrl *ctrl);

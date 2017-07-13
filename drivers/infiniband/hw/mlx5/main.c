@@ -5991,6 +5991,15 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 		dev->ib_dev.reg_dm_mr = mlx5_ib_reg_dm_mr;
 	}
 
+	if (MLX5_CAP_DEVICE_MEM(mdev, memic)) {
+		dev->ib_dev.exp_alloc_dm = mlx5_ib_exp_alloc_dm;
+		dev->ib_dev.exp_free_dm = mlx5_ib_exp_free_dm;
+		dev->ib_dev.exp_memcpy_dm = mlx5_ib_exp_memcpy_dm;
+		dev->ib_dev.uverbs_exp_cmd_mask |=
+			(1ull << IB_USER_VERBS_EXP_CMD_ALLOC_DM)	|
+			(1ull << IB_USER_VERBS_EXP_CMD_FREE_DM);
+	}
+
 	dev->ib_dev.create_flow	= mlx5_ib_create_flow;
 	dev->ib_dev.destroy_flow = mlx5_ib_destroy_flow;
 	dev->ib_dev.uverbs_ex_cmd_mask |=
