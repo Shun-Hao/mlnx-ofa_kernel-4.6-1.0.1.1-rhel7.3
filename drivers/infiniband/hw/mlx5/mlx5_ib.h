@@ -108,7 +108,6 @@ enum {
 };
 
 enum {
-	MLX5_MAX_MEMIC_PAGES = 0x100,
 	MLX5_MEMIC_ALLOC_SIZE_MASK = 0x3f,
 };
 

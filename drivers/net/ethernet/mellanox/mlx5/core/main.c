@@ -1656,6 +1656,7 @@ static int init_one(struct pci_dev *pdev,
 	spin_lock_init(&priv->ctx_lock);
 	mutex_init(&dev->pci_status_mutex);
 	mutex_init(&dev->intf_state_mutex);
+	spin_lock_init(&priv->memic_lock);
 
 	INIT_LIST_HEAD(&priv->waiting_events_list);
 	priv->is_accum_events = false;
