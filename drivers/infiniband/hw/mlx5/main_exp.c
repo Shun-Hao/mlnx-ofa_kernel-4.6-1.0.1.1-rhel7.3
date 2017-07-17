@@ -683,6 +683,11 @@ static int reduce_tx_pending(struct mlx5_dc_data *dcd, int num)
 	return 0;
 }
 
+static bool signal_wr(int wr_count, struct mlx5_dc_data *dcd)
+{
+	return !(wr_count % dcd->tx_signal_factor);
+}
+
 static int send_cnak(struct mlx5_dc_data *dcd, struct mlx5_send_wr *mlx_wr,
 		     u64 rcv_buff_id)
 {
@@ -720,7 +725,7 @@ static int send_cnak(struct mlx5_dc_data *dcd, struct mlx5_send_wr *mlx_wr,
 	wr->opcode = IB_WR_SEND;
 	wr->num_sge = 1;
 	wr->wr_id = cur;
-	if (cur % MLX5_CNAK_TX_CQ_SIGNAL_FACTOR)
+	if (!signal_wr(cur, dcd))
 		wr->send_flags &= ~IB_SEND_SIGNALED;
 	else
 		wr->send_flags |= IB_SEND_SIGNALED;
@@ -1247,6 +1252,9 @@ static int init_driver_cnak(struct mlx5_ib_dev *dev, int port, int index)
 		if (err)
 			goto error7;
 	}
+
+	dcd->tx_signal_factor = min_t(int, DIV_ROUND_UP(dcd->max_wqes, 2),
+				      MLX5_CNAK_TX_CQ_SIGNAL_FACTOR);
 
 	dcd->initialized = 1;
 	return 0;

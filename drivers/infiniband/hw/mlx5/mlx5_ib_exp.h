@@ -103,6 +103,7 @@ struct mlx5_dc_data {
 	int			port;
 	int			initialized;
 	int			index;
+	int			tx_signal_factor;
 	struct ib_wc		wc_tbl[MLX5_CNAK_RX_POLL_CQ_QUOTA];
 };
 
