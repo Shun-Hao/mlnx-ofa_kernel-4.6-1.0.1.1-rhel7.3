@@ -667,6 +667,7 @@ enum ib_event_type {
 	IB_EXP_EVENT_DCT_KEY_VIOLATION = 32,
 	IB_EXP_EVENT_DCT_ACCESS_ERR,
 	IB_EXP_EVENT_DCT_REQ_ERR,
+	IB_EXP_EVENT_XRQ_QP_ERR,
 };
 
 const char *__attribute_const__ ib_event_msg(enum ib_event_type event);
