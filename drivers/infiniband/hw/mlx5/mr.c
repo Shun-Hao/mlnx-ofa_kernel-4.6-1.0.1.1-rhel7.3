@@ -1188,6 +1188,23 @@ struct ib_mr *mlx5_ib_reg_dm_mr(struct ib_pd *pd, struct ib_dm *dm,
 				    attr->access_flags);
 }
 
+struct ib_mr *mlx5_ib_get_dm_mr(struct ib_pd *pd,
+		struct ib_mr_init_attr *attr)
+{
+	struct ib_mr *mr;
+
+	/* Registration of dm buffer is not allowed with certain
+	 * access flags.
+	 */
+	if (attr->access_flags & ~MLX5_IB_DM_ALLOWED_ACCESS)
+		return ERR_PTR(-EINVAL);
+
+	mr = mlx5_ib_get_memic_mr(pd, attr->dm->dev_addr + attr->start,
+				attr->length, attr->access_flags);
+
+	return mr;
+}
+
 struct ib_mr *mlx5_ib_reg_user_mr(struct ib_pd *pd,
 				  struct ib_mr_init_attr *attr,
 				  struct ib_udata *udata)

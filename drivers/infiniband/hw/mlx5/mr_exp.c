@@ -34,6 +34,15 @@
 #include "mlx5_ib.h"
 #include <rdma/ib_cmem.h>
 
+struct ib_mr *mlx5_ib_exp_alloc_mr(struct ib_pd *pd, struct ib_mr_init_attr *attr)
+{
+
+	if (attr->dm)
+		return mlx5_ib_get_dm_mr(pd, attr);
+	else
+		return mlx5_ib_alloc_mr(pd, attr->mr_type, attr->max_num_sg);
+}
+
 static int get_arg(unsigned long offset)
 {
 	return offset & ((1 << MLX5_IB_MMAP_CMD_SHIFT) - 1);
