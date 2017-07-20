@@ -53,6 +53,7 @@
 #ifdef CONFIG_RFS_ACCEL
 #include <linux/cpu_rmap.h>
 #endif
+#include <linux/mlx5/capi.h>
 #include <net/devlink.h>
 #include "mlx5_core.h"
 #include "fs_core.h"
@@ -1622,6 +1623,256 @@ static const struct devlink_ops mlx5_devlink_ops = {
 #endif
 };
 
+#ifdef CONFIG_CXL_LIB
+enum {
+	ACCESS_REG_DWLEN = 11,
+};
+
+enum {
+	MLX5_CAPI_CTRL_REG = 0x402f
+};
+
+enum {
+	INVAL_EN	= 1 << 0,
+	XLT_EN		= 1 << 1,
+	CAPI_OWNER	= 1 << 2,
+};
+
+static int capi_init_owner(struct mlx5_core_dev *dev)
+{
+	struct mlx5_core_capi *capi = &dev->capi;
+	struct icmd_acc_reg_out *out = NULL;
+	struct icmd_acc_reg_in *in;
+	int err = -ENOMEM;
+
+	in = kzalloc(sizeof(*in) + ACCESS_REG_DWLEN * 4, GFP_KERNEL);
+	if (!in)
+		goto term;
+
+	out = kzalloc(sizeof(*out) + ACCESS_REG_DWLEN * 4, GFP_KERNEL);
+	if (!out)
+		goto term;
+
+	err = cxllib_get_xsl_config(dev->pdev, &capi->cxl_cfg);
+	if (err) {
+		mlx5_core_warn(dev, "failed to get cxl configuration\n");
+		goto term;
+	}
+
+	mlx5_core_warn(dev, "xsl_config.version: 0x%x\n", capi->cxl_cfg.version);
+	mlx5_core_warn(dev, "xsl_config.log_bar_size:0x%x\n", capi->cxl_cfg.log_bar_size);
+	mlx5_core_warn(dev, "xsl_config.bar_addr:0x%llx\n", capi->cxl_cfg.bar_addr);
+	mlx5_core_warn(dev, "xsl_config.dsnctl:0x%llx\n", capi->cxl_cfg.dsnctl);
+	mlx5_core_warn(dev, "xsl_config.dra:0x%llx\n", capi->cxl_cfg.dra);
+	in->reg_id = MLX5_CAPI_CTRL_REG;
+	in->method = MLX5_ACCESS_REG_METHOD_WR;
+	in->dw_len = ACCESS_REG_DWLEN;
+	out->dw_len = ACCESS_REG_DWLEN;
+	in->data[0] = capi->cxl_cfg.version;
+	in->data[1] = INVAL_EN | XLT_EN | CAPI_OWNER;
+	in->data[2] = 0;
+	in->data[3] = 0;
+	in->data[4] = capi->cxl_cfg.dsnctl >> 32;
+	in->data[5] = capi->cxl_cfg.dsnctl & 0xffffffff;
+	in->data[6] = capi->cxl_cfg.dra >> 32;
+	in->data[7] = capi->cxl_cfg.dra & 0xffffffff;
+	in->data[8] = capi->cxl_cfg.bar_addr >> 32;
+	in->data[9] = capi->cxl_cfg.bar_addr & 0xffffffff;
+	in->data[10] = capi->cxl_cfg.log_bar_size;
+	err = mlx5_core_icmd_access_reg(dev, in, out);
+	if (err)
+		goto term;
+
+	in->method = MLX5_ACCEES_REG_METHOD_QUERY;
+	err = mlx5_core_icmd_access_reg(dev, in, out);
+	if (err) {
+		mlx5_core_warn(dev, "failed to query register 0x%x\n", in->reg_id);
+		goto term;
+	}
+
+	capi->owner = !!(out->data[1] & CAPI_OWNER);
+	if (!capi->owner)
+		goto term;
+
+	err = cxllib_switch_phb_mode(dev->pdev, CXL_MODE_CXL, CXL_MODE_DMA_TVT1);
+	if (err)
+		goto disable_inval;
+
+	goto term;
+
+disable_inval:
+	/* disable invalidations */
+	in->reg_id = MLX5_CAPI_CTRL_REG;
+	in->method = MLX5_ACCESS_REG_METHOD_WR;
+	in->dw_len = ACCESS_REG_DWLEN;
+	out->dw_len = ACCESS_REG_DWLEN;
+	memset(in->data, 0, in->dw_len * 4);
+	mlx5_core_icmd_access_reg(dev, in, out);
+term:
+	kfree(in);
+	kfree(out);
+	return err;
+}
+
+static int capi_init_func(struct mlx5_core_dev *dev)
+{
+	struct icmd_acc_reg_out *out = NULL;
+	struct icmd_acc_reg_in *in;
+	int err = -ENOMEM;
+
+	in = kzalloc(sizeof(*in) + ACCESS_REG_DWLEN * 4, GFP_KERNEL);
+	if (!in)
+		goto term;
+
+	out = kzalloc(sizeof(*out) + ACCESS_REG_DWLEN * 4, GFP_KERNEL);
+	if (!out)
+		goto term;
+
+	in->reg_id = MLX5_CAPI_CTRL_REG;
+	in->method = MLX5_ACCESS_REG_METHOD_WR;
+	in->dw_len = ACCESS_REG_DWLEN;
+	in->data[1] = INVAL_EN | XLT_EN;
+	out->dw_len = ACCESS_REG_DWLEN;
+	err = mlx5_core_icmd_access_reg(dev, in, out);
+	if (err)
+		goto term;
+
+	in->reg_id = MLX5_CAPI_CTRL_REG;
+	in->method = MLX5_ACCEES_REG_METHOD_QUERY;
+	in->dw_len = ACCESS_REG_DWLEN;
+	out->dw_len = ACCESS_REG_DWLEN;
+	err = mlx5_core_icmd_access_reg(dev, in, out);
+	if (err)
+		goto term;
+
+	if ((out->data[1] & 3) != 3)
+		err = -EINVAL;
+term:
+	kfree(in);
+	kfree(out);
+	return err;
+}
+
+static int capi_init(struct mlx5_core_dev *dev)
+{
+	struct mlx5_core_capi *capi = &dev->capi;
+	int err;
+
+	if (!cxllib_slot_is_supported(dev->pdev, 0)) {
+		mlx5_core_dbg(dev, "slot does not NOT support CAPI\n");
+		return -ENOTSUPP;
+	}
+
+	err = mlx5_core_icmd_query_cap(dev, 0, &capi->icmd_caps);
+	if (err) {
+		mlx5_core_warn(dev, "failed to query icmd caps\n");
+		return err;
+	}
+
+	mlx5_core_dbg(dev, "icmd caps 0x%llx\n", capi->icmd_caps);
+
+	if (!mlx5_capi_supported(dev)) {
+		mlx5_core_warn(dev, "capi is NOT supported\n");
+		return -ENOTSUPP;
+	}
+
+	mlx5_core_dbg(dev, "capi is supported by the HCA\n");
+
+	err = capi_init_owner(dev);
+	if (err) {
+		mlx5_core_warn(dev, "failed init %s %d\n", capi->owner ? "owner" : "func", err);
+		return err;
+	}
+	if (!capi->owner) {
+		err = capi_init_func(dev);
+		if (err) {
+			mlx5_core_warn(dev, "failed init %s %d\n", capi->owner ? "owner" : "func", err);
+			return err;
+		}
+	}
+
+	mlx5_core_dbg(dev, "I am %sthe owner", capi->owner ? "" : "not ");
+
+	return 0;
+}
+
+static int capi_disable_xlt(struct mlx5_core_dev *dev)
+{
+	struct icmd_acc_reg_out *out = NULL;
+	struct icmd_acc_reg_in *in;
+	int err = -ENOMEM;
+
+	in = kzalloc(sizeof(*in) + 16 * 4, GFP_KERNEL);
+	if (!in)
+		goto term;
+
+	out = kzalloc(sizeof(*out) + 16 * 4, GFP_KERNEL);
+	if (!out)
+		goto term;
+
+	in->reg_id = MLX5_CAPI_CTRL_REG;
+	in->method = MLX5_ACCESS_REG_METHOD_WR;
+	in->dw_len = ACCESS_REG_DWLEN;
+	in->data[1] = INVAL_EN | CAPI_OWNER;
+	out->dw_len = ACCESS_REG_DWLEN;
+	err = mlx5_core_icmd_access_reg(dev, in, out);
+term:
+	kfree(in);
+	kfree(out);
+	return err;
+}
+
+static int capi_clear_bar(struct mlx5_core_dev *dev)
+{
+	struct icmd_acc_reg_out *out = NULL;
+	struct icmd_acc_reg_in *in;
+	int err = -ENOMEM;
+
+	in = kzalloc(sizeof(*in) + 16 * 4, GFP_KERNEL);
+	if (!in)
+		goto term;
+
+	out = kzalloc(sizeof(*out) + 16 * 4, GFP_KERNEL);
+	if (!out)
+		goto term;
+
+	in->reg_id = MLX5_CAPI_CTRL_REG;
+	in->method = MLX5_ACCESS_REG_METHOD_WR;
+	in->dw_len = ACCESS_REG_DWLEN;
+	out->dw_len = ACCESS_REG_DWLEN;
+	err = mlx5_core_icmd_access_reg(dev, in, out);
+term:
+	kfree(in);
+	kfree(out);
+	return err;
+}
+
+static void capi_cleanup(struct mlx5_core_dev *dev)
+{
+	int err;
+
+	if (!dev->capi.enabled)
+		return;
+
+	if (!dev->capi.owner)
+		return;
+
+	err = capi_disable_xlt(dev);
+	if (err)
+		mlx5_core_warn(dev, "disable translation failed\n");
+
+	err = cxllib_switch_phb_mode(dev->pdev, CXL_MODE_PCI, CXL_MODE_NO_DMA);
+	if (err) {
+		mlx5_core_warn(dev, "failed to switch to pci mode\n");
+		return;
+	}
+
+	err = capi_clear_bar(dev);
+	if (err)
+		mlx5_core_warn(dev, "failed to clear bar\n");
+}
+#endif
+
 #define MLX5_IB_MOD "mlx5_ib"
 static int init_one(struct pci_dev *pdev,
 		    const struct pci_device_id *id)
@@ -1686,6 +1937,7 @@ static int init_one(struct pci_dev *pdev,
 		err = mlx5_icmd_init(dev);
 		if (err)
 			dev_info(&pdev->dev, "mlx5_icmd_init failed with error code %d\n", err);
+		capi_init(dev);
 	}
 #endif
 
@@ -1728,8 +1980,10 @@ clean_health:
 	mlx5_health_cleanup(dev);
 close_pci:
 #ifdef CONFIG_CXL_LIB
-	if (mlx5_core_is_pf(dev))
+	if (mlx5_core_is_pf(dev)) {
+		capi_cleanup(dev);
 		mlx5_icmd_cleanup(dev);
+	}
 #endif
 	mlx5_pci_close(dev, priv);
 clean_srcu:
@@ -1768,8 +2022,10 @@ static void remove_one(struct pci_dev *pdev)
 	mlx5_health_cleanup(dev);
 	mlx5_crdump_cleanup(dev);
 #ifdef CONFIG_CXL_LIB
-	if (mlx5_core_is_pf(dev))
+	if (mlx5_core_is_pf(dev)) {
+		capi_cleanup(dev);
 		mlx5_icmd_cleanup(dev);
+	}
 #endif
 	mlx5_pci_close(dev, priv);
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING

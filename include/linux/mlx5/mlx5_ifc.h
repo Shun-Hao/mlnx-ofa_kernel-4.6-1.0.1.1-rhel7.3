@@ -263,6 +263,9 @@ enum {
 	MLX5_CMD_OP_FPGA_QUERY_QP                 = 0x962,
 	MLX5_CMD_OP_FPGA_DESTROY_QP               = 0x963,
 	MLX5_CMD_OP_FPGA_QUERY_QP_COUNTERS        = 0x964,
+	MLX5_CMD_OP_CREATE_CAPI_PEC               = 0x980,
+	MLX5_CMD_OP_QUERY_CAPI_PEC                = 0x981,
+	MLX5_CMD_OP_DESTROY_CAPI_PEC              = 0x982,
 	MLX5_CMD_OP_CREATE_GENERAL_OBJECT         = 0xa00,
 	MLX5_CMD_OP_MODIFY_GENERAL_OBJECT         = 0xa01,
 	MLX5_CMD_OP_QUERY_GENERAL_OBJECT          = 0xa02,
@@ -1232,9 +1235,12 @@ struct mlx5_ifc_cmd_hca_cap_bits {
 	u8         device_frequency_mhz[0x20];
 	u8         device_frequency_khz[0x20];
 
-	u8         reserved_at_500[0x2];
+	u8         capi[0x1];
+	u8         create_pec[0x1];
 	u8         nvmf_target_offload[0x1];
-	u8         reserved_at_503[0x1d];
+	u8         reserved_at_503[0x18];
+	u8         log_max_pasid[0x5];
+
 	u8	   num_of_uars_per_page[0x20];
 
 	u8         flex_parser_protocols[0x20];
@@ -2943,12 +2949,16 @@ struct mlx5_ifc_mkc_bits {
 	u8         lw[0x1];
 	u8         lr[0x1];
 	u8         access_mode_1_0[0x2];
-	u8         reserved_at_18[0x8];
+	u8         reserved_at_18[0x1];
+	u8	   tunneled_atoics[0x1];
+	u8	   ma_tranlation_mode[0x2];
+	u8	   reserved_at_1c[4];
 
 	u8         qpn[0x18];
 	u8         mkey_7_0[0x8];
 
-	u8         reserved_at_40[0x20];
+	u8         reserved_at_40[0x8];
+	u8	   pasid[0x18];
 
 	u8         length64[0x1];
 	u8         bsf_en[0x1];
@@ -9802,4 +9812,61 @@ struct mlx5_ifc_mtrc_ctrl_bits {
 	u8         reserved_at_80[0x180];
 };
 
+struct mlx5_ifc_capi_pec_context_bits {
+	u8         state_register[0x40];
+
+	u8         thread_id[0x20];
+
+	u8         process_id[0x20];
+
+	u8         local_partition_id[0x20];
+
+	u8         reserved_at_a0[0xe0];
+};
+
+struct mlx5_ifc_create_capi_pec_in_bits {
+	u8         opcode[0x10];
+	u8         reserved_at_10[0x10];
+
+	u8         reserved_at_20[0x10];
+	u8         op_mod[0x10];
+
+	u8         reserved_at_40[0x40];
+
+	struct mlx5_ifc_capi_pec_context_bits capi_pec_context;
+};
+
+struct mlx5_ifc_create_capi_pec_out_bits {
+	u8         status[0x8];
+	u8         reserved_at_8[0x18];
+
+	u8         syndrome[0x20];
+
+	u8         reserved_at_40[0x8];
+	u8         pasid[0x18];
+
+	u8         reserved_at_60[0x20];
+};
+
+struct mlx5_ifc_destroy_capi_pec_in_bits {
+	u8         opcode[0x10];
+	u8         reserved_at_10[0x10];
+
+	u8         reserved_at_20[0x10];
+	u8         op_mod[0x10];
+
+	u8         reserved_at_40[0x8];
+	u8         pasid[0x18];
+
+	u8         reserved_at_60[0x20];
+};
+
+struct mlx5_ifc_destroy_capi_pec_out_bits {
+	u8         status[0x8];
+	u8         reserved_at_8[0x18];
+
+	u8         syndrome[0x20];
+
+	u8         reserved_at_40[0x40];
+};
 #endif /* MLX5_IFC_H */

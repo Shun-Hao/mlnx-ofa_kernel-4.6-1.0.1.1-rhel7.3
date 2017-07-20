@@ -122,6 +122,11 @@ enum {
 	MLX5_IB_MAX_CTX_DYNAMIC_UARS = 256,
 };
 
+struct mlx5_capi_context {
+	u32			pasid;
+	struct mm_struct       *mm;
+};
+
 struct mlx5_ib_ucontext {
 	struct ib_ucontext	ibucontext;
 	struct list_head	db_page_list;
@@ -136,6 +141,7 @@ struct mlx5_ib_ucontext {
 	u32			tdn;
 
 	u64			lib_caps;
+	struct mlx5_capi_context cctx;
 	DECLARE_BITMAP(dm_pages, MLX5_MAX_MEMIC_PAGES);
 	u16			devx_uid;
 	/* For RoCE LAG TX affinity */
@@ -1457,4 +1463,9 @@ void mlx5_ib_put_xlt_emergency_page(void);
 int bfregn_to_uar_index(struct mlx5_ib_dev *dev,
 			struct mlx5_bfreg_info *bfregi, u32 bfregn,
 			bool dyn_bfreg);
+static inline bool mlx5_ib_capi_enabled(struct mlx5_ib_dev *dev)
+{
+	return dev->mdev->capi.enabled;
+}
+
 #endif /* MLX5_IB_H */

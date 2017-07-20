@@ -274,7 +274,9 @@ void mlx5_ib_invalidate_range(struct ib_umem_odp *umem_odp, unsigned long start,
 	 */
 
 	ib_umem_odp_unmap_dma_pages(umem_odp, start, end, &np_stat);
-	atomic_sub(np_stat, &mr->dev->odp_stats.num_odp_mr_pages);
+	/* Skip stats count for CAPI MR */
+	if (mr->dev)
+		atomic_sub(np_stat, &mr->dev->odp_stats.num_odp_mr_pages);
 	if (unlikely(!umem->npages && mr->parent &&
 		     !cmpxchg(&odp_mr->dying, 0, 1))) {
 		idx = ib_umem_start(umem) >> MLX5_IMR_MTT_SHIFT;
@@ -365,6 +367,23 @@ static void mlx5_ib_page_fault_resume(struct mlx5_ib_dev *dev,
 		atomic_inc(&dev->odp_stats.num_failed_resolutions);
 
 }
+
+#ifdef CONFIG_CXL_LIB
+static int handle_capi_pg_fault(struct mlx5_ib_dev *dev, struct mm_struct *mm,
+				u64 va, size_t sz)
+{
+	int err;
+
+	err = cxllib_handle_fault(mm, va, sz, 0);
+	return err;
+}
+#else
+static int handle_capi_pg_fault(struct mlx5_ib_dev *dev, struct mm_struct *mm,
+				u64 va, size_t sz)
+{
+	return 0;
+}
+#endif
 
 static struct mlx5_ib_mr *implicit_mr_alloc(struct ib_pd *pd,
 					    struct ib_umem *umem,
@@ -589,6 +608,14 @@ next_mr:
 	if (mr->umem->writable)
 		access_mask |= ODP_WRITE_ALLOWED_BIT;
 
+	if (mlx5_ib_capi_enabled(dev)) {
+		if (!mr->umem->owning_mm) {
+			mlx5_ib_warn(dev, "mm is null\n");
+			return -1;
+		}
+		return handle_capi_pg_fault(dev, mr->umem->owning_mm, io_virt, bcnt);
+	}
+
 	current_seq = READ_ONCE(odp->notifiers_seq);
 	/*
 	 * Ensure the sequence number is valid for some time before we call
@@ -759,6 +786,7 @@ next_mr:
 		goto srcu_unlock;
 	}
 
+	mlx5_ib_dbg(dev, "type %d\n", mmkey->type);
 	if (mmkey->type == MLX5_MKEY_MR) {
 		mr = container_of(mmkey, struct mlx5_ib_mr, mmkey);
 		if (!mr->live || !mr->ibmr.pd) {

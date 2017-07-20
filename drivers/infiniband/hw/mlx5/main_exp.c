@@ -479,6 +479,8 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 	mlx5_update_ooo_cap(dev, props);
 	mlx5_update_tm_cap(dev, props);
 	mlx5_update_tunnel_offloads_caps(dev, props);
+	if (MLX5_CAP_GEN(dev->mdev, capi))
+		props->device_cap_flags2 |= IB_EXP_DEVICE_CAPI;
 
 	props->device_cap_flags2 |= IB_EXP_DEVICE_PHYSICAL_RANGE_MR;
 

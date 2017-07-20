@@ -1016,6 +1016,66 @@ free_xlt:
 	return err;
 }
 
+static struct mlx5_ib_mr *create_capi_mr(struct ib_pd *pd, u64 virt_addr,
+					 u64 length, int acc)
+{
+	struct mlx5_ib_dev *dev = to_mdev(pd->device);
+	int inlen = MLX5_ST_SZ_BYTES(create_mkey_in);
+	struct mlx5_core_dev *mdev = dev->mdev;
+	struct mlx5_ib_mr *mr;
+	void *mkc;
+	u32 *in;
+	int err;
+	struct mlx5_ib_ucontext *mctx = to_mucontext(pd->uobject->context);
+
+	mr = kzalloc(sizeof(*mr), GFP_KERNEL);
+	if (!mr)
+		return ERR_PTR(-ENOMEM);
+
+	in = kzalloc(inlen, GFP_KERNEL);
+	if (!in) {
+		err = -ENOMEM;
+		goto err_free;
+	}
+
+	mkc = MLX5_ADDR_OF(create_mkey_in, in, memory_key_mkey_entry);
+
+	MLX5_SET(mkc, mkc, access_mode_1_0, MLX5_MKC_ACCESS_MODE_PA);
+	MLX5_SET(mkc, mkc, a, !!(acc & IB_ACCESS_REMOTE_ATOMIC));
+	MLX5_SET(mkc, mkc, rw, !!(acc & IB_ACCESS_REMOTE_WRITE));
+	MLX5_SET(mkc, mkc, rr, !!(acc & IB_ACCESS_REMOTE_READ));
+	MLX5_SET(mkc, mkc, lw, !!(acc & IB_ACCESS_LOCAL_WRITE));
+	MLX5_SET(mkc, mkc, lr, 1);
+
+	MLX5_SET(mkc, mkc, pd, to_mpd(pd)->pdn);
+	MLX5_SET(mkc, mkc, qpn, 0xffffff);
+	MLX5_SET64(mkc, mkc, start_addr, virt_addr);
+	MLX5_SET64(mkc, mkc, len, length);
+	MLX5_SET(mkc, mkc, pasid, mctx->cctx.pasid);
+	MLX5_SET(mkc, mkc, ma_tranlation_mode, 3);
+
+	err = mlx5_core_create_mkey(mdev, &mr->mmkey, in, inlen);
+	if (err)
+		goto err_in;
+
+	kfree(in);
+	mr->mmkey.type = MLX5_MKEY_MR;
+	mr->live = 1;
+	mr->ibmr.lkey = mr->mmkey.key;
+	mr->ibmr.rkey = mr->mmkey.key;
+	mr->umem = NULL;
+
+	return mr;
+
+err_in:
+	kfree(in);
+
+err_free:
+	kfree(mr);
+
+	return ERR_PTR(err);
+}
+
 /*
  * If ibmr is NULL it will be allocated by reg_create.
  * Else, the given ibmr will be used.
@@ -1274,7 +1334,21 @@ struct ib_mr *mlx5_ib_reg_user_mr(struct ib_pd *pd,
 			goto error;
 	}
 
-	if (use_umr(dev, order)) {
+	if ((access_flags & IB_ACCESS_ON_DEMAND) &&
+	    mlx5_ib_capi_enabled(dev)) {
+		mr = create_capi_mr(pd, virt_addr, length, access_flags);
+		if (IS_ERR(mr)) {
+			err = PTR_ERR(mr);
+			mlx5_ib_warn(dev, "failed to create capi mr. err = %d\n", err);
+			goto error;
+		}
+
+		populate_mtts = true;
+
+		/* it is safe to do this because current is running */
+	//umem->mm = current->mm;
+		umem->owning_mm = current->mm;
+	} else if (use_umr(dev, order)) {
 		mr = alloc_mr_from_cache(pd, umem, virt_addr, length, ncont,
 					 page_shift, order, access_flags);
 		if (PTR_ERR(mr) == -EAGAIN) {
