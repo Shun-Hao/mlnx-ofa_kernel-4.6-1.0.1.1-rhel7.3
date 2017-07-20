@@ -298,3 +298,13 @@ struct ib_mr *ib_exp_alloc_mr(struct ib_pd *pd, struct ib_mr_init_attr *attr)
 	return mr;
 }
 EXPORT_SYMBOL_GPL(ib_exp_alloc_mr);
+
+int ib_exp_invalidate_range(struct ib_device  *device, struct ib_mr *ibmr,
+			    u64 start, u64 length, u32 flags)
+{
+	if (!device->exp_invalidate_range)
+		return -EOPNOTSUPP;
+
+	return device->exp_invalidate_range(device, NULL, start, length, flags);
+}
+EXPORT_SYMBOL(ib_exp_invalidate_range);

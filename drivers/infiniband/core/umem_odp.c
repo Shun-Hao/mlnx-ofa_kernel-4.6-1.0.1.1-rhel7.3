@@ -204,10 +204,28 @@ static void ib_umem_notifier_invalidate_range_end(struct mmu_notifier *mn,
 	up_read(&per_mm->umem_rwsem);
 }
 
+#ifdef CONFIG_CXL_LIB
+static void ib_umem_notifier_invalidate_range(struct mmu_notifier *mn,
+					      struct mm_struct *mm,
+					      unsigned long start,
+					      unsigned long end)
+{
+	struct ib_ucontext *context = container_of(mn, struct ib_ucontext, mn);
+
+	if (!context->invalidate_range)
+		return;
+
+	ib_exp_invalidate_range(context->device, NULL, start, end, 0);
+}
+#endif
+
 static const struct mmu_notifier_ops ib_umem_notifiers = {
 	.release                    = ib_umem_notifier_release,
 	.invalidate_range_start     = ib_umem_notifier_invalidate_range_start,
 	.invalidate_range_end       = ib_umem_notifier_invalidate_range_end,
+#ifdef CONFIG_CXL_LIB
+	.invalidate_range	    = ib_umem_notifier_invalidate_range,
+#endif
 };
 
 static void add_umem_to_per_mm(struct ib_umem_odp *umem_odp)

@@ -2417,6 +2417,11 @@ struct ib_device {
 						    struct ib_exp_memcpy_dm_attr *attr);
 	struct ib_mr *             (*exp_alloc_mr)(struct ib_pd *pd,
 						   struct ib_mr_init_attr *attr);
+	int			(*exp_invalidate_range)(struct ib_device *device,
+							struct ib_mr *ibmr,
+							u64 start,
+							u64 length,
+							u32 flags);
 
 	/**
 	 * alloc_hw_stats - Allocate a struct rdma_hw_stats and fill in the

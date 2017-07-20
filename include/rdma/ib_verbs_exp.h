@@ -480,4 +480,6 @@ struct ib_dm *ib_exp_alloc_dm(struct ib_device *device, u64 length);
 int ib_exp_free_dm(struct ib_dm *dm);
 int ib_exp_memcpy_dm(struct ib_dm *dm, struct ib_exp_memcpy_dm_attr *attr);
 struct ib_mr *ib_exp_alloc_mr(struct ib_pd *pd, struct ib_mr_init_attr *attr);
+int ib_exp_invalidate_range(struct ib_device  *device, struct ib_mr *ibmr,
+			    u64 start, u64 length, u32 flags);
 #endif
