@@ -1776,6 +1776,8 @@ static int capi_init(struct mlx5_core_dev *dev)
 		return -ENOTSUPP;
 	}
 
+	capi->inv_io = &dev->iseg->capi_invalidate;
+
 	mlx5_core_dbg(dev, "capi is supported by the HCA\n");
 
 	err = capi_init_owner(dev);
@@ -1793,6 +1795,8 @@ static int capi_init(struct mlx5_core_dev *dev)
 
 	mlx5_core_dbg(dev, "I am %sthe owner", capi->owner ? "" : "not ");
 
+	capi->enabled = true;
+	spin_lock_init(&capi->inv_lock);
 	return 0;
 }
 

@@ -89,6 +89,18 @@ int mlx5_ib_prefetch_mr(struct ib_mr *ibmr, u64 start, u64 length, u32 flags)
 
 }
 
+int mlx5_ib_exp_invalidate_range(struct ib_device *device, struct ib_mr *ibmr,
+				 u64 start, u64 length, u32 flags)
+{
+#ifdef CONFIG_CXL_LIB
+	struct mlx5_ib_dev *dev = to_mdev(device);
+
+	return mlx5_core_invalidate_range(dev->mdev);
+#else
+	return -ENOTSUPP;
+#endif
+}
+
 int mlx5_ib_exp_odp_init_one(struct mlx5_ib_dev *ibdev)
 {
 	struct dentry *dbgfs_entry;

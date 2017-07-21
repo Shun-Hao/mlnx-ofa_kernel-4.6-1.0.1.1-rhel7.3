@@ -254,7 +254,7 @@ static void eq_pf_process(struct mlx5_eq *eq)
 		case MLX5_PFAULT_SUBTYPE_RDMA:
 			/* RDMA based event */
 			pfault->type =
-				be32_to_cpu(pf_eqe->rdma.pftype_token) >> 24;
+				(be32_to_cpu(pf_eqe->wqe.pftype_wq) >> 24) & 0xf;
 			pfault->token =
 				be32_to_cpu(pf_eqe->rdma.pftype_token) &
 				MLX5_24BIT_MASK;

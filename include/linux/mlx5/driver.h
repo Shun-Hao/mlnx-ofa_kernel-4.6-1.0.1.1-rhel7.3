@@ -903,6 +903,9 @@ struct mlx5_core_capi {
 #ifdef CONFIG_CXL_LIB
 	struct cxllib_xsl_config	cxl_cfg;
 #endif
+	/* Invalidation control lock */
+	spinlock_t			inv_lock;
+	__be32 __iomem		       *inv_io;
 };
 
 struct mlx5_core_dev {
@@ -1491,4 +1494,6 @@ struct mlx5_diag_dump {
 	u32	module_status;
 	char	dump[0];
 } __packed;
+
+int mlx5_core_invalidate_range(struct mlx5_core_dev *dev);
 #endif /* MLX5_DRIVER_H */
