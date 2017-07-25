@@ -1176,8 +1176,10 @@ void mlx5_unregister_debugfs(void);
 
 void mlx5_fill_page_array(struct mlx5_frag_buf *buf, __be64 *pas);
 void mlx5_fill_page_frag_array(struct mlx5_frag_buf *frag_buf, __be64 *pas);
-int mlx5_rsc_event(struct mlx5_core_dev *dev, u32 rsn, int event_type);
+int mlx5_rsc_event(struct mlx5_core_dev *dev, u32 rsn, int event_info);
 void mlx5_srq_event(struct mlx5_core_dev *dev, u32 srqn, int event_type);
+void mlx5_xrq_event(struct mlx5_core_dev *dev, u32 srqn, u8 event_type,
+		    u32 qpn_id_handle, u8 error_type);
 struct mlx5_core_srq *mlx5_core_get_srq(struct mlx5_core_dev *dev, u32 srqn);
 int mlx5_vector2eqn(struct mlx5_core_dev *dev, int vector, int *eqn,
 		    unsigned int *irqn);

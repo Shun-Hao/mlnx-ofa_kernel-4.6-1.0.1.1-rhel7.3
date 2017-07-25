@@ -308,6 +308,10 @@ enum {
 	MLX5_EVENT_QUEUE_TYPE_DCT = 6,
 };
 
+enum mlx5_xrq_error_type {
+	MLX5_XRQ_ERROR_TYPE_QP_ERROR			= 0x0,
+};
+
 enum mlx5_event {
 	MLX5_EVENT_TYPE_COMP		   = 0x0,
 
@@ -344,6 +348,8 @@ enum mlx5_event {
 
 	MLX5_EVENT_TYPE_DCT_DRAINED        = 0x1c,
 	MLX5_EVENT_TYPE_DCT_KEY_VIOLATION  = 0x1d,
+
+	MLX5_EVENT_TYPE_XRQ_ERROR	   = 0x18,
 
 	MLX5_EVENT_TYPE_FPGA_ERROR         = 0x20,
 	MLX5_EVENT_TYPE_FPGA_QP_ERROR      = 0x21,
@@ -565,6 +571,12 @@ struct mlx5_eqe_comp {
 	__be32	cqn;
 };
 
+struct mlx5_eqe_xrq {
+	__be32	reserved1[5];
+	__be32	type_xrqn;
+	__be32	qpn_id_handle;
+};
+
 struct mlx5_eqe_qp_srq {
 	__be32	reserved1[5];
 	u8	type;
@@ -680,6 +692,7 @@ union ev_data {
 	struct mlx5_eqe_cmd		cmd;
 	struct mlx5_eqe_comp		comp;
 	struct mlx5_eqe_qp_srq		qp_srq;
+	struct mlx5_eqe_xrq		xrq;
 	struct mlx5_eqe_cq_err		cq_err;
 	struct mlx5_eqe_port_state	port;
 	struct mlx5_eqe_gpio		gpio;

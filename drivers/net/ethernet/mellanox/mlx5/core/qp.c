@@ -79,6 +79,7 @@ static u64 qp_allowed_event_types(void)
 	       BIT(MLX5_EVENT_TYPE_PATH_MIG_FAILED) |
 	       BIT(MLX5_EVENT_TYPE_WQ_INVAL_REQ_ERROR) |
 	       BIT(MLX5_EVENT_TYPE_WQ_ACCESS_ERROR) |
+	       BIT(MLX5_EVENT_TYPE_XRQ_ERROR) |
 	       BIT(MLX5_EVENT_TYPE_DCT_DRAINED) |
 	       BIT(MLX5_EVENT_TYPE_DCT_KEY_VIOLATION);
 
@@ -129,11 +130,12 @@ static bool is_event_type_allowed(int rsc_type, int event_type)
 	}
 }
 
-int mlx5_rsc_event(struct mlx5_core_dev *dev, u32 rsn, int event_type)
+int mlx5_rsc_event(struct mlx5_core_dev *dev, u32 rsn, int event_info)
 {
 	struct mlx5_core_rsc_common *common = mlx5_get_rsc(dev, rsn);
 	struct mlx5_core_dct *dct;
 	struct mlx5_core_qp *qp;
+	int event_type = event_info & 0xff;
 
 	if (!common)
 		return -1;
@@ -149,7 +151,7 @@ int mlx5_rsc_event(struct mlx5_core_dev *dev, u32 rsn, int event_type)
 	case MLX5_RES_RQ:
 	case MLX5_RES_SQ:
 		qp = (struct mlx5_core_qp *)common;
-		qp->event(qp, event_type);
+		qp->event(qp, event_info);
 		break;
 	case MLX5_RES_DCT:
 		dct = (struct mlx5_core_dct *)common;

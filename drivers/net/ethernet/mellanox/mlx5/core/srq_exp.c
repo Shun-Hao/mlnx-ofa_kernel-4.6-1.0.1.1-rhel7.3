@@ -108,3 +108,20 @@ int set_xrq_dc_params_entry(struct mlx5_core_dev *dev,
 	return mlx5_cmd_exec(dev, in, sizeof(in), out, sizeof(out));
 }
 
+void mlx5_xrq_event(struct mlx5_core_dev *dev, u32 srqn, u8 event_type,
+		    u32 qpn_id_handle, u8 error_type)
+{
+	u32 rsn;
+	int event_info = event_type | (error_type << 8);
+
+	switch (error_type) {
+	case MLX5_XRQ_ERROR_TYPE_QP_ERROR:
+		rsn = qpn_id_handle | (MLX5_EVENT_QUEUE_TYPE_QP << MLX5_USER_INDEX_LEN);
+		mlx5_rsc_event(dev, rsn, event_info);
+		break;
+	default:
+		mlx5_core_warn(dev, "XRQ event with unrecognized type: xrqn 0x%x, type %u\n",
+			       srqn, error_type);
+	}
+}
+
