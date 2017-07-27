@@ -1089,8 +1089,7 @@ static void nvmet_rdma_destroy_queue_ib(struct nvmet_rdma_queue *queue)
 	struct ib_qp *qp = queue->cm_id->qp;
 
 	/* TODO: bug #974802 - Need to debug with FW */
-	if (!queue->offload)
-		ib_drain_qp(qp);
+	ib_drain_qp(queue->cm_id->qp);
 	rdma_destroy_id(queue->cm_id);
 	ib_destroy_qp(qp);
 	ib_free_cq(queue->cq);
