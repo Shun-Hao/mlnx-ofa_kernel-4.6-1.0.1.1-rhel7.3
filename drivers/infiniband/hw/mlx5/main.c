@@ -1167,6 +1167,7 @@ static int mlx5_query_hca_port(struct ib_device *ibdev, u8 port,
 	props->lid		= rep->lid;
 	props->lmc		= rep->lmc;
 	props->sm_lid		= rep->sm_lid;
+	props->has_smi		= rep->has_smi;
 	props->sm_sl		= rep->sm_sl;
 	props->state		= rep->vport_state;
 	props->phys_state	= rep->port_physical_state;

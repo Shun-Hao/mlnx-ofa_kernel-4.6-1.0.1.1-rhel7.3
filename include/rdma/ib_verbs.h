@@ -617,6 +617,7 @@ struct ib_port_attr {
 	u8			active_width;
 	u8			active_speed;
 	u8                      phys_state;
+	bool			has_smi;
 };
 
 enum ib_device_modify_flags {
