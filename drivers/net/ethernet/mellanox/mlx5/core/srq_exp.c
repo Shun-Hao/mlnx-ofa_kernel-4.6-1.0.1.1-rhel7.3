@@ -84,3 +84,27 @@ void set_nvmf_xrq_context(struct mlx5_nvmf_attr *nvmf, void *xrqc)
 		 nvmf->nvme_queue_size);
 }
 
+int set_xrq_dc_params_entry(struct mlx5_core_dev *dev,
+			    struct mlx5_core_srq *srq,
+			    struct mlx5_dc_offload_params *dc_op)
+{
+	u32 in[MLX5_ST_SZ_DW(set_xrq_dc_params_entry_in)] = {0};
+	u32 out[MLX5_ST_SZ_DW(set_xrq_dc_params_entry_out)] = {0};
+
+	MLX5_SET(set_xrq_dc_params_entry_in, in, pkey_table_index,
+		 dc_op->pkey_index);
+	MLX5_SET(set_xrq_dc_params_entry_in, in, mtu, dc_op->path_mtu);
+	MLX5_SET(set_xrq_dc_params_entry_in, in, sl, dc_op->sl);
+	MLX5_SET(set_xrq_dc_params_entry_in, in, reverse_sl, dc_op->sl);
+	MLX5_SET(set_xrq_dc_params_entry_in, in, cnak_reverse_sl, dc_op->sl);
+	MLX5_SET(set_xrq_dc_params_entry_in, in, ack_timeout, dc_op->timeout);
+	MLX5_SET64(set_xrq_dc_params_entry_in, in, dc_access_key,
+		   dc_op->dct_key);
+
+	MLX5_SET(set_xrq_dc_params_entry_in, in, xrqn, srq->srqn);
+	MLX5_SET(set_xrq_dc_params_entry_in, in, opcode,
+		 MLX5_CMD_OP_SET_XRQ_DC_PARAMS_ENTRY);
+
+	return mlx5_cmd_exec(dev, in, sizeof(in), out, sizeof(out));
+}
+

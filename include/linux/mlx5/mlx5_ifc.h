@@ -153,6 +153,7 @@ enum {
 	MLX5_CMD_OP_QUERY_NVMF_BACKEND_CTRL       = 0x722,
 	MLX5_CMD_OP_ATTACH_NVMF_NAMESPACE         = 0x723,
 	MLX5_CMD_OP_DETACH_NVMF_NAMESPACE         = 0x724,
+	MLX5_CMD_OP_SET_XRQ_DC_PARAMS_ENTRY	  = 0x726,
 	MLX5_CMD_OP_QUERY_VPORT_STATE             = 0x750,
 	MLX5_CMD_OP_MODIFY_VPORT_STATE            = 0x751,
 	MLX5_CMD_OP_QUERY_ESW_VPORT_CONTEXT       = 0x752,
@@ -3480,7 +3481,10 @@ struct mlx5_ifc_xrqc_bits {
 	u8         reserved_at_40[0x8];
 	u8         cqn[0x18];
 
-	u8         reserved_at_60[0xa0];
+	u8         reserved_at_60[0x1f];
+	u8         dc[0x1];
+
+	u8         reserved_at_80[0x80];
 
 	struct mlx5_ifc_tag_matching_topology_context_bits tag_matching_topology_context;
 	struct mlx5_ifc_nvme_offload_context_bits nvme_offload_context;
@@ -6949,6 +6953,46 @@ struct mlx5_ifc_create_xrq_in_bits {
 	u8         reserved_at_40[0x40];
 
 	struct mlx5_ifc_xrqc_bits xrq_context;
+};
+
+struct mlx5_ifc_set_xrq_dc_params_entry_out_bits {
+	u8         status[0x8];
+	u8         reserved_at_8[0x18];
+
+	u8         syndrome[0x20];
+
+	u8         reserved_at_40[0x40];
+};
+
+struct mlx5_ifc_set_xrq_dc_params_entry_in_bits {
+	u8         opcode[0x10];
+	u8         reserved_at_10[0x10];
+
+	u8         reserved_at_20[0x10];
+	u8         op_mod[0x10];
+
+	u8         reserved_at_40[0x8];
+	u8         xrqn[0x18];
+
+	u8         reserved_at_60[0x20];
+
+	u8         reserved_at_80[0x3];
+	u8         ack_timeout[0x5];
+	u8         reserved_at_88[0x4];
+	u8         multi_path[0x1];
+	u8         mtu[0x3];
+	u8         pkey_table_index[0x10];
+
+	u8         reserved_at_a0[0xc];
+	u8         cnak_reverse_sl[0x4];
+	u8         reserved_at_b0[0x4];
+	u8         reverse_sl[0x4];
+	u8         reserved_at_b8[0x4];
+	u8         sl[0x4];
+
+	u8         dc_access_key[0x40];
+
+	u8         reserved_at_100[0x80];
 };
 
 struct mlx5_ifc_create_xrc_srq_out_bits {
