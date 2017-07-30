@@ -399,6 +399,41 @@ int ib_exp_query_dct(struct ib_dct *dct, struct ib_dct_attr *attr);
 int ib_exp_query_mkey(struct ib_mr *mr, u64 mkey_attr_mask,
 		  struct ib_mkey_attr *mkey_attr);
 /* NVMEoF target offload EXP API */
+struct ib_nvmf_ctrl {
+	struct ib_srq	*srq;
+	u32		id;
+	atomic_t	usecnt; /* count all attached namespaces */
+	void		(*event_handler)(struct ib_event *, void *);
+	void		*be_context;
+};
+
+struct ib_nvmf_backend_ctrl_init_attr {
+	void		(*event_handler)(struct ib_event *, void *);
+	void		*be_context;
+	u32		cq_page_offset;
+	u32		sq_page_offset;
+	u8		cq_log_page_size;
+	u8		sq_log_page_size;
+	u16		initial_cqh_db_value;
+	u16		initial_sqt_db_value;
+	u64		cqh_dbr_addr;
+	u64		sqt_dbr_addr;
+	u64		cq_pas;
+	u64		sq_pas;
+};
+
+struct ib_nvmf_ns {
+	struct ib_nvmf_ctrl	*ctrl;
+	u32			nsid;
+};
+
+struct ib_nvmf_ns_init_attr {
+	u32		frontend_namespace;
+	u32		backend_namespace;
+	u16		lba_data_size;
+	u16		backend_ctrl_id;
+};
+
 struct ib_nvmf_ctrl *ib_create_nvmf_backend_ctrl(struct ib_srq *srq,
 		struct ib_nvmf_backend_ctrl_init_attr *init_attr);
 int ib_destroy_nvmf_backend_ctrl(struct ib_nvmf_ctrl *ctrl);

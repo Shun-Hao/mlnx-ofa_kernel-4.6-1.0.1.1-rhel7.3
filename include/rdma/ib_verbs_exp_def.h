@@ -57,37 +57,6 @@ enum ib_qp_offload_type {
 	IB_QP_OFFLOAD_NVMF = 1,
 };
 
-struct ib_nvmf_ctrl {
-	struct ib_srq	*srq;
-	u32		id;
-	atomic_t	usecnt; /* count all attached namespaces */
-};
-
-struct ib_nvmf_backend_ctrl_init_attr {
-	u32		cq_page_offset;
-	u32		sq_page_offset;
-	u8		cq_log_page_size;
-	u8		sq_log_page_size;
-	u16		initial_cqh_db_value;
-	u16		initial_sqt_db_value;
-	u64		cqh_dbr_addr;
-	u64		sqt_dbr_addr;
-	u64		cq_pas;
-	u64		sq_pas;
-};
-
-struct ib_nvmf_ns {
-	struct ib_nvmf_ctrl	*ctrl;
-	u32			nsid;
-};
-
-struct ib_nvmf_ns_init_attr {
-	u32		frontend_namespace;
-	u32		backend_namespace;
-	u16		lba_data_size;
-	u16		backend_ctrl_id;
-};
-
 struct ib_odp_statistics {
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 

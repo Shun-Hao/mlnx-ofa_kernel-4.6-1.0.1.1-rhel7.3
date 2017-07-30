@@ -82,6 +82,10 @@ struct ib_dct_attr;
 struct ib_dct_init_attr;
 struct ib_mkey_attr;
 struct ib_exp_context_attr;
+struct ib_nvmf_ctrl;
+struct ib_nvmf_backend_ctrl_init_attr;
+struct ib_nvmf_ns;
+struct ib_nvmf_ns_init_attr;
 
 union ib_gid {
 	u8	raw[16];
