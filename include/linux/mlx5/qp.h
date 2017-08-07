@@ -485,6 +485,25 @@ struct mlx5_stride_block_ctrl_seg {
 	__be16		num_entries;
 };
 
+enum {
+	MLX5_CALC_MATRIX	= 1 << 7,
+};
+
+struct mlx5_vec_calc_seg {
+	u8		calc_op[4];
+	__be32		rsvd0[2];
+	u8		op_tags;
+	u8		mat_le_tag_cs;
+	u8		rsvd1;
+	u8		vec_count;
+	__be32		rsvd2;
+	__be32		cm_lkey;
+	__be64		cm_addr;
+	__be32		vec_size;
+	__be32		vec_lkey;
+	__be64		vec_addr;
+};
+
 struct mlx5_core_qp {
 	struct mlx5_core_rsc_common	common; /* must be first */
 	void (*event)		(struct mlx5_core_qp *, int);
