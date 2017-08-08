@@ -58,6 +58,7 @@ struct ipoib_rx_ring_stats {
 	unsigned long rx_bytes;
 	unsigned long rx_errors;
 	unsigned long rx_dropped;
+	unsigned long multicast;
 };
 
 /*
