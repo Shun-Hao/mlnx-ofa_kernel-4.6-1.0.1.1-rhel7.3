@@ -457,6 +457,7 @@ struct mlx5_core_sig_ctx {
 enum {
 	MLX5_MKEY_MR = 1,
 	MLX5_MKEY_MW,
+	MLX5_MKEY_MR_USER,
 };
 
 struct mlx5_core_mkey {

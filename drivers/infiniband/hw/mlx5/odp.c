@@ -703,6 +703,7 @@ int pagefault_single_data_segment(struct mlx5_ib_dev *dev,
 	struct mlx5_klm *pklm;
 	u32 *out = NULL;
 	size_t offset;
+	int ndescs;
 
 	srcu_key = srcu_read_lock(&dev->mr_srcu);
 
@@ -718,8 +719,7 @@ next_mr:
 		goto srcu_unlock;
 	}
 
-	switch (mmkey->type) {
-	case MLX5_MKEY_MR:
+	if (mmkey->type == MLX5_MKEY_MR) {
 		mr = container_of(mmkey, struct mlx5_ib_mr, mmkey);
 		if (!mr->live || !mr->ibmr.pd) {
 			mlx5_ib_dbg(dev, "got dead MR\n");
@@ -741,10 +741,18 @@ next_mr:
 
 		npages += ret;
 		ret = 0;
-		break;
-
-	case MLX5_MKEY_MW:
-		mw = container_of(mmkey, struct mlx5_ib_mw, mmkey);
+	} else {
+		if (mmkey->type == MLX5_MKEY_MW) {
+			mw = container_of(mmkey, struct mlx5_ib_mw, mmkey);
+			ndescs = mw->ndescs;
+		} else if (mmkey->type == MLX5_MKEY_MR_USER) {
+			mr = container_of(mmkey, struct mlx5_ib_mr, mmkey);
+			ndescs = mr->max_descs;
+		} else {
+			mlx5_ib_warn(dev, "wrong mkey type %d\n", mmkey->type);
+			ret = -EFAULT;
+			goto srcu_unlock;
+		}
 
 		if (depth >= MLX5_CAP_GEN(dev->mdev, max_indirection)) {
 			mlx5_ib_dbg(dev, "indirection level exceeded\n");
@@ -753,7 +761,7 @@ next_mr:
 		}
 
 		outlen = MLX5_ST_SZ_BYTES(query_mkey_out) +
-			sizeof(*pklm) * (mw->ndescs - 2);
+			sizeof(*pklm) * (ndescs - 2);
 
 		if (outlen > cur_outlen) {
 			kfree(out);
@@ -768,14 +776,16 @@ next_mr:
 		pklm = (struct mlx5_klm *)MLX5_ADDR_OF(query_mkey_out, out,
 						       bsf0_klm0_pas_mtt0_1);
 
-		ret = mlx5_core_query_mkey(dev->mdev, &mw->mmkey, out, outlen);
-		if (ret)
+		ret = mlx5_core_query_mkey(dev->mdev, mmkey, out, outlen);
+		if (ret) {
+			mlx5_ib_warn(dev, "ret %d\n", ret);
 			goto srcu_unlock;
+		}
 
 		offset = io_virt - MLX5_GET64(query_mkey_out, out,
 					      memory_key_mkey_entry.start_addr);
 
-		for (i = 0; bcnt && i < mw->ndescs; i++, pklm++) {
+		for (i = 0; bcnt && i < ndescs; i++, pklm++) {
 			if (offset >= be32_to_cpu(pklm->bcount)) {
 				offset -= be32_to_cpu(pklm->bcount);
 				continue;
@@ -797,12 +807,6 @@ next_mr:
 
 			bcnt -= frame->bcnt;
 		}
-		break;
-
-	default:
-		mlx5_ib_dbg(dev, "wrong mkey type %d\n", mmkey->type);
-		ret = -EFAULT;
-		goto srcu_unlock;
 	}
 
 	if (head) {
