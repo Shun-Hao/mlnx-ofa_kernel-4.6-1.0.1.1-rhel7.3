@@ -675,7 +675,6 @@ static int reduce_tx_pending(struct mlx5_dc_data *dcd, int num)
 			polled = send_completed - dcd->last_send_completed;
 			dcd->tx_pending = (unsigned int)(dcd->cur_send - send_completed);
 			num -= polled;
-			atomic64_add(polled, &dcd->dev->dc_stats[dcd->port - 1].cnaks);
 			dcd->last_send_completed = send_completed;
 		}
 	}
@@ -741,6 +740,7 @@ static int send_cnak(struct mlx5_dc_data *dcd, struct mlx5_send_wr *mlx_wr,
 	if (likely(!err)) {
 		dcd->tx_pending++;
 		dcd->cur_send++;
+		atomic64_inc(&dcd->dev->dc_stats[dcd->port - 1].cnaks);
 	}
 
 	return err;
