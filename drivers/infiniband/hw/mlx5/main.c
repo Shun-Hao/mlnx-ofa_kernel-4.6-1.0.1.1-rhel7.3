@@ -5326,7 +5326,7 @@ static int delay_drop_debugfs_init(struct mlx5_ib_dev *dev)
 {
 	struct mlx5_ib_dbg_delay_drop *dbg;
 
-	if (!mlx5_debugfs_root)
+	if (!mlx5_debugfs_root || dev->rep)
 		return 0;
 
 	dbg = kzalloc(sizeof(*dbg), GFP_KERNEL);

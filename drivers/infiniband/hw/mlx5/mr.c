@@ -2310,6 +2310,9 @@ static int mlx5_mr_sysfs_init(struct mlx5_ib_dev *dev)
 	int i;
 	int err;
 
+	if (dev->rep)
+		return 0;
+
 	err = kobject_init_and_add(&dev->mr_cache, &cache_type,
 				   &device->kobj, "mr_cache");
 	if (err)
@@ -2345,6 +2348,9 @@ static void mlx5_mr_sysfs_cleanup(struct mlx5_ib_dev *dev)
 	struct mlx5_mr_cache *cache = &dev->cache;
 	struct cache_order *co;
 	int i;
+
+	if (dev->rep)
+		return;
 
 	for (i = MAX_MR_CACHE_ENTRIES - 1; i >= 0; i--) {
 		co = &cache->ent[i].co;
