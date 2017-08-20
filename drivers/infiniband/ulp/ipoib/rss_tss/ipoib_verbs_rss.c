@@ -353,7 +353,10 @@ static int ipoib_create_parent_qp(struct net_device *dev,
 	struct ib_exp_qp_init_attr init_attr = {
 		.sq_sig_type = IB_SIGNAL_ALL_WR,
 		.qp_type     = IB_EXP_UD_RSS_TSS,
-		.cap.max_inline_data    = IPOIB_MAX_INLINE_SIZE
+		.cap.max_inline_data    = IPOIB_MAX_INLINE_SIZE,
+		.cap.max_send_wr	= priv->sendq_size,
+		.cap.max_send_sge 	= min_t(u32, priv->ca->attrs.max_sge,
+						MAX_SKB_FRAGS + 1),
 	};
 	struct ib_qp *qp;
 
@@ -377,16 +380,6 @@ static int ipoib_create_parent_qp(struct net_device *dev,
 
 	if (priv->hca_caps & IB_DEVICE_MANAGED_FLOW_STEERING)
 		init_attr.create_flags |= IB_QP_CREATE_NETIF_QP;
-
-	/*
-	 * NO TSS (tss_qp_num = 0 priv->num_tx_queues  == 1)
-	 * OR TSS is not supported in HW in this case
-	 * parent QP is used for ARP and friend transmission
-	 */
-	if (priv->num_tx_queues > priv->tss_qp_num) {
-		init_attr.cap.max_send_wr  = priv->sendq_size;
-		init_attr.cap.max_send_sge = 1;
-	}
 
 	/* No RSS parent QP will be used for RX */
 	if (priv->rss_qp_num == 0) {
