@@ -1110,7 +1110,7 @@ static struct kobj_type dc_type = {
 	.default_attrs = dc_attrs
 };
 
-static int init_sysfs(struct mlx5_ib_dev *dev)
+static int init_dc_sysfs(struct mlx5_ib_dev *dev)
 {
 	struct device *device = &dev->ib_dev.dev;
 
@@ -1123,7 +1123,7 @@ static int init_sysfs(struct mlx5_ib_dev *dev)
 	return 0;
 }
 
-static void cleanup_sysfs(struct mlx5_ib_dev *dev)
+static void cleanup_dc_sysfs(struct mlx5_ib_dev *dev)
 {
 	if (dev->dc_kobj) {
 		kobject_put(dev->dc_kobj);
@@ -1131,8 +1131,8 @@ static void cleanup_sysfs(struct mlx5_ib_dev *dev)
 	}
 }
 
-static int init_port_sysfs(struct mlx5_dc_stats *dc_stats,
-			   struct mlx5_ib_dev *dev, int port)
+static int init_dc_port_sysfs(struct mlx5_dc_stats *dc_stats,
+			      struct mlx5_ib_dev *dev, int port)
 {
 	int ret;
 
@@ -1145,7 +1145,7 @@ static int init_port_sysfs(struct mlx5_dc_stats *dc_stats,
 	return ret;
 }
 
-static void cleanup_port_sysfs(struct mlx5_dc_stats *dc_stats)
+static void cleanup_dc_port_sysfs(struct mlx5_dc_stats *dc_stats)
 {
 	if (!dc_stats->initialized)
 		return;
@@ -1348,7 +1348,7 @@ int mlx5_ib_init_dc_improvements(struct mlx5_ib_dev *dev)
 
 	max_dc_cnak_qps = min_t(int, 1 << MLX5_CAP_GEN(mdev, log_max_dc_cnak_qps),
 			      dev->ib_dev.num_comp_vectors / MLX5_CAP_GEN(mdev, num_ports));
-	err = init_sysfs(dev);
+	err = init_dc_sysfs(dev);
 	if (err)
 		return err;
 
@@ -1376,7 +1376,7 @@ int mlx5_ib_init_dc_improvements(struct mlx5_ib_dev *dev)
 			if (err)
 				goto err;
 		}
-		err = init_port_sysfs(&dev->dc_stats[port - 1], dev, port);
+		err = init_dc_port_sysfs(&dev->dc_stats[port - 1], dev, port);
 		if (err) {
 			mlx5_ib_warn(dev, "failed to initialize DC cnak sysfs\n");
 			goto err;
@@ -1392,11 +1392,11 @@ err:
 	for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
 		for (i = 0; i < ini_dc_cnak_qps; i++)
 			cleanup_driver_cnak(dev, port, i);
-		cleanup_port_sysfs(&dev->dc_stats[port - 1]);
+		cleanup_dc_port_sysfs(&dev->dc_stats[port - 1]);
 		kfree(dev->dc_stats[port - 1].rx_scatter);
 		kfree(dev->dcd[port - 1]);
 	}
-	cleanup_sysfs(dev);
+	cleanup_dc_sysfs(dev);
 
 	return err;
 }
@@ -1409,13 +1409,124 @@ void mlx5_ib_cleanup_dc_improvements(struct mlx5_ib_dev *dev)
 	for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
 		for (i = 0; i < dev->num_dc_cnak_qps; i++)
 			cleanup_driver_cnak(dev, port, i);
-		cleanup_port_sysfs(&dev->dc_stats[port - 1]);
+		cleanup_dc_port_sysfs(&dev->dc_stats[port - 1]);
 		kfree(dev->dc_stats[port - 1].rx_scatter);
 		kfree(dev->dcd[port - 1]);
 	}
-	cleanup_sysfs(dev);
+	cleanup_dc_sysfs(dev);
 
 	mlx5_ib_disable_dc_tracer(dev);
+}
+
+struct tc_attribute {
+	struct attribute attr;
+	ssize_t (*show)(struct mlx5_tc_data *, struct tc_attribute *, char *buf);
+	ssize_t (*store)(struct mlx5_tc_data *, struct tc_attribute *,
+			 const char *buf, size_t count);
+};
+
+#define TC_ATTR(_name, _mode, _show, _store) \
+struct tc_attribute tc_attr_##_name = __ATTR(_name, _mode, _show, _store)
+
+static ssize_t traffic_class_show(struct mlx5_tc_data *tcd, struct tc_attribute *unused, char *buf)
+{
+	return sprintf(buf, "%d\n", tcd->val);
+}
+
+static ssize_t traffic_class_store(struct mlx5_tc_data *tcd, struct tc_attribute *unused,
+				   const char *buf, size_t count)
+{
+	long var;
+
+	if (kstrtol(buf, 0, &var))
+		return -EINVAL;
+
+	if (var > 0xff)
+		return -EINVAL;
+
+	tcd->val = var;
+	return count;
+}
+
+static TC_ATTR(traffic_class, 0644, traffic_class_show, traffic_class_store);
+
+static struct attribute *tc_attrs[] = {
+	&tc_attr_traffic_class.attr,
+	NULL
+};
+
+static ssize_t tc_attr_show(struct kobject *kobj,
+			    struct attribute *attr, char *buf)
+{
+	struct tc_attribute *tc_attr = container_of(attr, struct tc_attribute, attr);
+	struct mlx5_tc_data *d = container_of(kobj, struct mlx5_tc_data, kobj);
+
+	if (!tc_attr->show)
+		return -EIO;
+
+	return tc_attr->show(d, tc_attr, buf);
+}
+
+static ssize_t tc_attr_store(struct kobject *kobj,
+			     struct attribute *attr, const char *buf, size_t count)
+{
+	struct tc_attribute *tc_attr = container_of(attr, struct tc_attribute, attr);
+	struct mlx5_tc_data *d = container_of(kobj, struct mlx5_tc_data, kobj);
+
+	if (!tc_attr->store)
+		return -EIO;
+
+	return tc_attr->store(d, tc_attr, buf, count);
+}
+
+static const struct sysfs_ops tc_sysfs_ops = {
+	.show = tc_attr_show,
+	.store = tc_attr_store
+};
+
+static struct kobj_type tc_type = {
+	.sysfs_ops     = &tc_sysfs_ops,
+	.default_attrs = tc_attrs
+};
+
+int init_tc_sysfs(struct mlx5_ib_dev *dev)
+{
+	struct device *device = &dev->ib_dev.dev;
+	int port;
+	int err;
+
+	dev->tc_kobj = kobject_create_and_add("tc", &device->kobj);
+	if (!dev->tc_kobj)
+		return -ENOMEM;
+	for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
+		struct mlx5_tc_data *tcd = &dev->tcd[port - 1];
+
+		err = kobject_init_and_add(&tcd->kobj, &tc_type, dev->tc_kobj, "%d", port);
+		if (err)
+			goto err;
+		tcd->val = -1;
+		tcd->initialized = true;
+	}
+	return 0;
+err:
+	cleanup_tc_sysfs(dev);
+	return err;
+}
+
+void cleanup_tc_sysfs(struct mlx5_ib_dev *dev)
+{
+	if (dev->tc_kobj) {
+		int port;
+
+		kobject_put(dev->tc_kobj);
+		dev->tc_kobj = NULL;
+		for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
+			struct mlx5_tc_data *tcd = &dev->tcd[port - 1];
+
+			if (tcd->initialized)
+				kobject_put(&tcd->kobj);
+		}
+	}
 }
 
 static phys_addr_t idx2pfn(struct mlx5_ib_dev *dev, int idx)

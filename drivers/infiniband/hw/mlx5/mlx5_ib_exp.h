@@ -107,6 +107,12 @@ struct mlx5_dc_data {
 	struct ib_wc		wc_tbl[MLX5_CNAK_RX_POLL_CQ_QUOTA];
 };
 
+struct mlx5_tc_data {
+	bool initialized;
+	int val;
+	struct kobject kobj;
+};
+
 struct mlx5_dc_tracer {
 	struct page	*pg;
 	dma_addr_t	dma;
@@ -139,6 +145,8 @@ static inline struct mlx5_ib_dc_target *to_mdct(struct ib_dct *ibdct)
 {
 	return container_of(ibdct, struct mlx5_ib_dc_target, ibdct);
 }
+int init_tc_sysfs(struct mlx5_ib_dev *dev);
+void cleanup_tc_sysfs(struct mlx5_ib_dev *dev);
 
 struct ib_dct *mlx5_ib_create_dc_target(struct ib_pd *pd,
 				  struct ib_dct_init_attr *attr,

@@ -6294,6 +6294,23 @@ static void mlx5_ib_stage_rep_reg_cleanup(struct mlx5_ib_dev *dev)
 	mlx5_ib_unregister_vport_reps(dev);
 }
 
+int mlx5_ib_stage_tc_sysfs_init(struct mlx5_ib_dev *dev)
+{
+	int err;
+	err = init_tc_sysfs(dev);
+	if (err) {
+		mlx5_ib_err(dev, "Fail to init tc sysfs\n");
+		return err;
+	}
+
+	return 0;
+}
+
+void mlx5_ib_stage_tc_sysfs_cleanup(struct mlx5_ib_dev *dev)
+{
+	cleanup_tc_sysfs(dev);
+}
+
 void __mlx5_ib_remove(struct mlx5_ib_dev *dev,
 		      const struct mlx5_ib_profile *profile,
 		      int stage)
@@ -6392,6 +6409,9 @@ static const struct mlx5_ib_profile pf_profile = {
 	STAGE_CREATE(MLX5_IB_STAGE_DC_TRACER,
 		     mlx5_ib_stage_dc_tracer_init,
 		     mlx5_ib_stage_dc_tracer_cleanup),
+	STAGE_CREATE(MLX5_IB_STAGE_TC_SYSFS,
+		     mlx5_ib_stage_tc_sysfs_init,
+		     mlx5_ib_stage_tc_sysfs_cleanup),
 };
 
 static const struct mlx5_ib_profile nic_rep_profile = {
@@ -6434,6 +6454,9 @@ static const struct mlx5_ib_profile nic_rep_profile = {
 	STAGE_CREATE(MLX5_IB_STAGE_POST_IB_REG_UMR,
 		     mlx5_ib_stage_post_ib_reg_umr_init,
 		     mlx5_ib_stage_post_ib_reg_umr_cleanup),
+	STAGE_CREATE(MLX5_IB_STAGE_TC_SYSFS,
+		     mlx5_ib_stage_tc_sysfs_init,
+		     mlx5_ib_stage_tc_sysfs_cleanup),
 	STAGE_CREATE(MLX5_IB_STAGE_REP_REG,
 		     mlx5_ib_stage_rep_reg_init,
 		     mlx5_ib_stage_rep_reg_cleanup),
