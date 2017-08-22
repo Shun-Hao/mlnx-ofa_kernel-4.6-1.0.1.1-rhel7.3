@@ -2996,6 +2996,7 @@ static int mlx5_set_path(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 	enum ib_gid_type gid_type;
 	u8 ah_flags = rdma_ah_get_ah_flags(ah);
 	u8 sl = rdma_ah_get_sl(ah);
+	u8 tclass = grh->traffic_class;
 
 	if (attr_mask & IB_QP_PKEY_INDEX)
 		path->pkey_index = cpu_to_be16(alt ? attr->alt_pkey_index :
@@ -3009,6 +3010,9 @@ static int mlx5_set_path(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 			       dev->mdev->port_caps[port - 1].gid_table_len);
 			return -EINVAL;
 		}
+
+		if (dev->tcd[port - 1].val >= 0)
+			tclass = dev->tcd[port - 1].val;
 	}
 
 	if (ah->type == RDMA_AH_ATTR_TYPE_ROCE) {
@@ -3025,7 +3029,7 @@ static int mlx5_set_path(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 		path->dci_cfi_prio_sl = (sl & 0x7) << 4;
 		gid_type = ah->grh.sgid_attr->gid_type;
 		if (gid_type == IB_GID_TYPE_ROCE_UDP_ENCAP)
-			path->ecn_dscp = (grh->traffic_class >> 2) & 0x3f;
+			path->ecn_dscp = (tclass >> 2) & 0x3f;
 	} else {
 		path->fl_free_ar = (path_flags & MLX5_PATH_FLAG_FL) ? 0x80 : 0;
 		path->fl_free_ar |=
@@ -3046,7 +3050,7 @@ static int mlx5_set_path(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 		else
 			path->hop_limit  = ah->grh.hop_limit;
 		path->tclass_flowlabel =
-			cpu_to_be32((grh->traffic_class << 20) |
+			cpu_to_be32((tclass << 20) |
 				    (grh->flow_label));
 		memcpy(path->rgid, grh->dgid.raw, 16);
 	}
