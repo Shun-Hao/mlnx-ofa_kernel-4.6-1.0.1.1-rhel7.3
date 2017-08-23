@@ -105,6 +105,7 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
 		return PTR_ERR(obj);
 	obj->uxrcd = NULL;
 	obj->uevent.uobject.user_handle = cmd_exp->user_handle;
+	mutex_init(&obj->mcast_lock);
 
 	rx_qp = cmd_exp->rx_hash_conf.rx_hash_function ? 1 : 0;
 
