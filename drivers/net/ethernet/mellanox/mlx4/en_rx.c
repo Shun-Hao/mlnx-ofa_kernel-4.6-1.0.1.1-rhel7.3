@@ -645,6 +645,8 @@ static void mlx4_en_inline_scatter(struct mlx4_en_rx_ring *ring,
 	rx_desc->data[0].addr = cpu_to_be64(dma);
 
 	rx_desc->data[1].lkey = cpu_to_be32(MLX4_EN_MEMTYPE_PAD);
+
+	ring->inline_scatter++;
 }
 
 /* We reach this function only after checking that any of
