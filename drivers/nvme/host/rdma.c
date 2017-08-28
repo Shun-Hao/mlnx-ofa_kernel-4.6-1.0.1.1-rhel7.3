@@ -20,6 +20,7 @@
 #include <linux/slab.h>
 #include <rdma/mr_pool.h>
 #include <linux/err.h>
+#include <linux/sizes.h>
 #include <linux/string.h>
 #include <linux/atomic.h>
 #include <linux/blk-mq.h>
