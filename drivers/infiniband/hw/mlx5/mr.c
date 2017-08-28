@@ -136,11 +136,8 @@ static void update_odp_mr(struct mlx5_ib_mr *mr, struct mlx5_ib_dev *dev)
 		 * the invalidation handler.
 		 */
 		smp_wmb();
-		if (dev) {
+		if (dev)
 			atomic_inc(&dev->odp_stats.num_odp_mrs);
-			atomic_add(ib_umem_num_pages(mr->umem),
-				   &dev->odp_stats.num_odp_mr_pages);
-		}
 	}
 }
 #endif
@@ -1588,9 +1585,6 @@ static void dereg_mr(struct mlx5_ib_dev *dev, struct mlx5_ib_mr *mr)
 		else
 			mlx5_ib_free_implicit_mr(mr);
 		atomic_dec(&dev->odp_stats.num_odp_mrs);
-
-		atomic_sub(ib_umem_num_pages(mr->umem),
-			   &dev->odp_stats.num_odp_mr_pages);
 		/*
 		 * We kill the umem before the MR for ODP,
 		 * so that there will not be any invalidations in

@@ -124,10 +124,11 @@ void ib_umem_odp_release(struct ib_umem_odp *umem_odp);
 int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 start_offset,
 			      u64 bcnt, u64 access_mask,
 			      unsigned long current_seq,
-			      enum ib_odp_dma_map_flags flags);
+			      enum ib_odp_dma_map_flags flags,
+			      int *num_pages);
 
 void ib_umem_odp_unmap_dma_pages(struct ib_umem_odp *umem_odp, u64 start_offset,
-				 u64 bound);
+				 u64 bound, int *num_pages);
 
 typedef int (*umem_call_back)(struct ib_umem_odp *item, u64 start, u64 end,
 			      void *cookie);
