@@ -1579,6 +1579,13 @@ static void raw_packet_qp_copy_info(struct mlx5_ib_qp *qp,
 	rq->doorbell = &qp->db;
 }
 
+static bool tunnel_offloads_supported(struct mlx5_ib_dev *dev)
+{
+	return  (MLX5_CAP_ETH(dev->mdev, tunnel_stateless_vxlan) ||
+		 MLX5_CAP_ETH(dev->mdev, tunnel_stateless_gre) ||
+		 MLX5_CAP_ETH(dev->mdev, tunnel_stateless_geneve_rx));
+}
+
 static void destroy_rss_raw_qp_tir(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp)
 {
 	if (qp->flags_en & (MLX5_QP_FLAG_TIR_ALLOW_SELF_LB_UC |
@@ -1615,8 +1622,16 @@ static int create_rss_raw_qp_tir(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 	u8 *rx_hash_key;
 	u8 rx_hash_function;
 	u8 rx_key_len;
+	u8 tunnel_offloads_en = 0;
 
 	if (is_exp) {
+		if (init_attr->create_flags  & IB_QP_EXP_CREATE_TUNNEL_OFFLOADS) {
+			if (!tunnel_offloads_supported(dev)) {
+				mlx5_ib_dbg(dev, "Tunnel offloads isn't supported\n");
+				return -EOPNOTSUPP;
+			}
+			tunnel_offloads_en = 1;
+		}
 		mlx5_ib_exp_get_hash_parameters(init_attr, &rwq_ind_tbl,
 						&rx_hash_fields_mask,
 						&ind_tbl_num, &rx_hash_key,
@@ -2043,9 +2058,23 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 		qp->flags |= MLX5_IB_QP_CAP_SCATTER_FCS;
 	}
 
-	if (is_exp && (init_attr->create_flags & IB_QP_EXP_CREATE_RX_END_PADDING) &&
-	    MLX5_CAP_GEN(mdev, end_pad))
-		qp->flags |= MLX5_IB_QP_PCI_WRITE_END_PADDING;
+	if (is_exp) {
+		if ((init_attr->create_flags & IB_QP_EXP_CREATE_RX_END_PADDING) &&
+		    MLX5_CAP_GEN(mdev, end_pad))
+			qp->flags |= MLX5_IB_QP_PCI_WRITE_END_PADDING;
+
+		if (init_attr->create_flags & IB_QP_EXP_CREATE_TUNNEL_OFFLOADS) {
+			if (init_attr->qp_type != IB_QPT_RAW_PACKET) {
+				mlx5_ib_dbg(dev, "Tunnel offload is supported for RAW QP only\n");
+				return -EOPNOTSUPP;
+			}
+			else if (!tunnel_offloads_supported(dev)) {
+				mlx5_ib_dbg(dev, "Tunnel offload isn't supported by device\n");
+				return -EOPNOTSUPP;
+			}
+			qp->tunnel_offload_en = true;
+		}
+	}
 
 	if (init_attr->sq_sig_type == IB_SIGNAL_ALL_WR)
 		qp->sq_signal_bits = MLX5_WQE_CTRL_CQ_UPDATE;

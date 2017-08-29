@@ -232,6 +232,23 @@ static void mlx5_update_tm_cap(struct mlx5_ib_dev *dev,
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_TM_CAPS;
 }
 
+static void mlx5_update_tunnel_offloads_caps(struct mlx5_ib_dev *dev,
+					     struct ib_exp_device_attr *props)
+{
+	props->tunnel_offloads_caps = 0;
+
+	if (MLX5_CAP_ETH(dev->mdev, tunnel_stateless_vxlan))
+		props->tunnel_offloads_caps |=
+			IBV_EXP_RAW_PACKET_CAP_TUNNELED_OFFLOAD_VXLAN;
+	if (MLX5_CAP_ETH(dev->mdev, tunnel_stateless_geneve_rx))
+		props->tunnel_offloads_caps |=
+			IBV_EXP_RAW_PACKET_CAP_TUNNELED_OFFLOAD_GENEVE;
+	if (MLX5_CAP_ETH(dev->mdev, tunnel_stateless_gre))
+		props->tunnel_offloads_caps|=
+			IBV_EXP_RAW_PACKET_CAP_TUNNELED_OFFLOAD_GRE;
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_TUNNEL_OFFLOADS_CAPS;
+}
+
 int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			     struct ib_exp_device_attr *props,
 			     struct ib_udata *uhw)
@@ -441,6 +458,7 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 
 	mlx5_update_ooo_cap(dev, props);
 	mlx5_update_tm_cap(dev, props);
+	mlx5_update_tunnel_offloads_caps(dev, props);
 
 	return 0;
 }
