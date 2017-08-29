@@ -205,6 +205,11 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
 			attr->create_flags &= ~IB_QP_EXP_USER_CREATE_SCATTER_FCS;
 			attr->create_flags |= IB_QP_CREATE_SCATTER_FCS;
 		}
+
+		if (attr->create_flags & IB_QP_EXP_USER_CREATE_TUNNEL_OFFLOADS) {
+			attr->create_flags &= ~IB_QP_EXP_USER_CREATE_TUNNEL_OFFLOADS;
+			attr->create_flags |= IB_QP_EXP_CREATE_TUNNEL_OFFLOADS;
+		}
 	}
 
 	if (cmd_exp->comp_mask & IB_UVERBS_EXP_CREATE_QP_QPG) {
@@ -633,6 +638,11 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		resp->tm_caps.max_sge = exp_attr->tm_caps.max_sge;
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_TM_CAPS;
 
+	}
+
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_TUNNEL_OFFLOADS_CAPS) {
+		resp->tunnel_offloads_caps = exp_attr->tunnel_offloads_caps;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_TUNNEL_OFFLOADS_CAPS;
 	}
 
 	ret = ib_copy_to_udata(ucore, resp, min_t(size_t, sizeof(*resp), ucore->outlen));
