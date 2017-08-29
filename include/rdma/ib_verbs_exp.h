@@ -74,7 +74,8 @@ enum ib_rx_hash_fields {
 	IB_RX_HASH_SRC_PORT_TCP	= 1 << 4,
 	IB_RX_HASH_DST_PORT_TCP	= 1 << 5,
 	IB_RX_HASH_SRC_PORT_UDP	= 1 << 6,
-	IB_RX_HASH_DST_PORT_UDP	= 1 << 7
+	IB_RX_HASH_DST_PORT_UDP	= 1 << 7,
+	IB_RX_HASH_INNER	= 1 << 31
 };
 
 struct ib_rx_hash_conf {
