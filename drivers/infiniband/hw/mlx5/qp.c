@@ -1623,6 +1623,7 @@ static int create_rss_raw_qp_tir(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 	u8 rx_hash_function;
 	u8 rx_key_len;
 	u8 tunnel_offloads_en = 0;
+	u8 inner_hash = 0;
 
 	if (is_exp) {
 		if (init_attr->create_flags  & IB_QP_EXP_CREATE_TUNNEL_OFFLOADS) {
@@ -1636,6 +1637,13 @@ static int create_rss_raw_qp_tir(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 						&rx_hash_fields_mask,
 						&ind_tbl_num, &rx_hash_key,
 						&rx_hash_function, &rx_key_len);
+		if (rx_hash_fields_mask & IB_RX_HASH_INNER) {
+			if (!tunnel_offloads_en) {
+				mlx5_ib_dbg(dev, "Tunnel offloads must be set for inner RSS\n");
+				return -EOPNOTSUPP;
+			}
+			inner_hash = 1;
+		}
 		goto common;
 	}
 
@@ -1726,14 +1734,14 @@ common:
 	MLX5_SET(tirc, tirc, indirect_table, ind_tbl_num);
 	MLX5_SET(tirc, tirc, transport_domain, tdn);
 
-	hfso = MLX5_ADDR_OF(tirc, tirc, rx_hash_field_selector_outer);
-
 	if (ucmd.flags & MLX5_QP_FLAG_TUNNEL_OFFLOADS)
 		MLX5_SET(tirc, tirc, tunneled_offload_en, 1);
 
 	MLX5_SET(tirc, tirc, self_lb_block, lb_flag);
 
 	if (ucmd.rx_hash_fields_mask & MLX5_RX_HASH_INNER)
+		inner_hash = 1;
+	if (inner_hash)
 		hfso = MLX5_ADDR_OF(tirc, tirc, rx_hash_field_selector_inner);
 	else
 		hfso = MLX5_ADDR_OF(tirc, tirc, rx_hash_field_selector_outer);
