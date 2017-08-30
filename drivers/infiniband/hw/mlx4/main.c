@@ -3078,7 +3078,7 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
 			goto err_notif;
 		}
 	}
-	if (dev->caps.flags2 & MLX4_DEV_CAP_FLAG2_ROCE_V1_V2) {
+	if (!mlx4_is_slave(dev) && dev->caps.flags2 & MLX4_DEV_CAP_FLAG2_ROCE_V1_V2) {
 		err = mlx4_config_roce_v2_port(dev, ROCE_V2_UDP_DPORT);
 		if (err)
 			goto err_notif;
