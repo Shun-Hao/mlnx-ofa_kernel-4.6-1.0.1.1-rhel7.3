@@ -145,11 +145,12 @@ int ipoib_transport_dev_init(struct net_device *dev, struct ib_device *ca)
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ib_qp_init_attr init_attr = {
 		.cap = {
-			.max_send_wr  = priv->sendq_size,
-			.max_recv_wr  = priv->recvq_size,
-			.max_send_sge = min_t(u32, priv->ca->attrs.max_send_sge,
-					      MAX_SKB_FRAGS + 1),
-			.max_recv_sge = IPOIB_UD_RX_SG
+			.max_send_wr	 = priv->sendq_size,
+			.max_recv_wr	 = priv->recvq_size,
+			.max_send_sge	 = min_t(u32, priv->ca->attrs.max_send_sge,
+						 MAX_SKB_FRAGS + 1),
+			.max_recv_sge	 = IPOIB_UD_RX_SG,
+			.max_inline_data = IPOIB_MAX_INLINE_SIZE,
 		},
 		.sq_sig_type = IB_SIGNAL_ALL_WR,
 		.qp_type     = IB_QPT_UD
