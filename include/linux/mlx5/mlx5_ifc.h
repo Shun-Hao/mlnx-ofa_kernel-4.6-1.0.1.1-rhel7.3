@@ -449,7 +449,8 @@ struct mlx5_ifc_fte_match_set_misc_bits {
 	u8         inner_second_cvlan_tag[0x1];
 	u8         outer_second_svlan_tag[0x1];
 	u8         inner_second_svlan_tag[0x1];
-	u8         reserved_at_64[0xc];
+	u8         outer_emd_tag[0x1];
+	u8         reserved_at_65[0xb];
 	u8         gre_protocol[0x10];
 
 	u8         gre_key_h[0x18];
@@ -472,7 +473,10 @@ struct mlx5_ifc_fte_match_set_misc_bits {
 	u8         inner_esp_spi[0x20];
 	u8	   outer_esp_spi[0x20];
 
-	u8         reserved_at_1a0[0x60];
+	u8         reserved_at_1a0[0x20];
+
+	u8         outer_emd_tag_data[6][0x8];
+	u8         reserved_at_1f0[0x10];
 };
 
 struct mlx5_ifc_fte_match_mpls_bits {
