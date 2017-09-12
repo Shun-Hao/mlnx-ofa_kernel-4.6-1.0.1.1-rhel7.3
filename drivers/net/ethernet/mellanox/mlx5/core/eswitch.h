@@ -100,6 +100,7 @@ struct mlx5_vport_info {
 	u8                      mac[ETH_ALEN];
 	u16                     vlan;
 	u8                      qos;
+	__be16			vlan_proto;
 	u64                     node_guid;
 	int                     link_state;
 	u32                     min_rate;
@@ -239,7 +240,7 @@ int mlx5_eswitch_set_vport_mac(struct mlx5_eswitch *esw,
 int mlx5_eswitch_set_vport_state(struct mlx5_eswitch *esw,
 				 int vport, int link_state);
 int mlx5_eswitch_set_vport_vlan(struct mlx5_eswitch *esw,
-				int vport, u16 vlan, u8 qos);
+				int vport, u16 vlan, u8 qos, __be16 vlan_proto);
 int mlx5_eswitch_set_vport_spoofchk(struct mlx5_eswitch *esw,
 				    int vport, bool spoofchk);
 int mlx5_eswitch_set_vport_trust(struct mlx5_eswitch *esw,
@@ -355,8 +356,8 @@ int mlx5_eswitch_add_vlan_action(struct mlx5_eswitch *esw,
 				 struct mlx5_esw_flow_attr *attr);
 int mlx5_eswitch_del_vlan_action(struct mlx5_eswitch *esw,
 				 struct mlx5_esw_flow_attr *attr);
-int __mlx5_eswitch_set_vport_vlan(struct mlx5_eswitch *esw,
-				  int vport, u16 vlan, u8 qos, u8 set_flags);
+int __mlx5_eswitch_set_vport_vlan(struct mlx5_eswitch *esw, int vport,
+				  u16 vlan, u8 qos, __be16 proto, u8 set_flags);
 
 static inline bool mlx5_eswitch_vlan_actions_supported(struct mlx5_core_dev *dev,
 						       u8 vlan_depth)

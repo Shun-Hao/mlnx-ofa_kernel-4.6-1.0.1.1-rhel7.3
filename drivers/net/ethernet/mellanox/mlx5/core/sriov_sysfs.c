@@ -379,15 +379,31 @@ static ssize_t vlan_store(struct mlx5_sriov_vf *g, struct vf_attributes *oa,
 			  const char *buf, size_t count)
 {
 	struct mlx5_core_dev *dev = g->dev;
+	char vproto_ext[5] = {'\0'};
+	__be16 vlan_proto;
 	u16 vlan_id;
 	u8 qos;
 	int err;
 
-	err = sscanf(buf, "%hu:%hhu", &vlan_id, &qos);
-	if (err != 2)
-		return -EINVAL;
+	err = sscanf(buf, "%hu:%hhu:802.%4s", &vlan_id, &qos, vproto_ext);
+	if (err == 3) {
+		if ((strcmp(vproto_ext, "1AD") == 0) ||
+		    (strcmp(vproto_ext, "1ad") == 0))
+			vlan_proto = htons(ETH_P_8021AD);
+		else if ((strcmp(vproto_ext, "1Q") == 0) ||
+			 (strcmp(vproto_ext, "1q") == 0))
+			vlan_proto = htons(ETH_P_8021Q);
+		else
+			return -EINVAL;
+	} else {
+		err = sscanf(buf, "%hu:%hhu", &vlan_id, &qos);
+		if (err != 2)
+			return -EINVAL;
+		vlan_proto = htons(ETH_P_8021Q);
+	}
 
-	err = mlx5_eswitch_set_vport_vlan(dev->priv.eswitch, g->vf + 1, vlan_id, qos);
+	err = mlx5_eswitch_set_vport_vlan(dev->priv.eswitch, g->vf + 1,
+					  vlan_id, qos, vlan_proto);
 	return err ? err : count;
 }
 

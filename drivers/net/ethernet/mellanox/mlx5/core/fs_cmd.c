@@ -432,6 +432,7 @@ static int mlx5_cmd_set_fte(struct mlx5_core_dev *dev,
 			 list_size);
 	}
 
+
 	err = mlx5_cmd_exec(dev, in, inlen, out, sizeof(out));
 err_out:
 	kvfree(in);
