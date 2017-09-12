@@ -403,8 +403,10 @@ nvmet_rdma_create_be_ctrl(struct nvmet_rdma_xrq *xrq,
 	int err;
 
 	be_ctrl = kzalloc(sizeof(*be_ctrl), GFP_KERNEL);
-	if (!be_ctrl)
-		return ERR_PTR(-ENOMEM);
+	if (!be_ctrl) {
+		err = -ENOMEM;
+		goto out_err;
+	}
 
 	INIT_WORK(&be_ctrl->release_work,
 		  nvmet_release_backend_ctrl_work);
@@ -448,7 +450,7 @@ out_put_resource:
 	nvme_peer_put_resource(be_ctrl->ofl);
 out_free_be_ctrl:
 	kfree(be_ctrl);
-
+out_err:
 	return ERR_PTR(err);
 }
 
