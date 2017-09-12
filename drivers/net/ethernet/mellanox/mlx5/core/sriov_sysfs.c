@@ -372,7 +372,8 @@ static ssize_t vlan_show(struct mlx5_sriov_vf *g, struct vf_attributes *oa,
 			 char *buf)
 {
 	return sprintf(buf,
-		       "usage: write <Vlan:Qos> to set VF Vlan and Qos\n");
+		       "usage: write <Vlan:Qos[:Proto]> to set VF Vlan,"
+		       " Qos, and optionally Vlan Protocol (default 802.1Q)\n");
 }
 
 static ssize_t vlan_store(struct mlx5_sriov_vf *g, struct vf_attributes *oa,
@@ -405,6 +406,18 @@ static ssize_t vlan_store(struct mlx5_sriov_vf *g, struct vf_attributes *oa,
 	err = mlx5_eswitch_set_vport_vlan(dev->priv.eswitch, g->vf + 1,
 					  vlan_id, qos, vlan_proto);
 	return err ? err : count;
+}
+
+static const char *vlan_proto_str(u16 vlan, u8 qos, __be16 vlan_proto)
+{
+	if (!vlan && !qos)
+		return "N/A";
+
+	switch (vlan_proto) {
+	case htons(ETH_P_8021AD):	return "802.1ad";
+	case htons(ETH_P_8021Q):	return "802.1Q";
+	default:			return "Invalid vlan protocol";
+	}
 }
 
 static ssize_t spoofcheck_show(struct mlx5_sriov_vf *g,
@@ -625,6 +638,8 @@ static ssize_t config_show(struct mlx5_sriov_vf *g, struct vf_attributes *oa,
 	p += _sprintf(p, buf, "MAC        : %pM\n", ivi->mac);
 	p += _sprintf(p, buf, "VLAN       : %d\n", ivi->vlan);
 	p += _sprintf(p, buf, "QoS        : %d\n", ivi->qos);
+	p += _sprintf(p, buf, "VLAN Proto : %s\n",
+		      vlan_proto_str(ivi->vlan, ivi->qos, ivi->vlan_proto));
 	p += _sprintf(p, buf, "SpoofCheck : %s\n", ivi->spoofchk ? "ON" : "OFF");
 	p += _sprintf(p, buf, "Trust      : %s\n", ivi->trusted ? "ON" : "OFF");
 	p += _sprintf(p, buf, "LinkState  : %s",   policy_str(ivi->link_state));
