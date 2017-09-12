@@ -529,6 +529,42 @@ int mlx5_query_port_pause(struct mlx5_core_dev *dev,
 }
 EXPORT_SYMBOL_GPL(mlx5_query_port_pause);
 
+int mlx5_set_port_pfc_prevention(struct mlx5_core_dev *dev,
+				 u16 pfc_preven_critical, u16 pfc_preven_minor)
+{
+	u32 in[MLX5_ST_SZ_DW(pfcc_reg)] = {0};
+	u32 out[MLX5_ST_SZ_DW(pfcc_reg)];
+
+	MLX5_SET(pfcc_reg, in, local_port, 1);
+	MLX5_SET(pfcc_reg, in, pptx_mask_n, 1);
+	MLX5_SET(pfcc_reg, in, pprx_mask_n, 1);
+	MLX5_SET(pfcc_reg, in, ppan_mask_n, 1);
+	MLX5_SET(pfcc_reg, in, critical_stall_mask, 1);
+	MLX5_SET(pfcc_reg, in, minor_stall_mask, 1);
+	MLX5_SET(pfcc_reg, in, device_stall_critical_watermark, pfc_preven_critical);
+	MLX5_SET(pfcc_reg, in, device_stall_minor_watermark, pfc_preven_minor);
+
+	return mlx5_core_access_reg(dev, in, sizeof(in), out,
+				    sizeof(out), MLX5_REG_PFCC, 0, 1);
+}
+
+int mlx5_query_port_pfc_prevention(struct mlx5_core_dev *dev,
+				   u16 *pfc_preven_critical)
+{
+	u32 out[MLX5_ST_SZ_DW(pfcc_reg)];
+	int err;
+
+	err = mlx5_query_pfcc_reg(dev, out, sizeof(out));
+	if (err)
+		return err;
+
+	if (pfc_preven_critical)
+		*pfc_preven_critical = MLX5_GET(pfcc_reg, out,
+						device_stall_critical_watermark);
+
+	return 0;
+}
+
 int mlx5_set_port_stall_watermark(struct mlx5_core_dev *dev,
 				  u16 stall_critical_watermark,
 				  u16 stall_minor_watermark)

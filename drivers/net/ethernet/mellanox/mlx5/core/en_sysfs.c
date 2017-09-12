@@ -361,6 +361,82 @@ static ssize_t mlx5e_show_link_down_reason(struct device *device,
 
 static DEVICE_ATTR(link_down_reason, S_IRUGO,
 		   mlx5e_show_link_down_reason, NULL);
+#define MLX5E_PFC_PREVEN_CRITICAL_AUTO_MSEC	100
+#define MLX5E_PFC_PREVEN_MINOR_AUTO_MSEC	85
+#define MLX5E_PFC_PREVEN_CRITICAL_DEFAULT_MSEC	8000
+#define MLX5E_PFC_PREVEN_MINOR_DEFAULT_MSEC	6800
+
+static ssize_t mlx5e_get_pfc_prevention_mode(struct device *device,
+					     struct device_attribute *attr,
+					     char *buf)
+{
+	struct mlx5e_priv *priv = netdev_priv(to_net_dev(device));
+	struct mlx5_core_dev *mdev = priv->mdev;
+	u16 pfc_prevention_critical;
+	char *str_critical;
+	int len = 0;
+	int err;
+
+	if (!MLX5_CAP_PCAM_FEATURE(mdev, pfcc_mask))
+		return -EOPNOTSUPP;
+
+	err = mlx5_query_port_pfc_prevention(mdev, &pfc_prevention_critical);
+	if (err)
+		return err;
+
+	str_critical = (pfc_prevention_critical ==
+			MLX5E_PFC_PREVEN_CRITICAL_DEFAULT_MSEC) ?
+			"default" : "auto";
+	len += sprintf(buf, "%s\n", str_critical);
+
+	return len;
+}
+
+static ssize_t mlx5e_set_pfc_prevention_mode(struct device *device,
+					     struct device_attribute *attr,
+					     const char *buf, size_t count)
+{
+	struct mlx5e_priv *priv = netdev_priv(to_net_dev(device));
+	struct net_device *netdev = priv->netdev;
+	struct mlx5_core_dev *mdev = priv->mdev;
+	char pfc_stall_prevention[ETH_GSTRING_LEN];
+	u16 pfc_prevention_critical;
+	u16 pfc_prevention_minor;
+	int err;
+
+	if (!MLX5_CAP_PCAM_FEATURE(mdev, pfcc_mask))
+		return -EOPNOTSUPP;
+
+	err = sscanf(buf, "%31s", pfc_stall_prevention);
+
+	if (!strcmp(pfc_stall_prevention, "default")) {
+		pfc_prevention_critical = MLX5E_PFC_PREVEN_CRITICAL_DEFAULT_MSEC;
+		pfc_prevention_minor = MLX5E_PFC_PREVEN_MINOR_DEFAULT_MSEC;
+	} else if (!strcmp(pfc_stall_prevention, "auto")) {
+		pfc_prevention_critical = MLX5E_PFC_PREVEN_CRITICAL_AUTO_MSEC;
+		pfc_prevention_minor = MLX5E_PFC_PREVEN_MINOR_AUTO_MSEC;
+	} else {
+		goto bad_input;
+	}
+
+	rtnl_lock();
+
+	err = mlx5_set_port_pfc_prevention(mdev, pfc_prevention_critical,
+					   pfc_prevention_minor);
+
+	rtnl_unlock();
+	if (err)
+		return err;
+
+	return count;
+
+bad_input:
+	netdev_err(netdev, "Bad Input\n");
+	return -EINVAL;
+}
+
+static DEVICE_ATTR(pfc_stall_prevention, S_IRUGO | S_IWUSR,
+		   mlx5e_get_pfc_prevention_mode, mlx5e_set_pfc_prevention_mode);
 
 static const char *mlx5e_get_cong_protocol(int protocol)
 {
@@ -681,6 +757,7 @@ static DEVICE_ATTR(vf_roce, S_IRUGO | S_IWUSR,
 
 static struct attribute *mlx5e_settings_attrs[] = {
 	&dev_attr_hfunc.attr,
+	&dev_attr_pfc_stall_prevention.attr,
 	NULL,
 };
 

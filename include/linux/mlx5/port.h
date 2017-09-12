@@ -147,6 +147,11 @@ int mlx5_set_port_pause(struct mlx5_core_dev *dev, u32 rx_pause, u32 tx_pause);
 int mlx5_query_port_pause(struct mlx5_core_dev *dev,
 			  u32 *rx_pause, u32 *tx_pause);
 
+int mlx5_set_port_pfc_prevention(struct mlx5_core_dev *dev, u16 pfc_preven_critical,
+				 u16 pfc_preven_minor);
+int mlx5_query_port_pfc_prevention(struct mlx5_core_dev *dev,
+				   u16 *pfc_preven_critical);
+
 int mlx5_set_port_pfc(struct mlx5_core_dev *dev, u8 pfc_en_tx, u8 pfc_en_rx);
 int mlx5_query_port_pfc(struct mlx5_core_dev *dev, u8 *pfc_en_tx,
 			u8 *pfc_en_rx);
