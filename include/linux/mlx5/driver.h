@@ -246,6 +246,10 @@ enum mlx5_eq_type {
 #endif
 };
 
+enum {
+	MLX5_MAX_DELAY_DROP_TIMEOUT_MS = 100,
+};
+
 struct mlx5_bfreg_info {
 	u32		       *sys_pages;
 	int			num_low_latency_bfregs;

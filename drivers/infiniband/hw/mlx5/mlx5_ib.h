@@ -783,10 +783,6 @@ struct mlx5_ib_dbg_cc_params {
 	struct mlx5_ib_dbg_param	params[MLX5_IB_DBG_CC_MAX];
 };
 
-enum {
-	MLX5_MAX_DELAY_DROP_TIMEOUT_MS = 100,
-};
-
 struct mlx5_ib_dbg_delay_drop {
 	struct dentry		*dir_debugfs;
 	struct dentry		*rqs_cnt_debugfs;

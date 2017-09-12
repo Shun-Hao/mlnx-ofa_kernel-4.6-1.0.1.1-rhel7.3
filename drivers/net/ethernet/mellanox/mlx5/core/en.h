@@ -237,6 +237,7 @@ enum mlx5e_priv_flag {
 	MLX5E_PFLAG_RX_STRIDING_RQ = (1 << 3),
 	MLX5E_PFLAG_RX_NO_CSUM_COMPLETE = (1 << 4),
 	MLX5E_PFLAG_SNIFFER = (1 << 5),
+	MLX5E_PFLAG_DROPLESS_RQ = (1 << 6),
 };
 
 #define MLX5E_SET_PFLAG(params, pflag, enable)			\
@@ -761,6 +762,14 @@ struct mlx5e_ecn_enable_ctx {
 	struct kobj_attribute	enable;
 };
 
+struct mlx5e_delay_drop {
+	struct work_struct	work;
+	/* serialize setting of delay drop */
+	struct mutex		lock;
+	u32			usec_timeout;
+	bool			activate;
+};
+
 struct mlx5e_priv {
 	/* priv data path fields - start */
 	struct mlx5e_txqsq *txq2sq[MLX5E_MAX_NUM_CHANNELS * MLX5E_MAX_NUM_TC + MLX5E_MAX_RL_QUEUES];
@@ -821,6 +830,7 @@ struct mlx5e_priv {
 
 	struct mlx5e_ecn_ctx ecn_ctx[MLX5E_CONG_PROTOCOL_NUM];
 	struct mlx5e_ecn_enable_ctx ecn_enable_ctx[MLX5E_CONG_PROTOCOL_NUM][8];
+	struct mlx5e_delay_drop delay_drop;
 };
 
 struct mlx5e_profile {
@@ -1129,6 +1139,12 @@ int mlx5e_get_dump_flag(struct net_device *netdev, struct ethtool_dump *dump);
 int mlx5e_get_dump_data(struct net_device *netdev, struct ethtool_dump *dump,
 			void *buffer);
 int mlx5e_set_dump(struct net_device *dev, struct ethtool_dump *dump);
+
+static inline bool mlx5e_dropless_rq_supported(struct mlx5_core_dev *mdev)
+{
+	return (MLX5_CAP_GEN(mdev, rq_delay_drop) &&
+		MLX5_CAP_GEN(mdev, general_notification_event));
+}
 
 void mlx5e_rx_dim_work(struct work_struct *work);
 void mlx5e_tx_dim_work(struct work_struct *work);

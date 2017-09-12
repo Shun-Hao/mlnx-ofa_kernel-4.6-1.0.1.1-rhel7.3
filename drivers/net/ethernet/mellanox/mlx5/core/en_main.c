@@ -282,6 +282,25 @@ static void mlx5e_update_stats_work(struct work_struct *work)
 	mutex_unlock(&priv->state_lock);
 }
 
+static void mlx5e_delay_drop_handler(struct work_struct *work)
+{
+	struct mlx5e_delay_drop *delay_drop =
+		container_of(work, struct mlx5e_delay_drop, work);
+	struct mlx5e_priv *priv = container_of(delay_drop, struct mlx5e_priv,
+					       delay_drop);
+	int err;
+
+	mutex_lock(&delay_drop->lock);
+	err = mlx5_core_set_delay_drop(priv->mdev,
+				       delay_drop->usec_timeout);
+	if (err) {
+		mlx5_core_warn(priv->mdev, "Failed to enable delay drop err=%d\n",
+			       err);
+		delay_drop->activate = false;
+	}
+	mutex_unlock(&delay_drop->lock);
+}
+
 void mlx5e_queue_update_stats(struct mlx5e_priv *priv)
 {
 	if (!priv->profile->update_stats)
@@ -305,6 +324,9 @@ static void mlx5e_async_event(struct mlx5_core_dev *mdev, void *vpriv,
 	case MLX5_DEV_EVENT_PORT_UP:
 	case MLX5_DEV_EVENT_PORT_DOWN:
 		queue_work(priv->wq, &priv->update_carrier_work);
+		break;
+	case MLX5_DEV_EVENT_DELAY_DROP_TIMEOUT:
+		queue_work(priv->wq, &priv->delay_drop.work);
 		break;
 	default:
 		break;
@@ -820,6 +842,29 @@ static void mlx5e_free_rq(struct mlx5e_rq *rq)
 	mlx5_wq_destroy(&rq->wq_ctrl);
 }
 
+static int mlx5e_set_delay_drop(struct mlx5e_priv *priv,
+				struct mlx5e_params *params)
+{
+	struct mlx5e_delay_drop *delay_drop = &priv->delay_drop;
+	int err = 0;
+
+	if (!MLX5E_GET_PFLAG(params, MLX5E_PFLAG_DROPLESS_RQ))
+		return 0;
+
+	mutex_lock(&delay_drop->lock);
+	if (delay_drop->activate)
+		goto out;
+
+	err = mlx5_core_set_delay_drop(priv->mdev, delay_drop->usec_timeout);
+	if (err)
+		goto out;
+
+	delay_drop->activate = true;
+out:
+	mutex_unlock(&delay_drop->lock);
+	return err;
+}
+
 static int mlx5e_create_rq(struct mlx5e_rq *rq,
 			   struct mlx5e_rq_param *param)
 {
@@ -1018,6 +1063,11 @@ static int mlx5e_open_rq(struct mlx5e_channel *c,
 	err = mlx5e_create_rq(rq, param);
 	if (err)
 		goto err_free_rq;
+
+	err = mlx5e_set_delay_drop(rq->channel->priv, params);
+	if (err)
+		mlx5_core_warn(c->mdev, "Failed to enable delay drop err=%d\n",
+			       err);
 
 	err = mlx5e_modify_rq_state(rq, MLX5_RQC_STATE_RST, MLX5_RQC_STATE_RDY);
 	if (err)
@@ -2341,6 +2391,9 @@ static void mlx5e_build_rq_param(struct mlx5e_priv *priv,
 	MLX5_SET(rqc, rqc, counter_set_id, priv->q_counter);
 	MLX5_SET(rqc, rqc, vsd,            params->vlan_strip_disable);
 	MLX5_SET(rqc, rqc, scatter_fcs,    params->scatter_fcs_en);
+
+	if (MLX5E_GET_PFLAG(params, MLX5E_PFLAG_DROPLESS_RQ))
+		MLX5_SET(rqc, rqc, delay_drop_en, 1);
 
 	param->wq.buf_numa_node = dev_to_node(&mdev->pdev->dev);
 }
@@ -4799,6 +4852,18 @@ void mlx5e_build_rss_params(struct mlx5e_params *params)
 				      MLX5E_INDIR_RQT_SIZE, params->num_channels);
 }
 
+static void mlx5e_init_delay_drop(struct mlx5e_priv *priv,
+				  struct mlx5e_params *params)
+{
+	if (!mlx5e_dropless_rq_supported(priv->mdev))
+		return;
+
+	mutex_init(&priv->delay_drop.lock);
+	priv->delay_drop.activate = false;
+	priv->delay_drop.usec_timeout = MLX5_MAX_DELAY_DROP_TIMEOUT_MS * 1000;
+	INIT_WORK(&priv->delay_drop.work, mlx5e_delay_drop_handler);
+}
+
 void mlx5e_build_nic_params(struct mlx5_core_dev *mdev,
 			    struct mlx5e_params *params,
 			    u16 max_channels, u16 mtu)
@@ -5031,6 +5096,7 @@ static int mlx5e_nic_init(struct mlx5_core_dev *mdev,
 	mlx5e_build_nic_params(mdev, &priv->channels.params,
 			       mlx5e_get_netdev_max_channels(netdev), netdev->mtu);
 
+	mlx5e_init_delay_drop(priv, &priv->channels.params);
 	mlx5e_timestamp_init(priv);
 
 	err = mlx5e_ipsec_init(priv);
