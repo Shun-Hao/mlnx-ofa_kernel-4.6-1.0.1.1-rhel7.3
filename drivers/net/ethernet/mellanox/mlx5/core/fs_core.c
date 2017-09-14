@@ -2830,9 +2830,12 @@ cleanup:
 	return err;
 }
 
+#define CACHE_SIZE_NAME 30
 int mlx5_init_fs(struct mlx5_core_dev *dev)
 {
 	struct mlx5_flow_steering *steering;
+	char *ftes_cache_name;
+	char *fgs_cache_name;
 	int err = 0;
 
 	err = mlx5_init_fc_stats(dev);
@@ -2842,13 +2845,24 @@ int mlx5_init_fs(struct mlx5_core_dev *dev)
 	steering = kzalloc(sizeof(*steering), GFP_KERNEL);
 	if (!steering)
 		return -ENOMEM;
+
+	ftes_cache_name = kzalloc(sizeof(char) * CACHE_SIZE_NAME, GFP_KERNEL);
+	fgs_cache_name = kzalloc(sizeof(char) * CACHE_SIZE_NAME, GFP_KERNEL);
+	if (!ftes_cache_name || !fgs_cache_name) {
+		err = -ENOMEM;
+		goto err;
+	}
+
 	steering->dev = dev;
 	dev->priv.steering = steering;
 
-	steering->fgs_cache = kmem_cache_create("mlx5_fs_fgs",
+	snprintf(ftes_cache_name, CACHE_SIZE_NAME, "fs_ftes_%s", dev->priv.name);
+	snprintf(fgs_cache_name, CACHE_SIZE_NAME, "fs_fgs_%s", dev->priv.name);
+	steering->fgs_cache = kmem_cache_create(fgs_cache_name,
 						sizeof(struct mlx5_flow_group), 0,
 						0, NULL);
-	steering->ftes_cache = kmem_cache_create("mlx5_fs_ftes", sizeof(struct fs_fte), 0,
+	steering->ftes_cache = kmem_cache_create(ftes_cache_name,
+						 sizeof(struct fs_fte), 0,
 						 0, NULL);
 	if (!steering->ftes_cache || !steering->fgs_cache) {
 		err = -ENOMEM;
@@ -2904,8 +2918,12 @@ int mlx5_init_fs(struct mlx5_core_dev *dev)
 			goto err;
 	}
 
+	kfree(ftes_cache_name);
+	kfree(fgs_cache_name);
 	return 0;
 err:
+	kfree(ftes_cache_name);
+	kfree(fgs_cache_name);
 	mlx5_cleanup_fs(dev);
 	return err;
 }
