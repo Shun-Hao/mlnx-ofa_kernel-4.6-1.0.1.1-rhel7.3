@@ -293,6 +293,17 @@ int mlx5_set_mtppse(struct mlx5_core_dev *mdev, u8 pin, u8 arm, u8 mode);
 
 int mlx5_firmware_flash(struct mlx5_core_dev *dev, const struct firmware *fw);
 
+enum {
+	UNLOCK,
+	LOCK,
+	CAP_ID = 0x9,
+};
+
+int mlx5_pciconf_cap9_sem(struct mlx5_core_dev *dev, int state);
+int mlx5_pciconf_set_addr_space(struct mlx5_core_dev *dev, u16 space);
+int mlx5_block_op_pciconf(struct mlx5_core_dev *dev,
+			  unsigned int offset, u32 *data,
+			  int length);
 int mlx5_mst_dump_init(struct mlx5_core_dev *dev);
 int mlx5_mst_capture(struct mlx5_core_dev *dev);
 u32 mlx5_mst_dump(struct mlx5_core_dev *dev, void *buff, u32 buff_sz);

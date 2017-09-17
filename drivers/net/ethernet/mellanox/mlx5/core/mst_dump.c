@@ -6774,13 +6774,7 @@ mlx5_mst_dump_regs_mt4115[MLX5_NUM_MST_OFFSETS_MT4115][2] = {{0x000000, 16388},
 	{0x11fdc0, 3} };
 
 enum {
-	CAP_ID = 0x9,
 	IFC_MAX_RETRIES = 2048
-};
-
-enum {
-	UNLOCK,
-	LOCK
 };
 
 enum {
@@ -6816,7 +6810,7 @@ struct mlx5_mst_dump {
 	struct mutex lock;
 };
 
-static int mlx5_pciconf_set_addr_space(struct mlx5_core_dev *dev, u16 space)
+int mlx5_pciconf_set_addr_space(struct mlx5_core_dev *dev, u16 space)
 {
 	int ret = 0;
 	u32 val;
@@ -6847,7 +6841,7 @@ out:
 	return ret;
 }
 
-static int mlx5_pciconf_cap9_sem(struct mlx5_core_dev *dev, int state)
+int mlx5_pciconf_cap9_sem(struct mlx5_core_dev *dev, int state)
 {
 	u32 counter = 0;
 	int retries = 0;
@@ -6985,9 +6979,9 @@ out:
 	return ret;
 }
 
-static int mlx5_block_op_pciconf(struct mlx5_core_dev *dev,
-				 unsigned int offset, u32 *data,
-				 int length)
+int mlx5_block_op_pciconf(struct mlx5_core_dev *dev,
+			  unsigned int offset, u32 *data,
+			  int length)
 {
 	int read = length;
 	int i;
@@ -7047,7 +7041,7 @@ static int mlx5_read4_block_old(struct mlx5_core_dev *dev,
 	return mlx5_block_op_pciconf_old(dev, offset, data, length);
 }
 
-static int mlx5_get_vendor_cap_addr(struct mlx5_core_dev *dev)
+int mlx5_get_vendor_cap_addr(struct mlx5_core_dev *dev)
 {
 	int vend_cap;
 	int ret;
