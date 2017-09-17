@@ -323,6 +323,23 @@ int mlx5_modify_other_hca_cap_roce(struct mlx5_core_dev *mdev,
 				   int function_id, bool value);
 int mlx5_get_other_hca_cap_roce(struct mlx5_core_dev *mdev,
 				int function_id, bool *value);
+/* crdump */
+struct mlx5_fw_crdump {
+	u32	crspace_size;
+	/* sync reading/freeing the data */
+	struct mutex crspace_mutex;
+	u32	vsec_addr;
+	u8	*crspace;
+};
+
+int mlx5_cr_protected_capture(struct mlx5_core_dev *dev, int size);
+
+#define MLX5_CORE_PROC "driver/mlx5_core"
+#define MLX5_CORE_PROC_CRDUMP "crdump"
+extern struct proc_dir_entry *mlx5_crdump_dir;
+int mlx5_crdump_init(struct mlx5_core_dev *dev);
+void mlx5_crdump_cleanup(struct mlx5_core_dev *dev);
+int mlx5_fill_cr_dump(struct mlx5_core_dev *dev);
 
 static inline int mlx5_lag_is_lacp_owner(struct mlx5_core_dev *dev)
 {

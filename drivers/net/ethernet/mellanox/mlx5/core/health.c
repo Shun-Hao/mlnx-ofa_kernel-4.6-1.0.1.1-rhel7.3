@@ -99,6 +99,10 @@ void mlx5_enter_error_state(struct mlx5_core_dev *dev, bool force)
 		goto unlock;
 
 	mlx5_core_err(dev, "start\n");
+
+	if(mlx5_fill_cr_dump(dev))
+		mlx5_core_err(dev, "Failed to collect crdump area.\n");
+
 	if (pci_channel_offline(dev->pdev) || in_fatal(dev) || force) {
 		dev->state = MLX5_DEVICE_STATE_INTERNAL_ERROR;
 		mlx5_lock_and_flush_cmdif(dev);
