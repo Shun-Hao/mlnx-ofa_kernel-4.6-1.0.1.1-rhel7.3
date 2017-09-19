@@ -672,6 +672,7 @@ ssize_t ib_uverbs_reg_mr(struct ib_uverbs_file *file,
 	struct ib_uobject           *uobj;
 	struct ib_pd                *pd;
 	struct ib_mr                *mr;
+	struct ib_mr_init_attr	     attr = {0};
 	int                          ret;
 	struct ib_device *ib_dev;
 
@@ -712,8 +713,12 @@ ssize_t ib_uverbs_reg_mr(struct ib_uverbs_file *file,
 		}
 	}
 
-	mr = pd->device->reg_user_mr(pd, cmd.start, cmd.length, cmd.hca_va,
-				     cmd.access_flags, &udata);
+	attr.start = cmd.start;
+	attr.length = cmd.length;
+	attr.hca_va = cmd.hca_va;
+	attr.access_flags = cmd.access_flags;
+
+	mr = pd->device->reg_user_mr(pd, &attr, &udata);
 	if (IS_ERR(mr)) {
 		ret = PTR_ERR(mr);
 		goto err_put;

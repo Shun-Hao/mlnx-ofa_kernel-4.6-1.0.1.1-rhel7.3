@@ -990,15 +990,17 @@ err1:
 }
 
 static struct ib_mr *rxe_reg_user_mr(struct ib_pd *ibpd,
-				     u64 start,
-				     u64 length,
-				     u64 iova,
-				     int access, struct ib_udata *udata)
+				     struct ib_mr_init_attr *attr,
+				     struct ib_udata *udata)
 {
 	int err;
 	struct rxe_dev *rxe = to_rdev(ibpd->device);
 	struct rxe_pd *pd = to_rpd(ibpd);
 	struct rxe_mem *mr;
+	int access = attr->access_flags;
+	u64 length = attr->length;
+	u64 start = attr->start;
+	u64 iova = attr->hca_va;
 
 	mr = rxe_alloc(&rxe->mr_pool);
 	if (!mr) {

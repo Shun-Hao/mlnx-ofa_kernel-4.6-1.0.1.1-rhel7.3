@@ -378,6 +378,13 @@ struct ib_dct {
 	u32			dct_num;
 };
 
+struct ib_mr_init_attr {
+	u64		start;
+	u64		length;
+	u64		hca_va;
+	int		access_flags;
+};
+
 /**
  * struct ib_mkey_attr - Memory key attributes
  *

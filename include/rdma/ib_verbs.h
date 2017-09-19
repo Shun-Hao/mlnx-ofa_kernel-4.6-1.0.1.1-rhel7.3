@@ -86,6 +86,7 @@ struct ib_nvmf_ctrl;
 struct ib_nvmf_backend_ctrl_init_attr;
 struct ib_nvmf_ns;
 struct ib_nvmf_ns_init_attr;
+struct ib_mr_init_attr;
 
 union ib_gid {
 	u8	raw[16];
@@ -2556,9 +2557,7 @@ struct ib_device {
 	struct ib_mr *             (*get_dma_mr)(struct ib_pd *pd,
 						 int mr_access_flags);
 	struct ib_mr *             (*reg_user_mr)(struct ib_pd *pd,
-						  u64 start, u64 length,
-						  u64 virt_addr,
-						  int mr_access_flags,
+						  struct ib_mr_init_attr *attr,
 						  struct ib_udata *udata);
 	int			   (*rereg_user_mr)(struct ib_mr *mr,
 						    int flags,

@@ -426,8 +426,8 @@ static void mlx4_invalidate_umem(void *invalidation_cookie,
 	complete(&mr->invalidation_comp);
 }
 
-struct ib_mr *mlx4_ib_reg_user_mr(struct ib_pd *pd, u64 start, u64 length,
-				  u64 virt_addr, int access_flags,
+struct ib_mr *mlx4_ib_reg_user_mr(struct ib_pd *pd,
+				  struct ib_mr_init_attr *attr,
 				  struct ib_udata *udata)
 {
 	struct mlx4_ib_dev *dev = to_mdev(pd->device);
@@ -436,6 +436,10 @@ struct ib_mr *mlx4_ib_reg_user_mr(struct ib_pd *pd, u64 start, u64 length,
 	int err;
 	int n;
 	struct ib_peer_memory_client *ib_peer_mem;
+	int access_flags = attr->access_flags;
+	u64 length = attr->length;
+	u64 start = attr->start;
+	u64 virt_addr = attr->hca_va;
 
 	if (access_flags & IB_EXP_ACCESS_PHYSICAL_ADDR)
 		return mlx4_ib_phys_addr(pd, length, virt_addr, access_flags);

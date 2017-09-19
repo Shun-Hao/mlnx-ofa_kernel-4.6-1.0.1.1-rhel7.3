@@ -793,6 +793,7 @@ int ib_uverbs_exp_reg_mr(struct ib_uverbs_file *file,
 {
 	struct ib_uverbs_exp_reg_mr cmd;
 	struct ib_uverbs_exp_reg_mr_resp resp;
+	struct ib_mr_init_attr attr = {0};
 	struct ib_device *ib_dev;
 	struct ib_uobject *uobj;
 	struct ib_pd      *pd;
@@ -858,8 +859,12 @@ int ib_uverbs_exp_reg_mr(struct ib_uverbs_file *file,
 #endif
 	}
 
-	mr = pd->device->reg_user_mr(pd, cmd.start, cmd.length, cmd.hca_va,
-					 access_flags, uhw);
+	attr.start = cmd.start;
+	attr.length = cmd.length;
+	attr.hca_va = cmd.hca_va;
+	attr.access_flags = access_flags;
+
+	mr = pd->device->reg_user_mr(pd, &attr, uhw);
 	if (IS_ERR(mr)) {
 		ret = PTR_ERR(mr);
 		goto err_put;
@@ -1458,7 +1463,6 @@ int ib_uverbs_exp_create_srq_resp(struct ib_uverbs_create_srq_resp *resp,
 }
 
 int ib_uverbs_exp_alloc_dm(struct ib_uverbs_file *file,
-			   struct ib_device *ib_dev,
 			   struct ib_udata *ucore, struct ib_udata *uhw)
 {
 	int out_len = ucore->outlen + uhw->outlen;
@@ -1466,6 +1470,7 @@ int ib_uverbs_exp_alloc_dm(struct ib_uverbs_file *file,
 	struct ib_uverbs_exp_alloc_dm_resp resp;
 	struct ib_uobject *uobj;
 	struct ib_dm *dm;
+	struct ib_device *ib_dev;
 	int ret;
 
 	if (ucore->inlen < sizeof(cmd))
@@ -1484,7 +1489,7 @@ int ib_uverbs_exp_alloc_dm(struct ib_uverbs_file *file,
 	if (cmd.comp_mask)
 		return -EINVAL;
 
-	uobj = uobj_alloc(UVERBS_OBJECT_DM, file->ucontext);
+	uobj = uobj_alloc(UVERBS_OBJECT_DM, file, &ib_dev);
 	if (IS_ERR(uobj))
 		return PTR_ERR(uobj);
 
@@ -1510,9 +1515,7 @@ int ib_uverbs_exp_alloc_dm(struct ib_uverbs_file *file,
 	if (ret)
 		goto err_copy;
 
-	uobj_alloc_commit(uobj);
-
-	return ret;
+	return  uobj_alloc_commit(uobj, ret);
 
 err_copy:
 	ib_exp_free_dm(dm);
@@ -1524,7 +1527,6 @@ err_alloc:
 }
 
 int ib_uverbs_exp_free_dm(struct ib_uverbs_file *file,
-			  struct ib_device *ib_dev,
 			  struct ib_udata *ucore, struct ib_udata *uhw)
 {
 	struct ib_uverbs_exp_free_dm  cmd;
@@ -1539,9 +1541,9 @@ int ib_uverbs_exp_free_dm(struct ib_uverbs_file *file,
 		return ret;
 
 	uobj = uobj_get_write(UVERBS_OBJECT_DM, cmd.dm_handle,
-		file->ucontext);
+		file);
 	if (IS_ERR(uobj))
 		return PTR_ERR(uobj);
 
-	return uobj_remove_commit(uobj);
+	return ret;
 }
