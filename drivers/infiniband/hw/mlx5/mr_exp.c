@@ -79,14 +79,11 @@ int mlx5_ib_exp_contig_mmap(struct ib_ucontext *ibcontext,
 	return 0;
 }
 
-struct ib_mr *mlx5_ib_phys_addr(struct ib_pd *pd, u64 length, u64 virt_addr,
+struct ib_mr *mlx5_ib_phys_addr(struct ib_pd *pd, u64 length, u64 start_addr,
 				int access_flags)
 {
 #ifdef CONFIG_INFINIBAND_PA_MR
-	if (virt_addr || length)
-		return ERR_PTR(-EINVAL);
-
-	return pd->device->get_dma_mr(pd, access_flags);
+	return mlx5_ib_get_dma_mr_ex(pd, access_flags, start_addr, length);
 #else
 	pr_debug("Physical Address MR support wasn't compiled in"
 		 "the RDMA subsystem. Recompile with Physical"

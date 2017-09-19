@@ -653,7 +653,8 @@ int mlx5_mr_cache_cleanup(struct mlx5_ib_dev *dev)
 	return 0;
 }
 
-struct ib_mr *mlx5_ib_get_dma_mr(struct ib_pd *pd, int acc)
+struct ib_mr *mlx5_ib_get_dma_mr_ex(struct ib_pd *pd, int acc,
+				    u64 start_addr, u64 length)
 {
 	struct mlx5_ib_dev *dev = to_mdev(pd->device);
 	int inlen = MLX5_ST_SZ_BYTES(create_mkey_in);
@@ -682,10 +683,11 @@ struct ib_mr *mlx5_ib_get_dma_mr(struct ib_pd *pd, int acc)
 	MLX5_SET(mkc, mkc, lw, !!(acc & IB_ACCESS_LOCAL_WRITE));
 	MLX5_SET(mkc, mkc, lr, 1);
 
-	MLX5_SET(mkc, mkc, length64, 1);
+	MLX5_SET(mkc, mkc, length64, length ? 0 : 1);
+	MLX5_SET64(mkc, mkc, len, length);
 	MLX5_SET(mkc, mkc, pd, to_mpd(pd)->pdn);
 	MLX5_SET(mkc, mkc, qpn, 0xffffff);
-	MLX5_SET64(mkc, mkc, start_addr, 0);
+	MLX5_SET64(mkc, mkc, start_addr, start_addr);
 
 	err = mlx5_core_create_mkey(mdev, &mr->mmkey, in, inlen);
 	if (err)
@@ -706,6 +708,11 @@ err_free:
 	kfree(mr);
 
 	return ERR_PTR(err);
+}
+
+struct ib_mr *mlx5_ib_get_dma_mr(struct ib_pd *pd, int acc)
+{
+	return mlx5_ib_get_dma_mr_ex(pd, acc, 0, 0);
 }
 
 static int get_octo_len(u64 addr, u64 len, int page_shift)
