@@ -171,6 +171,7 @@ enum ib_exp_device_cap_flags2 {
 	IB_EXP_DEVICE_RX_TCP_UDP_PKT_TYPE       = 1 << 15,
 	IB_EXP_DEVICE_SCATTER_FCS               = 1 << 16,
 	IB_EXP_DEVICE_DELAY_DROP                = 1 << 18,
+	IB_EXP_DEVICE_PHYSICAL_RANGE_MR		= 1 << 19,
 	IB_EXP_DEVICE_CROSS_CHANNEL	= 1 << 28, /* Comapt with user exp area */
 	IB_EXP_DEVICE_MASK =	IB_DEVICE_CROSS_CHANNEL |
 				IB_EXP_DEVICE_EC_OFFLOAD,

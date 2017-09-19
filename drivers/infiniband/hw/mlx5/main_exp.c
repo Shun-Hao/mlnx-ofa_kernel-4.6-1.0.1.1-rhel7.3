@@ -460,6 +460,8 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 	mlx5_update_tm_cap(dev, props);
 	mlx5_update_tunnel_offloads_caps(dev, props);
 
+	props->device_cap_flags2 |= IB_EXP_DEVICE_PHYSICAL_RANGE_MR;
+
 	return 0;
 }
 
