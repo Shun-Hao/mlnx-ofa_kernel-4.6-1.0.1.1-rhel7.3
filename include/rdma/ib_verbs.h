@@ -2414,6 +2414,8 @@ struct ib_device {
 	int                        (*exp_free_dm)(struct ib_dm *dm);
 	int                        (*exp_memcpy_dm)(struct ib_dm *dm,
 						    struct ib_exp_memcpy_dm_attr *attr);
+	struct ib_mr *             (*exp_alloc_mr)(struct ib_pd *pd,
+						   struct ib_mr_init_attr *attr);
 
 	/**
 	 * alloc_hw_stats - Allocate a struct rdma_hw_stats and fill in the

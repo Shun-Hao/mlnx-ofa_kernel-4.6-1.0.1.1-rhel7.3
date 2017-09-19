@@ -275,3 +275,26 @@ int ib_exp_memcpy_dm(struct ib_dm *dm, struct ib_exp_memcpy_dm_attr *attr)
 	return err;
 }
 EXPORT_SYMBOL_GPL(ib_exp_memcpy_dm);
+
+struct ib_mr *ib_exp_alloc_mr(struct ib_pd *pd, struct ib_mr_init_attr *attr)
+{
+	struct ib_mr *mr;
+
+	if (!pd->device->exp_alloc_mr)
+		return ERR_PTR(-ENOSYS);
+
+	if ((attr->mr_type == IB_MR_TYPE_DM) && !attr->dm)
+		return ERR_PTR(-EINVAL);
+
+	mr = pd->device->exp_alloc_mr(pd, attr);
+	if (!IS_ERR(mr)) {
+		mr->device  = pd->device;
+		mr->pd      = pd;
+		mr->uobject = NULL;
+		atomic_inc(&pd->usecnt);
+		mr->need_inval = false;
+	}
+
+	return mr;
+}
+EXPORT_SYMBOL_GPL(ib_exp_alloc_mr);
