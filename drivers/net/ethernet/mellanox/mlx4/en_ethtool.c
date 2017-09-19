@@ -1910,14 +1910,17 @@ static int mlx4_en_set_channels(struct net_device *dev,
 	struct mlx4_en_dev *mdev = priv->mdev;
 	struct mlx4_en_port_profile new_prof;
 	struct mlx4_en_priv *tmp;
+	struct ethtool_channels tmp_channel = {};
 	int port_up = 0;
 	int xdp_count;
 	int err = 0;
 	u8 up;
 
+	mlx4_en_get_channels(dev, &tmp_channel);
+
 	if (channel->other_count || channel->combined_count ||
-	    channel->tx_count > MLX4_EN_MAX_TX_RING_P_UP ||
-	    channel->rx_count > MAX_RX_RINGS ||
+	    channel->tx_count > tmp_channel.max_tx ||
+	    channel->rx_count > tmp_channel.max_rx ||
 	    !channel->tx_count || !channel->rx_count)
 		return -EINVAL;
 
