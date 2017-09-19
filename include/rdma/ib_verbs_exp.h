@@ -383,6 +383,9 @@ struct ib_mr_init_attr {
 	u64		length;
 	u64		hca_va;
 	int		access_flags;
+	struct ib_dm   *dm;
+	enum ib_mr_type mr_type;
+	u32 max_num_sg;
 };
 
 /**

@@ -402,7 +402,8 @@ enum ib_uverbs_exp_access_flags {
 };
 
 enum ib_uverbs_exp_reg_mr_ex_comp_mask {
-	IB_UVERBS_EXP_REG_MR_EX_RESERVED		= (u64)1 << 0,
+	IB_UVERBS_EXP_REG_MR_EX_DM_HANDLE		= (u64)1 << 1,
+	IB_UVERBS_EXP_REG_MR_EX_RESERVED		= (u64)1 << 2,
 };
 
 struct ib_uverbs_exp_reg_mr {
@@ -413,6 +414,7 @@ struct ib_uverbs_exp_reg_mr {
 	__u32 reserved;
 	__u64 exp_access_flags;
 	__u64 comp_mask;
+	__u32 dm_handle;
 };
 
 struct ib_uverbs_exp_reg_mr_resp {
