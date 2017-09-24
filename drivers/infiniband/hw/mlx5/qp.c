@@ -1716,6 +1716,7 @@ static int create_rss_raw_qp_tir(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 	}
 
 	rx_hash_fields_mask = ucmd.rx_hash_fields_mask;
+	rwq_ind_tbl = init_attr->rwq_ind_tbl;
 	ind_tbl_num = init_attr->rwq_ind_tbl->ind_tbl_num;
 	rx_hash_key = ucmd.rx_hash_key;
 	rx_hash_function = ucmd.rx_hash_function;
