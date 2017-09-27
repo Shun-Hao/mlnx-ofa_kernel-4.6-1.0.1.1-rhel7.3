@@ -161,6 +161,8 @@ int set_xrq_dc_params_entry(struct mlx5_core_dev *dev,
 	MLX5_SET(set_xrq_dc_params_entry_in, in, reverse_sl, dc_op->sl);
 	MLX5_SET(set_xrq_dc_params_entry_in, in, cnak_reverse_sl, dc_op->sl);
 	MLX5_SET(set_xrq_dc_params_entry_in, in, ack_timeout, dc_op->timeout);
+	MLX5_SET(set_xrq_dc_params_entry_in, in, multi_path,
+		 !!(dc_op->ooo_caps & IB_EXP_DCT_OOO_RW_DATA_PLACEMENT));
 	MLX5_SET64(set_xrq_dc_params_entry_in, in, dc_access_key,
 		   dc_op->dct_key);
 
