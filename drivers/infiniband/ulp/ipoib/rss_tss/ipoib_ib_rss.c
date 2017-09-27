@@ -268,9 +268,9 @@ static void ipoib_ib_handle_tx_wc_rss(struct ipoib_send_ring *send_ring,
 	dev_kfree_skb_any(tx_req->skb);
 
 	++send_ring->tx_tail;
-	if (unlikely(atomic_dec_return(&send_ring->tx_outstanding) == priv->sendq_size >> 1) &&
-	    __netif_subqueue_stopped(dev, send_ring->index) &&
-	    test_bit(IPOIB_FLAG_ADMIN_UP, &priv->flags))
+	if (unlikely(__netif_subqueue_stopped(dev, send_ring->index) &&
+		     ((send_ring->tx_head - send_ring->tx_tail) <= priv->sendq_size >> 1) &&
+		     test_bit(IPOIB_FLAG_ADMIN_UP, &priv->flags)))
 		netif_wake_subqueue(dev, send_ring->index);
 
 	if (wc->status != IB_WC_SUCCESS &&
@@ -506,8 +506,8 @@ int ipoib_send_rss(struct net_device *dev, struct sk_buff *skb,
 		send_ring->tx_wr.wr.send_flags |= IB_SEND_IP_CSUM;
 	else
 		send_ring->tx_wr.wr.send_flags &= ~IB_SEND_IP_CSUM;
-
-	if (atomic_inc_return(&send_ring->tx_outstanding) == priv->sendq_size) {
+	/* increase the tx_head after send success, but use it for queue state */
+	if (send_ring->tx_head - send_ring->tx_tail == priv->sendq_size - 1) {
 		ipoib_dbg(priv, "TX ring full, stopping kernel net queue\n");
 		if (ib_req_notify_cq(send_ring->send_cq, IB_CQ_NEXT_COMP))
 			ipoib_warn(priv, "request notify on send CQ failed\n");
@@ -522,7 +522,6 @@ int ipoib_send_rss(struct net_device *dev, struct sk_buff *skb,
 	if (unlikely(rc)) {
 		ipoib_warn(priv, "post_send_rss failed, error %d\n", rc);
 		++send_ring->stats.tx_errors;
-		atomic_dec(&send_ring->tx_outstanding);
 		if (!tx_req->is_inline)
 			ipoib_dma_unmap_tx(priv, tx_req);
 		dev_kfree_skb_any(skb);
@@ -736,7 +735,6 @@ static void ipoib_ib_send_ring_stop(struct ipoib_dev_priv *priv)
 				ipoib_dma_unmap_tx(priv, tx_req);
 			dev_kfree_skb_any(tx_req->skb);
 			++tx_ring->tx_tail;
-			atomic_dec(&tx_ring->tx_outstanding);
 		}
 		tx_ring++;
 	}
