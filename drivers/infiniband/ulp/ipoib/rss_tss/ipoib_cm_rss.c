@@ -418,33 +418,37 @@ void ipoib_cm_send_rss(struct net_device *dev, struct sk_buff *skb, struct ipoib
 		send_ring->tx_wr.wr.send_flags &= ~IB_SEND_INLINE;
 	}
 
+	if ((send_ring->tx_head - send_ring->tx_tail) == priv->sendq_size - 1) {
+		ipoib_dbg(priv, "TX ring 0x%x full, stopping kernel net queue\n",
+			  tx->qp->qp_num);
+		netif_stop_subqueue(dev, queue_index);
+	}
+
 	skb_orphan(skb);
 	skb_dst_drop(skb);
+
+	if (__netif_subqueue_stopped(dev, queue_index))
+		if (ib_req_notify_cq(send_ring->send_cq, IB_CQ_NEXT_COMP |
+				     IB_CQ_REPORT_MISSED_EVENTS)) {
+			ipoib_warn(priv, "IPoIB/CM/TSS:request notify on send CQ failed\n");
+			napi_schedule(&priv->send_napi);
+		}
 
 	rc = post_send_rss(priv, tx, tx->tx_head & (priv->sendq_size - 1), tx_req,
 			   send_ring);
 	if (unlikely(rc)) {
-		ipoib_warn(priv, "post_send_rss failed, error %d\n", rc);
+		ipoib_warn(priv, "IPoIB/CM/TSS:post_send failed, error %d\n", rc);
 		++dev->stats.tx_errors;
 		if (!tx_req->is_inline)
 			ipoib_dma_unmap_tx(priv, tx_req);
 		dev_kfree_skb_any(skb);
+
+		if (__netif_subqueue_stopped(dev, queue_index))
+			netif_wake_subqueue(dev, queue_index);
 	} else {
 		netdev_get_tx_queue(dev, queue_index)->trans_start = jiffies;
 		++tx->tx_head;
 		++send_ring->tx_head;
-
-		if (send_ring->tx_head - send_ring->tx_tail == priv->sendq_size) {
-			ipoib_dbg(priv, "TX ring 0x%x full, stopping kernel net queue\n",
-				  tx->qp->qp_num);
-			netif_stop_subqueue(dev, queue_index);
-			rc = ib_req_notify_cq(send_ring->send_cq,
-				IB_CQ_NEXT_COMP | IB_CQ_REPORT_MISSED_EVENTS);
-			if (rc < 0)
-				ipoib_warn(priv, "request notify on send CQ failed\n");
-			else if (rc)
-				ipoib_send_comp_handler_rss(send_ring->send_cq, dev);
-		}
 	}
 }
 
@@ -538,16 +542,9 @@ static struct ib_qp *ipoib_cm_create_tx_qp_rss(struct net_device *dev, struct ip
 		.qp_context		= tx,
 		.create_flags		= 0
 	};
-	int index;
 	struct ib_qp *tx_qp;
 
-	/* CM uses ipoib_ib_completion for TX completion and work using NAPI */
-	index = priv->cm.tx_cq_ind;
-	if (index >= priv->num_rx_queues)
-		index = 0;
-
-	priv->cm.tx_cq_ind = index + 1;
-	attr.send_cq = attr.recv_cq = priv->recv_ring[index].recv_cq;
+	attr.send_cq = attr.recv_cq = priv->send_ring[tx->neigh->index].send_cq;
 
 	if (dev->features & NETIF_F_SG)
 		attr.cap.max_send_sge =

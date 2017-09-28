@@ -71,6 +71,7 @@ struct ipoib_send_ring {
 	struct ipoib_tx_buf	*tx_ring;
 	unsigned		tx_head;
 	unsigned		tx_tail;
+	struct napi_struct	napi;
 	struct ib_sge		tx_sge[MAX_SKB_FRAGS + 1];
 	struct ib_ud_wr		tx_wr;
 	struct ib_wc		tx_wc[MAX_SEND_CQE];
@@ -149,8 +150,9 @@ struct ipoib_func_pointers {
 	void (*__ipoib_reap_ah)(struct net_device *dev);
 };
 
+void ipoib_ib_tx_completion_rss(struct ib_cq *cq, void *ctx_ptr);
+
 int ipoib_ib_dev_init_rss(struct net_device *dev, struct ib_device *ca, int port);
-void ipoib_send_comp_handler_rss(struct ib_cq *cq, void *ctx_ptr);
 
 int ipoib_mcast_attach_rss(struct net_device *dev, struct ib_device *hca,
 			   union ib_gid *mgid, u16 mlid, int set_qkey, u32 qkey);
@@ -186,9 +188,6 @@ struct net_device *ipoib_create_netdev_default_rss(struct ib_device *hca,
 
 int ipoib_ib_dev_open_default_rss(struct net_device *dev);
 int ipoib_ib_dev_stop_default_rss(struct net_device *dev);
-
-void set_tx_poll_timers(struct ipoib_dev_priv *priv);
-void del_tx_poll_timers(struct ipoib_dev_priv *priv);
 
 #ifdef CONFIG_INFINIBAND_IPOIB_CM
 

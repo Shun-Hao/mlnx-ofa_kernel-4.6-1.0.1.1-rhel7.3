@@ -205,7 +205,7 @@ static struct ipoib_neigh *ipoib_neigh_ctor_rss(u8 *daddr,
 	 */
 	if (priv->tss_qp_num > 0)
 		neigh->index = atomic_inc_return(&priv->tx_ring_ind)
-			% priv->tss_qp_num;
+			       % priv->tss_qp_num;
 	else
 		neigh->index = 0;
 
@@ -288,8 +288,6 @@ int ipoib_dev_init_default_rss(struct net_device *dev)
 	priv->dev->dev_addr[1] = (priv->qp->qp_num >> 16) & 0xff;
 	priv->dev->dev_addr[2] = (priv->qp->qp_num >>  8) & 0xff;
 	priv->dev->dev_addr[3] = (priv->qp->qp_num) & 0xff;
-
-	set_tx_poll_timers(priv);
 
 	return 0;
 
