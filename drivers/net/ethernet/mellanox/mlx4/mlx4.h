@@ -1279,6 +1279,7 @@ int mlx4_get_slave_from_resource_id(struct mlx4_dev *dev,
 void mlx4_delete_all_resources_for_slave(struct mlx4_dev *dev, int slave_id);
 void mlx4_reset_roce_gids(struct mlx4_dev *dev, int slave);
 int mlx4_init_resource_tracker(struct mlx4_dev *dev);
+void mlx4_update_counter_resource_tracker(struct mlx4_dev *dev);
 
 void mlx4_free_resource_tracker(struct mlx4_dev *dev,
 				enum mlx4_res_tracker_free_type type);

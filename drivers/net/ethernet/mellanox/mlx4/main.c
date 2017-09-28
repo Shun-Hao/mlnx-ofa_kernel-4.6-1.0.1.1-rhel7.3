@@ -3577,6 +3577,9 @@ static int mlx4_setup_hca(struct mlx4_dev *dev)
 		goto err_counters_table_free;
 	}
 
+	if (mlx4_is_master(dev))
+		mlx4_update_counter_resource_tracker(dev);
+
 	if (!mlx4_is_slave(dev)) {
 		err = mlx4_init_counters_table(dev);
 		if (err && err != -ENOENT) {
