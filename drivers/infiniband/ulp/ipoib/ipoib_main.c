@@ -1270,6 +1270,9 @@ static void ipoib_timeout(struct net_device *dev)
 {
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 
+	if (priv->rn_ops->ndo_tx_timeout)
+		return priv->rn_ops->ndo_tx_timeout(dev);
+
 	ipoib_warn(priv, "transmit timeout: latency %d msecs\n",
 		   jiffies_to_msecs(jiffies - dev_trans_start(dev)));
 	ipoib_warn(priv, "queue stopped %d, tx_head %u, tx_tail %u\n",
