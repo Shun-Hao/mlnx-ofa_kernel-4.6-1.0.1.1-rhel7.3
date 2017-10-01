@@ -174,7 +174,7 @@ static const struct file_operations mlx5_crdump_fops = {
 	.release = seq_release
 };
 
-int mlx5_cr_protected_capture(struct mlx5_core_dev *dev, int size)
+int mlx5_cr_protected_capture(struct mlx5_core_dev *dev)
 {
 	struct mlx5_priv *priv = &dev->priv;
 	void *cr_data = NULL;
@@ -184,44 +184,46 @@ int mlx5_cr_protected_capture(struct mlx5_core_dev *dev, int size)
 	if (!priv->health.crdump->vsec_addr)
 		return -ENODEV;
 
-	total_len = size * sizeof(u32);
-
-	cr_data = kcalloc(size, sizeof(u32), GFP_KERNEL);
-	if (!cr_data)
-		return -ENOMEM;
-
 	ret = mlx5_pciconf_cap9_sem(dev, LOCK);
 	if (ret)
-		goto free_mem;
+		return ret;
 
-	ret = mlx5_pciconf_set_addr_space(dev, MLX5_PROTECTED_CR_SPCAE_DOMAIN);
+	ret = mlx5_pciconf_set_protected_addr_space(dev, &total_len);
 	if (ret)
 		goto unlock;
 
+	cr_data = kcalloc(total_len, sizeof(u8), GFP_KERNEL);
+	if (!cr_data) {
+		ret = -ENOMEM;
+		goto unlock;
+	}
+
 	ret = mlx5_block_op_pciconf(dev, 0, (u32 *)cr_data, total_len);
+	if (ret < 0)
+		goto free_mem;
 
 	if (total_len != ret) {
+		pr_warn("crdump failed to read full dump, read %d out of %u\n",
+			ret, total_len);
 		ret = -EINVAL;
-		goto unlock;
+		goto free_mem;
 	}
 
 	priv->health.crdump->crspace = cr_data;
 	priv->health.crdump->crspace_size = total_len;
-	ret = total_len;
+	ret = 0;
 
+free_mem:
+	if (ret)
+		kfree(cr_data);
 unlock:
 	mlx5_pciconf_cap9_sem(dev, UNLOCK);
-free_mem:
-	if (ret < 0)
-		kfree(cr_data);
 	return ret;
 }
 
 int mlx5_fill_cr_dump(struct mlx5_core_dev *dev)
 {
 	int ret = 0;
-	/* TODO: read size from FW, ~2M */
-	int size = 512 * 1024;
 
 	if (!mlx5_core_is_pf(dev))
 		return 0;
@@ -243,16 +245,15 @@ int mlx5_fill_cr_dump(struct mlx5_core_dev *dev)
 	kfree(dev->priv.health.crdump->crspace);
 	dev->priv.health.crdump->crspace_size = 0;
 
-	ret = mlx5_cr_protected_capture(dev, size);
-	if (ret < 0) {
+	ret = mlx5_cr_protected_capture(dev);
+	if (ret) {
 		dev_err(&dev->pdev->dev, "failed capture crdump (err: %d)\n", ret);
-		ret = -1;
 		goto unlock;
-	} else {
-		pr_info("crdump: Crash snapshot collected to /proc/%s/%s/%s\n",
-			MLX5_CORE_PROC, MLX5_CORE_PROC_CRDUMP,
-			pci_name(dev->pdev));
 	}
+
+	pr_info("crdump: Crash snapshot collected to /proc/%s/%s/%s\n",
+		MLX5_CORE_PROC, MLX5_CORE_PROC_CRDUMP,
+		pci_name(dev->pdev));
 
 unlock:
 	mutex_unlock(&dev->priv.health.crdump->crspace_mutex);

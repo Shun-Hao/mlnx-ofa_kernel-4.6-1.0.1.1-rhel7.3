@@ -301,6 +301,8 @@ enum {
 
 int mlx5_pciconf_cap9_sem(struct mlx5_core_dev *dev, int state);
 int mlx5_pciconf_set_addr_space(struct mlx5_core_dev *dev, u16 space);
+int mlx5_pciconf_set_protected_addr_space(struct mlx5_core_dev *dev,
+					  u32 *ret_space_size);
 int mlx5_block_op_pciconf(struct mlx5_core_dev *dev,
 			  unsigned int offset, u32 *data,
 			  int length);
@@ -332,7 +334,7 @@ struct mlx5_fw_crdump {
 	u8	*crspace;
 };
 
-int mlx5_cr_protected_capture(struct mlx5_core_dev *dev, int size);
+int mlx5_cr_protected_capture(struct mlx5_core_dev *dev);
 
 #define MLX5_CORE_PROC "driver/mlx5_core"
 #define MLX5_CORE_PROC_CRDUMP "crdump"
