@@ -150,6 +150,7 @@ static const struct net_device_ops mlx5i_pkey_netdev_ops = {
 	.ndo_uninit              = mlx5i_pkey_dev_cleanup,
 	.ndo_change_mtu          = mlx5i_pkey_change_mtu,
 	.ndo_do_ioctl            = mlx5i_pkey_ioctl,
+	.ndo_tx_timeout          = mlx5i_tx_timeout,
 };
 
 /* Child NDOs */

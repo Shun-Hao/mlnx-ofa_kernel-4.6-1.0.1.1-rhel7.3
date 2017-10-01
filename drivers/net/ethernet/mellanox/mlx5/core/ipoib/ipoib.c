@@ -47,6 +47,7 @@ static int mlx5i_change_mtu(struct net_device *netdev, int new_mtu);
 static const struct net_device_ops mlx5i_netdev_ops = {
 	.ndo_open                = mlx5i_open,
 	.ndo_stop                = mlx5i_close,
+	.ndo_tx_timeout          = mlx5i_tx_timeout,
 	.ndo_get_stats64         = mlx5i_get_stats,
 	.ndo_init                = mlx5i_dev_init,
 	.ndo_uninit              = mlx5i_dev_cleanup,
@@ -72,6 +73,24 @@ static void mlx5i_build_nic_params(struct mlx5_core_dev *mdev,
 	params->hard_mtu = MLX5_IB_GRH_BYTES + MLX5_IPOIB_HARD_LEN;
 }
 
+static void mlx5i_tx_timeout_work(struct work_struct *work)
+{
+	struct mlx5e_priv *priv = container_of(work, struct mlx5e_priv,
+					       tx_timeout_work);
+	int err;
+
+	rtnl_lock();
+	if (!test_bit(MLX5E_STATE_OPENED, &priv->state))
+		goto unlock;
+	priv->netdev->netdev_ops->ndo_stop(priv->netdev);
+	err = priv->netdev->netdev_ops->ndo_open(priv->netdev);
+	if (err)
+		netdev_err(priv->netdev, "mlx5i_open failed recovering from a tx_timeout, err(%d).\n",
+			   err);
+unlock:
+	rtnl_unlock();
+}
+
 /* Called directly after IPoIB netdevice was created to initialize SW structs */
 int mlx5i_init(struct mlx5_core_dev *mdev,
 	       struct net_device *netdev,
@@ -86,6 +105,7 @@ int mlx5i_init(struct mlx5_core_dev *mdev,
 	if (err)
 		return err;
 
+	INIT_WORK(&priv->tx_timeout_work, mlx5i_tx_timeout_work);
 	mlx5_query_port_max_mtu(mdev, &max_mtu, 1);
 	netdev->mtu = max_mtu;
 
@@ -469,6 +489,13 @@ static int mlx5i_change_mtu(struct net_device *netdev, int new_mtu)
 out:
 	mutex_unlock(&priv->state_lock);
 	return err;
+}
+
+void mlx5i_tx_timeout(struct net_device *netdev)
+{
+	struct mlx5e_priv *priv  = mlx5i_epriv(netdev);
+
+	queue_work(priv->wq, &priv->tx_timeout_work);
 }
 
 int mlx5i_dev_init(struct net_device *dev)

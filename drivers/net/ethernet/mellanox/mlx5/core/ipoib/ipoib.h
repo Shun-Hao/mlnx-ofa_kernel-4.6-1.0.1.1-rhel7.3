@@ -81,6 +81,8 @@ struct net_device *mlx5i_pkey_get_netdev(struct net_device *netdev, u32 qpn);
 /* Shared ndo functions */
 int mlx5i_dev_init(struct net_device *dev);
 void mlx5i_dev_cleanup(struct net_device *dev);
+void mlx5i_tx_timeout(struct net_device *netdev);
+
 int mlx5i_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd);
 
 /* Parent profile functions */
