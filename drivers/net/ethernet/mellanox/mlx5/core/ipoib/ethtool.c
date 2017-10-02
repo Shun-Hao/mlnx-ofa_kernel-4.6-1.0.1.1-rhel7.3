@@ -284,4 +284,6 @@ const struct ethtool_ops mlx5i_pkey_ethtool_ops = {
 	.get_drvinfo        = mlx5i_get_drvinfo,
 	.get_link           = ethtool_op_get_link,
 	.get_ts_info        = mlx5i_get_ts_info,
+//	.get_settings	    = mlx5i_get_settings,
+	.get_link_ksettings = mlx5i_get_link_ksettings,
 };
