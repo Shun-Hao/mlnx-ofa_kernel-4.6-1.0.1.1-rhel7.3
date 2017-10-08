@@ -394,9 +394,6 @@ struct mlx4_en_rx_ring {
 	struct mlx4_en_page_pool	pool;
 	unsigned long			rx_alloc_pages;
 
-	struct page			*pre_allocated;
-	unsigned int			pre_allocated_count;
-	unsigned int			rx_alloc_order;
 	struct mlx4_en_frag_info	frag_info[MLX4_EN_MAX_RX_FRAGS];
 	struct mlx4_en_page_cache	page_cache;
 
@@ -411,7 +408,6 @@ struct mlx4_en_rx_ring {
 	unsigned long dropped;
 	cpumask_var_t affinity_mask;
 	struct xdp_rxq_info xdp_rxq;
-	unsigned int			rx_pref_alloc_order;
 };
 
 struct mlx4_en_cq {

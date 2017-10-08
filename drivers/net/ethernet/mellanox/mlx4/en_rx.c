@@ -57,29 +57,14 @@ static struct page *mlx4_alloc_page(struct mlx4_en_priv *priv,
 {
 	struct page *page;
 
-	if (unlikely(!ring->pre_allocated_count)) {
-		unsigned int order = READ_ONCE(ring->rx_alloc_order);
-		page = __alloc_pages_node(node,
-					  (gfp & ~__GFP_DIRECT_RECLAIM) |
-					  __GFP_NOMEMALLOC | __GFP_NOWARN | __GFP_NORETRY,
-					  order);
-		if (page) {
-			split_page(page, order);
-			ring->pre_allocated_count = 1U << order;
-		} else {
-			if (order > 1)
-				ring->rx_alloc_order--;
-			page = __alloc_pages_node(node, gfp, 0);
-			if (unlikely(!page))
-				return NULL;
-			ring->pre_allocated_count = 1U;
-       	}
-		ring->pre_allocated = page;
-		ring->rx_alloc_pages += ring->pre_allocated_count;
-       }
+	page = __alloc_pages_node(node,
+				  (gfp & ~__GFP_DIRECT_RECLAIM) |
+				  __GFP_NOMEMALLOC | __GFP_NOWARN | __GFP_NORETRY,
+				  0);
+	if (unlikely(!page))
+		return NULL;
 
-	page = ring->pre_allocated++;
-	ring->pre_allocated_count--;
+	ring->rx_alloc_pages++;
 	*dma = dma_map_page(priv->ddev, page, 0, PAGE_SIZE, priv->dma_dir);
 	if (unlikely(dma_mapping_error(priv->ddev, *dma))) {
 		__free_page(page);
@@ -127,6 +112,11 @@ static void mlx4_en_prepare_rx_desc(struct mlx4_en_priv *priv,
 						    frags->page_offset);
 }
 
+static bool mlx4_en_is_ring_empty(const struct mlx4_en_rx_ring *ring)
+{
+	return ring->prod == ring->cons;
+}
+
 static inline void mlx4_en_update_rx_prod_db(struct mlx4_en_rx_ring *ring)
 {
 	*ring->wqres.db.db = cpu_to_be32(ring->prod & 0xffff);
@@ -148,10 +138,6 @@ static void mlx4_en_free_rx_buf(struct mlx4_en_priv *priv,
 		}
 		kfree(ring->pool.array);
 		ring->pool.array = NULL;
-		while (ring->pre_allocated_count) {
-			__free_page(ring->pre_allocated++);
-			ring->pre_allocated_count--;
-		}
 	}
 	ring->cons = 0;
 	ring->prod = 0;
@@ -166,7 +152,6 @@ static int mlx4_en_fill_rx_buffers(struct mlx4_en_priv *priv)
 	unsigned int pages_per_ring;
 	unsigned int page_ind;
 	unsigned int total;
-	unsigned int order;
 
 	for (i = 0; i < priv->num_frags; i++)
 		stride_bytes += priv->frag_info[i].frag_stride;
@@ -180,8 +165,6 @@ retry:
 	pages_per_ring = new_size * stride_bytes * 2 / PAGE_SIZE;
 	pages_per_ring = roundup_pow_of_two(pages_per_ring);
 
-	order = min_t(u32, ilog2(pages_per_ring), MAX_ORDER - 1);
-
 	for (ring_ind = 0; ring_ind < priv->rx_ring_num; ring_ind++) {
 		ring = priv->rx_ring[ring_ind];
 		mlx4_en_free_rx_buf(priv, ring);
@@ -194,7 +177,6 @@ retry:
 			return -ENOMEM;
 		ring->pool.pool_idx = 0;
 		ring->pool.pool_size = 0;
-		ring->rx_alloc_order = ring->rx_pref_alloc_order = order;
 	}
 
 	for (page_ind = 0; page_ind < pages_per_ring; page_ind++) {
@@ -215,11 +197,8 @@ retry:
 		}
 	}
 
-	order = min_t(u32, ilog2(pages_per_ring >> 1), MAX_ORDER - 1);
-
 	for (ring_ind = 0; ring_ind < priv->rx_ring_num; ring_ind++) {
 		ring = priv->rx_ring[ring_ind];
-		ring->rx_alloc_order = ring->rx_pref_alloc_order = order;
 
 		memcpy(ring->frag_info, priv->frag_info,
 		       sizeof(priv->frag_info));
@@ -415,24 +394,23 @@ err_buffers:
 	return err;
 }
 
-/* Under memory pressure, each ring->rx_alloc_order might be lowered
- * to very small values. Periodically increase t to initial value for
- * optimal allocations, in case stress is over.
- */
+/* We recover from out of memory by scheduling our napi poll
+ * * function (mlx4_en_process_cq), which tries to allocate
+ * * all missing RX buffers (call to mlx4_en_refill_rx_buffers).
+ * */
 void mlx4_en_recover_from_oom(struct mlx4_en_priv *priv)
 {
-	struct mlx4_en_rx_ring *ring;
-	unsigned int order;
-	int ring_ind;
+	int ring;
 
 	if (!priv->port_up)
 		return;
 
-	for (ring_ind = 0; ring_ind < priv->rx_ring_num; ring_ind++) {
-		ring = priv->rx_ring[ring_ind];
-		order = min_t(unsigned int, ring->rx_alloc_order + 1,
-			      ring->rx_pref_alloc_order);
-		WRITE_ONCE(ring->rx_alloc_order, order);
+	for (ring = 0; ring < priv->rx_ring_num; ring++) {
+		if (mlx4_en_is_ring_empty(priv->rx_ring[ring])) {
+			local_bh_disable();
+			napi_reschedule(&priv->rx_cq[ring]->napi);
+			local_bh_enable();
+		}
 	}
 }
 
