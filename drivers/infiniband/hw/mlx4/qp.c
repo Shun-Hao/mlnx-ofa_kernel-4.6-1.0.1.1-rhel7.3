@@ -651,7 +651,7 @@ static int set_qp_rss(struct mlx4_ib_dev *dev, struct mlx4_ib_rss *rss_ctx,
 	return 0;
 }
 
-static int create_qp_rss(struct mlx4_ib_dev *dev,
+static int create_qp_rss(struct mlx4_ib_dev *dev, struct ib_pd *ibpd,
 			 struct ib_qp_init_attr *init_attr,
 			 struct mlx4_ib_create_qp_rss *ucmd,
 			 struct mlx4_ib_qp *qp)
@@ -684,6 +684,7 @@ static int create_qp_rss(struct mlx4_ib_dev *dev,
 	qp->buf_size = qp->sq.wqe_cnt << MLX4_IB_MIN_SQ_STRIDE;
 	qp->mtt = (to_mqp(
 		   (struct ib_qp *)init_attr->rwq_ind_tbl->ind_tbl[0]))->mtt;
+	qp->uar = &to_mucontext(ibpd->uobject->context)->uar;
 
 	qp->rss_ctx = kzalloc(sizeof(*qp->rss_ctx), GFP_KERNEL);
 	if (!qp->rss_ctx) {
@@ -774,7 +775,7 @@ static struct ib_qp *_mlx4_ib_create_qp_rss(struct ib_pd *pd,
 	qp->pri.vid = 0xFFFF;
 	qp->alt.vid = 0xFFFF;
 
-	err = create_qp_rss(to_mdev(pd->device), init_attr, &ucmd, qp);
+	err = create_qp_rss(to_mdev(pd->device), pd, init_attr, &ucmd, qp);
 	if (err) {
 		kfree(qp);
 		return ERR_PTR(err);
