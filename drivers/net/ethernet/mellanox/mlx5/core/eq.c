@@ -444,7 +444,7 @@ static void mlx5_eq_cq_completion(struct mlx5_eq *eq, u32 cqn)
 	struct mlx5_core_cq *cq = mlx5_eq_cq_get(eq, cqn);
 
 	if (unlikely(!cq)) {
-		mlx5_core_warn(eq->dev, "Completion event for bogus CQ 0x%x\n", cqn);
+		mlx5_core_dbg(eq->dev, "Completion event for bogus CQ 0x%x\n", cqn);
 		return;
 	}
 
