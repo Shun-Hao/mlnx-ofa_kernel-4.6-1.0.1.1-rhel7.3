@@ -31,6 +31,8 @@
  */
 #include "port_buffer.h"
 
+#define MLX5E_MAX_PORT_MTU  9216
+
 int mlx5e_port_query_buffer(struct mlx5e_priv *priv,
 			    struct mlx5e_port_buffer *port_buffer)
 {
@@ -131,8 +133,8 @@ static u32 calculate_xoff(struct mlx5e_priv *priv, unsigned int mtu)
 
 	err = mlx5e_port_linkspeed(priv->mdev, &speed);
 	if (err)
-		return 0;
-
+		speed = SPEED_40000;
+	speed = max_t(u32, speed, SPEED_40000);
 	xoff = (301 + 216 * priv->dcbx.cable_len / 100) * speed / 1000 + 272 * mtu / 100;
 
 	mlx5e_dbg(HW, priv, "%s: xoff=%d\n", __func__, xoff);
@@ -140,7 +142,7 @@ static u32 calculate_xoff(struct mlx5e_priv *priv, unsigned int mtu)
 }
 
 static int update_xoff_threshold(struct mlx5e_port_buffer *port_buffer,
-				 u32 xoff, unsigned int mtu)
+				 u32 xoff)
 {
 	int i;
 
@@ -152,11 +154,12 @@ static int update_xoff_threshold(struct mlx5e_port_buffer *port_buffer,
 		}
 
 		if (port_buffer->buffer[i].size <
-		    (xoff + mtu + (1 << MLX5E_BUFFER_CELL_SHIFT)))
+		    (xoff + MLX5E_MAX_PORT_MTU + (1 << MLX5E_BUFFER_CELL_SHIFT)))
 			return -ENOMEM;
 
 		port_buffer->buffer[i].xoff = port_buffer->buffer[i].size - xoff;
-		port_buffer->buffer[i].xon  = port_buffer->buffer[i].xoff - mtu;
+		port_buffer->buffer[i].xon  = 
+			port_buffer->buffer[i].xoff - MLX5E_MAX_PORT_MTU;
 	}
 
 	return 0;
@@ -218,7 +221,7 @@ static int update_buffer_lossy(unsigned int mtu,
 	}
 
 	if (changed) {
-		err = update_xoff_threshold(port_buffer, xoff, mtu);
+		err = update_xoff_threshold(port_buffer, xoff);
 		if (err)
 			return err;
 
@@ -252,7 +255,7 @@ int mlx5e_port_manual_buffer_config(struct mlx5e_priv *priv,
 
 	if (change & MLX5E_PORT_BUFFER_CABLE_LEN) {
 		update_buffer = true;
-		err = update_xoff_threshold(&port_buffer, xoff, mtu);
+		err = update_xoff_threshold(&port_buffer, xoff);
 		if (err)
 			return err;
 	}
@@ -299,7 +302,7 @@ int mlx5e_port_manual_buffer_config(struct mlx5e_priv *priv,
 			return -EINVAL;
 
 		update_buffer = true;
-		err = update_xoff_threshold(&port_buffer, xoff, mtu);
+		err = update_xoff_threshold(&port_buffer, xoff);
 		if (err)
 			return err;
 	}
@@ -307,7 +310,7 @@ int mlx5e_port_manual_buffer_config(struct mlx5e_priv *priv,
 	/* Need to update buffer configuration if xoff value is changed */
 	if (!update_buffer && xoff != priv->dcbx.xoff) {
 		update_buffer = true;
-		err = update_xoff_threshold(&port_buffer, xoff, mtu);
+		err = update_xoff_threshold(&port_buffer, xoff);
 		if (err)
 			return err;
 	}
