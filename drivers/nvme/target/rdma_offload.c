@@ -158,8 +158,10 @@ static int nvmet_rdma_init_xrq(struct nvmet_rdma_device *ndev,
 					struct nvmet_rdma_staging_buf, entry);
 		list_del(&xrq->st->entry);
 	} else {
-		xrq->st = nvmet_rdma_alloc_st_buff(NVMET_DYNAMIC_STAGING_BUFFER_NUM_PAGES,
-						   NVMET_DYNAMIC_STAGING_BUFFER_SIZE_MB, true);
+		u16 num_pages = nvmet_rdma_offload_buffer_size_mb / NVMET_DYNAMIC_STAGING_BUFFER_PAGE_SIZE_MB;
+		xrq->st = nvmet_rdma_alloc_st_buff(num_pages,
+				NVMET_DYNAMIC_STAGING_BUFFER_PAGE_SIZE_MB,
+				true);
 	}
 	if (!xrq->st) {
 		ret = -ENOMEM;
