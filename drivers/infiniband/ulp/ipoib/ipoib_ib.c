@@ -912,6 +912,12 @@ int ipoib_ib_dev_open_default(struct net_device *dev)
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	int ret;
 
+	/* Re-arm the RX CQs due to a race between completion event and arm
+	 * during default stop. This fix is temporary and should be removed
+	 * once the mlx4/5 bug is solved
+	 */
+	ib_req_notify_cq(priv->recv_cq, IB_CQ_NEXT_COMP);
+
 	ret = ipoib_init_qp(dev);
 	if (ret) {
 		ipoib_warn(priv, "ipoib_init_qp returned %d\n", ret);
