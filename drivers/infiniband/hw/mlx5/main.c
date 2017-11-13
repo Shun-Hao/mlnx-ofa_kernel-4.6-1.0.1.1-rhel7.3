@@ -53,6 +53,7 @@
 #include <linux/mlx5/port.h>
 #include <linux/mlx5/vport.h>
 #include <linux/mlx5/capi.h>
+#include <linux/mmu_context.h>
 #include <linux/mlx5/fs.h>
 #include <linux/list.h>
 #include <rdma/ib_smi.h>
@@ -1681,6 +1682,7 @@ static int alloc_capi_context(struct mlx5_ib_dev *dev, struct mlx5_capi_context 
 		goto out;
 	}
 
+	mm_context_add_copro(cctx->mm);
 	err = mlx5_core_create_pec(dev->mdev, &attr, &cctx->pasid);
 	if (err) {
 		mlx5_ib_warn(dev, "create pec failed %d\n", err);
@@ -1690,6 +1692,7 @@ static int alloc_capi_context(struct mlx5_ib_dev *dev, struct mlx5_capi_context 
 	return 0;
 
 out_mm:
+	mm_context_remove_copro(cctx->mm);
 	mmput(cctx->mm);
 out:
 	return err;
@@ -1707,6 +1710,7 @@ static int free_capi_context(struct mlx5_ib_dev *dev, struct mlx5_capi_context *
 		mlx5_ib_warn(dev, "destroy pec failed\n");
 		goto out;
 	}
+	mm_context_remove_copro(cctx->mm);
 	mmput(cctx->mm);
 
 out:
