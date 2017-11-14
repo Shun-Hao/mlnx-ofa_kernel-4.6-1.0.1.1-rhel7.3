@@ -1137,6 +1137,7 @@ out:
 
 static int mlx5e_set_trust_state(struct mlx5e_priv *priv, u8 trust_state)
 {
+	struct tc_mqprio_qopt mqprio = {.num_tc = MLX5E_MAX_NUM_TC};
 	int err;
 
 	err = mlx5_set_trust_state(priv->mdev, trust_state);
@@ -1144,6 +1145,10 @@ static int mlx5e_set_trust_state(struct mlx5e_priv *priv, u8 trust_state)
 		return err;
 	priv->dcbx_dp.trust_state = trust_state;
 	mlx5e_trust_update_sq_inline_mode(priv);
+
+	/* In DSCP trust state, we need 8 send queues per channel */
+	if (priv->dcbx_dp.trust_state == MLX5_QPTS_TRUST_DSCP)
+		mlx5e_setup_tc_mqprio(priv->netdev, &mqprio);
 
 	return err;
 }
@@ -1175,6 +1180,8 @@ static int mlx5e_trust_initialize(struct mlx5e_priv *priv)
 		return err;
 
 	mlx5e_trust_update_tx_min_inline_mode(priv, &priv->channels.params);
+	if (priv->dcbx_dp.trust_state == MLX5_QPTS_TRUST_DSCP)
+		priv->channels.params.num_tc = MLX5E_MAX_NUM_TC;
 
 	err = mlx5_query_dscp2prio(priv->mdev, priv->dcbx_dp.dscp2prio);
 	if (err)
