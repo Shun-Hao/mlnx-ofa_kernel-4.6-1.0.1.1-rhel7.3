@@ -545,6 +545,14 @@ static void nvmet_rdma_destroy_offload_ctrl(struct nvmet_ctrl *ctrl)
 
 }
 
+static u8 nvmet_rdma_peer_to_peer_mdts(struct nvmet_port *port)
+{
+	struct rdma_cm_id *cm_id = port->priv;
+
+	/* we assume ctrl page_size is 4K */
+	return ilog2(cm_id->device->attrs.nvmf_caps.max_io_sz / SZ_4K);
+}
+
 static unsigned int __nvmet_rdma_peer_to_peer_sqe_inline_size(struct ib_nvmf_caps *nvmf_caps)
 {
 	unsigned int sqe_inline_size = __nvmet_rdma_peer_to_peer_sqe_inline_size(nvmf_caps);
