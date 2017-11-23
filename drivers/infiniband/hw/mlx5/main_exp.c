@@ -323,7 +323,8 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			IB_RX_HASH_SRC_PORT_TCP |
 			IB_RX_HASH_DST_PORT_TCP |
 			IB_RX_HASH_SRC_PORT_UDP |
-			IB_RX_HASH_DST_PORT_UDP;
+			IB_RX_HASH_DST_PORT_UDP |
+			IB_RX_HASH_INNER;
 		props->rx_hash_caps.supported_qps = IB_QPT_RAW_PACKET;
 		props->max_wq_type_rq = 1 << MLX5_CAP_GEN(dev->mdev, log_max_rq);
 	} else {
