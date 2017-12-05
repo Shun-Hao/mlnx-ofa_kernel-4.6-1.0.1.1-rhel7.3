@@ -667,6 +667,11 @@ struct mlx5_ifc_nvmf_cap_bits {
 	u8	reserved_at_c0[0xe4];
 };
 
+enum {
+       MLX5_COUNTER_SOURCE_ESWITCH = 0x0,
+       MLX5_COUNTER_FLOW_ESWITCH   = 0x1,
+};
+
 struct mlx5_ifc_e_switch_cap_bits {
 	u8         vport_svlan_strip[0x1];
 	u8         vport_cvlan_strip[0x1];
@@ -676,7 +681,8 @@ struct mlx5_ifc_e_switch_cap_bits {
 	u8         reserved_at_5[0x1];
 	u8         merged_eswitch[0x1];
 	u8         vport_cvlan_insert_always[0x1];
-	u8         reserved_at_7[0x16];
+	u8         reserved_at_7[0x15];
+	u8         counter_eswitch_affinity[0x1];
 	u8         nic_vport_node_guid_modify[0x1];
 	u8         nic_vport_port_guid_modify[0x1];
 
