@@ -1074,9 +1074,11 @@ int ib_uverbs_exp_modify_qp(struct ib_uverbs_file *file,
 	attr->dct_key             = cmd.dct_key;
 	attr->rate_limit	  = cmd.rate_limit;
 
-	copy_ah_attr_from_uverbs(qp->device, &attr->ah_attr, &cmd.dest);
-	copy_ah_attr_from_uverbs(qp->device, &attr->alt_ah_attr,
-				 &cmd.alt_dest);
+	if (cmd.attr_mask & IB_QP_AV)
+		copy_ah_attr_from_uverbs(qp, &attr->ah_attr, &cmd.dest);
+	if (cmd.attr_mask & IB_QP_ALT_PATH)
+		copy_ah_attr_from_uverbs(qp, &attr->alt_ah_attr,
+					 &cmd.alt_dest);
 
 	if (cmd.comp_mask & IB_UVERBS_EXP_QP_ATTR_FLOW_ENTROPY) {
 		if (offsetof(typeof(cmd), flow_entropy) + sizeof(cmd.flow_entropy) <= ucore->inlen) {
