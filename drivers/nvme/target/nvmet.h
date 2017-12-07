@@ -204,6 +204,8 @@ struct nvmet_ctrl {
 
 	struct device *p2p_client;
 	struct radix_tree_root p2p_ns_map;
+
+	void			*offload_ctrl;
 };
 
 struct nvmet_subsys {
@@ -287,6 +289,8 @@ struct nvmet_fabrics_ops {
 	int (*install_offload_queue)(struct nvmet_ctrl *ctrl, u16 qid);
 	int (*create_offload_ctrl)(struct nvmet_ctrl *ctrl);
 	void (*destroy_offload_ctrl)(struct nvmet_ctrl *ctrl);
+	int (*enable_offload_ns)(struct nvmet_ctrl *ctrl);
+	void (*disable_offload_ns)(struct nvmet_ctrl *ctrl);
 	unsigned int (*peer_to_peer_sqe_inline_size)(struct nvmet_ctrl *ctrl);
 	u8 (*peer_to_peer_mdts)(struct nvmet_port *port);
 };
