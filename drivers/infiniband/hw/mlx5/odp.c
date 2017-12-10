@@ -576,7 +576,8 @@ void mlx5_ib_free_implicit_mr(struct mlx5_ib_mr *imr)
 }
 
 static int pagefault_mr(struct mlx5_ib_dev *dev, struct mlx5_ib_mr *mr,
-			u64 io_virt, size_t bcnt, u32 *bytes_mapped)
+			u64 io_virt, size_t bcnt, u32 *bytes_mapped,
+			enum ib_odp_dma_map_flags dma_flags)
 {
 	struct ib_umem_odp *odp_mr = to_ib_umem_odp(mr->umem);
 	int npages = 0, current_seq, page_shift, ret, np, np_stat;
@@ -623,8 +624,10 @@ next_mr:
 	 */
 	smp_rmb();
 
-	ret = ib_umem_odp_map_dma_pages(to_ib_umem_odp(mr->umem), io_virt, size, access_mask,
-					current_seq, 0, &np_stat);
+	ret = ib_umem_odp_map_dma_pages(to_ib_umem_odp(mr->umem), io_virt, size,
+					access_mask, current_seq,
+					dma_flags, &np_stat);
+
 	atomic_add(np_stat, &dev->odp_stats.num_odp_mr_pages);
 
 	if (ret < 0)
@@ -760,7 +763,8 @@ static int pagefault_stride_block(void *pklm, size_t *offset, size_t *bcnt,
 int pagefault_single_data_segment(struct mlx5_ib_dev *dev,
 				  u32 key, u64 io_virt, size_t bcnt,
 				  u32 *bytes_committed,
-				  u32 *bytes_mapped)
+				  u32 *bytes_mapped,
+				  enum ib_odp_dma_map_flags dma_flags)
 {
 	int npages = 0, srcu_key, ret, i, outlen, cur_outlen = 0, depth = 0;
 	struct pf_frame *head = NULL, *frame;
@@ -803,7 +807,8 @@ next_mr:
 			goto srcu_unlock;
 		}
 
-		ret = pagefault_mr(dev, mr, io_virt, bcnt, bytes_mapped);
+		ret = pagefault_mr(dev, mr, io_virt, bcnt, bytes_mapped,
+				   dma_flags);
 		if (ret < 0)
 			goto srcu_unlock;
 
@@ -1001,7 +1006,7 @@ static int pagefault_data_segments(struct mlx5_ib_dev *dev,
 
 		ret = pagefault_single_data_segment(dev, key, io_virt, bcnt,
 						    &pfault->bytes_committed,
-						    bytes_mapped);
+						    bytes_mapped, 0);
 		if (ret < 0)
 			break;
 		npages += ret;
@@ -1344,7 +1349,7 @@ static void mlx5_ib_mr_rdma_pfault_handler(struct mlx5_ib_dev *dev,
 	}
 
 	ret = pagefault_single_data_segment(dev, rkey, address, length,
-					    &pfault->bytes_committed, NULL);
+					    &pfault->bytes_committed, NULL, 0);
 	if (ret == -EAGAIN) {
 		/* We're racing with an invalidation, don't prefetch */
 		prefetch_activated = 0;
@@ -1371,7 +1376,7 @@ static void mlx5_ib_mr_rdma_pfault_handler(struct mlx5_ib_dev *dev,
 
 		ret = pagefault_single_data_segment(dev, rkey, address,
 						    prefetch_len,
-						    &bytes_committed, NULL);
+						    &bytes_committed, NULL, 0);
 		if (ret < 0 && ret != -EAGAIN) {
 			mlx5_ib_dbg(dev, "Prefetch failed. ret: %d, QP 0x%x, address: 0x%.16llx, length = 0x%.16x\n",
 				    ret, pfault->token, address, prefetch_len);
