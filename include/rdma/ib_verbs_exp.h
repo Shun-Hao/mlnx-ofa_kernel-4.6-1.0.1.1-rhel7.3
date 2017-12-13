@@ -209,6 +209,10 @@ struct ib_exp_tso_caps {
 	__u32 supported_qpts;
 };
 
+enum ib_exp_packet_pacing_cap_flags {
+	IB_EXP_QP_SUPPORT_BURST               = 1 << 0,
+};
+
 struct ib_exp_packet_pacing_caps {
 	__u32 qp_rate_limit_min;
 	__u32 qp_rate_limit_max; /* In kpbs */
@@ -218,7 +222,8 @@ struct ib_exp_packet_pacing_caps {
 	 * supported_qpts |= 1 << IB_QPT_RAW_PACKET
 	 */
 	__u32 supported_qpts;
-	__u32 reserved;
+	__u8  cap_flags; /* ib_exp_packet_pacing_cap_flags */
+	__u8  reserved[3];
 };
 
 struct ib_exp_ec_caps {

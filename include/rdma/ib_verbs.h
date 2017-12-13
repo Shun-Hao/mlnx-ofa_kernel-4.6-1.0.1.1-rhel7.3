@@ -1340,6 +1340,7 @@ struct ib_qp_attr {
 	u32			rate_limit;
 	u32			flow_entropy;
 	enum ib_qp_offload_type	offload_type;
+	struct ib_exp_burst_info	burst_info;
 };
 
 enum ib_wr_opcode {

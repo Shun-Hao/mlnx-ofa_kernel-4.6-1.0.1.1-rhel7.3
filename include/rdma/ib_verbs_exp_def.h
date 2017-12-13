@@ -89,4 +89,9 @@ struct ib_exp_memcpy_dm_attr {
 	uint32_t comp_mask;
 };
 
+struct ib_exp_burst_info {
+	u32			max_burst_sz;
+	u16			typical_pkt_sz;
+};
+
 #endif
