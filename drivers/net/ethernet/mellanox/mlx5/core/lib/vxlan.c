@@ -36,6 +36,7 @@
 #include <linux/mlx5/fs.h>
 #include "mlx5_core.h"
 #include "vxlan.h"
+#include "en.h"
 
 struct mlx5_vxlan {
 	struct mlx5_core_dev		*mdev;
@@ -134,18 +135,23 @@ int mlx5_vxlan_add_port(struct mlx5_vxlan *vxlan, u16 port)
 	}
 
 /* Talat - Saeed, how can we add the rule? from where we can take the priv? for
- * now I'll remark the call of mlx5e_add_udp_tunnel_flow_rule */
+ * now I'll remark the call of mlx5e_add_udp_tunnel_flow_rule  and the
+ * vxlan_work as well ? */
 /*
 #ifdef CONFIG_MLX5_INNER_RSS
-	if (vxlan_work->sa_family == AF_INET)
-		etype = ETH_P_IP;
-	else if (vxlan_work->sa_family == AF_INET6)
-		etype = ETH_P_IPV6;
-	else
-		goto err_delete_port;
-	vxlanp->flow_rule = mlx5e_add_udp_tunnel_flow_rule(priv, etype, port);
-	if (IS_ERR(vxlanp->flow_rule)) {
-		pr_warn("Failed to add flow rule for VXLAN port %d\n", port);
+	if (mlx5e_tunnel_inner_ft_supported(priv->mdev)) {
+		if (vxlan_work->sa_family == AF_INET)
+			etype = ETH_P_IP;
+		else if (vxlan_work->sa_family == AF_INET6)
+			etype = ETH_P_IPV6;
+		else
+			goto err_free;
+
+		vxlan->flow_rule = mlx5e_add_udp_tunnel_flow_rule(priv, etype, port);
+		if (IS_ERR(vxlan->flow_rule)) {
+			pr_warn("Failed to add flow rule for VXLAN port %d\n", port);
+			goto err_free;
+		}
 		goto err_delete_port;
 	}
 #endif
@@ -198,9 +204,12 @@ out_unlock:
 
 	if (remove) {
 		mlx5_vxlan_debugfs_remove(vxlan->mdev, vxlanp);
-#ifdef config_mlx5_inner_rss
-	mlx5_del_flow_rules(vxlanp->flow_rule);
+/* Talat - Saeed need to add the rule with the new design
+#ifdef CONFIG_MLX5_INNER_RSS
+	if (mlx5e_tunnel_inner_ft_supported(vxlan->mdev))
+		mlx5_del_flow_rules(vxlanp->flow_rule);
 #endif
+*/
 		mlx5_vxlan_core_del_port_cmd(vxlan->mdev, port);
 		kfree(vxlanp);
 		vxlan->num_ports--;
@@ -247,9 +256,12 @@ void mlx5_vxlan_destroy(struct mlx5_vxlan *vxlan)
 	hash_for_each_safe(vxlan->htable, bkt, tmp, vxlanp, hlist) {
 		hash_del(&vxlanp->hlist);
 		mlx5_vxlan_debugfs_remove(vxlan->mdev, vxlanp);
+/* Talat - Saeed need to add the rule with the new design
 #ifdef CONFIG_MLX5_INNER_RSS
-		mlx5_del_flow_rules(vxlanp->flow_rule);
+		if (mlx5e_tunnel_inner_ft_supported(vxlan->mdev))
+			mlx5_del_flow_rules(vxlanp->flow_rule);
 #endif
+*/
 		mlx5_vxlan_core_del_port_cmd(vxlan->mdev, vxlanp->udp_port);
 		kfree(vxlanp);
 	}
