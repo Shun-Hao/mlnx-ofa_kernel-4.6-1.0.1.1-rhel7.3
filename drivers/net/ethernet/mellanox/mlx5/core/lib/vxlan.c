@@ -46,12 +46,6 @@ struct mlx5_vxlan {
 	struct mutex                    sync_lock; /* sync add/del port HW operations */
 };
 
-struct mlx5_vxlan_port {
-	struct hlist_node hlist;
-	atomic_t refcount;
-	u16 udp_port;
-};
-
 static inline u8 mlx5_vxlan_max_udp_ports(struct mlx5_core_dev *mdev)
 {
 	return MLX5_CAP_ETH(mdev, max_vxlan_udp_ports) ?: 4;
@@ -164,6 +158,10 @@ int mlx5_vxlan_add_port(struct mlx5_vxlan *vxlan, u16 port)
 	spin_unlock_bh(&vxlan->lock);
 
 	vxlan->num_ports++;
+
+	if (mlx5_vxlan_debugfs_add(vxlan->mdev, vxlanp))
+		pr_warn("Failed to add VXLAN port %d to debugfs\n", vxlanp->udp_port);
+
 	mutex_unlock(&vxlan->sync_lock);
 	return 0;
 
@@ -229,6 +227,7 @@ struct mlx5_vxlan *mlx5_vxlan_create(struct mlx5_core_dev *mdev)
 	spin_lock_init(&vxlan->lock);
 	hash_init(vxlan->htable);
 
+	mlx5_vxlan_debugfs_init(vxlan->mdev);
 	/* Hardware adds 4789 by default */
 	mlx5_vxlan_add_port(vxlan, 4789);
 
@@ -247,9 +246,14 @@ void mlx5_vxlan_destroy(struct mlx5_vxlan *vxlan)
 	/* Lockless since we are the only hash table consumers*/
 	hash_for_each_safe(vxlan->htable, bkt, tmp, vxlanp, hlist) {
 		hash_del(&vxlanp->hlist);
+		mlx5_vxlan_debugfs_remove(vxlan->mdev, vxlanp);
+#ifdef CONFIG_MLX5_INNER_RSS
+		mlx5_del_flow_rules(vxlanp->flow_rule);
+#endif
 		mlx5_vxlan_core_del_port_cmd(vxlan->mdev, vxlanp->udp_port);
 		kfree(vxlanp);
 	}
 
+	mlx5_vxlan_debugfs_cleanup(vxlan->mdev);
 	kfree(vxlan);
 }
