@@ -1067,7 +1067,7 @@ struct mlx5_ifc_cmd_hca_cap_bits {
 	u8         reserved_at_202[0x1];
 	u8         ipoib_enhanced_offloads[0x1];
 	u8         ipoib_basic_offloads[0x1];
-	u8         reserved_at_205[0x1];
+	u8         ib_striding_wq[0x1];
 	u8         repeated_block_disabled[0x1];
 	u8         umr_modify_entity_size_disabled[0x1];
 	u8         umr_modify_atomic_disabled[0x1];
