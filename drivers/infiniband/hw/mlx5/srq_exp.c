@@ -55,6 +55,50 @@ int mlx5_ib_exp_create_srq_user(struct mlx5_ib_dev *dev,
 	    ucmd_exp.comp_mask >= MLX5_EXP_CREATE_SRQ_MASK_RESERVED)
 		return -EINVAL;
 
+	if (ucmd_exp.comp_mask & MLX5_EXP_CREATE_SRQ_MASK_MP_WR) {
+		if (!MLX5_CAP_GEN(dev->mdev, ib_striding_wq)) {
+			mlx5_ib_dbg(dev, "MP WR isn't supported\n");
+			return -EOPNOTSUPP;
+		}
+
+		if (in->type != IB_EXP_SRQT_TAG_MATCHING) {
+			mlx5_ib_dbg(dev, "MP WR is supported over TM SRQ type only\n");
+			return -EOPNOTSUPP;
+		}
+
+		if ((ucmd_exp.mp_wr_log_num_of_strides <
+		     MLX5_EXT_MIN_SINGLE_WQE_LOG_NUM_STRIDES) ||
+		    ((ucmd_exp.mp_wr_log_num_of_strides <
+		      MLX5_MIN_SINGLE_WQE_LOG_NUM_STRIDES) &&
+		     !MLX5_CAP_GEN(dev->mdev, ext_stride_num_range))) {
+			mlx5_ib_dbg(dev, "Requested MP WR log2 number of strides %u is lower than supported\n",
+				    ucmd_exp.mp_wr_log_num_of_strides);
+			return -EINVAL;
+		}
+
+		if (ucmd_exp.mp_wr_log_num_of_strides >
+		    MLX5_MAX_SINGLE_WQE_LOG_NUM_STRIDES) {
+			mlx5_ib_dbg(dev, "Requested MP WR log2 number of strides %u is higher than supported\n",
+				    ucmd_exp.mp_wr_log_num_of_strides);
+			return -EINVAL;
+		}
+
+		if ((ucmd_exp.mp_wr_log_stride_size >
+		     MLX5_MAX_SINGLE_STRIDE_LOG_NUM_BYTES) ||
+		    (ucmd_exp.mp_wr_log_stride_size <
+		     MLX5_MIN_SINGLE_STRIDE_LOG_NUM_BYTES)) {
+			mlx5_ib_dbg(dev, "Requested MP WR log2 stride size of %u is unsupported\n",
+				    ucmd_exp.mp_wr_log_stride_size);
+			return -EINVAL;
+		}
+
+		in->flags |= MLX5_SRQ_FLAG_STRIDING_RECV_WQ;
+		in->striding_recv_wq.log_wqe_num_of_strides =
+			ucmd_exp.mp_wr_log_num_of_strides;
+		in->striding_recv_wq.log_wqe_stride_size =
+			ucmd_exp.mp_wr_log_stride_size;
+	}
+
 	if (in->type == IB_EXP_SRQT_TAG_MATCHING) {
 		if (!ucmd_exp.max_num_tags)
 			return -EINVAL;
