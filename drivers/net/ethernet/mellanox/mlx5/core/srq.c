@@ -90,6 +90,27 @@ static void set_wq(void *wq, struct mlx5_srq_attr *in)
 	MLX5_SET(wq,   wq, lwm,		  in->lwm);
 	MLX5_SET(wq,   wq, pd,		  in->pd);
 	MLX5_SET64(wq, wq, dbr_addr,	  in->db_record);
+
+	if (in->flags & MLX5_SRQ_FLAG_STRIDING_RECV_WQ) {
+		int log_num_of_strides;
+		u8 twos_comp_log_num_of_strides;
+
+		MLX5_SET(wq,   wq, wq_type,
+			 MLX5_WQ_TYPE_LINKED_LIST_STRIDING_RQ);
+
+		/* Normalize to device's interface values (range of (-6) - 7) */
+		log_num_of_strides =
+			in->striding_recv_wq.log_wqe_num_of_strides - 9;
+		/* Convert to 2's complement representation */
+		twos_comp_log_num_of_strides = log_num_of_strides < 0 ?
+			((u32)(~abs(log_num_of_strides)) + 1) & 0xF :
+			(u8)log_num_of_strides;
+		MLX5_SET(wq,   wq, log_wqe_num_of_strides,
+			 twos_comp_log_num_of_strides);
+
+		MLX5_SET(wq,   wq, log_wqe_stride_size,
+			 in->striding_recv_wq.log_wqe_stride_size - 6);
+	}
 }
 
 static void set_srqc(void *srqc, struct mlx5_srq_attr *in)
