@@ -61,10 +61,21 @@ int mlx5_ib_exp_get_cmd_data(struct mlx5_ib_dev *dev,
 			return -EOPNOTSUPP;
 
 		if (ucmd.mp_rq.use_shift & ~IB_MP_RQ_2BYTES_SHIFT ||
-		    ucmd.mp_rq.single_stride_log_num_of_bytes < MLX5_MIN_SINGLE_STRIDE_LOG_NUM_BYTES ||
-		    ucmd.mp_rq.single_stride_log_num_of_bytes > MLX5_MAX_SINGLE_STRIDE_LOG_NUM_BYTES ||
-		    ucmd.mp_rq.single_wqe_log_num_of_strides < MLX5_MIN_SINGLE_WQE_LOG_NUM_STRIDES ||
-		    ucmd.mp_rq.single_wqe_log_num_of_strides > MLX5_MAX_SINGLE_WQE_LOG_NUM_STRIDES)
+		    ucmd.mp_rq.single_stride_log_num_of_bytes <
+		    MLX5_MIN_SINGLE_STRIDE_LOG_NUM_BYTES ||
+		    ucmd.mp_rq.single_stride_log_num_of_bytes >
+		    MLX5_MAX_SINGLE_STRIDE_LOG_NUM_BYTES)
+			return -EINVAL;
+
+		if ((ucmd.mp_rq.single_wqe_log_num_of_strides <
+		     MLX5_EXT_MIN_SINGLE_WQE_LOG_NUM_STRIDES) ||
+		    ((ucmd.mp_rq.single_wqe_log_num_of_strides <
+		      MLX5_MIN_SINGLE_WQE_LOG_NUM_STRIDES) &&
+		     !MLX5_CAP_GEN(dev->mdev, ext_stride_num_range)))
+			return -EINVAL;
+
+		if (ucmd.mp_rq.single_wqe_log_num_of_strides >
+		    MLX5_MAX_SINGLE_WQE_LOG_NUM_STRIDES)
 			return -EINVAL;
 
 		data->mp_rq.use_shift = ucmd.mp_rq.use_shift;
@@ -122,13 +133,25 @@ void mlx5_ib_exp_set_rqc(void *rqc, struct mlx5_ib_rwq *rwq)
 
 	wq = MLX5_ADDR_OF(rqc, rqc, wq);
 	if (rwq->mp_rq.use_mp_rq) {
+		int log_num_of_strides;
+		u8 twos_comp_log_num_of_strides;
+
 		MLX5_SET(wq, wq, wq_type, MLX5_WQ_TYPE_CYCLIC_STRIDING_RQ);
+
+		/* Normalize to device's interface values (range of (-6) - 7) */
+		log_num_of_strides =
+			rwq->mp_rq.single_wqe_log_num_of_strides - 9;
+		/* Convert to 2's complement representation */
+		twos_comp_log_num_of_strides = log_num_of_strides < 0 ?
+			((u32)(~abs(log_num_of_strides)) + 1) & 0xF :
+			(u8)log_num_of_strides;
 		MLX5_SET(wq, wq, log_wqe_num_of_strides,
-			 (rwq->mp_rq.single_wqe_log_num_of_strides -
-			  MLX5_MIN_SINGLE_WQE_LOG_NUM_STRIDES));
+			 twos_comp_log_num_of_strides);
+
 		MLX5_SET(wq, wq, log_wqe_stride_size,
 			 (rwq->mp_rq.single_stride_log_num_of_bytes -
 			  MLX5_MIN_SINGLE_STRIDE_LOG_NUM_BYTES));
+
 		if (rwq->mp_rq.use_shift == IB_MP_RQ_2BYTES_SHIFT)
 			MLX5_SET(wq, wq, two_byte_shift_en, 0x1);
 	}
