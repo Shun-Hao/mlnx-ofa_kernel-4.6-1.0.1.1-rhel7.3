@@ -367,7 +367,7 @@ static void __cache_work_func(struct mlx5_cache_ent *ent)
 			if (ent->cur > ent->limit)
 				queue_work(cache->wq, &ent->work);
 		} else if (cache->rel_timeout >= 0) {
-			dtime = max_t(s64, dtime, 0);
+			dtime = max_t(s64, dtime, msecs_to_jiffies(3));
 			dtime = min_t(s64, dtime, (MAX_MR_RELEASE_TIMEOUT * HZ));
 			cancel_delayed_work(&ent->dwork);
 			queue_delayed_work(cache->wq, &ent->dwork, dtime);
