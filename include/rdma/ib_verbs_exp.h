@@ -108,8 +108,17 @@ struct ib_exp_qp_init_attr {
 	struct ib_rx_hash_conf	*rx_hash_conf;
 };
 
+enum ib_exp_mp_rq_sup_types {
+	IB_EXP_MP_RQ_SUP_TYPE_SRQ_TM	= 1 << 0,
+	/*
+	 * For backport compatibility we use IB_EXP_QPT_RAW_PACKET value for the
+	 * IB_EXP_MP_SUP_TYPE_WQ_RQ.
+	 */
+	IB_EXP_MP_RQ_SUP_TYPE_WQ_RQ	= 1 << 5,
+};
+
 struct ib_exp_mp_rq_caps {
-	uint32_t supported_qps; /* use ib_exp_supported_qp_types */
+	uint32_t supported_qps; /* use ib_exp_mp_rq_sup_types */
 	uint32_t allowed_shifts; /* use ib_mp_rq_shifts */
 	uint8_t min_single_wqe_log_num_of_strides;
 	uint8_t max_single_wqe_log_num_of_strides;
