@@ -210,6 +210,7 @@ void mlx5_ib_invalidate_range(struct ib_umem_odp *umem_odp, unsigned long start,
 				    sizeof(struct mlx5_mtt)) - 1;
 	u64 idx = 0, blk_start_idx = 0;
 	struct ib_umem *umem;
+	struct ib_umem_odp *odp_mr;
 	int in_block = 0, np_stat;
 	u64 addr;
 
@@ -224,6 +225,7 @@ void mlx5_ib_invalidate_range(struct ib_umem_odp *umem_odp, unsigned long start,
 	if (!mr || !mr->ibmr.pd)
 		return;
 
+	odp_mr	= to_ib_umem_odp(mr->umem);
 	start = max_t(u64, ib_umem_start(umem), start);
 	end = min_t(u64, ib_umem_end(umem), end);
 
@@ -273,12 +275,9 @@ void mlx5_ib_invalidate_range(struct ib_umem_odp *umem_odp, unsigned long start,
 
 	ib_umem_odp_unmap_dma_pages(umem_odp, start, end, &np_stat);
 	atomic_sub(np_stat, &mr->dev->odp_stats.num_odp_mr_pages);
-
 	if (unlikely(!umem->npages && mr->parent &&
-		     !umem_odp->dying)) {
+		     !cmpxchg(&odp_mr->dying, 0, 1))) {
 		idx = ib_umem_start(umem) >> MLX5_IMR_MTT_SHIFT;
-
-		WRITE_ONCE(umem_odp->dying, 1);
 
 		mlx5_ib_update_xlt(mr->parent, idx, 0, 1, 0,
 				   MLX5_IB_UPD_XLT_INDIRECT |
@@ -525,6 +524,7 @@ static int mr_leaf_free(struct ib_umem_odp *umem_odp, u64 start, u64 end,
 {
 	struct mlx5_ib_mr *mr = umem_odp->private, *imr = cookie;
 	struct ib_umem *umem = &umem_odp->umem;
+	struct ib_umem_odp *odp_mr = to_ib_umem_odp(mr->umem);
 	int np_stat;
 
 	if (mr->parent != imr)
@@ -535,10 +535,9 @@ static int mr_leaf_free(struct ib_umem_odp *umem_odp, u64 start, u64 end,
 				    &np_stat);
 	atomic_sub(np_stat, &mr->dev->odp_stats.num_odp_mr_pages);
 
-	if (umem_odp->dying)
+	if (cmpxchg(&odp_mr->dying, 0, 1))
 		return 0;
 
-	WRITE_ONCE(umem_odp->dying, 1);
 	atomic_inc(&imr->num_leaf_free);
 	schedule_work(&umem_odp->work);
 
