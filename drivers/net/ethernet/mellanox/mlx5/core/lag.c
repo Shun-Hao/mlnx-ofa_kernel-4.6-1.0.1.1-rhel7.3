@@ -751,3 +751,43 @@ unlock:
 	return ret;
 }
 EXPORT_SYMBOL(mlx5_lag_query_cong_counters);
+
+static int mlx5_cmd_modify_cong_params(struct mlx5_core_dev *dev,
+				       void *in, int in_size)
+{
+	u32 out[MLX5_ST_SZ_DW(modify_cong_params_out)] = { };
+
+	return mlx5_cmd_exec(dev, in, in_size, out, sizeof(out));
+}
+
+int mlx5_lag_modify_cong_params(struct mlx5_core_dev *dev,
+				void *in, int in_size)
+{
+	struct mlx5_core_dev *mdev[MLX5_MAX_PORTS];
+	struct mlx5_lag *ldev;
+	int num_ports;
+	int ret;
+	int i;
+
+	mutex_lock(&lag_mutex);
+	ldev = mlx5_lag_dev_get(dev);
+	if (ldev && mlx5_lag_is_bonded(ldev)) {
+		num_ports = MLX5_MAX_PORTS;
+		mdev[0] = ldev->pf[0].dev;
+		mdev[1] = ldev->pf[1].dev;
+	} else {
+		num_ports = 1;
+		mdev[0] = dev;
+	}
+
+	for (i = 0; i < num_ports; i++) {
+		ret = mlx5_cmd_modify_cong_params(mdev[i], in, in_size);
+		if (ret)
+			goto unlock;
+	}
+
+unlock:
+	mutex_unlock(&lag_mutex);
+	return ret;
+}
+EXPORT_SYMBOL(mlx5_lag_modify_cong_params);
