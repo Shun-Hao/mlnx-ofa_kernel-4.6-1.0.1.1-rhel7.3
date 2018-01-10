@@ -332,9 +332,16 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		props->max_wq_type_rq = 0;
 	}
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_MP_RQ;
-	if (MLX5_CAP_GEN(dev->mdev, striding_rq)) {
+	props->mp_rq_caps.supported_qps = 0;
+	if (MLX5_CAP_GEN(dev->mdev, striding_rq) ||
+	    MLX5_CAP_GEN(dev->mdev, ib_striding_wq)) {
 		props->mp_rq_caps.allowed_shifts =  IB_MP_RQ_2BYTES_SHIFT;
-		props->mp_rq_caps.supported_qps = IB_EXP_QPT_RAW_PACKET;
+		if (MLX5_CAP_GEN(dev->mdev, striding_rq))
+			props->mp_rq_caps.supported_qps =
+				IB_EXP_MP_RQ_SUP_TYPE_WQ_RQ;
+		if (MLX5_CAP_GEN(dev->mdev, ib_striding_wq))
+			props->mp_rq_caps.supported_qps |=
+				IB_EXP_MP_RQ_SUP_TYPE_SRQ_TM;
 		props->mp_rq_caps.max_single_stride_log_num_of_bytes =  MLX5_MAX_SINGLE_STRIDE_LOG_NUM_BYTES;
 		props->mp_rq_caps.min_single_stride_log_num_of_bytes =  MLX5_MIN_SINGLE_STRIDE_LOG_NUM_BYTES;
 		props->mp_rq_caps.max_single_wqe_log_num_of_strides =  MLX5_MAX_SINGLE_WQE_LOG_NUM_STRIDES;
@@ -344,8 +351,6 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		else
 			props->mp_rq_caps.min_single_wqe_log_num_of_strides =
 				MLX5_MIN_SINGLE_WQE_LOG_NUM_STRIDES;
-	} else {
-		props->mp_rq_caps.supported_qps = 0;
 	}
 
 	props->vlan_offloads = 0;
