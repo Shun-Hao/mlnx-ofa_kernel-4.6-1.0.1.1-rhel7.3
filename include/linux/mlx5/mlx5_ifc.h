@@ -9756,34 +9756,6 @@ struct mlx5_ifc_create_uctx_in_bits {
 	struct mlx5_ifc_uctx_bits                     uctx;
 };
 
-struct mlx5_ifc_mtrc_string_db_param_bits {
-	u8         string_db_base_address[0x20];
-
-	u8         reserved_at_20[0x8];
-	u8         string_db_size[0x18];
-};
-
-struct mlx5_ifc_mtrc_cap_bits {
-	u8         trace_owner[0x1];
-	u8         trace_to_memory[0x1];
-	u8         reserved_at_2[0x4];
-	u8         trc_ver[0x2];
-	u8         reserved_at_8[0x14];
-	u8         num_string_db[0x4];
-
-	u8         first_string_trace[0x8];
-	u8         num_string_trace[0x8];
-	u8         reserved_at_30[0x28];
-
-	u8         log_max_trace_buffer_size[0x8];
-
-	u8         reserved_at_60[0x20];
-
-	struct mlx5_ifc_mtrc_string_db_param_bits string_db_param[8];
-
-	u8         reserved_at_280[0x180];
-};
-
 struct mlx5_ifc_mtrc_conf_bits {
 	u8         reserved_at_0[0x1c];
 	u8         trace_mode[0x4];
@@ -9870,4 +9842,35 @@ struct mlx5_ifc_destroy_capi_pec_out_bits {
 
 	u8         reserved_at_40[0x40];
 };
+
+struct mlx5_ifc_mtrc_string_db_param_bits {
+	u8         string_db_base_address[0x20];
+
+	u8         reserved_at_20[0x8];
+	u8         string_db_size[0x18];
+};
+
+struct mlx5_ifc_mtrc_cap_bits {
+	u8         trace_owner[0x1];
+	u8         trace_to_memory[0x1];
+	u8         reserved_at_2[0x4];
+	u8         trc_ver[0x2];
+	u8         reserved_at_8[0xd];
+	u8         log_pointer_granularity[0x3];
+	u8         reserved_at_18[0x4];
+	u8         num_string_db[0x4];
+
+	u8         first_string_trace[0x8];
+	u8         num_string_trace[0x8];
+	u8         reserved_at_30[0x10];
+
+	u8         max_trace_buffer_size[0x20];
+
+	u8         reserved_at_60[0x20];
+
+	struct mlx5_ifc_mtrc_string_db_param_bits string_db_param[8];
+
+	u8         reserved_at_280[0x180];
+};
+
 #endif /* MLX5_IFC_H */
