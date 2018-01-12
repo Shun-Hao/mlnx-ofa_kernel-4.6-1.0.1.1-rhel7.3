@@ -4618,8 +4618,6 @@ static int mlx4_do_detach_rule(struct mlx4_dev *dev,
 	u64 mirr_reg_id;
 	struct res_fs_rule *mirr_rule;
 
-	mirr_reg_id = rrule->mirr_rule_id;
-
 	/* First detach chained rule if exists */
 	if (rrule->chained_rule_id) {
 		err = get_res(dev, slave, rrule->chained_rule_id,
@@ -4633,6 +4631,15 @@ static int mlx4_do_detach_rule(struct mlx4_dev *dev,
 			mlx4_err(dev, "Failed to remove chained rule\n");
 		rrule->chained_rule_id = 0;
 	}
+
+	if (!rrule->mirr_mbox) {
+		mlx4_err(dev, "Mirror rules cannot be removed explicitly\n");
+		put_res(dev, slave, rule_id, RES_FS_RULE);
+		return -EPERM;
+	}
+
+	mirr_reg_id = rrule->mirr_rule_id;
+	kfree(rrule->mirr_mbox);
 
 	/* Release the rule from busy state before removal */
 	put_res(dev, slave, rule_id, RES_FS_RULE);
@@ -4872,20 +4879,12 @@ int mlx4_QP_FLOW_STEERING_DETACH_wrapper(struct mlx4_dev *dev, int slave,
 		return err;
 	}
 
-	if (!rrule->mirr_mbox) {
-		mlx4_err(dev, "Mirror rules cannot be removed explicitly\n");
-		put_res(dev, slave, vhcr->in_param, RES_FS_RULE);
-		return -EPERM;
-	}
-
 	/* Fail if somebody is trying to remove chained rule directly */
 	if (rrule->is_chained) {
 		mlx4_err(dev, "Can't remove chained rule directly\n");
 		put_res(dev, slave, vhcr->in_param, RES_FS_RULE);
 		return -EPERM;
 	}
-
-	kfree(rrule->mirr_mbox);
 
 	err = mlx4_do_detach_rule(dev, rrule, slave, vhcr->in_param);
 	if (err)
