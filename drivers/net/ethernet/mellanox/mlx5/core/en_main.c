@@ -4444,20 +4444,20 @@ static netdev_features_t mlx5e_features_check(struct sk_buff *skb,
 	return features;
 }
 
-static bool mlx5e_tx_timeout_eq_recover(struct net_device *dev,
+static bool mlx5e_tx_timeout_eq_recover(struct mlx5e_priv *priv,
 					struct mlx5e_txqsq *sq)
 {
 	struct mlx5_eq *eq = sq->cq.mcq.eq;
 	u32 eqe_count;
 
-	netdev_err(dev, "EQ 0x%x: Cons = 0x%x, irqn = 0x%x\n",
+	netdev_err(priv->netdev, "EQ 0x%x: Cons = 0x%x, irqn = 0x%x\n",
 		   eq->eqn, eq->cons_index, eq->irqn);
 
 	eqe_count = mlx5_eq_poll_irq_disabled(eq);
 	if (!eqe_count)
 		return false;
 
-	netdev_err(dev, "Recover %d eqes on EQ 0x%x\n", eqe_count, eq->eqn);
+	netdev_err(priv->netdev, "Recover %d eqes on EQ 0x%x\n", eqe_count, eq->eqn);
 	sq->channel->stats->eq_rearm++;
 	return true;
 }
@@ -4496,7 +4496,7 @@ static void mlx5e_tx_timeout_work(struct work_struct *work)
 		/* If we recover a lost interrupt, most likely TX timeout will
 		 * be resolved, skip reopening channels
 		 */
-		if (!mlx5e_tx_timeout_eq_recover(dev, sq)) {
+		if (!mlx5e_tx_timeout_eq_recover(priv, sq)) {
 			clear_bit(MLX5E_SQ_STATE_ENABLED, &sq->state);
 			reopen_channels = true;
 		}
