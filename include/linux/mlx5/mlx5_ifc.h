@@ -971,7 +971,8 @@ struct mlx5_ifc_cmd_hca_cap_bits {
 	u8         log_max_eq_sz[0x8];
 	u8         reserved_at_e8[0x2];
 	u8         log_max_mkey[0x6];
-	u8         reserved_at_f0[0x8];
+	u8         tunneled_atomic[0x1];
+	u8         reserved_at_f0[0x7];
 	u8         dump_fill_mkey[0x1];
 	u8         reserved_at_f9[0x2];
 	u8         fast_teardown[0x1];
@@ -2950,7 +2951,7 @@ struct mlx5_ifc_mkc_bits {
 	u8         lr[0x1];
 	u8         access_mode_1_0[0x2];
 	u8         reserved_at_18[0x1];
-	u8	   tunneled_atoics[0x1];
+	u8	   tunneled_atomic[0x1];
 	u8	   ma_tranlation_mode[0x2];
 	u8	   reserved_at_1c[4];
 

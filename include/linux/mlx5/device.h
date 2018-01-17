@@ -268,6 +268,10 @@ enum {
 };
 
 enum {
+	MLX5_MKEY_TUNNELED_ATOMIC = 1 << 6,
+};
+
+enum {
 	MLX5_MKEY_MASK_LEN		= 1ull << 0,
 	MLX5_MKEY_MASK_PAGE_SIZE	= 1ull << 1,
 	MLX5_MKEY_MASK_START_ADDR	= 1ull << 6,
@@ -282,8 +286,10 @@ enum {
 	MLX5_MKEY_MASK_RR		= 1ull << 19,
 	MLX5_MKEY_MASK_RW		= 1ull << 20,
 	MLX5_MKEY_MASK_A		= 1ull << 21,
+	MLX5_MKEY_MASK_UMR_EN		= 1ull << 22,
 	MLX5_MKEY_MASK_SMALL_FENCE	= 1ull << 23,
 	MLX5_MKEY_MASK_FREE		= 1ull << 29,
+	MLX5_MKEY_MASK_TUNNELED_ATOMIC	= 1ull << 41,
 };
 
 enum {
@@ -976,7 +982,7 @@ struct mlx5_mkey_seg {
 	u8		status;
 	u8		pcie_control;
 	u8		flags;
-	u8		version;
+	u8		tunneled_atomic;
 	__be32		qpn_mkey7_0;
 	u8		rsvd1[4];
 	__be32		flags_pd;

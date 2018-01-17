@@ -1128,6 +1128,8 @@ static struct mlx5_ib_mr *reg_create(struct ib_mr *ibmr, struct ib_pd *pd,
 	MLX5_SET(mkc, mkc, lw, !!(access_flags & IB_ACCESS_LOCAL_WRITE));
 	MLX5_SET(mkc, mkc, lr, 1);
 	MLX5_SET(mkc, mkc, umr_en, 1);
+	if (access_flags & IB_EXP_ACCESS_TUNNELED_ATOMIC)
+		MLX5_SET(mkc, mkc, tunneled_atomic, 1);
 
 	MLX5_SET64(mkc, mkc, start_addr, virt_addr);
 	MLX5_SET64(mkc, mkc, len, length);
@@ -1332,6 +1334,20 @@ struct ib_mr *mlx5_ib_reg_user_mr(struct ib_pd *pd,
 							     mlx5_ib_peer_id);
 		if (err)
 			goto error;
+	}
+
+	if (access_flags & IB_EXP_ACCESS_TUNNELED_ATOMIC) {
+		if (!MLX5_CAP_GEN(dev->mdev, tunneled_atomic)) {
+			err = -EINVAL;
+			mlx5_ib_dbg(dev, "Tunneled atomic is not supported");
+			goto error;
+		}
+
+		if (access_flags & IB_ACCESS_ON_DEMAND) {
+			err = -EINVAL;
+			mlx5_ib_dbg(dev, "Tunneled atomic and ODP can't both be enabled");
+			goto error;
+		}
 	}
 
 	if ((access_flags & IB_ACCESS_ON_DEMAND) &&

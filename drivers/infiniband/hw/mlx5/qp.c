@@ -4296,6 +4296,15 @@ static void set_linv_umr_seg(struct mlx5_wqe_umr_ctrl_seg *umr)
 	umr->flags = MLX5_UMR_INLINE;
 }
 
+static __be64 get_umr_enable_umr_mask(void)
+{
+	u64 result;
+
+	result = MLX5_MKEY_MASK_UMR_EN;
+
+	return cpu_to_be64(result);
+}
+
 static __be64 get_umr_enable_mr_mask(void)
 {
 	u64 result;
@@ -4350,6 +4359,15 @@ static __be64 get_umr_update_pd_mask(void)
 	return cpu_to_be64(result);
 }
 
+static __be64 get_umr_tunneled_atomic_mask(void)
+{
+	u64 result;
+
+	result = MLX5_MKEY_MASK_TUNNELED_ATOMIC;
+
+	return cpu_to_be64(result);
+}
+
 static int umr_check_mkey_mask(struct mlx5_ib_dev *dev, u64 mask)
 {
 	if ((mask & MLX5_MKEY_MASK_PAGE_SIZE &&
@@ -4394,6 +4412,12 @@ static int set_reg_umr_segment(struct mlx5_ib_dev *dev,
 
 	if (!wr->num_sge)
 		umr->flags |= MLX5_UMR_INLINE;
+
+	if (umrwr->access_flags & IB_EXP_ACCESS_TUNNELED_ATOMIC) {
+		umr->mkey_mask |= get_umr_tunneled_atomic_mask();
+		umr->mkey_mask |= get_umr_enable_umr_mask();
+		umr->mkey_mask |= get_umr_update_access_mask(0);
+	}
 
 	return umr_check_mkey_mask(dev, be64_to_cpu(umr->mkey_mask));
 }
@@ -4451,6 +4475,10 @@ static void set_reg_mkey_segment(struct mlx5_mkey_seg *seg,
 	    !umrwr->length)
 		seg->flags_pd |= cpu_to_be32(MLX5_MKEY_LEN64);
 
+	if (umrwr->access_flags & IB_EXP_ACCESS_TUNNELED_ATOMIC) {
+		seg->tunneled_atomic |= MLX5_MKEY_TUNNELED_ATOMIC;
+		seg->flags |= MLX5_PERM_UMR_EN;
+	}
 	seg->start_addr = cpu_to_be64(umrwr->virt_addr);
 	seg->len = cpu_to_be64(umrwr->length);
 	seg->log2_page_size = umrwr->page_shift;
