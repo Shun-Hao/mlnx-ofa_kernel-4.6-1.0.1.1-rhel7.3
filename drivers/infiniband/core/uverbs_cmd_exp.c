@@ -652,6 +652,11 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_MAX_DM_SIZE;
 	}
 
+	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_TUNNELED_ATOMIC) {
+		resp->tunneled_atomic_caps  = exp_attr->tunneled_atomic_caps;
+		resp->comp_mask |= IB_EXP_DEVICE_ATTR_TUNNELED_ATOMIC;
+	}
+
 	ret = ib_copy_to_udata(ucore, resp, min_t(size_t, sizeof(*resp), ucore->outlen));
 out:
 	kfree(exp_attr);
@@ -786,6 +791,8 @@ static int translate_exp_access_flags(u64 exp_access_flags)
 		access_flags |= IB_ACCESS_ON_DEMAND;
 	if (exp_access_flags & IB_UVERBS_EXP_ACCESS_PHYSICAL_ADDR)
 		access_flags |= IB_EXP_ACCESS_PHYSICAL_ADDR;
+	if (exp_access_flags & IB_UVERBS_EXP_ACCESS_TUNNELED_ATOMIC)
+		access_flags |= IB_EXP_ACCESS_TUNNELED_ATOMIC;
 
 	return access_flags;
 }

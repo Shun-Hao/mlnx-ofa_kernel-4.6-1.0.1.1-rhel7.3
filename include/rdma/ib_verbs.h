@@ -4131,6 +4131,14 @@ static inline int ib_check_mr_access(int flags)
 	    !(flags & IB_ACCESS_LOCAL_WRITE))
 		return -EINVAL;
 
+	/*
+	 * Tunneld atomic requires both local and remote write permission
+	 */
+	if ((flags & IB_EXP_ACCESS_TUNNELED_ATOMIC) &&
+	    (!(flags & IB_ACCESS_LOCAL_WRITE) ||
+	     !(flags & IB_ACCESS_REMOTE_WRITE)))
+		return -EINVAL;
+
 	return 0;
 }
 

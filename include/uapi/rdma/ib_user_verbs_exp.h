@@ -348,7 +348,7 @@ struct ib_uverbs_exp_query_device_resp {
 	__u64					odp_mr_max_size;
 	struct ib_uverbs_exp_tm_caps		tm_caps;
 	__u32					tunnel_offloads_caps;
-	__u8					reserved3[4];
+	__u32					tunneled_atomic_caps;
 	__u64 					max_dm_size;
 };
 
@@ -406,6 +406,7 @@ struct ib_uverbs_exp_query_mkey_resp {
 enum ib_uverbs_exp_access_flags {
 	IB_UVERBS_EXP_ACCESS_ON_DEMAND     = (IBV_EXP_START_FLAG << 14),
 	IB_UVERBS_EXP_ACCESS_PHYSICAL_ADDR = (IBV_EXP_START_FLAG << 16),
+	IB_UVERBS_EXP_ACCESS_TUNNELED_ATOMIC = (IBV_EXP_START_FLAG << 17),
 };
 
 enum ib_uverbs_exp_reg_mr_ex_comp_mask {
