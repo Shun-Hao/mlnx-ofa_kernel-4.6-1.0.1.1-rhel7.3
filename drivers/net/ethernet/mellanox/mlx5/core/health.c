@@ -66,9 +66,10 @@ enum {
 enum  {
 	MLX5_SENSOR_NO_ERR		= 0,
 	MLX5_SENSOR_PCI_COMM_ERR	= 1,
-	MLX5_SENSOR_NIC_DISABLED	= 2,
-	MLX5_SENSOR_NIC_SW_RESET	= 3,
-	MLX5_SENSOR_FW_SYND_RFR		= 4,
+	MLX5_SENSOR_PCI_ERR		= 2,
+	MLX5_SENSOR_NIC_DISABLED	= 3,
+	MLX5_SENSOR_NIC_SW_RESET	= 4,
+	MLX5_SENSOR_FW_SYND_RFR		= 5,
 };
 
 u8 mlx5_get_nic_mode(struct mlx5_core_dev *dev)
@@ -121,6 +122,8 @@ static u32 mlx5_check_fatal_sensors(struct mlx5_core_dev *dev)
 {
 	if (mlx5_sensor_pci_not_working(dev))
 		return MLX5_SENSOR_PCI_COMM_ERR;
+	if (pci_channel_offline(dev->pdev))
+		return MLX5_SENSOR_PCI_ERR;
 	if (mlx5_sensor_nic_disabled(dev))
 		return MLX5_SENSOR_NIC_DISABLED;
 	if (mlx5_sensor_nic_sw_reset(dev))
@@ -138,8 +141,7 @@ void mlx5_enter_error_state(struct mlx5_core_dev *dev, bool force)
 		goto unlock;
 
 	mlx5_core_err(dev, "start\n");
-	if (pci_channel_offline(dev->pdev) ||
-	    dev->priv.health.fatal_error != MLX5_SENSOR_NO_ERR || force) {
+	if (mlx5_check_fatal_sensors(dev) || force) {
 		dev->state = MLX5_DEVICE_STATE_INTERNAL_ERROR;
 		mlx5_lock_and_flush_cmdif(dev);
 		mlx5_unlock_cmdif(dev);
@@ -234,7 +236,8 @@ static void health_recover(struct work_struct *work)
 #define MLX5_RECOVERY_NO_DELAY 0
 static unsigned long get_recovery_delay(struct mlx5_core_dev *dev)
 {
-	return dev->priv.health.fatal_error == MLX5_SENSOR_PCI_COMM_ERR ?
+	return dev->priv.health.fatal_error == MLX5_SENSOR_PCI_ERR ||
+	       dev->priv.health.fatal_error == MLX5_SENSOR_PCI_COMM_ERR	?
 	       MLX5_RECOVERY_DELAY_MSECS : MLX5_RECOVERY_NO_DELAY;
 }
 
