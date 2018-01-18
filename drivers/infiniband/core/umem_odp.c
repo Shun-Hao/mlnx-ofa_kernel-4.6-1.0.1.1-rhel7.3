@@ -44,6 +44,7 @@
 #include <rdma/ib_verbs.h>
 #include <rdma/ib_umem.h>
 #include <rdma/ib_umem_odp.h>
+#include <rdma/ib_sync_mem.h>
 
 #include "uverbs.h"
 #include "umem_odp_exp.h"
@@ -140,6 +141,7 @@ static void ib_umem_notifier_release(struct mmu_notifier *mn,
 		rbt_ib_umem_for_each_in_range(
 			&per_mm->umem_tree, 0, ULLONG_MAX,
 			ib_umem_notifier_release_trampoline, true, NULL);
+	ib_invoke_sync_clients(mm, 0, 0);
 	up_read(&per_mm->umem_rwsem);
 }
 
@@ -148,6 +150,7 @@ static int invalidate_range_start_trampoline(struct ib_umem_odp *item,
 {
 	ib_umem_notifier_start_account(item);
 	item->umem.context->invalidate_range(item, start, end);
+	*(bool *)cookie = true;
 	return 0;
 }
 
@@ -159,6 +162,8 @@ static int ib_umem_notifier_invalidate_range_start(struct mmu_notifier *mn,
 {
 	struct ib_ucontext_per_mm *per_mm =
 		container_of(mn, struct ib_ucontext_per_mm, mn);
+	bool call_rsync;
+	int ret;
 
 	if (blockable)
 		down_read(&per_mm->umem_rwsem);
@@ -175,9 +180,13 @@ static int ib_umem_notifier_invalidate_range_start(struct mmu_notifier *mn,
 		return 0;
 	}
 
-	return rbt_ib_umem_for_each_in_range(&per_mm->umem_tree, start, end,
+	ret = rbt_ib_umem_for_each_in_range(&per_mm->umem_tree, start, end,
 					     invalidate_range_start_trampoline,
-					     blockable, NULL);
+					     blockable, &call_rsync);
+	if (call_rsync)
+		ib_invoke_sync_clients(mm, start, end - start);
+
+	return ret;
 }
 
 static int invalidate_range_end_trampoline(struct ib_umem_odp *item, u64 start,
