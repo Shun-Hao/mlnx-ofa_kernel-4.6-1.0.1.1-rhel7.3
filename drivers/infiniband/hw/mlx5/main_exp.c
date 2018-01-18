@@ -1390,12 +1390,13 @@ int mlx5_ib_init_dc_improvements(struct mlx5_ib_dev *dev)
 
 	max_dc_cnak_qps = min_t(int, 1 << MLX5_CAP_GEN(mdev, log_max_dc_cnak_qps),
 			      dev->ib_dev.num_comp_vectors / MLX5_CAP_GEN(mdev, num_ports));
-	err = init_dc_sysfs(dev);
-	if (err)
-		return err;
 
 	if (!MLX5_CAP_GEN(dev->mdev, dc_connect_qp))
 		return 0;
+
+	err = init_dc_sysfs(dev);
+	if (err)
+		return err;
 
 	/* start with 25% of maximum CNAK QPs */
 	ini_dc_cnak_qps = DIV_ROUND_UP(max_dc_cnak_qps, 4);
@@ -1448,14 +1449,16 @@ void mlx5_ib_cleanup_dc_improvements(struct mlx5_ib_dev *dev)
 	int port;
 	int i;
 
-	for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
-		for (i = 0; i < dev->num_dc_cnak_qps; i++)
-			cleanup_driver_cnak(dev, port, i);
-		cleanup_dc_port_sysfs(&dev->dc_stats[port - 1]);
-		kfree(dev->dc_stats[port - 1].rx_scatter);
-		kfree(dev->dcd[port - 1]);
+	if (dev->num_dc_cnak_qps) {
+		for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
+			for (i = 0; i < dev->num_dc_cnak_qps; i++)
+				cleanup_driver_cnak(dev, port, i);
+			cleanup_dc_port_sysfs(&dev->dc_stats[port - 1]);
+			kfree(dev->dc_stats[port - 1].rx_scatter);
+			kfree(dev->dcd[port - 1]);
+		}
+		cleanup_dc_sysfs(dev);
 	}
-	cleanup_dc_sysfs(dev);
 
 	mlx5_ib_disable_dc_tracer(dev);
 }
