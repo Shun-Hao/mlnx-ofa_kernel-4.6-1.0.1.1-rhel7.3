@@ -151,8 +151,7 @@ void mlx5_enter_error_state(struct mlx5_core_dev *dev, bool force)
 		mlx5_unlock_cmdif(dev);
 	}
 
-	if (!force && fatal_error != MLX5_SENSOR_PCI_ERR &&
-			fatal_error != MLX5_SENSOR_PCI_COMM_ERR) {
+	if (!force && fatal_error == MLX5_SENSOR_FW_SYND_RFR) {
 		err = mlx5_fill_cr_dump(dev);
 		if (err)
 			mlx5_core_err(dev, "Failed to collect crdump area err %d\n", err);
