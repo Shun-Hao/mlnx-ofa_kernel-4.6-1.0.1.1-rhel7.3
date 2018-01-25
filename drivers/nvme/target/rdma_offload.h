@@ -22,6 +22,7 @@
 #include "nvmet.h"
 
 #define NVMET_DYNAMIC_STAGING_BUFFER_PAGE_SIZE_MB 1
+#define NVMET_DEFAULT_CMD_TIMEOUT_USEC 30000000
 
 struct nvmet_rdma_xrq;
 struct nvmet_rdma_device;

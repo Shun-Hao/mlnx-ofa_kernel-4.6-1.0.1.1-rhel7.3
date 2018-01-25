@@ -349,7 +349,8 @@ static void nvmet_rdma_backend_ctrl_event(struct ib_event *event, void *priv)
 }
 
 static int nvmet_rdma_init_be_ctrl_attr(struct ib_nvmf_backend_ctrl_init_attr *attr,
-					 struct nvmet_rdma_backend_ctrl *be_ctrl)
+					struct nvmet_rdma_backend_ctrl *be_ctrl,
+					struct ib_nvmf_caps *nvmf_caps)
 {
 	struct nvme_peer_resource *ofl = be_ctrl->ofl;
 	unsigned int nvme_cq_depth, nvme_sq_depth;
@@ -378,6 +379,13 @@ static int nvmet_rdma_init_be_ctrl_attr(struct ib_nvmf_backend_ctrl_init_attr *a
 	attr->sq_log_page_size = ilog2(ofl->nvme_sq_size >> 12);
 	attr->initial_cqh_db_value = 0;
 	attr->initial_sqt_db_value = 0;
+	if (nvmf_caps->min_cmd_timeout_us && nvmf_caps->max_cmd_timeout_us)
+		attr->cmd_timeout_us = clamp_t(u32,
+					       NVMET_DEFAULT_CMD_TIMEOUT_USEC,
+					       nvmf_caps->min_cmd_timeout_us,
+					       nvmf_caps->max_cmd_timeout_us);
+	else
+		attr->cmd_timeout_us = 0;
 	attr->cqh_dbr_addr = ofl->cqh_dbr_addr;
 	attr->sqt_dbr_addr = ofl->sqt_dbr_addr;
 	attr->cq_pas = ofl->cq_dma_addr;
@@ -443,7 +451,8 @@ nvmet_rdma_create_be_ctrl(struct nvmet_rdma_xrq *xrq,
 	be_ctrl->pdev = ns->pdev;
 	be_ctrl->xrq = xrq;
 
-	err = nvmet_rdma_init_be_ctrl_attr(&init_attr, be_ctrl);
+	err = nvmet_rdma_init_be_ctrl_attr(&init_attr, be_ctrl,
+			&xrq->ndev->device->attrs.nvmf_caps);
 	if (err)
 		goto out_put_resource;
 
