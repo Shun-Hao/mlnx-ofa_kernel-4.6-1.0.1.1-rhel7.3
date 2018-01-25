@@ -60,6 +60,14 @@ static void *mlx5_dma_zalloc_coherent_node(struct mlx5_core_dev *dev,
 	int original_node;
 	void *cpu_handle;
 
+	/* WA for kernels that don't use numa_mem_id in alloc_pages_node */
+	if (node == NUMA_NO_NODE)
+#ifdef HAVE_NUMA_MEM_ID
+		node = numa_mem_id();
+#else
+		node = first_memory_node;
+#endif
+
 	mutex_lock(&priv->alloc_mutex);
 	original_node = dev_to_node(&dev->pdev->dev);
 	set_dev_node(&dev->pdev->dev, node);
