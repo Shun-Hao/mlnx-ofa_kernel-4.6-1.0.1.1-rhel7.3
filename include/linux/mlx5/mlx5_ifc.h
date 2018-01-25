@@ -618,7 +618,11 @@ struct mlx5_ifc_flow_table_eswitch_cap_bits {
 };
 
 struct mlx5_ifc_nvmf_cap_bits {
-	u8	reserved_at_0[0x1b];
+	u8	reserved_at_0[0xb];
+	u8	log_min_cmd_timeout[0x5];
+	u8	reserved_at_10[0x3];
+	u8	log_max_cmd_timeout[0x5];
+	u8	reserved_at_18[0x3];
 	u8	log_max_namespace_per_xrq[0x5];
 
 	u8	reserved_at_20[0x6];
