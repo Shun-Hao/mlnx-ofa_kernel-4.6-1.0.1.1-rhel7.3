@@ -3353,7 +3353,10 @@ struct mlx5_ifc_nvmf_be_ctrl_bits {
 	u8         initial_cqh_db_value[0x10];
 	u8         initial_sqt_db_value[0x10];
 
-	u8         reserved_at_80[0x100];
+	u8         reserved_at_80[0x1b];
+	u8         log_cmd_timeout_us[0x5];
+
+	u8         reserved_at_a0[0xe0];
 
 	u8         cqh_dbr_addr[0x40];
 
