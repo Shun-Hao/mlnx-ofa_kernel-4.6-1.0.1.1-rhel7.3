@@ -78,8 +78,16 @@ void mlx5_ib_internal_fill_nvmf_caps(struct mlx5_ib_dev *dev)
 	caps->min_cmd_size = MLX5_CAP_NVMF(mdev, min_ioccsz);
 	caps->max_cmd_size = MLX5_CAP_NVMF(mdev, max_ioccsz);
 	caps->max_data_offset = MLX5_CAP_NVMF(mdev, max_icdoff);
-
-	return;
+	/* log_min_cmd_timeout = 0 meens use default timeout from HCA */
+	if (MLX5_CAP_NVMF(mdev, log_min_cmd_timeout))
+		caps->min_cmd_timeout_us = 1 << MLX5_CAP_NVMF(mdev, log_min_cmd_timeout);
+	else
+		caps->min_cmd_timeout_us = 0;
+	/* log_max_cmd_timeout = 0 meens use default timeout from HCA */
+	if (MLX5_CAP_NVMF(mdev, log_max_cmd_timeout))
+		caps->max_cmd_timeout_us = 1 << MLX5_CAP_NVMF(mdev, log_max_cmd_timeout);
+	else
+		caps->max_cmd_timeout_us = 0;
 }
 
 static void set_nvmf_backend_ctrl_attrs(struct ib_nvmf_backend_ctrl_init_attr *attr,
