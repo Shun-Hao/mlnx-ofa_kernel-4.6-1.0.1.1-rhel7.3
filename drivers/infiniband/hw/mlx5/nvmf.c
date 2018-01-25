@@ -99,6 +99,7 @@ static void set_nvmf_backend_ctrl_attrs(struct ib_nvmf_backend_ctrl_init_attr *a
 	in->sq_log_page_size = attr->sq_log_page_size;
 	in->initial_cqh_db_value = attr->initial_cqh_db_value;
 	in->initial_sqt_db_value = attr->initial_sqt_db_value;
+	in->log_cmd_timeout_us = attr->cmd_timeout_us ? ilog2(attr->cmd_timeout_us) : 0;
 	in->cqh_dbr_addr = attr->cqh_dbr_addr;
 	in->sqt_dbr_addr = attr->sqt_dbr_addr;
 	in->cq_pas = attr->cq_pas;

@@ -42,6 +42,7 @@ struct mlx5_be_ctrl_attr {
 	u8	sq_log_page_size;
 	u16	initial_cqh_db_value;
 	u16	initial_sqt_db_value;
+	u8	log_cmd_timeout_us;
 	u64	cqh_dbr_addr;
 	u64	sqt_dbr_addr;
 	u64	cq_pas;
