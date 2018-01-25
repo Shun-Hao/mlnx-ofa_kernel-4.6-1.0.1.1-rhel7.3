@@ -459,6 +459,7 @@ struct ib_nvmf_backend_ctrl_init_attr {
 	u8		sq_log_page_size;
 	u16		initial_cqh_db_value;
 	u16		initial_sqt_db_value;
+	u32		cmd_timeout_us;
 	u64		cqh_dbr_addr;
 	u64		sqt_dbr_addr;
 	u64		cq_pas;
