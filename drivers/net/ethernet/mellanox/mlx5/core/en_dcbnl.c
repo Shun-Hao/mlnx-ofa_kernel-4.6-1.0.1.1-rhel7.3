@@ -1127,8 +1127,6 @@ static void mlx5e_trust_update_sq_inline_mode(struct mlx5e_priv *priv)
 	    priv->channels.params.tx_min_inline_mode)
 		goto out;
 
-	if (mlx5e_open_channels(priv, &new_channels))
-		goto out;
 	mlx5e_switch_priv_channels(priv, &new_channels, NULL);
 
 out:
