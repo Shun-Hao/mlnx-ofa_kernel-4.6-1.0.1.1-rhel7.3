@@ -1071,6 +1071,7 @@ struct mlx4_dev {
 	struct mlx4_vf_dev     *dev_vfs;
 	spinlock_t		eq_accounting_lock;
 	u8  uar_page_shift;
+	u8			lag_port_link_state[MLX4_MAX_PORTS + 1];
 };
 
 struct mlx4_clock_params {
