@@ -321,6 +321,7 @@ static struct mlx5_ib_qp *dct_create_qp(struct ib_pd *pd,
        struct mlx5_ib_qp *mqp;
        void *dctc;
        struct mlx5_ib_dev *dev = to_mdev(pd->device);
+       u8 tclass = attr->tclass;
 
        /* TODO: re-add  OOO
        if (!pd->uobject &&
@@ -359,6 +360,9 @@ static struct mlx5_ib_qp *dct_create_qp(struct ib_pd *pd,
 	       }
        }
 	
+	if (dev->tcd[attr->port - 1].val >= 0)
+		tclass = dev->tcd[attr->port - 1].val;
+	MLX5_SET(dctc, dctc, tclass, tclass);
        /* TODO: re-add  OOO
        if (attr->create_flags & IB_EXP_DCT_OOO_RW_DATA_PLACEMENT)
 	       MLX5_SET(dctc, dctc, multipath, 1);
