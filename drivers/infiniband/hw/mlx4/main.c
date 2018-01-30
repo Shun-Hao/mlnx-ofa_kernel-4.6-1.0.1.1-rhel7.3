@@ -1917,7 +1917,8 @@ static int mlx4_ib_mcg_attach(struct ib_qp *ibqp, union ib_gid *gid, u16 lid)
 	int is_over_ip = mlx4_roce_is_over_ip(mdev->dev->caps.ud_gid_type);
 	enum mlx4_protocol prot =
 		(ibqp->qp_type == IB_QPT_RAW_PACKET) ? MLX4_PROT_ETH :
-		(gid->raw[1] == 0x0e && is_over_ip) ? MLX4_PROT_IB_IPV4 : MLX4_PROT_IB_IPV6;
+		(!be64_to_cpu(gid->global.subnet_prefix) && is_over_ip) ?
+		MLX4_PROT_IB_IPV4 : MLX4_PROT_IB_IPV6;
 	DECLARE_BITMAP(ports, MLX4_MAX_PORTS);
 	int i = 0;
 
