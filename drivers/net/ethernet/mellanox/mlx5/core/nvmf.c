@@ -108,6 +108,9 @@ int mlx5_core_create_nvmf_backend_ctrl(struct mlx5_core_dev *dev,
 	MLX5_SET(create_nvmf_be_ctrl_in, in,
 		 nvmf_be_ctrl_entry.initial_sqt_db_value,
 		 attr_in->initial_sqt_db_value);
+	MLX5_SET(create_nvmf_be_ctrl_in, in,
+		 nvmf_be_ctrl_entry.log_cmd_timeout_us,
+		 attr_in->log_cmd_timeout_us);
 	MLX5_SET64(create_nvmf_be_ctrl_in, in,
 		   nvmf_be_ctrl_entry.cqh_dbr_addr,
 		   attr_in->cqh_dbr_addr);
