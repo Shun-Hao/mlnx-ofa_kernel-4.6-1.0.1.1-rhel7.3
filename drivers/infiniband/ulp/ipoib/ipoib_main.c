@@ -135,6 +135,11 @@ static int ipoib_netdev_event(struct notifier_block *this,
 		ipoib_create_debug_files(dev);
 		break;
 	case NETDEV_UNREGISTER:
+		/* NETDEV_UNREGISTER could be fired for multiple times.
+		 * Make sure we only call this once.
+		 */
+		if (dev->reg_state == NETREG_UNREGISTERED)
+			return NOTIFY_DONE;
 		ipoib_delete_debug_files(dev);
 		break;
 	}
