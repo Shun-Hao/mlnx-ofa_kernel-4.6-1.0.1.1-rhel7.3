@@ -3686,6 +3686,15 @@ void nvme_start_queues(struct nvme_ctrl *ctrl)
 }
 EXPORT_SYMBOL_GPL(nvme_start_queues);
 
+bool disk_is_nvme(struct gendisk *disk)
+{
+	if (!disk_to_dev(disk)->parent)
+		return false;
+
+	return disk_to_dev(disk)->parent->class == nvme_class;
+}
+EXPORT_SYMBOL_GPL(disk_is_nvme);
+
 int __init nvme_core_init(void)
 {
 	int result = -ENOMEM;
