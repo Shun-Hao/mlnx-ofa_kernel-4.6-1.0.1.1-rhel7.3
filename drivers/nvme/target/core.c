@@ -514,6 +514,12 @@ int nvmet_ns_enable(struct nvmet_ns *ns)
 		pci_dev_get(ns->pdev);
 	}
 
+	if (ns->pdev && !list_empty(&subsys->namespaces)) {
+		pr_err("Offloaded subsystem doesn't support many namespaces\n");
+		ret = -EINVAL;
+		goto out_pdev_put;
+	}
+
 	ret = nvmet_p2pmem_ns_enable(ns);
 	if (ret)
 		goto out_unlock;
