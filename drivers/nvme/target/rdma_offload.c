@@ -223,6 +223,7 @@ static int nvmet_rdma_init_xrq(struct nvmet_rdma_device *ndev,
 	xrq->ofl_srq = srq;
 	xrq->ofl_srq_size = srq_size;
 	xrq->st->xrq = xrq;
+	xrq->nvme_queue_depth = srq_attr.ext.nvmf.nvme_queue_size;
 	queue->xrq = xrq;
 
 	for (i = 0; i < srq_size; i++) {
@@ -354,10 +355,25 @@ static void nvmet_rdma_backend_ctrl_event(struct ib_event *event, void *priv)
 	}
 }
 
-static void nvmet_rdma_init_be_ctrl_attr(struct ib_nvmf_backend_ctrl_init_attr *attr,
+static int nvmet_rdma_init_be_ctrl_attr(struct ib_nvmf_backend_ctrl_init_attr *attr,
 					 struct nvmet_rdma_backend_ctrl *be_ctrl)
 {
 	struct nvme_peer_resource *ofl = be_ctrl->ofl;
+	unsigned int nvme_cq_depth, nvme_sq_depth;
+
+	nvme_sq_depth = ofl->nvme_sq_size / sizeof(struct nvme_command);
+	nvme_cq_depth = ofl->nvme_cq_size / sizeof(struct nvme_completion);
+
+	if (nvme_sq_depth < be_ctrl->xrq->nvme_queue_depth) {
+		pr_err("Minimal nvme SQ depth for offload is %u, actual is %u\n",
+		       be_ctrl->xrq->nvme_queue_depth, nvme_sq_depth);
+		return -EINVAL;
+	}
+	if (nvme_cq_depth < be_ctrl->xrq->nvme_queue_depth) {
+		pr_err("Minimal nvme CQ depth for offload is %u, actual is %u\n",
+		       be_ctrl->xrq->nvme_queue_depth, nvme_cq_depth);
+		return -EINVAL;
+	}
 
 	memset(attr, 0, sizeof(*attr));
 
@@ -373,6 +389,8 @@ static void nvmet_rdma_init_be_ctrl_attr(struct ib_nvmf_backend_ctrl_init_attr *
 	attr->sqt_dbr_addr = ofl->sqt_dbr_addr;
 	attr->cq_pas = ofl->cq_dma_addr;
 	attr->sq_pas = ofl->sq_dma_addr;
+
+	return 0;
 }
 
 static void nvmet_rdma_init_ns_attr(struct ib_nvmf_ns_init_attr *attr,
@@ -430,8 +448,12 @@ nvmet_rdma_create_be_ctrl(struct nvmet_rdma_xrq *xrq,
 	}
 	be_ctrl->restart = true;
 	be_ctrl->pdev = ns->pdev;
+	be_ctrl->xrq = xrq;
 
-	nvmet_rdma_init_be_ctrl_attr(&init_attr, be_ctrl);
+	err = nvmet_rdma_init_be_ctrl_attr(&init_attr, be_ctrl);
+	if (err)
+		goto out_put_resource;
+
 	be_ctrl->ibctrl = ib_create_nvmf_backend_ctrl(xrq->ofl_srq, &init_attr);
 	if (IS_ERR(be_ctrl->ibctrl)) {
 		err = PTR_ERR(be_ctrl->ibctrl);
@@ -450,7 +472,6 @@ nvmet_rdma_create_be_ctrl(struct nvmet_rdma_xrq *xrq,
 	list_add_tail(&be_ctrl->entry, &xrq->be_ctrls_list);
 	mutex_unlock(&xrq->be_mutex);
 
-	be_ctrl->xrq = xrq;
 	return be_ctrl;
 
 out_destroy_be_ctrl:

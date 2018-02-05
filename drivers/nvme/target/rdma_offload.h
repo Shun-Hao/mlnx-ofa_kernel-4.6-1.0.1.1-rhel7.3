@@ -75,6 +75,7 @@ struct nvmet_rdma_xrq {
 	struct nvmet_rdma_staging_buf	*st;
 	struct kref			ref;
 	struct list_head		entry;
+	unsigned int			nvme_queue_depth;
 };
 
 static void nvmet_rdma_free_st_buff(struct nvmet_rdma_staging_buf *st);
