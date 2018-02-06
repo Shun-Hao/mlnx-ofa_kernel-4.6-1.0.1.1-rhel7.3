@@ -58,6 +58,7 @@ int ipoib_set_mode_rss(struct net_device *dev, const char *buf)
 		send_ring = priv->send_ring;
 		for (i = 0; i < priv->num_tx_queues; i++) {
 			send_ring->tx_wr.wr.send_flags &= ~IB_SEND_IP_CSUM;
+			send_ring->tx_wr.wr.opcode = IB_WR_SEND;
 			send_ring++;
 		}
 
