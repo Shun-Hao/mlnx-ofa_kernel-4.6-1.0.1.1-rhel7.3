@@ -228,7 +228,7 @@ static void nvmet_execute_io_connect(struct nvmet_req *req)
 				goto out_ctrl_put;
 			}
 		}
-		status = ctrl->ops->install_offload_queue(ctrl, qid);
+		status = ctrl->ops->install_offload_queue(ctrl, req);
 		if (status) {
 			status = NVME_SC_INTERNAL | NVME_SC_DNR;
 			goto out_offload_destroy;

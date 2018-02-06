@@ -282,27 +282,20 @@ out_unlock:
 }
 
 static int nvmet_rdma_install_offload_queue(struct nvmet_ctrl *ctrl,
-					    u16 qid)
+					    struct nvmet_req *req)
 {
-	struct nvmet_rdma_queue *queue;
+	struct nvmet_rdma_queue *queue =
+		container_of(req->sq, struct nvmet_rdma_queue, nvme_sq);
 	struct ib_qp_attr attr;
-	struct nvmet_rdma_offload_ctrl *offload_ctrl = ctrl->offload_ctrl;
-	struct nvmet_rdma_xrq *xrq = offload_ctrl->xrq;
-	int ret = -ENODEV;
 
-	mutex_lock(&nvmet_rdma_queue_mutex);
-	list_for_each_entry(queue, &nvmet_rdma_queue_list, queue_list) {
-		if (queue->xrq == xrq && queue->host_qid == qid) {
-			attr.qp_state = IB_QPS_RTS;
-			attr.offload_type = IB_QP_OFFLOAD_NVMF;
-			ret = ib_modify_qp(queue->cm_id->qp, &attr,
-					   IB_QP_STATE | IB_QP_OFFLOAD_TYPE);
-			break;
-		}
-	}
-	mutex_unlock(&nvmet_rdma_queue_mutex);
+	WARN_ON_ONCE(!queue->offload);
 
-	return ret;
+	memset(&attr, 0, sizeof(attr));
+	attr.qp_state = IB_QPS_RTS;
+	attr.offload_type = IB_QP_OFFLOAD_NVMF;
+
+	return ib_modify_qp(queue->cm_id->qp, &attr,
+			    IB_QP_STATE | IB_QP_OFFLOAD_TYPE);
 }
 
 static void nvmet_rdma_free_be_ctrl(struct nvmet_rdma_backend_ctrl *be_ctrl)

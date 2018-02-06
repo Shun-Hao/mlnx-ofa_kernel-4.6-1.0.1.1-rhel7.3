@@ -83,7 +83,7 @@ static void nvmet_rdma_destroy_xrq(struct kref *ref);
 static int nvmet_rdma_find_get_xrq(struct nvmet_rdma_device *ndev,
 				   struct nvmet_rdma_queue *queue);
 static int nvmet_rdma_install_offload_queue(struct nvmet_ctrl *ctrl,
-					    u16 qid);
+					    struct nvmet_req *req);
 static int nvmet_rdma_create_offload_ctrl(struct nvmet_ctrl *ctrl);
 static void nvmet_rdma_destroy_offload_ctrl(struct nvmet_ctrl *ctrl);
 static int nvmet_rdma_enable_offload_ns(struct nvmet_ctrl *ctrl);

@@ -285,7 +285,8 @@ struct nvmet_fabrics_ops {
 	void (*disc_traddr)(struct nvmet_req *req,
 			struct nvmet_port *port, char *traddr);
 	bool (*peer_to_peer_capable)(struct nvmet_port *port);
-	int (*install_offload_queue)(struct nvmet_ctrl *ctrl, u16 qid);
+	int (*install_offload_queue)(struct nvmet_ctrl *ctrl,
+				     struct nvmet_req *req);
 	int (*create_offload_ctrl)(struct nvmet_ctrl *ctrl);
 	void (*destroy_offload_ctrl)(struct nvmet_ctrl *ctrl);
 	int (*enable_offload_ns)(struct nvmet_ctrl *ctrl);
