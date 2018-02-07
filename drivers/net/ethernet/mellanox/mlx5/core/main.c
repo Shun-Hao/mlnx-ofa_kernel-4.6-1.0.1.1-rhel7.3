@@ -1638,6 +1638,27 @@ enum {
 	CAPI_OWNER	= 1 << 2,
 };
 
+/* Caller allocates out pointer */
+static int mlx5_capi_query_control_reg(struct mlx5_core_dev *dev,
+				       struct icmd_acc_reg_out *out)
+{
+	struct icmd_acc_reg_in *in;
+	int err = -ENOMEM;
+
+	in = kzalloc(sizeof(*in) + ACCESS_REG_DWLEN * 4, GFP_KERNEL);
+	if (!in)
+		return err;
+
+	in->reg_id = MLX5_CAPI_CTRL_REG;
+	in->method = MLX5_ACCEES_REG_METHOD_QUERY;
+	in->dw_len = ACCESS_REG_DWLEN;
+	out->dw_len = ACCESS_REG_DWLEN;
+	err = mlx5_core_icmd_access_reg(dev, in, out);
+
+	kfree(in);
+	return err;
+}
+
 static int capi_init_owner(struct mlx5_core_dev *dev)
 {
 	struct mlx5_core_capi *capi = &dev->capi;
@@ -1728,6 +1749,13 @@ static int capi_init_func(struct mlx5_core_dev *dev)
 	if (!out)
 		goto term;
 
+	/* Query */
+	err = mlx5_capi_query_control_reg(dev, out);
+	if (err)
+		goto term;
+	memcpy(in->data, out->data, ACCESS_REG_DWLEN * 4);
+
+	/* Modify */
 	in->reg_id = MLX5_CAPI_CTRL_REG;
 	in->method = MLX5_ACCESS_REG_METHOD_WR;
 	in->dw_len = ACCESS_REG_DWLEN;
@@ -1737,6 +1765,7 @@ static int capi_init_func(struct mlx5_core_dev *dev)
 	if (err)
 		goto term;
 
+	/* Verify */
 	in->reg_id = MLX5_CAPI_CTRL_REG;
 	in->method = MLX5_ACCEES_REG_METHOD_QUERY;
 	in->dw_len = ACCESS_REG_DWLEN;
@@ -1772,7 +1801,7 @@ static int capi_init(struct mlx5_core_dev *dev)
 	mlx5_core_dbg(dev, "icmd caps 0x%llx\n", capi->icmd_caps);
 
 	if (!mlx5_capi_supported(dev)) {
-		mlx5_core_warn(dev, "capi is NOT supported\n");
+		mlx5_core_warn(dev, "capi is NOT enabled\n");
 		return -ENOTSUPP;
 	}
 
@@ -1814,6 +1843,13 @@ static int capi_disable_xlt(struct mlx5_core_dev *dev)
 	if (!out)
 		goto term;
 
+	/* Query */
+	err = mlx5_capi_query_control_reg(dev, out);
+	if (err)
+		goto term;
+	memcpy(in->data, out->data, ACCESS_REG_DWLEN * 4);
+
+	/* Modify */
 	in->reg_id = MLX5_CAPI_CTRL_REG;
 	in->method = MLX5_ACCESS_REG_METHOD_WR;
 	in->dw_len = ACCESS_REG_DWLEN;
@@ -1840,6 +1876,13 @@ static int capi_clear_bar(struct mlx5_core_dev *dev)
 	if (!out)
 		goto term;
 
+	/* Query */
+	err = mlx5_capi_query_control_reg(dev, out);
+	if (err)
+		goto term;
+	memcpy(in->data, out->data, ACCESS_REG_DWLEN * 4);
+
+	/* Modify */
 	in->reg_id = MLX5_CAPI_CTRL_REG;
 	in->method = MLX5_ACCESS_REG_METHOD_WR;
 	in->dw_len = ACCESS_REG_DWLEN;
