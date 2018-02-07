@@ -538,6 +538,8 @@ struct mlx5_ib_cq {
 	enum ib_cq_notify_flags notify_flags;
 	struct work_struct	notify_work;
 	u16			private_flags; /* Use mlx5_ib_cq_pr_flags */
+
+	struct task_struct     *tsk;
 };
 
 struct mlx5_ib_wc {

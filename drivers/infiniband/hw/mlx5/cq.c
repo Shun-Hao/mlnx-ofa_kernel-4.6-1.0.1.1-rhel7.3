@@ -36,12 +36,20 @@
 #include <rdma/ib_cache.h>
 #include "mlx5_ib.h"
 #include "user_exp.h"
+#ifdef HAVE_PNV_PCI_AS_NOTIFY
+#include <asm/switch_to.h>
+#include <asm/pnv-pci.h>
+#endif
 
 static void mlx5_ib_cq_comp(struct mlx5_core_cq *cq)
 {
-	struct ib_cq *ibcq = &to_mibcq(cq)->ibcq;
+	struct mlx5_ib_cq *mlx5ib_cq = to_mibcq(cq);
+	struct ib_cq *ibcq = &mlx5ib_cq->ibcq;
 
 	ibcq->comp_handler(ibcq, ibcq->cq_context);
+
+	if (unlikely(mlx5ib_cq->tsk))
+		kick_process(mlx5ib_cq->tsk);
 }
 
 static void mlx5_ib_cq_event(struct mlx5_core_cq *mcq, enum mlx5_event type)
@@ -906,6 +914,36 @@ static int create_cq_user(struct mlx5_ib_dev *dev, struct ib_udata *udata,
 	}
 
 	MLX5_SET(create_cq_in, *cqb, uid, to_mucontext(context)->devx_uid);
+#ifdef HAVE_PNV_PCI_AS_NOTIFY
+	if (ucmd.exp_data.as_notify_en) {
+		u32 lpid, pid, tid;
+
+		if (!dev->mdev->as_notify.enabled) {
+			err = -EOPNOTSUPP;
+			mlx5_ib_warn(dev, "as_notify is not enabled\n");
+			goto err_cqb;
+		}
+
+		err = set_thread_tidr(current);
+		if (err)
+			goto err_cqb;
+
+		err = pnv_pci_get_as_notify_info(current, &lpid, &pid, &tid);
+		if (err) {
+			clear_thread_tidr(current);
+			goto err_cqb;
+		}
+
+		mlx5_ib_dbg(dev, "as_notify_en cq lpid=%x, pid=%x, tid=%x\n", lpid, pid, tid);
+		MLX5_SET(cqc, cqc, as_notify, 1);
+		MLX5_SET(cqc, cqc, local_partition_id, lpid);
+		MLX5_SET(cqc, cqc, process_id, pid);
+		MLX5_SET(cqc, cqc, thread_id, tid);
+
+		cq->tsk = current;
+	}
+#endif
+
 	return 0;
 
 err_cqb:
