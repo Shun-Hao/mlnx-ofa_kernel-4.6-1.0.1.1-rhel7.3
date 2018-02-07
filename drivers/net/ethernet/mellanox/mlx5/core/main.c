@@ -68,6 +68,9 @@
 #include "lib/vxlan.h"
 #include "diag/fw_tracer.h"
 #include "icmd.h"
+#ifdef HAVE_PNV_PCI_AS_NOTIFY
+#include <asm/pnv-pci.h>
+#endif
 
 MODULE_AUTHOR("Eli Cohen <eli@mellanox.com>");
 MODULE_DESCRIPTION("Mellanox 5th generation network adapters (ConnectX series) core driver");
@@ -255,6 +258,9 @@ static struct mlx5_profile profile[] = {
 #define FW_INIT_WAIT_MS			2
 #define FW_PRE_INIT_TIMEOUT_MILI	120000
 #define FW_INIT_WARN_MESSAGE_INTERVAL	20000
+
+static void mlx5_as_notify_init(struct mlx5_core_dev *dev);
+static void mlx5_as_notify_cleanup(struct mlx5_core_dev *dev);
 
 static int wait_fw_init(struct mlx5_core_dev *dev, u32 max_wait_mili,
 			u32 warn_time_mili)
@@ -1373,6 +1379,9 @@ static int mlx5_load_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
 		goto reclaim_boot_pages;
 	}
 
+	/* Treat as_notify as best effort feature */
+	mlx5_as_notify_init(dev);
+
 	err = mlx5_pagealloc_start(dev);
 	if (err) {
 		dev_err(&pdev->dev, "mlx5_pagealloc_start failed\n");
@@ -1537,6 +1546,7 @@ err_stop_poll:
 	}
 
 err_pagealloc_stop:
+	mlx5_as_notify_cleanup(dev);
 	mlx5_pagealloc_stop(dev);
 
 reclaim_boot_pages:
@@ -1596,6 +1606,7 @@ static int mlx5_unload_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
 		dev_err(&dev->pdev->dev, "tear_down_hca failed, skip cleanup\n");
 		goto out;
 	}
+	mlx5_as_notify_cleanup(dev);
 	mlx5_pagealloc_stop(dev);
 	mlx5_reclaim_startup_pages(dev);
 	mlx5_core_disable_hca(dev, 0);
@@ -1919,6 +1930,46 @@ static void capi_cleanup(struct mlx5_core_dev *dev)
 		mlx5_core_warn(dev, "failed to clear bar\n");
 }
 #endif
+
+static void mlx5_as_notify_init(struct mlx5_core_dev *dev)
+{
+#ifdef HAVE_PNV_PCI_AS_NOTIFY
+	struct pci_dev *pdev = dev->pdev;
+#endif
+	u32 log_response_bar_size;
+	u64 response_bar_address;
+	u64 asn_match_value;
+	int err;
+
+	if (!mlx5_core_is_pf(dev))
+		return;
+
+	if (!MLX5_CAP_GEN(dev, as_notify))
+		return;
+
+#ifdef HAVE_PNV_PCI_AS_NOTIFY
+	err = pnv_pci_enable_tunnel(pdev, &asn_match_value);
+#endif
+	if (err)
+		return;
+	err = set_tunneled_operation(dev, 0xFFFF, asn_match_value, &log_response_bar_size, &response_bar_address);
+	if (err)
+		return;
+
+#ifdef HAVE_PNV_PCI_AS_NOTIFY
+	err = pnv_pci_set_tunnel_bar(pdev, response_bar_address, 1);
+#endif
+	if (err)
+		return;
+
+	dev->as_notify.response_bar_address = response_bar_address;
+	dev->as_notify.enabled = true;
+	mlx5_core_dbg(dev,
+		      "asn_match_value=%llx, log_response_bar_size=%x, response_bar_address=%llx\n",
+		      asn_match_value, log_response_bar_size, response_bar_address);
+}
+
+static void mlx5_as_notify_cleanup(struct mlx5_core_dev *dev) { }
 
 #define MLX5_IB_MOD "mlx5_ib"
 static int init_one(struct pci_dev *pdev,

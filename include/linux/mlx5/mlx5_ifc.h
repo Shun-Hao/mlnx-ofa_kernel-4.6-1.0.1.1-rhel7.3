@@ -101,6 +101,7 @@ enum {
 	MLX5_CMD_OP_SET_DRIVER_VERSION            = 0x10d,
 	MLX5_CMD_OP_QUERY_OTHER_HCA_CAP           = 0x10e,
 	MLX5_CMD_OP_MODIFY_OTHER_HCA_CAP          = 0x10f,
+	MLX5_CMD_OP_SET_TUNNELED_OPERATIONS       = 0x110,
 	MLX5_CMD_OP_CREATE_MKEY                   = 0x200,
 	MLX5_CMD_OP_QUERY_MKEY                    = 0x201,
 	MLX5_CMD_OP_DESTROY_MKEY                  = 0x202,
@@ -972,7 +973,8 @@ struct mlx5_ifc_cmd_hca_cap_bits {
 	u8         reserved_at_e8[0x2];
 	u8         log_max_mkey[0x6];
 	u8         tunneled_atomic[0x1];
-	u8         reserved_at_f0[0x7];
+	u8         as_notify[0x1];
+	u8         reserved_at_f0[0x6];
 	u8         dump_fill_mkey[0x1];
 	u8         reserved_at_f9[0x2];
 	u8         fast_teardown[0x1];
@@ -3226,7 +3228,8 @@ enum {
 
 struct mlx5_ifc_cqc_bits {
 	u8         status[0x4];
-	u8         reserved_at_4[0x2];
+	u8         as_notify[0x1];
+	u8         reserved_at_5[0x1];
 	u8         dbr_umem_valid[0x1];
 	u8         reserved_at_7[0x1];
 	u8         cqe_sz[0x3];
@@ -3275,7 +3278,10 @@ struct mlx5_ifc_cqc_bits {
 	u8         reserved_at_160[0x8];
 	u8         producer_counter[0x18];
 
-	u8         reserved_at_180[0x40];
+	u8         local_partition_id[0xc];
+	u8         process_id[0x14];
+	u8         reserved_at_1a0[0x10];
+	u8         thread_id[0x10];
 
 	u8         dbr_addr[0x40];
 };
@@ -9873,4 +9879,30 @@ struct mlx5_ifc_mtrc_cap_bits {
 	u8         reserved_at_280[0x180];
 };
 
+struct mlx5_ifc_set_tunnel_operation_out_bits {
+	u8         status[0x8];
+	u8         reserved_at_8[0x18];
+
+	u8         syndrome[0x20];
+
+	u8         reserved_at_40[0x20];
+
+	u8         log_response_bar_size[0x20];
+	u8         response_bar_address[0x40];
+
+	u8         reserved_at_80[0x40];
+};
+
+struct mlx5_ifc_set_tunnel_operation_in_bits {
+	u8         opcode[0x10];
+	u8         reserved_at_10[0x10];
+
+	u8         reserved_at_20[0x10];
+	u8         op_mod[0x10];
+
+	u8         asn_match_mask[0x10];
+	u8         asn_match_value[0x10];
+
+	u8         reserved_at_60[0x1a0];
+};
 #endif /* MLX5_IFC_H */
