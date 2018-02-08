@@ -882,6 +882,8 @@ static ssize_t nvmet_subsys_attr_offload_store(struct config_item *item,
 {
 	struct nvmet_subsys *subsys = to_subsys(item);
 	bool offload;
+	struct nvmet_ns *ns;
+	int ns_count = 0;
 	int ret = 0;
 
 	if (strtobool(page, &offload))
@@ -891,12 +893,6 @@ static ssize_t nvmet_subsys_attr_offload_store(struct config_item *item,
 	mutex_lock(&subsys->lock);
 	if (subsys->offloadble == offload)
 		goto out_unlock;
-
-	if (!list_empty(&subsys->namespaces)) {
-		pr_err("Can't update offload polarity with enabled namespace!\n");
-		ret = -EBUSY;
-		goto out_unlock;
-	}
 
 	if (!list_empty(&subsys->ctrls)) {
 		pr_err("Can't update offload polarity with active controller!\n");
@@ -908,6 +904,33 @@ static ssize_t nvmet_subsys_attr_offload_store(struct config_item *item,
 		pr_err("Can't update offload polarity with active port!\n");
 		ret = -EBUSY;
 		goto out_unlock;
+	}
+
+	if (offload) {
+		list_for_each_entry_rcu(ns, &subsys->namespaces, dev_link)
+			ns_count++;
+		if (ns_count > 1) {
+			pr_err("Offloaded subsystem doesn't support many namespaces\n");
+			ret = -EINVAL;
+			goto out_unlock;
+		}
+	}
+
+	list_for_each_entry_rcu(ns, &subsys->namespaces, dev_link) {
+		if (offload) {
+			ns->pdev = nvme_find_pdev_from_bdev(ns->bdev);
+			if (!ns->pdev) {
+				pr_err("Couldn't find nvme pci device from device %s\n",
+				       ns->device_path);
+				ret = -EINVAL;
+				goto out_unlock;
+			}
+			pci_dev_get(ns->pdev);
+		} else {
+			WARN_ON_ONCE(!ns->pdev);
+			pci_dev_put(ns->pdev);
+			ns->pdev = NULL;
+		}
 	}
 
 	subsys->offloadble = offload;

@@ -509,6 +509,7 @@ int nvmet_ns_enable(struct nvmet_ns *ns)
 		if (!ns->pdev) {
 			pr_err("Couldn't find nvme pci device from device %s\n",
 			       ns->device_path);
+			ret = -EINVAL;
 			goto out_bdev_put;
 		}
 		pci_dev_get(ns->pdev);
