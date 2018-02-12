@@ -2164,7 +2164,7 @@ void ipoib_setup_common(struct net_device *dev)
 
 	ipoib_set_ethtool_ops(dev);
 
-	dev->watchdog_timeo	 = HZ;
+	dev->watchdog_timeo	 = 10 * HZ;
 
 	dev->flags		|= IFF_BROADCAST | IFF_MULTICAST;
 
