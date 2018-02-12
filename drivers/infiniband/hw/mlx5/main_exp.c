@@ -260,6 +260,7 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			     struct ib_udata *uhw)
 {
 	struct mlx5_ib_dev *dev = to_mdev(ibdev);
+	u32 def_tot_bfregs;
 	u32 uar_sz_shift;
 	u32 max_tso;
 	int ret;
@@ -464,18 +465,21 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 
 	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_MAX_DEVICE_CTX;
 
-	if (MLX5_CAP_GEN(dev->mdev, uar_4k))
+	if (MLX5_CAP_GEN(dev->mdev, uar_4k)) {
 		uar_sz_shift = MLX5_ADAPTER_PAGE_SHIFT;
-	else
+		def_tot_bfregs = 16 * MLX5_NUM_BFREGS_PER_UAR;
+	} else {
 		uar_sz_shift = PAGE_SHIFT;
+		def_tot_bfregs = 8 * MLX5_NUM_BFREGS_PER_UAR;
+	}
 
-	/* mlx5_core uses MLX5_NUM_DRIVER_UARS uar pages. Each ucontext uses
-	 * 8 uars (see MLX5_DEF_TOT_UUARS and MLX5_NUM_NON_FP_BFREGS_PER_UAR
-	 * in libmlx5). Note that the CAP's uar_sz is in MB unit.
+	/* mlx5_core uses MLX5_NUM_DRIVER_UARS uar pages. In x86 each ucontext uses
+	 * 8 uars, and in PPC with 4k UAR each context uses 16 uars.
+	 * Note that the CAP's uar_sz is in MB unit.
 	 */
 	props->max_device_ctx =
 		(1 << (MLX5_CAP_GEN(dev->mdev, uar_sz) + 20 - uar_sz_shift))
-		/ (MLX5_DEF_TOT_BFREGS / MLX5_NON_FP_BFREGS_PER_UAR)
+		/ (def_tot_bfregs / MLX5_NON_FP_BFREGS_PER_UAR)
 		- MLX5_NUM_DRIVER_UARS;
 
 	if (MLX5_CAP_GEN(dev->mdev, rq_delay_drop) &&

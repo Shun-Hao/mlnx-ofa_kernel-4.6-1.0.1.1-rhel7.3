@@ -259,7 +259,6 @@ enum {
 
 enum {
 	MLX5_NUM_BFREGS_PER_UAR         = MLX5_NON_FP_BFREGS_PER_UAR,
-	MLX5_DEF_TOT_BFREGS             = 8 * MLX5_NUM_BFREGS_PER_UAR,
 };
 
 enum {
