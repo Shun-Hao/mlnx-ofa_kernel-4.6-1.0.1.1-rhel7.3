@@ -1238,7 +1238,7 @@ static struct mlx5_ib_qp *mlx5_ib_odp_find_qp(struct mlx5_ib_dev *dev,
 	struct mlx5_core_qp *mqp = __mlx5_qp_lookup(dev->mdev, wq_num);
 
 	if (!mqp) {
-		mlx5_ib_err(dev, "QPN 0x%6x not found\n", wq_num);
+		mlx5_ib_dbg(dev, "QPN 0x%6x not found\n", wq_num);
 		return NULL;
 	}
 
@@ -1258,14 +1258,12 @@ static void mlx5_ib_mr_wqe_pfault_handler(struct mlx5_ib_dev *dev,
 	struct mlx5_ib_qp *qp;
 
 	buffer = (char *)__get_free_page(GFP_KERNEL);
-	if (!buffer) {
-		mlx5_ib_err(dev, "Error allocating memory for IO page fault handling.\n");
-		goto resolve_page_fault;
-	}
+	if (!buffer)
+		return;
 
 	qp = mlx5_ib_odp_find_qp(dev, pfault->wqe.wq_num);
 	if (!qp)
-		goto resolve_page_fault;
+		goto out_err;
 
 	ret = mlx5_ib_read_user_wqe(qp, requestor, wqe_index, buffer,
 				    PAGE_SIZE, &qp->trans_qp.base);
@@ -1306,6 +1304,7 @@ resolve_page_fault:
 	mlx5_ib_dbg(dev, "PAGE FAULT completed. QP 0x%x resume_with_error=%d, type: 0x%x\n",
 		    pfault->wqe.wq_num, resume_with_error,
 		    pfault->type);
+out_err:
 	free_page((unsigned long)buffer);
 }
 
