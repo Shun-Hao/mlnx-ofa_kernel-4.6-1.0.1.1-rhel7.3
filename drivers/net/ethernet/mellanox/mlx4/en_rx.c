@@ -42,6 +42,7 @@
 #include <linux/if_vlan.h>
 #include <linux/vmalloc.h>
 #include <linux/irq.h>
+#include <linux/prefetch.h>
 
 #include <net/ip.h>
 #if IS_ENABLED(CONFIG_IPV6)
