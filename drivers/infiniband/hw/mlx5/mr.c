@@ -163,7 +163,7 @@ static void reg_mr_callback(int status, void *context)
 		kfree(mr);
 		dev->fill_delay = 1;
 		mod_timer(&dev->delay_timer, jiffies + HZ);
-		return;
+		goto do_complete;
 	}
 
 	mr->mmkey.type = MLX5_MKEY_MR;
@@ -189,8 +189,13 @@ static void reg_mr_callback(int status, void *context)
 		pr_err("failed radix tree insert of mkey 0x%x, %d\n",
 		       mkey->key, err);
 
-	if (!completion_done(&ent->compl))
+do_complete:
+	spin_lock_irqsave(&ent->lock, flags);
+	if (atomic_read(&ent->do_complete)) {
 		complete(&ent->compl);
+		atomic_dec(&ent->do_complete);
+	}
+	spin_unlock_irqrestore(&ent->lock, flags);
 }
 
 static int add_keys(struct mlx5_ib_dev *dev, int c, int num)
@@ -411,6 +416,7 @@ struct mlx5_ib_mr *mlx5_mr_cache_alloc(struct mlx5_ib_dev *dev, int entry)
 		if (list_empty(&ent->head)) {
 			spin_unlock_irq(&ent->lock);
 
+			atomic_inc(&ent->do_complete);
 			err = add_keys(dev, entry, 1);
 			if (err && err != -EAGAIN)
 				return ERR_PTR(err);
@@ -569,6 +575,7 @@ int mlx5_mr_cache_init(struct mlx5_ib_dev *dev)
 		ent->order = i + 2;
 		ent->dev = dev;
 		ent->limit = 0;
+		atomic_set(&ent->do_complete, 0);
 
 		init_completion(&ent->compl);
 		INIT_WORK(&ent->work, cache_work_func);

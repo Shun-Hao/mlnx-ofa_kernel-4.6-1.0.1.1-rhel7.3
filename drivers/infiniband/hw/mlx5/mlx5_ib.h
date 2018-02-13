@@ -687,6 +687,7 @@ struct mlx5_cache_ent {
 	int			pending;
 	struct completion	compl;
 	struct cache_order	co;
+	atomic_t		do_complete;
 };
 
 struct mlx5_mr_cache {
