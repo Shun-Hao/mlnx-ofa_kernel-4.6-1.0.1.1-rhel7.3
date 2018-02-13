@@ -69,13 +69,13 @@ struct mlx5_nic_flow_attr {
 enum {
 	MLX5E_TC_FLOW_INGRESS	= MLX5E_TC_INGRESS,
 	MLX5E_TC_FLOW_EGRESS	= MLX5E_TC_EGRESS,
-	MLX5E_TC_FLOW_ESWITCH	= BIT(MLX5E_TC_FLOW_BASE),
-	MLX5E_TC_FLOW_NIC	= BIT(MLX5E_TC_FLOW_BASE + 1),
-	MLX5E_TC_FLOW_OFFLOADED	= BIT(MLX5E_TC_FLOW_BASE + 2),
-	MLX5E_TC_FLOW_HAIRPIN	= BIT(MLX5E_TC_FLOW_BASE + 3),
-	MLX5E_TC_FLOW_HAIRPIN_RSS = BIT(MLX5E_TC_FLOW_BASE + 4),
-	MLX5E_TC_FLOW_SLOW	  = BIT(MLX5E_TC_FLOW_BASE + 5),
-	MLX5E_TC_FLOW_DUP	= BIT(MLX5E_TC_FLOW_BASE + 6),
+	MLX5E_TC_FLOW_ESWITCH	= MLX5E_TC_ESW_OFFLOAD,
+	MLX5E_TC_FLOW_NIC	= MLX5E_TC_NIC_OFFLOAD,
+	MLX5E_TC_FLOW_OFFLOADED	= BIT(MLX5E_TC_FLOW_BASE),
+	MLX5E_TC_FLOW_HAIRPIN	= BIT(MLX5E_TC_FLOW_BASE + 1),
+	MLX5E_TC_FLOW_HAIRPIN_RSS = BIT(MLX5E_TC_FLOW_BASE + 2),
+	MLX5E_TC_FLOW_SLOW	  = BIT(MLX5E_TC_FLOW_BASE + 3),
+	MLX5E_TC_FLOW_DUP         = BIT(MLX5E_TC_FLOW_BASE + 4),
 };
 
 #define MLX5E_TC_MAX_SPLITS 1
@@ -813,7 +813,7 @@ static void mlx5e_tc_del_nic_flow(struct mlx5e_priv *priv,
 	mlx5_del_flow_rules(flow->rule[0]);
 	mlx5_fc_destroy(priv->mdev, counter);
 
-	if (!mlx5e_tc_num_filters(priv) && priv->fs.tc.t) {
+	if (!mlx5e_tc_num_filters(priv, MLX5E_TC_NIC_OFFLOAD)  && priv->fs.tc.t) {
 		mlx5_destroy_flow_table(priv->fs.tc.t);
 		priv->fs.tc.t = NULL;
 	}
@@ -3067,6 +3067,11 @@ static void get_flags(int flags, u16 *flow_flags)
 	if (flags & MLX5E_TC_EGRESS)
 		__flow_flags |= MLX5E_TC_FLOW_EGRESS;
 
+	if (flags & MLX5E_TC_ESW_OFFLOAD)
+		__flow_flags |= MLX5E_TC_FLOW_ESWITCH;
+	if (flags & MLX5E_TC_NIC_OFFLOAD)
+		__flow_flags |= MLX5E_TC_FLOW_NIC;
+
 	*flow_flags = __flow_flags;
 }
 
@@ -3077,15 +3082,15 @@ static const struct rhashtable_params tc_ht_params = {
 	.automatic_shrinking = true,
 };
 
-static struct rhashtable *get_tc_ht(struct mlx5e_priv *priv)
+static struct rhashtable *get_tc_ht(struct mlx5e_priv *priv, int flags)
 {
 	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
 	struct mlx5e_rep_priv *uplink_rpriv;
 
-	if (MLX5_VPORT_MANAGER(priv->mdev) && esw->mode == SRIOV_OFFLOADS) {
+	if (flags & MLX5E_TC_ESW_OFFLOAD) {
 		uplink_rpriv = mlx5_eswitch_get_uplink_priv(esw, REP_ETH);
 		return &uplink_rpriv->tc_ht;
-	} else
+	} else /* NIC offload */
 		return &priv->fs.tc.ht;
 }
 
@@ -3304,7 +3309,7 @@ int mlx5e_configure_flower(struct mlx5e_priv *priv,
 			   struct tc_cls_flower_offload *f, int flags)
 {
 	struct netlink_ext_ack *extack = f->common.extack;
-	struct rhashtable *tc_ht = get_tc_ht(priv);
+	struct rhashtable *tc_ht = get_tc_ht(priv, flags);
 	struct mlx5e_tc_flow *flow;
 	int err = 0;
 
@@ -3349,7 +3354,7 @@ static bool same_flow_direction(struct mlx5e_tc_flow *flow, int flags)
 int mlx5e_delete_flower(struct mlx5e_priv *priv,
 			struct tc_cls_flower_offload *f, int flags)
 {
-	struct rhashtable *tc_ht = get_tc_ht(priv);
+	struct rhashtable *tc_ht = get_tc_ht(priv, flags);
 	struct mlx5e_tc_flow *flow;
 
 	flow = rhashtable_lookup_fast(tc_ht, &f->cookie, tc_ht_params);
@@ -3368,7 +3373,7 @@ int mlx5e_delete_flower(struct mlx5e_priv *priv,
 int mlx5e_stats_flower(struct mlx5e_priv *priv,
 		       struct tc_cls_flower_offload *f, int flags)
 {
-	struct rhashtable *tc_ht = get_tc_ht(priv);
+	struct rhashtable *tc_ht = get_tc_ht(priv, flags);
 	struct mlx5e_tc_flow *flow;
 	struct mlx5_fc *counter;
 	u64 bytes;
@@ -3491,7 +3496,7 @@ void mlx5e_tc_nic_cleanup(struct mlx5e_priv *priv)
 	if (tc->netdevice_nb.notifier_call)
 		unregister_netdevice_notifier(&tc->netdevice_nb);
 
-	rhashtable_free_and_destroy(&tc->ht, _mlx5e_tc_del_flow, NULL);
+	rhashtable_destroy(&tc->ht);
 
 	if (!IS_ERR_OR_NULL(tc->t)) {
 		mlx5_destroy_flow_table(tc->t);
@@ -3509,9 +3514,9 @@ void mlx5e_tc_esw_cleanup(struct rhashtable *tc_ht)
 	rhashtable_free_and_destroy(tc_ht, _mlx5e_tc_del_flow, NULL);
 }
 
-int mlx5e_tc_num_filters(struct mlx5e_priv *priv)
+int mlx5e_tc_num_filters(struct mlx5e_priv *priv, int flags)
 {
-	struct rhashtable *tc_ht = get_tc_ht(priv);
+	struct rhashtable *tc_ht = get_tc_ht(priv, flags);
 
 	return atomic_read(&tc_ht->nelems);
 }
