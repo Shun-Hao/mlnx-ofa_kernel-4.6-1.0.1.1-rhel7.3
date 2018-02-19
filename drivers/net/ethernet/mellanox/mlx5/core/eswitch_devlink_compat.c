@@ -8,7 +8,7 @@
 #include "mlx5_core.h"
 #include "eswitch.h"
 
-#ifndef HAVE_DEVLINK_H
+#ifdef USE_DEVLINK_COMPAT
 
 static char *mode_to_str[] = {
 	[DEVLINK_ESWITCH_MODE_LEGACY] = "legacy",
@@ -210,4 +210,4 @@ void mlx5_eswitch_compat_debugfs_cleanup(struct mlx5_eswitch *esw)
 {
 }
 
-#endif /* HAVE_DEVLINK_H */
+#endif /* USE_DEVLINK_COMPAT */
