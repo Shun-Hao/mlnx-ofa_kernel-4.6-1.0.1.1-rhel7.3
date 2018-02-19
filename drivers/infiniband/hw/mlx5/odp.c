@@ -1240,19 +1240,6 @@ invalid_transport_or_opcode:
 	return 0;
 }
 
-static struct mlx5_ib_qp *mlx5_ib_odp_find_qp(struct mlx5_ib_dev *dev,
-					      u32 wq_num)
-{
-	struct mlx5_core_qp *mqp = __mlx5_qp_lookup(dev->mdev, wq_num);
-
-	if (!mqp) {
-		mlx5_ib_dbg(dev, "QPN 0x%6x not found\n", wq_num);
-		return NULL;
-	}
-
-	return to_mibqp(mqp);
-}
-
 static void mlx5_ib_mr_wqe_pfault_handler(struct mlx5_ib_dev *dev,
 					  struct mlx5_pagefault *pfault)
 {
@@ -1263,15 +1250,16 @@ static void mlx5_ib_mr_wqe_pfault_handler(struct mlx5_ib_dev *dev,
 	int resume_with_error = 1;
 	u16 wqe_index = pfault->wqe.wqe_index;
 	int requestor = pfault->type & MLX5_PFAULT_REQUESTOR;
+	struct mlx5_core_qp *mqp = (struct mlx5_core_qp *)pfault->wqe.common;
 	struct mlx5_ib_qp *qp;
 
 	buffer = (char *)__get_free_page(GFP_KERNEL);
 	if (!buffer)
 		return;
 
-	qp = mlx5_ib_odp_find_qp(dev, pfault->wqe.wq_num);
-	if (!qp)
+	if (!mqp)
 		goto out_err;
+	qp = to_mibqp(mqp);
 
 	ret = mlx5_ib_read_user_wqe(qp, requestor, wqe_index, buffer,
 				    PAGE_SIZE, &qp->trans_qp.base);

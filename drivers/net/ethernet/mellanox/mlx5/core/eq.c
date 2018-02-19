@@ -223,6 +223,9 @@ static void eqe_pf_action(struct work_struct *work)
 	struct mlx5_eq *eq = pfault->eq;
 
 	mlx5_core_page_fault(eq->dev, pfault);
+	if ((pfault->event_subtype == MLX5_PFAULT_SUBTYPE_WQE) &&
+	    pfault->wqe.common)
+		mlx5_core_put_rsc(pfault->wqe.common);
 	mempool_free(pfault, eq->pf_ctx.pool);
 }
 
@@ -245,6 +248,7 @@ static void eq_pf_process(struct mlx5_eq *eq)
 		pf_eqe = &eqe->data.page_fault;
 		pfault->event_subtype = eqe->sub_type;
 		pfault->bytes_committed = be32_to_cpu(pf_eqe->bytes_committed);
+		pfault->wqe.common = NULL;
 
 		mlx5_core_dbg(dev,
 			      "PAGE_FAULT: subtype: 0x%02x, bytes_committed: 0x%06x\n",
@@ -294,6 +298,8 @@ static void eq_pf_process(struct mlx5_eq *eq)
 				      pfault->type, pfault->token,
 				      pfault->wqe.wq_num,
 				      pfault->wqe.wqe_index);
+			pfault->wqe.common = mlx5_core_get_rsc(eq->dev,
+							       pfault->wqe.wq_num);
 			break;
 
 		default:
