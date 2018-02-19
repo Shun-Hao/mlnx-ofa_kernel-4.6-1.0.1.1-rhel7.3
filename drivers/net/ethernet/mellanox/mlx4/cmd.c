@@ -2737,6 +2737,7 @@ void mlx4_multi_func_cleanup(struct mlx4_dev *dev)
 			for (port = 1; port <= MLX4_MAX_PORTS; port++) {
 				kfree(priv->mfunc.master.slave_state[i].vlan_filter[port]);
 				mlx4_reset_vlan_oper_state(dev, port, i);
+				mlx4_reset_vlan_admin_state(dev, port, i);
 			}
 		}
 		kfree(priv->mfunc.master.slave_state);
