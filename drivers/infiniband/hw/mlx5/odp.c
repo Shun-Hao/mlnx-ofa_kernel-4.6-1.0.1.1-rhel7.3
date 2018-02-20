@@ -614,7 +614,10 @@ next_mr:
 			mlx5_ib_warn(dev, "mm is null\n");
 			return -1;
 		}
-		return handle_capi_pg_fault(dev, mr->umem->owning_mm, io_virt, bcnt);
+		ret = handle_capi_pg_fault(dev, mr->umem->owning_mm, io_virt, bcnt);
+		if (!ret && bytes_mapped)
+			*bytes_mapped += bcnt;
+		return ret;
 	}
 
 	current_seq = READ_ONCE(odp->notifiers_seq);
