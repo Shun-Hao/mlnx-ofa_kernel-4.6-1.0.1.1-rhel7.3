@@ -3014,6 +3014,8 @@ static int mlx5_set_path(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 		}
 
 		tclass_get_tclass(dev, &dev->tcd[port - 1], ah, port, &tclass);
+		memcpy(&qp->ah, ah, sizeof(qp->ah));
+		qp->tclass = tclass;
 	}
 
 	if (ah->type == RDMA_AH_ATTR_TYPE_ROCE) {

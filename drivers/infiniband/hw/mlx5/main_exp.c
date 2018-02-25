@@ -1746,19 +1746,19 @@ static struct tclass_match *tclass_find_match(struct mlx5_tc_data *tcd,
 	return NULL;
 }
 
-void tclass_get_tclass(struct mlx5_ib_dev *dev,
-		       struct mlx5_tc_data *tcd,
-		       const struct rdma_ah_attr *ah,
-		       u8 port,
-		       u8 *tclass)
+void tclass_get_tclass_locked(struct mlx5_ib_dev *dev,
+			      struct mlx5_tc_data *tcd,
+			      const struct rdma_ah_attr *ah,
+			      u8 port,
+			      u8 *tclass)
 {
 	struct tclass_match *res_match = NULL;
 	struct tclass_match match = {};
+	enum ib_gid_type gid_type;
 	union ib_gid gid;
 	int mask;
 	int err;
 
-	mutex_lock(&tcd->lock);
 	if (tcd->val >= 0) {
 		*tclass = tcd->val;
 	} else if (ah && ah->type == RDMA_AH_ATTR_TYPE_ROCE) {
@@ -1766,6 +1766,11 @@ void tclass_get_tclass(struct mlx5_ib_dev *dev,
 				   &gid);
 		if (err)
 			goto out;
+
+		gid_type = ah->grh.sgid_attr->gid_type;
+		if (gid_type != IB_GID_TYPE_ROCE_UDP_ENCAP)
+			goto out;
+
 		if (ipv6_addr_v4mapped((struct in6_addr *)&gid)) {
 			match.mask = TCLASS_MATCH_MASK_SRC_ADDR_IP |
 				TCLASS_MATCH_MASK_DST_ADDR_IP;
@@ -1796,7 +1801,16 @@ void tclass_get_tclass(struct mlx5_ib_dev *dev,
 out:
 	if (res_match)
 		*tclass = res_match->tclass;
+}
 
+void tclass_get_tclass(struct mlx5_ib_dev *dev,
+		       struct mlx5_tc_data *tcd,
+		       const struct rdma_ah_attr *ah,
+		       u8 port,
+		       u8 *tclass)
+{
+	mutex_lock(&tcd->lock);
+	tclass_get_tclass_locked(dev, tcd, ah, port, tclass);
 	mutex_unlock(&tcd->lock);
 }
 
@@ -1858,6 +1872,65 @@ static int tclass_compare_match(const void *ptr1, const void *ptr2)
 
 }
 
+static int tclass_update_qp(struct mlx5_ib_dev *ibdev, struct mlx5_ib_qp *mqp,
+			    u8 tclass, struct mlx5_qp_context *context)
+{
+	enum mlx5_qp_optpar optpar = MLX5_QP_OPTPAR_PRIMARY_ADDR_PATH_DSCP;
+	struct mlx5_ib_qp_base *base = &mqp->trans_qp.base;
+	u16 op = MLX5_CMD_OP_RTS2RTS_QP;
+	int err;
+
+	context->pri_path.ecn_dscp = (tclass >> 2) & 0x3f;
+	err = mlx5_core_qp_modify(ibdev->mdev, op, optpar, context, &base->mqp);
+
+	return err;
+}
+
+/* Locking here is a mess, mutex -> spinlock -> mutex
+ * We have no other choice as we need to lock the QP
+ * which uses a mutex, and the QP list uses a spinlock
+ * and TCD use a mutex as well.
+ */
+static void tclass_update_qps(struct mlx5_tc_data *tcd)
+{
+	struct mlx5_ib_dev *ibdev = tcd->ibdev;
+	struct mlx5_qp_context *context;
+	struct mlx5_ib_qp *mqp;
+	unsigned long flags;
+	u8 tclass;
+	int ret;
+
+	if (!tcd->ibdev || !MLX5_CAP_GEN(ibdev->mdev, rts2rts_qp_dscp))
+		return;
+
+	context = kzalloc(sizeof(*context), GFP_KERNEL);
+	if (!context)
+		return;
+
+	spin_lock_irqsave(&ibdev->reset_flow_resource_lock, flags);
+	list_for_each_entry(mqp, &ibdev->qp_list, qps_list) {
+		mutex_lock(&mqp->mutex);
+		if (mqp->state == IB_QPS_RTS &&
+		    rdma_ah_get_ah_flags(&mqp->ah) & IB_AH_GRH) {
+
+			tclass = mqp->tclass;
+			tclass_get_tclass_locked(ibdev, tcd, &mqp->ah,
+						 mqp->ah.port_num,
+						 &tclass);
+
+			if (tclass != mqp->tclass) {
+				ret = tclass_update_qp(ibdev, mqp, tclass,
+						       context);
+				if (!ret)
+					mqp->tclass = tclass;
+			}
+		}
+		mutex_unlock(&mqp->mutex);
+	}
+	spin_unlock_irqrestore(&ibdev->reset_flow_resource_lock, flags);
+	kfree(context);
+}
+
 static ssize_t traffic_class_store(struct mlx5_tc_data *tcd, struct tc_attribute *unused,
 				   const char *buf, size_t count)
 {
@@ -1895,6 +1968,7 @@ static ssize_t traffic_class_store(struct mlx5_tc_data *tcd, struct tc_attribute
 	/* Sort the list based on subnet mask */
 	sort(tcd->rule, TCLASS_MAX_RULES, sizeof(tcd->rule[0]),
 	     tclass_compare_match, NULL);
+	tclass_update_qps(tcd);
 	mutex_unlock(&tcd->lock);
 
 	return count;
@@ -1957,6 +2031,7 @@ int init_tc_sysfs(struct mlx5_ib_dev *dev)
 		if (err)
 			goto err;
 		tcd->val = -1;
+		tcd->ibdev = dev;
 		tcd->initialized = true;
 		mutex_init(&tcd->lock);
 	}

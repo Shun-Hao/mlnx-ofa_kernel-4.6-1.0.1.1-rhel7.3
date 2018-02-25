@@ -462,6 +462,8 @@ struct mlx5_ib_qp {
 	u32			flags_en;
 	/* storage for qp sub type when core qp type is IB_QPT_DRIVER */
 	enum ib_qp_type		qp_sub_type;
+	struct rdma_ah_attr	ah;
+	u8			tclass;
 };
 
 struct mlx5_ib_cq_buf {

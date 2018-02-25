@@ -160,6 +160,7 @@ struct mlx5_tc_data {
 	bool initialized;
 	int val;
 	struct kobject kobj;
+	struct mlx5_ib_dev *ibdev;
 };
 
 void tclass_get_tclass(struct mlx5_ib_dev *dev,
