@@ -238,6 +238,17 @@ extern int mlx4_internal_err_reset;
 extern int mlx4_blck_lb;
 extern int ingress_parser_mode;
 
+extern int mlx4_log_num_mgm_entry_size;
+#define MLX4_FORCE_DMFS_IF_NO_NCSI_FS           (1U << 0)
+#define MLX4_DMFS_ETH_ONLY                      (1U << 1)
+#define MLX4_DMFS_A0_STEERING                   (1U << 2)
+#define MLX4_DISABLE_DMFS_LOW_QP_NUM            (1U << 3)
+#define MLX4_IB_IGNORE_SIP_CHECK                (1U << 4)
+#define MLX4_ETH_IGNORE_SIP_CHECK               (1U << 5)
+#define MLX4_DISABLE_VXLAN_OFFLOADS             (1U << 6)
+#define MLX4_DMFS_PARAM_VALUES                  ((MLX4_DISABLE_VXLAN_OFFLOADS << 1) - 1)
+
+
 #define MLX4_MAX_NUM_SLAVES	(min(MLX4_MAX_NUM_PF + MLX4_MAX_NUM_VF, \
 				     MLX4_MFUNC_MAX))
 #define ALL_SLAVES 0xff
