@@ -1670,32 +1670,34 @@ static int alloc_capi_context(struct mlx5_ib_dev *dev, struct mlx5_capi_context 
 
 	err = cxllib_get_PE_attributes(current, CXL_TRANSLATED_MODE, &attr);
 	if (err)
-		goto out;
+		return err;
 
 	mlx5_ib_dbg(dev, "sr 0x%llx\n", attr.sr);
 	mlx5_ib_dbg(dev, "lpid 0x%x\n", attr.lpid);
 	mlx5_ib_dbg(dev, "tid 0x%x\n", attr.tid);
 	mlx5_ib_dbg(dev, "pid 0x%x\n", attr.pid);
 
+	/* Obtain process's mm */
 	cctx->mm = get_task_mm(current);
 	if (!cctx->mm) {
 		err = -ENOMEM;
-		goto out;
+		return err;
 	}
+	mmgrab(cctx->mm);
+	mmput(cctx->mm);
 
-	mm_context_add_copro(cctx->mm);
+	/* create pec */
 	err = mlx5_core_create_pec(dev->mdev, &attr, &cctx->pasid);
 	if (err) {
 		mlx5_ib_warn(dev, "create pec failed %d\n", err);
 		goto out_mm;
 	}
 
+	mm_context_add_copro(cctx->mm);
 	return 0;
 
 out_mm:
-	mm_context_remove_copro(cctx->mm);
-	mmput(cctx->mm);
-out:
+	mmdrop(cctx->mm);
 	return err;
 }
 
@@ -1707,14 +1709,10 @@ static int free_capi_context(struct mlx5_ib_dev *dev, struct mlx5_capi_context *
 		return 0;
 
 	err = mlx5_core_destroy_pec(dev->mdev, cctx->pasid);
-	if (err) {
+	if (err)
 		mlx5_ib_warn(dev, "destroy pec failed\n");
-		goto out;
-	}
 	mm_context_remove_copro(cctx->mm);
-	mmput(cctx->mm);
-
-out:
+	mmdrop(cctx->mm);
 	return err;
 }
 #else
