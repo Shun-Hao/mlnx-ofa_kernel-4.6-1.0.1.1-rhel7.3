@@ -778,6 +778,7 @@ struct mlx4_mac_table {
 	__be64			entries[MLX4_MAX_MAC_NUM];
 	int			refs[MLX4_MAX_MAC_NUM];
 	bool			is_dup[MLX4_MAX_MAC_NUM];
+	u8			mac_index[MLX4_MAX_MAC_NUM];
 	struct mutex		mutex;
 	int			total;
 	int			max;
