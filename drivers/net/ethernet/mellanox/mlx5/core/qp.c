@@ -143,6 +143,7 @@ int mlx5_rsc_event(struct mlx5_core_dev *dev, u32 rsn, int event_info)
 	if (!is_event_type_allowed((rsn >> MLX5_USER_INDEX_LEN), event_type)) {
 		mlx5_core_warn(dev, "event 0x%.2x is not allowed on resource 0x%.8x\n",
 			       event_type, rsn);
+		mlx5_core_put_rsc(common);
 		return -1;
 	}
 
