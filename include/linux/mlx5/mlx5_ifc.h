@@ -155,6 +155,7 @@ enum {
 	MLX5_CMD_OP_ATTACH_NVMF_NAMESPACE         = 0x723,
 	MLX5_CMD_OP_DETACH_NVMF_NAMESPACE         = 0x724,
 	MLX5_CMD_OP_SET_XRQ_DC_PARAMS_ENTRY	  = 0x726,
+	MLX5_CMD_OP_QUERY_NVMF_NAMESPACE_CONTEXT  = 0x728,
 	MLX5_CMD_OP_QUERY_VPORT_STATE             = 0x750,
 	MLX5_CMD_OP_MODIFY_VPORT_STATE            = 0x751,
 	MLX5_CMD_OP_QUERY_ESW_VPORT_CONTEXT       = 0x752,
@@ -636,7 +637,7 @@ struct mlx5_ifc_nvmf_cap_bits {
 	u8	log_min_staging_buffer_size[0x5];
 	u8	reserved_at_38[0x1];
 	u8	cmd_unknown_namespace_cnt[0x1];
-	u8	reserved_at_3a[0x1];
+	u8	frontend_namespace_context[0x1];
 	u8	read_write_flush_offload_rc[0x1];
 	u8	read_write_offload_rc[0x1];
 	u8	read_offload_rc[0x1];
@@ -3419,6 +3420,58 @@ struct mlx5_ifc_destroy_nvmf_be_ctrl_in_bits {
 
 	u8         reserved_at_60[0x10];
 	u8         backend_controller_id[0x10];
+};
+
+struct mlx5_ifc_nvmf_frontend_namespace_context_bits {
+	u8         num_read_cmd_high[0x20];
+	u8         num_read_cmd_low[0x20];
+
+	u8         num_read_blocks_high[0x20];
+	u8         num_read_blocks_low[0x20];
+
+	u8         num_write_cmd_high[0x20];
+	u8         num_write_cmd_low[0x20];
+
+	u8         num_write_blocks_high[0x20];
+	u8         num_write_blocks_low[0x20];
+
+	u8         num_write_inline_cmd_high[0x20];
+	u8         num_write_inline_cmd_low[0x20];
+
+	u8         num_flush_cmd_high[0x20];
+	u8         num_flush_cmd_low[0x20];
+
+	u8         num_error_cmd_high[0x20];
+	u8         num_error_cmd_low[0x20];
+
+	u8         num_backend_error_cmd_high[0x20];
+	u8         num_backend_error_cmd_low[0x20];
+
+	u8         reserved_at_200[0x180];
+};
+
+struct mlx5_ifc_query_nvmf_namespace_out_bits {
+	u8         status[0x8];
+	u8         reserved_at_8[0x18];
+
+	u8         syndrome[0x20];
+
+	u8         reserved_at_40[0x40];
+
+	struct mlx5_ifc_nvmf_frontend_namespace_context_bits ns_ctx;
+};
+
+struct mlx5_ifc_query_nvmf_namespace_in_bits {
+	u8         opcode[0x10];
+	u8         reserved_at_10[0x10];
+
+	u8         reserved_at_20[0x10];
+	u8         op_mod[0x10];
+
+	u8         reserved_at_40[0x8];
+	u8         xrqn[0x18];
+
+	u8         frontend_namespace[0x20];
 };
 
 struct mlx5_ifc_detach_nvmf_namespace_out_bits {

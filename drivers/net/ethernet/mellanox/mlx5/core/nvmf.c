@@ -232,3 +232,46 @@ int mlx5_core_detach_nvmf_ns(struct mlx5_core_dev *dev,
 }
 EXPORT_SYMBOL_GPL(mlx5_core_detach_nvmf_ns);
 
+int mlx5_core_query_nvmf_ns(struct mlx5_core_dev *dev,
+			    struct mlx5_core_srq *srq,
+			    struct mlx5_core_nvmf_ns *ns)
+{
+	u32 in[MLX5_ST_SZ_DW(query_nvmf_namespace_in)]   = {0};
+	u32 out[MLX5_ST_SZ_DW(query_nvmf_namespace_out)] = {0};
+	int err;
+
+	MLX5_SET(query_nvmf_namespace_in, in,
+		 opcode,
+		 MLX5_CMD_OP_QUERY_NVMF_NAMESPACE_CONTEXT);
+	MLX5_SET(query_nvmf_namespace_in, in,
+		 xrqn,
+		 srq->srqn);
+	MLX5_SET(query_nvmf_namespace_in, in,
+		 frontend_namespace,
+		 ns->frontend_nsid);
+
+	err = mlx5_cmd_exec(dev, in, sizeof(in), out, sizeof(out));
+	if (err)
+		return err;
+
+	ns->counters.num_read_cmd = MLX5_GET(query_nvmf_namespace_out, out,
+					     ns_ctx.num_read_cmd_low);
+	ns->counters.num_read_blocks = MLX5_GET(query_nvmf_namespace_out, out,
+						ns_ctx.num_read_blocks_low);
+	ns->counters.num_write_cmd = MLX5_GET(query_nvmf_namespace_out, out,
+					      ns_ctx.num_write_cmd_low);
+	ns->counters.num_write_blocks = MLX5_GET(query_nvmf_namespace_out, out,
+						 ns_ctx.num_write_blocks_low);
+	ns->counters.num_write_inline_cmd = MLX5_GET(query_nvmf_namespace_out, out,
+						     ns_ctx.num_write_inline_cmd_low);
+	ns->counters.num_flush_cmd = MLX5_GET(query_nvmf_namespace_out, out,
+					      ns_ctx.num_flush_cmd_low);
+	ns->counters.num_error_cmd = MLX5_GET(query_nvmf_namespace_out, out,
+					      ns_ctx.num_error_cmd_low);
+	ns->counters.num_backend_error_cmd = MLX5_GET(query_nvmf_namespace_out, out,
+						      ns_ctx.num_backend_error_cmd_low);
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(mlx5_core_query_nvmf_ns);
+
