@@ -634,7 +634,9 @@ struct mlx5_ifc_nvmf_cap_bits {
 	u8	log_max_staging_buffer_size[0x5];
 	u8	reserved_at_30[0x3];
 	u8	log_min_staging_buffer_size[0x5];
-	u8	reserved_at_38[0x3];
+	u8	reserved_at_38[0x1];
+	u8	cmd_unknown_namespace_cnt[0x1];
+	u8	reserved_at_3a[0x1];
 	u8	read_write_flush_offload_rc[0x1];
 	u8	read_write_offload_rc[0x1];
 	u8	read_offload_rc[0x1];
@@ -3477,7 +3479,7 @@ struct mlx5_ifc_nvme_offload_context_bits {
 	u8         log_max_namespace[0x5];
 	u8         reserved_at_10[0x10];
 
-	u8         offloaded_capsules_count[0x20];
+	u8         cmd_unknown_namespace_cnt[0x20];
 
 	u8         ioccsz[0x20];
 
