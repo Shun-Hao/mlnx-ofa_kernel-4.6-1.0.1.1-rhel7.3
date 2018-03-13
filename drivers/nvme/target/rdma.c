@@ -1711,6 +1711,7 @@ static const struct nvmet_fabrics_ops nvmet_rdma_ops = {
 	.disable_offload_ns	= nvmet_rdma_disable_offload_ns,
 	.peer_to_peer_sqe_inline_size = nvmet_rdma_peer_to_peer_sqe_inline_size,
 	.peer_to_peer_mdts	= nvmet_rdma_peer_to_peer_mdts,
+	.offload_subsys_unknown_ns_cmds	= nvmet_rdma_offload_subsys_unknown_ns_cmds,
 };
 
 static void nvmet_rdma_remove_one(struct ib_device *ib_device, void *client_data)

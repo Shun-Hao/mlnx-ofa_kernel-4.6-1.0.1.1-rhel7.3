@@ -616,6 +616,28 @@ static void nvmet_rdma_destroy_offload_ctrl(struct nvmet_ctrl *ctrl)
 	mutex_unlock(&xrq->offload_ctrl_mutex);
 }
 
+static u64
+nvmet_rdma_offload_subsys_unknown_ns_cmds(struct nvmet_subsys *subsys)
+{
+	struct nvmet_rdma_xrq *xrq;
+	struct ib_srq_attr attr;
+	u64 unknown_cmds = 0;
+	int ret;
+
+	mutex_lock(&nvmet_rdma_xrq_mutex);
+	list_for_each_entry(xrq, &nvmet_rdma_xrq_list, entry) {
+		if (xrq->subsys == subsys) {
+			memset(&attr, 0, sizeof(attr));
+			ret = ib_query_srq(xrq->ofl_srq, &attr);
+			if (!ret)
+				unknown_cmds += attr.nvmf.cmd_unknown_namespace_cnt;
+		}
+	}
+	mutex_unlock(&nvmet_rdma_xrq_mutex);
+
+	return unknown_cmds;
+}
+
 static u8 nvmet_rdma_peer_to_peer_mdts(struct nvmet_port *port)
 {
 	struct rdma_cm_id *cm_id = port->priv;

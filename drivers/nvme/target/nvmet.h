@@ -293,6 +293,7 @@ struct nvmet_fabrics_ops {
 	void (*disable_offload_ns)(struct nvmet_ctrl *ctrl);
 	unsigned int (*peer_to_peer_sqe_inline_size)(struct nvmet_ctrl *ctrl);
 	u8 (*peer_to_peer_mdts)(struct nvmet_port *port);
+	u64 (*offload_subsys_unknown_ns_cmds)(struct nvmet_subsys *subsys);
 };
 
 #define NVMET_MAX_INLINE_BIOVEC	8

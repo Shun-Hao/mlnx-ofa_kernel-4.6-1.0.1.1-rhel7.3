@@ -92,6 +92,7 @@ static void nvmet_rdma_disable_offload_ns(struct nvmet_ctrl *ctrl);
 static bool nvmet_rdma_peer_to_peer_capable(struct nvmet_port *port);
 static unsigned int nvmet_rdma_peer_to_peer_sqe_inline_size(struct nvmet_ctrl *ctrl);
 static u8 nvmet_rdma_peer_to_peer_mdts(struct nvmet_port *port);
+static u64 nvmet_rdma_offload_subsys_unknown_ns_cmds(struct nvmet_subsys *subsys);
 static int nvmet_rdma_init_st_pool(struct nvmet_rdma_staging_buf_pool *pool,
 				   unsigned long long mem_start,
 				   unsigned int mem_size,
