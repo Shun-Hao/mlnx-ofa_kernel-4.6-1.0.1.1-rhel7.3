@@ -25,6 +25,10 @@ enum ib_nvmf_offload_type {
 	IB_NVMF_READ_WRITE_FLUSH_OFFLOAD = (1ULL << 3),
 };
 
+struct ib_nvmf_srq_attr {
+	u64 cmd_unknown_namespace_cnt;
+};
+
 struct ib_nvmf_init_data {
 	enum ib_nvmf_offload_type	type;
 	u8				log_max_namespace;

@@ -1080,6 +1080,7 @@ struct ib_srq_attr {
 	u32	max_wr;
 	u32	max_sge;
 	u32	srq_limit;
+	struct ib_nvmf_srq_attr nvmf;
 };
 
 struct ib_srq_init_attr {
