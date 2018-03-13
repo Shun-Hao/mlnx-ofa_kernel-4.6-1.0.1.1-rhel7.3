@@ -234,6 +234,7 @@ struct nvmet_subsys {
 
 	bool			offloadble;
 	unsigned int		num_ports;
+	u64 (*offload_subsys_unknown_ns_cmds)(struct nvmet_subsys *subsys);
 };
 
 static inline struct nvmet_subsys *to_subsys(struct config_item *item)
@@ -414,6 +415,10 @@ void nvmet_unregister_transport(const struct nvmet_fabrics_ops *ops);
 
 int nvmet_enable_port(struct nvmet_port *port, bool offloadble);
 void nvmet_disable_port(struct nvmet_port *port);
+
+void nvmet_init_offload_subsystem_port_attrs(struct nvmet_port *port,
+					     struct nvmet_subsys *subsys);
+void nvmet_uninit_offload_subsystem_port_attrs(struct nvmet_subsys *subsys);
 
 void nvmet_referral_enable(struct nvmet_port *parent, struct nvmet_port *port);
 void nvmet_referral_disable(struct nvmet_port *port);

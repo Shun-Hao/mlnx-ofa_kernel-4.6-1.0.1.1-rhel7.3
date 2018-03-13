@@ -262,10 +262,33 @@ static bool nvmet_peer_to_peer_capable(struct nvmet_port *port)
 	    ops->enable_offload_ns &&
 	    ops->disable_offload_ns &&
 	    ops->peer_to_peer_sqe_inline_size &&
-	    ops->peer_to_peer_mdts)
+	    ops->peer_to_peer_mdts &&
+	    ops->offload_subsys_unknown_ns_cmds)
 		return ops->peer_to_peer_capable(port);
 
 	return false;
+}
+
+void nvmet_init_offload_subsystem_port_attrs(struct nvmet_port *port,
+					     struct nvmet_subsys *subsys)
+{
+	struct nvmet_fabrics_ops *ops;
+
+	lockdep_assert_held(&nvmet_config_sem);
+	WARN_ON_ONCE(subsys->num_ports || !subsys->offloadble);
+
+	ops = nvmet_transports[port->disc_addr.trtype];
+	if (!subsys->offload_subsys_unknown_ns_cmds)
+		subsys->offload_subsys_unknown_ns_cmds =
+			ops->offload_subsys_unknown_ns_cmds;
+}
+
+void nvmet_uninit_offload_subsystem_port_attrs(struct nvmet_subsys *subsys)
+{
+	lockdep_assert_held(&nvmet_config_sem);
+	WARN_ON_ONCE(subsys->num_ports || !subsys->offloadble);
+
+	subsys->offload_subsys_unknown_ns_cmds = NULL;
 }
 
 int nvmet_enable_port(struct nvmet_port *port, bool offloadble)

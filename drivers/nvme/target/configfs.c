@@ -662,6 +662,9 @@ static int nvmet_port_subsys_allow_link(struct config_item *parent,
 	}
 
 	list_add_tail(&link->entry, &port->subsystems);
+	/* We initialize offload subsystem attrs in the first port */
+	if (!subsys->num_ports && subsys->offloadble)
+		nvmet_init_offload_subsystem_port_attrs(port, subsys);
 	subsys->num_ports++;
 	nvmet_genctr++;
 	up_write(&nvmet_config_sem);
@@ -694,6 +697,9 @@ found:
 	if (list_empty(&port->subsystems))
 		nvmet_disable_port(port);
 	p->subsys->num_ports--;
+	/* We un-initialize offload subsystem attrs in the last port */
+	if (!subsys->num_ports && subsys->offloadble)
+		nvmet_uninit_offload_subsystem_port_attrs(subsys);
 	up_write(&nvmet_config_sem);
 	kfree(p);
 }
@@ -870,6 +876,30 @@ static ssize_t nvmet_subsys_attr_serial_store(struct config_item *item,
 }
 CONFIGFS_ATTR(nvmet_subsys_, attr_serial);
 
+static ssize_t
+nvmet_subsys_attr_offload_subsys_unknown_ns_cmds_show(struct config_item *item,
+						      char *page)
+{
+	struct nvmet_subsys *subsys = to_subsys(item);
+	bool valid = false;
+	u64 unknown_cmds;
+
+	down_write(&nvmet_config_sem);
+	mutex_lock(&subsys->lock);
+	if (subsys->offloadble && subsys->offload_subsys_unknown_ns_cmds) {
+		unknown_cmds = subsys->offload_subsys_unknown_ns_cmds(subsys);
+		valid = true;
+	}
+	mutex_unlock(&subsys->lock);
+	up_write(&nvmet_config_sem);
+
+	if (valid)
+		return snprintf(page, PAGE_SIZE, "%llu\n", unknown_cmds);
+	else
+		return snprintf(page, PAGE_SIZE, "%d\n", -1);
+}
+CONFIGFS_ATTR_RO(nvmet_subsys_, attr_offload_subsys_unknown_ns_cmds);
+
 static ssize_t nvmet_subsys_attr_offload_show(struct config_item *item,
 		char *page)
 {
@@ -946,6 +976,7 @@ static struct configfs_attribute *nvmet_subsys_attrs[] = {
 	&nvmet_subsys_attr_attr_version,
 	&nvmet_subsys_attr_attr_serial,
 	&nvmet_subsys_attr_attr_offload,
+	&nvmet_subsys_attr_attr_offload_subsys_unknown_ns_cmds,
 	NULL,
 };
 
