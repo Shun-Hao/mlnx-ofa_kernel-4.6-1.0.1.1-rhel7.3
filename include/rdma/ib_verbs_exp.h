@@ -478,6 +478,18 @@ struct ib_nvmf_ns_init_attr {
 	u16		backend_ctrl_id;
 };
 
+struct ib_nvmf_ns_attr {
+	u64	num_read_cmd;
+	u64	num_read_blocks;
+	u64	num_write_cmd;
+	u64	num_write_blocks;
+	u64	num_write_inline_cmd;
+	u64	num_flush_cmd;
+	u64	num_error_cmd;
+	u64	num_backend_error_cmd;
+};
+
+int ib_query_nvmf_ns(struct ib_nvmf_ns *ns, struct ib_nvmf_ns_attr *ns_attr);
 struct ib_nvmf_ctrl *ib_create_nvmf_backend_ctrl(struct ib_srq *srq,
 		struct ib_nvmf_backend_ctrl_init_attr *init_attr);
 int ib_destroy_nvmf_backend_ctrl(struct ib_nvmf_ctrl *ctrl);
