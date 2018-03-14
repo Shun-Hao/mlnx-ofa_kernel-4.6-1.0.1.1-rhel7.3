@@ -145,6 +145,7 @@ struct nvmet_port {
 	enum nvme_ana_state		*ana_state;
 	void				*priv;
 	bool				enabled;
+	const struct nvmet_fabrics_ops	*ops;
 	bool				offload;
 	int				inline_data_size;
 };

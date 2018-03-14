@@ -367,6 +367,7 @@ int nvmet_enable_port(struct nvmet_port *port, bool offloadble)
 	if (port->inline_data_size < 0)
 		port->inline_data_size = 0;
 
+	port->ops = ops;
 	port->enabled = true;
 	port->offload = offloadble;
 	return 0;
@@ -381,15 +382,13 @@ out_module_put:
 
 void nvmet_disable_port(struct nvmet_port *port)
 {
-	const struct nvmet_fabrics_ops *ops;
-
 	lockdep_assert_held(&nvmet_config_sem);
 
 	port->enabled = false;
 
-	ops = nvmet_transports[port->disc_addr.trtype];
-	ops->remove_port(port);
-	module_put(ops->owner);
+	port->ops->remove_port(port);
+	module_put(port->ops->owner);
+	port->ops = NULL;
 
 	port->offload = false;
 }
