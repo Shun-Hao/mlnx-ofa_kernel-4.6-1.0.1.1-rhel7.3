@@ -1723,12 +1723,20 @@ static void nvmet_rdma_add_one(struct ib_device *ib_device)
 	mutex_unlock(&port_list_mutex);
 }
 
+static bool nvmet_rdma_is_port_active(struct nvmet_port *nport)
+{
+	struct nvmet_rdma_port *port = nport->priv;
+
+	return port->cm_id ? true : false;
+}
+
 static const struct nvmet_fabrics_ops nvmet_rdma_ops = {
 	.owner			= THIS_MODULE,
 	.type			= NVMF_TRTYPE_RDMA,
 	.msdbd			= 1,
 	.has_keyed_sgls		= 1,
 	.add_port		= nvmet_rdma_add_port,
+	.is_port_active		= nvmet_rdma_is_port_active,
 	.remove_port		= nvmet_rdma_remove_port,
 	.queue_response		= nvmet_rdma_queue_response,
 	.delete_ctrl		= nvmet_rdma_delete_ctrl,

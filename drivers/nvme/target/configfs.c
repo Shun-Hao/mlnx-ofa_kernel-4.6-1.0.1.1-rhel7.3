@@ -304,6 +304,15 @@ found:
 
 CONFIGFS_ATTR(nvmet_, addr_trtype);
 
+static ssize_t nvmet_addr_tractive_show(struct config_item *item, char *page)
+{
+	struct nvmet_port *port = to_nvmet_port(item);
+
+	return sprintf(page, "%d\n", nvmet_is_port_active(port));
+}
+
+CONFIGFS_ATTR_RO(nvmet_, addr_tractive);
+
 /*
  * Namespace structures & file operation functions below
  */
@@ -1380,6 +1389,7 @@ static struct configfs_attribute *nvmet_port_attrs[] = {
 	&nvmet_attr_addr_traddr,
 	&nvmet_attr_addr_trsvcid,
 	&nvmet_attr_addr_trtype,
+	&nvmet_attr_addr_tractive,
 	&nvmet_attr_param_inline_data_size,
 	NULL,
 };

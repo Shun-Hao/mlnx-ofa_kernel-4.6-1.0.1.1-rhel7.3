@@ -393,6 +393,14 @@ void nvmet_disable_port(struct nvmet_port *port)
 	port->offload = false;
 }
 
+bool nvmet_is_port_active(struct nvmet_port *port)
+{
+	if (port->ops && port->ops->is_port_active)
+		return port->ops->is_port_active(port);
+
+	return port->enabled;
+}
+
 static void nvmet_keep_alive_timer(struct work_struct *work)
 {
 	struct nvmet_ctrl *ctrl = container_of(to_delayed_work(work),
