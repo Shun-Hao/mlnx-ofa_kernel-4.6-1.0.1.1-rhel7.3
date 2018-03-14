@@ -6041,6 +6041,8 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 		dev->ib_dev.destroy_nvmf_backend_ctrl = mlx5_ib_destroy_nvmf_backend_ctrl;
 		dev->ib_dev.attach_nvmf_ns            = mlx5_ib_attach_nvmf_ns;
 		dev->ib_dev.detach_nvmf_ns            = mlx5_ib_detach_nvmf_ns;
+		if (MLX5_CAP_NVMF(mdev, frontend_namespace_context))
+			dev->ib_dev.query_nvmf_ns = mlx5_ib_query_nvmf_ns;
 
 		mlx5_ib_internal_fill_nvmf_caps(dev);
 	}

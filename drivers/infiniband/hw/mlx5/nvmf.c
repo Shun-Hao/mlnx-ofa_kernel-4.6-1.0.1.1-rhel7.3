@@ -248,3 +248,26 @@ int mlx5_ib_detach_nvmf_ns(struct ib_nvmf_ns *ns)
 	kfree(mns);
 	return 0;
 }
+
+int mlx5_ib_query_nvmf_ns(struct ib_nvmf_ns *ns,
+			  struct ib_nvmf_ns_attr *ns_attr)
+{
+	struct mlx5_ib_nvmf_ns *mns = to_mns(ns);
+	struct mlx5_ib_dev *dev = to_mdev(ns->ctrl->srq->device);
+	struct mlx5_ib_srq *msrq = to_msrq(ns->ctrl->srq);
+	int ret;
+
+	ret = mlx5_core_query_nvmf_ns(dev->mdev, &msrq->msrq, &mns->mns);
+	if (!ret) {
+		ns_attr->num_read_cmd = mns->mns.counters.num_read_cmd;
+		ns_attr->num_read_blocks = mns->mns.counters.num_read_blocks;
+		ns_attr->num_write_cmd = mns->mns.counters.num_write_cmd;
+		ns_attr->num_write_blocks = mns->mns.counters.num_write_blocks;
+		ns_attr->num_write_inline_cmd = mns->mns.counters.num_write_inline_cmd;
+		ns_attr->num_flush_cmd = mns->mns.counters.num_flush_cmd;
+		ns_attr->num_error_cmd = mns->mns.counters.num_error_cmd;
+		ns_attr->num_backend_error_cmd = mns->mns.counters.num_backend_error_cmd;
+	}
+
+	return ret;
+}
