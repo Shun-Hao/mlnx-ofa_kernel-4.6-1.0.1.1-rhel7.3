@@ -1944,7 +1944,8 @@ static void mlx5_as_notify_init(struct mlx5_core_dev *dev)
 	if (!mlx5_core_is_pf(dev))
 		return;
 
-	if (!MLX5_CAP_GEN(dev, as_notify))
+	if (!MLX5_CAP_GEN(dev, tunneled_atomic) &&
+	    !MLX5_CAP_GEN(dev, as_notify))
 		return;
 
 #ifdef HAVE_PNV_PCI_AS_NOTIFY
@@ -1957,11 +1958,13 @@ static void mlx5_as_notify_init(struct mlx5_core_dev *dev)
 		return;
 
 #ifdef HAVE_PNV_PCI_AS_NOTIFY
-	err = pnv_pci_set_tunnel_bar(pdev, response_bar_address, 1);
-#endif
-	if (err)
+	if (!MLX5_CAP_GEN(dev, as_notify))
 		return;
 
+	err = pnv_pci_set_tunnel_bar(pdev, response_bar_address, 1);
+	if (err)
+		return;
+#endif
 	dev->as_notify.response_bar_address = response_bar_address;
 	dev->as_notify.enabled = true;
 	mlx5_core_dbg(dev,
