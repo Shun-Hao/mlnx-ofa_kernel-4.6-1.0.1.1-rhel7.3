@@ -1253,13 +1253,15 @@ static void mlx5_ib_mr_wqe_pfault_handler(struct mlx5_ib_dev *dev,
 	struct mlx5_core_qp *mqp = (struct mlx5_core_qp *)pfault->wqe.common;
 	struct mlx5_ib_qp *qp;
 
-	buffer = (char *)__get_free_page(GFP_KERNEL);
-	if (!buffer)
-		return;
-
 	if (!mqp)
-		goto out_err;
+		return;
 	qp = to_mibqp(mqp);
+
+	buffer = (char *)__get_free_page(GFP_KERNEL);
+	if (!buffer) {
+		mlx5_ib_err(dev, "Error allocating memory for IO page fault handling.\n");
+		goto resolve_page_fault;
+	}
 
 	ret = mlx5_ib_read_user_wqe(qp, requestor, wqe_index, buffer,
 				    PAGE_SIZE, &qp->trans_qp.base);
@@ -1300,7 +1302,6 @@ resolve_page_fault:
 	mlx5_ib_dbg(dev, "PAGE FAULT completed. QP 0x%x resume_with_error=%d, type: 0x%x\n",
 		    pfault->wqe.wq_num, resume_with_error,
 		    pfault->type);
-out_err:
 	free_page((unsigned long)buffer);
 }
 
