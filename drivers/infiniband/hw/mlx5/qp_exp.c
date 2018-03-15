@@ -323,7 +323,6 @@ static struct mlx5_ib_qp *dct_create_qp(struct ib_pd *pd,
        struct mlx5_ib_dev *dev = to_mdev(pd->device);
        u8 tclass = attr->tclass;
 
-       /* TODO: re-add  OOO
        if (!pd->uobject &&
            dev->ooo.enabled &&
            MLX5_CAP_GEN(dev->mdev, multipath_dc_qp))
@@ -331,7 +330,7 @@ static struct mlx5_ib_qp *dct_create_qp(struct ib_pd *pd,
        if ((attr->create_flags & IB_EXP_DCT_OOO_RW_DATA_PLACEMENT) &&
            !MLX5_CAP_GEN(dev->mdev, multipath_dc_qp))
               return ERR_PTR(-EINVAL);
-	*/
+
        if ((attr->srq && attr->srq->srq_type == IB_EXP_SRQT_TAG_MATCHING) &&
            !MLX5_CAP_GEN(dev->mdev, rndv_offload_dc))
               return ERR_PTR(-EINVAL);
@@ -363,10 +362,10 @@ static struct mlx5_ib_qp *dct_create_qp(struct ib_pd *pd,
 	if (dev->tcd[attr->port - 1].val >= 0)
 		tclass = dev->tcd[attr->port - 1].val;
 	MLX5_SET(dctc, dctc, tclass, tclass);
-       /* TODO: re-add  OOO
+
        if (attr->create_flags & IB_EXP_DCT_OOO_RW_DATA_PLACEMENT)
 	       MLX5_SET(dctc, dctc, multipath, 1);
-	*/
+
        if (attr->srq && attr->srq->srq_type == IB_EXP_SRQT_TAG_MATCHING)
               MLX5_SET(dctc, dctc, offload_type, MLX5_DCTC_OFFLOAD_TYPE_RNDV);
 	

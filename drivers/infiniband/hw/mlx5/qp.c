@@ -4008,6 +4008,26 @@ static int ignored_ts_check(enum ib_qp_type qp_type)
 	return 0;
 }
 
+static bool is_ooo_supported(struct ib_qp *ibqp)
+{
+	struct mlx5_ib_dev *dev = to_mdev(ibqp->device);
+
+	if (ibqp->qp_type == IB_QPT_RC &&
+	    MLX5_CAP_GEN(dev->mdev, multipath_rc_qp))
+		return true;
+
+	if ((ibqp->qp_type == IB_QPT_XRC_INI ||
+	     ibqp->qp_type == IB_QPT_XRC_TGT) &&
+	    MLX5_CAP_GEN(dev->mdev, multipath_xrc_qp))
+		return true;
+
+	if (ibqp->qp_type == IB_EXP_QPT_DC_INI &&
+	    MLX5_CAP_GEN(dev->mdev, multipath_dc_qp))
+		return true;
+
+	return false;
+}
+
 int mlx5_ib_modify_qp(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 		      int attr_mask, struct ib_udata *udata)
 {
@@ -4123,6 +4143,12 @@ int mlx5_ib_modify_qp(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 		err = 0;
 		goto out;
 	}
+
+	if (qp->create_type == MLX5_QP_KERNEL &&
+	    new_state == IB_QPS_RTR &&
+	    dev->ooo.enabled &&
+	    is_ooo_supported(ibqp))
+		attr_mask |= IB_EXP_QP_OOO_RW_DATA_PLACEMENT;
 
 	err = __mlx5_ib_modify_qp(ibqp, attr, attr_mask, cur_state,
 				  new_state, &ucmd);

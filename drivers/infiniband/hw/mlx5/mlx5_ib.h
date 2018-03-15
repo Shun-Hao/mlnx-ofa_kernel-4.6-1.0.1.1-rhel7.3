@@ -835,6 +835,7 @@ enum mlx5_ib_stages {
 	MLX5_IB_STAGE_TC_SYSFS,
 	MLX5_IB_STAGE_CLASS_ATTR,
 	MLX5_IB_STAGE_REP_REG,
+	MLX5_IB_STAGE_OOO_DEBUGFS,
 	MLX5_IB_STAGE_MAX,
 };
 
@@ -928,6 +929,12 @@ struct mlx5_ib_lb_state {
 	bool			enabled;
 };
 
+struct mlx5_ib_dbg_ooo {
+	u8			enabled;
+	struct dentry		*dir_debugfs;
+	struct dentry		*ooo_debugfs;
+};
+
 struct mlx5_ib_dev {
 	struct ib_device		ib_dev;
 	const struct uverbs_object_tree_def *driver_trees[7];
@@ -990,6 +997,8 @@ struct mlx5_ib_dev {
 	struct mlx5_memic	memic;
 	u16			devx_whitelist_uid;
 	struct kobject          mr_cache;
+
+	struct mlx5_ib_dbg_ooo	ooo;
 };
 
 static inline struct mlx5_ib_cq *to_mibcq(struct mlx5_core_cq *mcq)
