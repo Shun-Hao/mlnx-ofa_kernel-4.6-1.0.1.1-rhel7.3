@@ -449,6 +449,7 @@ nvmet_rdma_create_be_ctrl(struct nvmet_rdma_xrq *xrq,
 	}
 	be_ctrl->restart = true;
 	be_ctrl->pdev = ns->pdev;
+	be_ctrl->ns = ns;
 	be_ctrl->xrq = xrq;
 
 	err = nvmet_rdma_init_be_ctrl_attr(&init_attr, be_ctrl,
@@ -636,6 +637,115 @@ nvmet_rdma_offload_subsys_unknown_ns_cmds(struct nvmet_subsys *subsys)
 	mutex_unlock(&nvmet_rdma_xrq_mutex);
 
 	return unknown_cmds;
+}
+
+static u64
+nvmet_rdma_query_ns_counter(struct nvmet_ns *ns,
+			    enum nvmet_rdma_offload_ns_counter counter)
+{
+	struct nvmet_rdma_xrq *xrq;
+	struct nvmet_rdma_backend_ctrl *be_ctrl;
+	struct ib_nvmf_ns_attr attr;
+	u64 cmds = 0;
+	int ret;
+
+	mutex_lock(&nvmet_rdma_xrq_mutex);
+	list_for_each_entry(xrq, &nvmet_rdma_xrq_list, entry) {
+		if (xrq->subsys == ns->subsys) {
+			mutex_lock(&xrq->be_mutex);
+			list_for_each_entry(be_ctrl, &xrq->be_ctrls_list, entry) {
+				if (be_ctrl->ns == ns) {
+					memset(&attr, 0, sizeof(attr));
+					ret = ib_query_nvmf_ns(be_ctrl->ibns, &attr);
+					if (!ret) {
+						switch (counter) {
+						case NVMET_RDMA_OFFLOAD_NS_READ_CMDS:
+							cmds += attr.num_read_cmd;
+							break;
+						case NVMET_RDMA_OFFLOAD_NS_READ_BLOCKS:
+							cmds += attr.num_read_blocks;
+							break;
+						case NVMET_RDMA_OFFLOAD_NS_WRITE_CMDS:
+							cmds += attr.num_write_cmd;
+							break;
+						case NVMET_RDMA_OFFLOAD_NS_WRITE_BLOCKS:
+							cmds += attr.num_write_blocks;
+							break;
+						case NVMET_RDMA_OFFLOAD_NS_WRITE_INLINE_CMDS:
+							cmds += attr.num_write_inline_cmd;
+							break;
+						case NVMET_RDMA_OFFLOAD_NS_FLUSH_CMDS:
+							cmds += attr.num_flush_cmd;
+							break;
+						case NVMET_RDMA_OFFLOAD_NS_ERROR_CMDS:
+							cmds += attr.num_error_cmd;
+							break;
+						case NVMET_RDMA_OFFLOAD_NS_BACKEND_ERROR_CMDS:
+							cmds += attr.num_backend_error_cmd;
+							break;
+						default:
+							pr_err("received unknown counter for offloaded namespace query (%d)\n",
+							       counter);
+							break;
+						}
+					}
+				}
+			}
+			mutex_unlock(&xrq->be_mutex);
+		}
+	}
+	mutex_unlock(&nvmet_rdma_xrq_mutex);
+
+	return cmds;
+}
+
+static u64 nvmet_rdma_offload_ns_read_cmds(struct nvmet_ns *ns)
+{
+	return nvmet_rdma_query_ns_counter(ns,
+					   NVMET_RDMA_OFFLOAD_NS_READ_CMDS);
+}
+
+static u64 nvmet_rdma_offload_ns_read_blocks(struct nvmet_ns *ns)
+{
+	return nvmet_rdma_query_ns_counter(ns,
+					   NVMET_RDMA_OFFLOAD_NS_READ_BLOCKS);
+}
+
+static u64 nvmet_rdma_offload_ns_write_cmds(struct nvmet_ns *ns)
+{
+	return nvmet_rdma_query_ns_counter(ns,
+					   NVMET_RDMA_OFFLOAD_NS_WRITE_CMDS);
+}
+
+static u64 nvmet_rdma_offload_ns_write_blocks(struct nvmet_ns *ns)
+{
+	return nvmet_rdma_query_ns_counter(ns,
+					   NVMET_RDMA_OFFLOAD_NS_WRITE_BLOCKS);
+}
+
+static u64 nvmet_rdma_offload_ns_write_inline_cmds(struct nvmet_ns *ns)
+{
+	return nvmet_rdma_query_ns_counter(ns,
+					   NVMET_RDMA_OFFLOAD_NS_WRITE_INLINE_CMDS);
+}
+
+static u64 nvmet_rdma_offload_ns_flush_cmds(struct nvmet_ns *ns)
+{
+	return nvmet_rdma_query_ns_counter(ns,
+					   NVMET_RDMA_OFFLOAD_NS_FLUSH_CMDS);
+
+}
+
+static u64 nvmet_rdma_offload_ns_error_cmds(struct nvmet_ns *ns)
+{
+	return nvmet_rdma_query_ns_counter(ns,
+					   NVMET_RDMA_OFFLOAD_NS_ERROR_CMDS);
+}
+
+static u64 nvmet_rdma_offload_ns_backend_error_cmds(struct nvmet_ns *ns)
+{
+	return nvmet_rdma_query_ns_counter(ns,
+					   NVMET_RDMA_OFFLOAD_NS_BACKEND_ERROR_CMDS);
 }
 
 static u8 nvmet_rdma_peer_to_peer_mdts(struct nvmet_port *port)

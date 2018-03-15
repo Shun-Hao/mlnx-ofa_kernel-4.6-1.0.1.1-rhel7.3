@@ -1712,6 +1712,14 @@ static const struct nvmet_fabrics_ops nvmet_rdma_ops = {
 	.peer_to_peer_sqe_inline_size = nvmet_rdma_peer_to_peer_sqe_inline_size,
 	.peer_to_peer_mdts	= nvmet_rdma_peer_to_peer_mdts,
 	.offload_subsys_unknown_ns_cmds	= nvmet_rdma_offload_subsys_unknown_ns_cmds,
+	.offload_ns_read_cmds	= nvmet_rdma_offload_ns_read_cmds,
+	.offload_ns_read_blocks	= nvmet_rdma_offload_ns_read_blocks,
+	.offload_ns_write_cmds	= nvmet_rdma_offload_ns_write_cmds,
+	.offload_ns_write_blocks = nvmet_rdma_offload_ns_write_blocks,
+	.offload_ns_write_inline_cmds = nvmet_rdma_offload_ns_write_inline_cmds,
+	.offload_ns_flush_cmds	= nvmet_rdma_offload_ns_flush_cmds,
+	.offload_ns_error_cmds	= nvmet_rdma_offload_ns_error_cmds,
+	.offload_ns_backend_error_cmds	= nvmet_rdma_offload_ns_backend_error_cmds,
 };
 
 static void nvmet_rdma_remove_one(struct ib_device *ib_device, void *client_data)

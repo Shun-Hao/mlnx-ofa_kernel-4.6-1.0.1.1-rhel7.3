@@ -272,7 +272,7 @@ static bool nvmet_peer_to_peer_capable(struct nvmet_port *port)
 void nvmet_init_offload_subsystem_port_attrs(struct nvmet_port *port,
 					     struct nvmet_subsys *subsys)
 {
-	struct nvmet_fabrics_ops *ops;
+	const struct nvmet_fabrics_ops *ops;
 
 	lockdep_assert_held(&nvmet_config_sem);
 	WARN_ON_ONCE(subsys->num_ports || !subsys->offloadble);

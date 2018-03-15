@@ -295,6 +295,14 @@ struct nvmet_fabrics_ops {
 	unsigned int (*peer_to_peer_sqe_inline_size)(struct nvmet_ctrl *ctrl);
 	u8 (*peer_to_peer_mdts)(struct nvmet_port *port);
 	u64 (*offload_subsys_unknown_ns_cmds)(struct nvmet_subsys *subsys);
+	u64 (*offload_ns_read_cmds)(struct nvmet_ns *ns);
+	u64 (*offload_ns_read_blocks)(struct nvmet_ns *ns);
+	u64 (*offload_ns_write_cmds)(struct nvmet_ns *ns);
+	u64 (*offload_ns_write_blocks)(struct nvmet_ns *ns);
+	u64 (*offload_ns_write_inline_cmds)(struct nvmet_ns *ns);
+	u64 (*offload_ns_flush_cmds)(struct nvmet_ns *ns);
+	u64 (*offload_ns_error_cmds)(struct nvmet_ns *ns);
+	u64 (*offload_ns_backend_error_cmds)(struct nvmet_ns *ns);
 };
 
 #define NVMET_MAX_INLINE_BIOVEC	8
