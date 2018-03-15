@@ -235,6 +235,14 @@ struct nvmet_subsys {
 	bool			offloadble;
 	unsigned int		num_ports;
 	u64 (*offload_subsys_unknown_ns_cmds)(struct nvmet_subsys *subsys);
+	u64 (*offload_ns_read_cmds)(struct nvmet_ns *ns);
+	u64 (*offload_ns_read_blocks)(struct nvmet_ns *ns);
+	u64 (*offload_ns_write_cmds)(struct nvmet_ns *ns);
+	u64 (*offload_ns_write_blocks)(struct nvmet_ns *ns);
+	u64 (*offload_ns_write_inline_cmds)(struct nvmet_ns *ns);
+	u64 (*offload_ns_flush_cmds)(struct nvmet_ns *ns);
+	u64 (*offload_ns_error_cmds)(struct nvmet_ns *ns);
+	u64 (*offload_ns_backend_error_cmds)(struct nvmet_ns *ns);
 };
 
 static inline struct nvmet_subsys *to_subsys(struct config_item *item)

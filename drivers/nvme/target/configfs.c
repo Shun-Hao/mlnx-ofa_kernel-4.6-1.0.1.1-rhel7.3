@@ -550,12 +550,124 @@ static ssize_t nvmet_ns_buffered_io_store(struct config_item *item,
 
 CONFIGFS_ATTR(nvmet_ns_, buffered_io);
 
+/*
+ * Offload Namespace attributes and functions below
+ */
+static ssize_t
+nvmet_ns_offload_cmds(struct nvmet_ns *ns, char *page,
+		      u64 (*offload_cmds)(struct nvmet_ns *ns))
+{
+	struct nvmet_subsys *subsys = ns->subsys;
+	bool valid = false;
+	u64 cmds;
+
+	mutex_lock(&subsys->lock);
+	if (subsys->offloadble && offload_cmds) {
+		cmds = offload_cmds(ns);
+		valid = true;
+	}
+	mutex_unlock(&subsys->lock);
+
+	if (valid)
+		return sprintf(page, "%llu\n", cmds);
+	else
+		return sprintf(page, "%d\n", -1);
+}
+
+static ssize_t
+nvmet_ns_offload_read_cmds_show(struct config_item *item, char *page)
+{
+	struct nvmet_ns *ns = to_nvmet_ns(item);
+
+	return nvmet_ns_offload_cmds(ns, page,
+				     ns->subsys->offload_ns_read_cmds);
+}
+CONFIGFS_ATTR_RO(nvmet_ns_, offload_read_cmds);
+
+static ssize_t
+nvmet_ns_offload_read_blocks_show(struct config_item *item, char *page)
+{
+	struct nvmet_ns *ns = to_nvmet_ns(item);
+
+	return nvmet_ns_offload_cmds(ns, page,
+				     ns->subsys->offload_ns_read_blocks);
+}
+CONFIGFS_ATTR_RO(nvmet_ns_, offload_read_blocks);
+
+static ssize_t
+nvmet_ns_offload_write_cmds_show(struct config_item *item, char *page)
+{
+	struct nvmet_ns *ns = to_nvmet_ns(item);
+
+	return nvmet_ns_offload_cmds(ns, page,
+				     ns->subsys->offload_ns_write_cmds);
+}
+CONFIGFS_ATTR_RO(nvmet_ns_, offload_write_cmds);
+
+static ssize_t
+nvmet_ns_offload_write_blocks_show(struct config_item *item, char *page)
+{
+	struct nvmet_ns *ns = to_nvmet_ns(item);
+
+	return nvmet_ns_offload_cmds(ns, page,
+				     ns->subsys->offload_ns_write_blocks);
+}
+CONFIGFS_ATTR_RO(nvmet_ns_, offload_write_blocks);
+
+static ssize_t
+nvmet_ns_offload_write_inline_cmds_show(struct config_item *item, char *page)
+{
+	struct nvmet_ns *ns = to_nvmet_ns(item);
+
+	return nvmet_ns_offload_cmds(ns, page,
+				     ns->subsys->offload_ns_write_inline_cmds);
+}
+CONFIGFS_ATTR_RO(nvmet_ns_, offload_write_inline_cmds);
+
+static ssize_t
+nvmet_ns_offload_flush_cmds_show(struct config_item *item, char *page)
+{
+	struct nvmet_ns *ns = to_nvmet_ns(item);
+
+	return nvmet_ns_offload_cmds(ns, page,
+				     ns->subsys->offload_ns_flush_cmds);
+}
+CONFIGFS_ATTR_RO(nvmet_ns_, offload_flush_cmds);
+
+static ssize_t
+nvmet_ns_offload_error_cmds_show(struct config_item *item, char *page)
+{
+	struct nvmet_ns *ns = to_nvmet_ns(item);
+
+	return nvmet_ns_offload_cmds(ns, page,
+				     ns->subsys->offload_ns_error_cmds);
+}
+CONFIGFS_ATTR_RO(nvmet_ns_, offload_error_cmds);
+
+static ssize_t
+nvmet_ns_offload_backend_error_cmds_show(struct config_item *item, char *page)
+{
+	struct nvmet_ns *ns = to_nvmet_ns(item);
+
+	return nvmet_ns_offload_cmds(ns, page,
+				     ns->subsys->offload_ns_backend_error_cmds);
+}
+CONFIGFS_ATTR_RO(nvmet_ns_, offload_backend_error_cmds);
+
 static struct configfs_attribute *nvmet_ns_attrs[] = {
 	&nvmet_ns_attr_device_path,
 	&nvmet_ns_attr_device_nguid,
 	&nvmet_ns_attr_device_uuid,
 	&nvmet_ns_attr_ana_grpid,
 	&nvmet_ns_attr_enable,
+	&nvmet_ns_attr_offload_read_cmds,
+	&nvmet_ns_attr_offload_read_blocks,
+	&nvmet_ns_attr_offload_write_cmds,
+	&nvmet_ns_attr_offload_write_blocks,
+	&nvmet_ns_attr_offload_write_inline_cmds,
+	&nvmet_ns_attr_offload_flush_cmds,
+	&nvmet_ns_attr_offload_error_cmds,
+	&nvmet_ns_attr_offload_backend_error_cmds,
 	&nvmet_ns_attr_buffered_io,
 #ifdef CONFIG_PCI_P2PDMA
 	&nvmet_ns_attr_p2pmem,

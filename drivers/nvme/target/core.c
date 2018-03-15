@@ -263,7 +263,15 @@ static bool nvmet_peer_to_peer_capable(struct nvmet_port *port)
 	    ops->disable_offload_ns &&
 	    ops->peer_to_peer_sqe_inline_size &&
 	    ops->peer_to_peer_mdts &&
-	    ops->offload_subsys_unknown_ns_cmds)
+	    ops->offload_subsys_unknown_ns_cmds &&
+	    ops->offload_ns_read_cmds &&
+	    ops->offload_ns_read_blocks &&
+	    ops->offload_ns_write_cmds &&
+	    ops->offload_ns_write_blocks &&
+	    ops->offload_ns_write_inline_cmds &&
+	    ops->offload_ns_flush_cmds &&
+	    ops->offload_ns_error_cmds &&
+	    ops->offload_ns_backend_error_cmds)
 		return ops->peer_to_peer_capable(port);
 
 	return false;
@@ -281,6 +289,31 @@ void nvmet_init_offload_subsystem_port_attrs(struct nvmet_port *port,
 	if (!subsys->offload_subsys_unknown_ns_cmds)
 		subsys->offload_subsys_unknown_ns_cmds =
 			ops->offload_subsys_unknown_ns_cmds;
+	if (!subsys->offload_ns_read_cmds)
+		subsys->offload_ns_read_cmds =
+			ops->offload_ns_read_cmds;
+	if (!subsys->offload_ns_read_blocks)
+		subsys->offload_ns_read_blocks =
+			ops->offload_ns_read_blocks;
+	if (!subsys->offload_ns_write_cmds)
+		subsys->offload_ns_write_cmds =
+			ops->offload_ns_write_cmds;
+	if (!subsys->offload_ns_write_blocks)
+		subsys->offload_ns_write_blocks =
+			ops->offload_ns_write_blocks;
+	if (!subsys->offload_ns_write_inline_cmds)
+		subsys->offload_ns_write_inline_cmds =
+			ops->offload_ns_write_inline_cmds;
+	if (!subsys->offload_ns_flush_cmds)
+		subsys->offload_ns_flush_cmds =
+			ops->offload_ns_flush_cmds;
+	if (!subsys->offload_ns_error_cmds)
+		subsys->offload_ns_error_cmds =
+			ops->offload_ns_error_cmds;
+	if (!subsys->offload_ns_backend_error_cmds)
+		subsys->offload_ns_backend_error_cmds =
+			ops->offload_ns_backend_error_cmds;
+
 }
 
 void nvmet_uninit_offload_subsystem_port_attrs(struct nvmet_subsys *subsys)
@@ -288,6 +321,14 @@ void nvmet_uninit_offload_subsystem_port_attrs(struct nvmet_subsys *subsys)
 	lockdep_assert_held(&nvmet_config_sem);
 	WARN_ON_ONCE(subsys->num_ports || !subsys->offloadble);
 
+	subsys->offload_ns_backend_error_cmds = NULL;
+	subsys->offload_ns_error_cmds = NULL;
+	subsys->offload_ns_flush_cmds = NULL;
+	subsys->offload_ns_write_inline_cmds = NULL;
+	subsys->offload_ns_write_blocks = NULL;
+	subsys->offload_ns_write_cmds = NULL;
+	subsys->offload_ns_read_blocks = NULL;
+	subsys->offload_ns_read_cmds = NULL;
 	subsys->offload_subsys_unknown_ns_cmds = NULL;
 }
 
