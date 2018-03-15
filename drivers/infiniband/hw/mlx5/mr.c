@@ -418,8 +418,10 @@ struct mlx5_ib_mr *mlx5_mr_cache_alloc(struct mlx5_ib_dev *dev, int entry)
 
 			atomic_inc(&ent->do_complete);
 			err = add_keys(dev, entry, 1);
-			if (err && err != -EAGAIN)
+			if (err && err != -EAGAIN) {
+				atomic_dec(&ent->do_complete);
 				return ERR_PTR(err);
+			}
 
 			if (err)
 				msleep(20);
