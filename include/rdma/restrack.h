@@ -188,4 +188,13 @@ int rdma_nl_put_driver_u32_hex(struct sk_buff *msg, const char *name,
 int rdma_nl_put_driver_u64(struct sk_buff *msg, const char *name, u64 value);
 int rdma_nl_put_driver_u64_hex(struct sk_buff *msg, const char *name,
 			       u64 value);
+/**
+ * rdma_restrack_dontrack() - mark resource as not valid
+ * @res:  resource entry
+ */
+static inline void rdma_restrack_dontrack(struct rdma_restrack_entry *res)
+{
+	res->valid = false;
+	res->task = NULL;
+}
 #endif /* _RDMA_RESTRACK_H_ */

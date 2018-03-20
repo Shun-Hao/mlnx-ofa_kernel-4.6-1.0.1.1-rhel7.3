@@ -3321,14 +3321,16 @@ enum ib_pd_flags {
 };
 
 struct ib_pd *__ib_alloc_pd(struct ib_device *device, unsigned int flags,
-		const char *caller);
+		const char *caller, bool skip_tracking);
 
 /* Part of Lustre compatibility patch */
 #define ib_alloc_pd(device, ...) ib_alloc_pd_(device, ##__VA_ARGS__, 2, 1)
 #define ib_alloc_pd_(device, flags, n, ...) ib_alloc_pd_##n(device, flags)
-#define ib_alloc_pd_1(device, ...) __ib_alloc_pd(device, 0, KBUILD_MODNAME)
-#define ib_alloc_pd_2(device, flags) __ib_alloc_pd(device, flags, KBUILD_MODNAME)
+#define ib_alloc_pd_1(device, ...) __ib_alloc_pd(device, 0, KBUILD_MODNAME, false)
+#define ib_alloc_pd_2(device, flags) __ib_alloc_pd(device, flags, KBUILD_MODNAME, false)
 
+#define ib_alloc_pd_notrack(device, flags) \
+	__ib_alloc_pd((device), (flags), KBUILD_MODNAME, true)
 void ib_dealloc_pd(struct ib_pd *pd);
 
 /**
@@ -3620,9 +3622,12 @@ static inline int ib_post_recv(struct ib_qp *qp,
 
 struct ib_cq *__ib_alloc_cq(struct ib_device *dev, void *private,
 			    int nr_cqe, int comp_vector,
-			    enum ib_poll_context poll_ctx, const char *caller);
+			    enum ib_poll_context poll_ctx, const char *caller,
+			    bool skip_tracking);
 #define ib_alloc_cq(device, priv, nr_cqe, comp_vect, poll_ctx) \
-	__ib_alloc_cq((device), (priv), (nr_cqe), (comp_vect), (poll_ctx), KBUILD_MODNAME)
+	__ib_alloc_cq((device), (priv), (nr_cqe), (comp_vect), (poll_ctx), KBUILD_MODNAME, false)
+#define ib_alloc_cq_notrack(device, priv, nr_cqe, comp_vect, poll_ctx) \
+	__ib_alloc_cq((device), (priv), (nr_cqe), (comp_vect), (poll_ctx), KBUILD_MODNAME, true)
 
 void ib_free_cq(struct ib_cq *cq);
 int ib_process_cq_direct(struct ib_cq *cq, int budget);

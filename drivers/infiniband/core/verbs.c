@@ -246,7 +246,7 @@ EXPORT_SYMBOL(rdma_port_get_link_layer);
  * memory operations.
  */
 struct ib_pd *__ib_alloc_pd(struct ib_device *device, unsigned int flags,
-		const char *caller)
+			    const char *caller, bool skip_tracking)
 {
 	struct ib_pd *pd;
 	int mr_access_flags = 0;
@@ -273,7 +273,11 @@ struct ib_pd *__ib_alloc_pd(struct ib_device *device, unsigned int flags,
 
 	pd->res.type = RDMA_RESTRACK_PD;
 	rdma_restrack_set_task(&pd->res, caller);
-	rdma_restrack_add(&pd->res);
+
+	if (skip_tracking)
+		rdma_restrack_dontrack(&pd->res);
+	else
+		rdma_restrack_add(&pd->res);
 
 	if (mr_access_flags) {
 		struct ib_mr *mr;
