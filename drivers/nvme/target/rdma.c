@@ -1477,6 +1477,25 @@ static void nvmet_rdma_queue_connect_fail(struct rdma_cm_id *cm_id,
 	schedule_work(&queue->release_work);
 }
 
+static void nvmet_rdma_destroy_xrqs(struct nvmet_port *nport)
+{
+	struct nvmet_rdma_xrq *xrq, *next;
+
+	mutex_lock(&nvmet_rdma_xrq_mutex);
+	list_for_each_entry_safe(xrq, next, &nvmet_rdma_xrq_list, entry) {
+		if (xrq->port == nport) {
+			/*
+			 * nvmet_rdma_destroy_xrq lock nvmet_rdma_xrq_mutex too,
+			 * so we need to unlock it to avoid a deadlock.
+			 */
+			mutex_unlock(&nvmet_rdma_xrq_mutex);
+			kref_put(&xrq->ref, nvmet_rdma_destroy_xrq);
+			mutex_lock(&nvmet_rdma_xrq_mutex);
+		}
+	}
+	mutex_unlock(&nvmet_rdma_xrq_mutex);
+}
+
 static int nvmet_rdma_cm_handler(struct rdma_cm_id *cm_id,
 		struct rdma_cm_event *event)
 {
@@ -1655,23 +1674,10 @@ static void nvmet_rdma_disable_port(struct nvmet_rdma_port *port)
 {
 	struct rdma_cm_id *cm_id = port->cm_id;
 	struct nvmet_port *nport = port->nport;
-	struct nvmet_rdma_xrq *xrq, *next;
 
-	if (nport->offload) {
-		mutex_lock(&nvmet_rdma_xrq_mutex);
-		list_for_each_entry_safe(xrq, next, &nvmet_rdma_xrq_list, entry) {
-			if (xrq->port == nport) {
-				/*
-				 * nvmet_rdma_destroy_xrq lock nvmet_rdma_xrq_mutex too,
-				 * so we need to unlock it to avoid a deadlock.
-				 */
-				mutex_unlock(&nvmet_rdma_xrq_mutex);
-				kref_put(&xrq->ref, nvmet_rdma_destroy_xrq);
-				mutex_lock(&nvmet_rdma_xrq_mutex);
-			}
-		}
-		mutex_unlock(&nvmet_rdma_xrq_mutex);
-	}
+	if (nport->offload && cm_id)
+		nvmet_rdma_destroy_xrqs(nport);
+
 	port->cm_id = NULL;
 	if (cm_id)
 		rdma_destroy_id(cm_id);
