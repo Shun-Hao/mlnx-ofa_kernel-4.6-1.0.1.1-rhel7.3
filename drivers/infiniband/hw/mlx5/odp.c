@@ -345,6 +345,9 @@ void mlx5_ib_internal_fill_odp_caps(struct mlx5_ib_dev *dev)
 	    MLX5_CAP_GEN(dev->mdev, umr_extended_translation_offset))
 		caps->general_caps |= IB_ODP_SUPPORT_IMPLICIT;
 
+	if (mlx5_ib_capi_enabled(dev))
+		caps->general_caps |= IB_ODP_SUPPORT_IMPLICIT;
+
 	return;
 }
 

@@ -38,6 +38,7 @@
 #include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/sysfs.h>
+#include <linux/sched/signal.h>
 #include <rdma/ib_umem.h>
 #include <rdma/ib_umem_odp.h>
 #include <rdma/ib_verbs.h>
@@ -764,6 +765,12 @@ static int mr_umem_get(struct ib_pd *pd, u64 start, u64 length,
 		return err;
 	}
 
+	/* Skip if it is CAPI mr */
+	if ((access_flags & IB_ACCESS_ON_DEMAND) && mlx5_ib_capi_enabled(dev)) {
+		*umem = u;
+		return 0;
+	}
+
 	mlx5_ib_cont_pages(u, start, MLX5_MKEY_PAGE_SHIFT_MASK, npages,
 			   page_shift, ncont, order);
 	if (!*npages) {
@@ -1314,12 +1321,16 @@ struct ib_mr *mlx5_ib_reg_user_mr(struct ib_pd *pd,
 		    !(dev->odp_caps.general_caps & IB_ODP_SUPPORT_IMPLICIT))
 			return ERR_PTR(-EINVAL);
 
-		mr = mlx5_ib_alloc_implicit_mr(to_mpd(pd), access_flags);
-		if (IS_ERR(mr))
-			return ERR_CAST(mr);
-		atomic_inc(&dev->odp_stats.num_odp_mrs);
+		if (mlx5_ib_capi_enabled(dev)) {
+			length = READ_ONCE(current->signal->rlim[RLIMIT_AS].rlim_cur);
+		} else {
+			mr = mlx5_ib_alloc_implicit_mr(to_mpd(pd), access_flags);
+			if (IS_ERR(mr))
+				return ERR_CAST(mr);
+			atomic_inc(&dev->odp_stats.num_odp_mrs);
 
-		return &mr->ibmr;
+			return &mr->ibmr;
+		}
 	}
 #endif
 
