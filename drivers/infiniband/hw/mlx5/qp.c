@@ -6005,12 +6005,21 @@ static int  create_rq(struct mlx5_ib_rwq *rwq, struct ib_pd *pd,
 	}
 	MLX5_SET(wq, wq, log_wq_stride, rwq->log_rq_stride);
 	if (rwq->create_flags & MLX5_IB_WQ_FLAGS_STRIDING_RQ) {
+		int log_num_of_strides;
+		u8 twos_comp_log_num_of_strides;
+
 		MLX5_SET(wq, wq, two_byte_shift_en, rwq->two_byte_shift_en);
 		MLX5_SET(wq, wq, log_wqe_stride_size,
 			 rwq->single_stride_log_num_of_bytes -
 			 MLX5_MIN_SINGLE_STRIDE_LOG_NUM_BYTES);
-		MLX5_SET(wq, wq, log_wqe_num_of_strides, rwq->log_num_strides -
-			 MLX5_MIN_SINGLE_WQE_LOG_NUM_STRIDES);
+		/* Normalize to device's interface values (range of (-6) - 7) */
+		log_num_of_strides =
+			rwq->log_num_strides - 9;
+		/* Convert to 2's complement representation */
+		twos_comp_log_num_of_strides = log_num_of_strides < 0 ?
+			((u32)(~abs(log_num_of_strides)) + 1) & 0xF :
+			(u8)log_num_of_strides;
+		MLX5_SET(wq, wq, log_wqe_num_of_strides, twos_comp_log_num_of_strides);
 	}
 	MLX5_SET(wq, wq, log_wq_sz, rwq->log_rq_size);
 	MLX5_SET(wq, wq, pd, to_mpd(pd)->pdn);
@@ -6158,10 +6167,15 @@ static int prepare_user_rq(struct ib_pd *pd,
 		}
 		if ((ucmd.single_wqe_log_num_of_strides >
 		    MLX5_MAX_SINGLE_WQE_LOG_NUM_STRIDES) ||
-		     (ucmd.single_wqe_log_num_of_strides <
-			MLX5_MIN_SINGLE_WQE_LOG_NUM_STRIDES)) {
+		     ((ucmd.single_wqe_log_num_of_strides <
+		       MLX5_EXT_MIN_SINGLE_WQE_LOG_NUM_STRIDES) ||
+		      (ucmd.single_wqe_log_num_of_strides <
+		       MLX5_MIN_SINGLE_WQE_LOG_NUM_STRIDES &&
+		       !MLX5_CAP_GEN(dev->mdev, ext_stride_num_range)))) {
 			mlx5_ib_dbg(dev, "Invalid log num strides (%u. Range is %u - %u)\n",
 				    ucmd.single_wqe_log_num_of_strides,
+				    MLX5_CAP_GEN(dev->mdev, ext_stride_num_range) ?
+				    MLX5_EXT_MIN_SINGLE_WQE_LOG_NUM_STRIDES :
 				    MLX5_MIN_SINGLE_WQE_LOG_NUM_STRIDES,
 				    MLX5_MAX_SINGLE_WQE_LOG_NUM_STRIDES);
 			return -EINVAL;
