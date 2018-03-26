@@ -309,6 +309,7 @@ static void nvmet_rdma_free_be_ctrl(struct nvmet_rdma_backend_ctrl *be_ctrl)
 		ib_destroy_nvmf_backend_ctrl(be_ctrl->ibctrl);
 	if (be_ctrl->ofl)
 		nvme_peer_put_resource(be_ctrl->ofl, be_ctrl->restart);
+	kref_put(&be_ctrl->xrq->ref, nvmet_rdma_destroy_xrq);
 	kfree(be_ctrl);
 }
 
@@ -434,6 +435,8 @@ nvmet_rdma_create_be_ctrl(struct nvmet_rdma_xrq *xrq,
 	INIT_WORK(&be_ctrl->release_work,
 		  nvmet_release_backend_ctrl_work);
 
+	kref_get(&xrq->ref);
+
 	be_ctrl->ofl = nvme_peer_get_resource(ns->pdev,
 			NVME_PEER_SQT_DBR      |
 			NVME_PEER_CQH_DBR      |
@@ -482,6 +485,7 @@ out_destroy_be_ctrl:
 out_put_resource:
 	nvme_peer_put_resource(be_ctrl->ofl, true);
 out_free_be_ctrl:
+	kref_put(&xrq->ref, nvmet_rdma_destroy_xrq);
 	kfree(be_ctrl);
 out_err:
 	return ERR_PTR(err);
