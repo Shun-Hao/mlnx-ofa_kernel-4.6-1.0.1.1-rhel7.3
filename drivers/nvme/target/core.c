@@ -280,12 +280,11 @@ static bool nvmet_peer_to_peer_capable(struct nvmet_port *port)
 void nvmet_init_offload_subsystem_port_attrs(struct nvmet_port *port,
 					     struct nvmet_subsys *subsys)
 {
-	const struct nvmet_fabrics_ops *ops;
+	const struct nvmet_fabrics_ops *ops = port->ops;
 
 	lockdep_assert_held(&nvmet_config_sem);
 	WARN_ON_ONCE(subsys->num_ports || !subsys->offloadble);
 
-	ops = nvmet_transports[port->disc_addr.trtype];
 	if (!subsys->offload_subsys_unknown_ns_cmds)
 		subsys->offload_subsys_unknown_ns_cmds =
 			ops->offload_subsys_unknown_ns_cmds;
