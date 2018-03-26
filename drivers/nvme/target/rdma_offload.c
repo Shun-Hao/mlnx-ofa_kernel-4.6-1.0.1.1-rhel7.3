@@ -748,9 +748,10 @@ static u64 nvmet_rdma_offload_ns_backend_error_cmds(struct nvmet_ns *ns)
 					   NVMET_RDMA_OFFLOAD_NS_BACKEND_ERROR_CMDS);
 }
 
-static u8 nvmet_rdma_peer_to_peer_mdts(struct nvmet_port *port)
+static u8 nvmet_rdma_peer_to_peer_mdts(struct nvmet_port *nport)
 {
-	struct rdma_cm_id *cm_id = port->priv;
+	struct nvmet_rdma_port *port = nport->priv;
+	struct rdma_cm_id *cm_id = port->cm_id;
 
 	/* we assume ctrl page_size is 4K */
 	return ilog2(cm_id->device->attrs.nvmf_caps.max_io_sz / SZ_4K);
@@ -771,15 +772,17 @@ static unsigned int __nvmet_rdma_peer_to_peer_sqe_inline_size(struct ib_nvmf_cap
 
 static unsigned int nvmet_rdma_peer_to_peer_sqe_inline_size(struct nvmet_ctrl *ctrl)
 {
-	struct rdma_cm_id *cm_id = ctrl->port->priv;
+	struct nvmet_rdma_port *port = ctrl->port->priv;
+	struct rdma_cm_id *cm_id = port->cm_id;
 	struct ib_nvmf_caps *nvmf_caps = &cm_id->device->attrs.nvmf_caps;
 
 	return __nvmet_rdma_peer_to_peer_sqe_inline_size(nvmf_caps);
 }
 
-static bool nvmet_rdma_peer_to_peer_capable(struct nvmet_port *port)
+static bool nvmet_rdma_peer_to_peer_capable(struct nvmet_port *nport)
 {
-	struct rdma_cm_id *cm_id = port->priv;
+	struct nvmet_rdma_port *port = nport->priv;
+	struct rdma_cm_id *cm_id = port->cm_id;
 
 	return cm_id->device->attrs.device_cap_flags & IB_DEVICE_NVMF_TARGET_OFFLOAD;
 }
