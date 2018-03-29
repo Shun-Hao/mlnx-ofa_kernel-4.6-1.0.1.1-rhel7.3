@@ -164,7 +164,7 @@ static int ib_nl_ip_send_msg(struct rdma_dev_addr *dev_addr,
 	len = nla_total_size(sizeof(size));
 	len += NLMSG_ALIGN(sizeof(*header));
 
-	skb = nlmsg_new(len, GFP_KERNEL);
+	skb = nlmsg_new(len, GFP_ATOMIC);
 	if (!skb)
 		return -ENOMEM;
 
@@ -182,7 +182,7 @@ static int ib_nl_ip_send_msg(struct rdma_dev_addr *dev_addr,
 
 	/* Repair the nlmsg header length */
 	nlmsg_end(skb, nlh);
-	rdma_nl_multicast(skb, RDMA_NL_GROUP_LS, GFP_KERNEL);
+	rdma_nl_multicast(skb, RDMA_NL_GROUP_LS, GFP_ATOMIC);
 
 	/* Make the request retry, so when we get the response from userspace
 	 * we will have something.
