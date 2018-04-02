@@ -202,7 +202,7 @@ static int offload_buffer_size_set(const char *val,
 {
 	int n = 0, ret;
 
-	ret = kstrtoint(val, 10, &n);
+	ret = kstrtoint(val, 0, &n);
 	if (ret != 0 || n < 16)
 		return -EINVAL;
 
