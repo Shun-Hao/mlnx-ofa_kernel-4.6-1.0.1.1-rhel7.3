@@ -37,6 +37,7 @@
 
 #include "mlx5_ib.h"
 #include "cmd.h"
+#include "odp_exp.h"
 
 #define MAX_PREFETCH_LEN (4*1024*1024U)
 
@@ -799,6 +800,12 @@ next_mr:
 			goto srcu_unlock;
 		}
 		if (mlx5_ib_capi_enabled(dev)) {
+			if (!pfault) {
+				mlx5_ib_dbg(dev, "CAPI: pfault is NULL\n");
+				ret = -EFAULT;
+				goto srcu_unlock;
+			}
+
 			if (!mr->umem->owning_mm) {
 				mlx5_ib_dbg(dev, "CAPI: skipping non ODP MR (lkey=0x%06x) in page fault handler.\n",
 					    key);
