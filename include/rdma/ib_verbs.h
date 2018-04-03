@@ -805,6 +805,7 @@ enum ib_mr_type {
 	IB_MR_INDIRECT_REG,
 	IB_MR_TYPE_SG_GAPS,
 	IB_MR_TYPE_DM,
+	IB_MR_TYPE_FIXED_SIZE,
 };
 
 /**

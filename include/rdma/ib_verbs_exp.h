@@ -411,6 +411,12 @@ struct ib_dct {
 	u32			dct_num;
 };
 
+enum ib_mr_create_flags {
+	IB_EXP_MR_SIGNATURE_EN         = (1 << 0),
+	IB_EXP_MR_INDIRECT_KLMS        = (1 << 1),
+	IB_EXP_MR_FIXED_BUFFER_SIZE    = (1 << 2)
+};
+
 struct ib_mr_init_attr {
 	u64		start;
 	u64		length;
