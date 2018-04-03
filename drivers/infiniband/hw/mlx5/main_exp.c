@@ -510,6 +510,15 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_TUNNELED_ATOMIC;
 	}
 
+	props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_COMP_MASK_2;
+
+#define KSM_LOG_ENTITY_SIZE 31
+	if (MLX5_CAP_GEN(dev->mdev, fixed_buffer_size)) {
+		props->umr_fixed_size_caps.max_entity_size = 1 << KSM_LOG_ENTITY_SIZE;
+		props->exp_comp_mask_2 |= IB_EXP_DEVICE_ATTR_UMR_FIXED_SIZE_CAPS;
+		props->device_cap_flags2 |= IB_EXP_DEVICE_UMR_FIXED_SIZE;
+	}
+
 	return 0;
 }
 
