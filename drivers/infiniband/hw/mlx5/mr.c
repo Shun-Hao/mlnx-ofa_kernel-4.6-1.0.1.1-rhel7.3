@@ -1883,6 +1883,12 @@ struct ib_mr *mlx5_ib_alloc_mr(struct ib_pd *pd,
 			 ALIGN(max_num_sg + 1, 4));
 		mr->access_mode = MLX5_MKC_ACCESS_MODE_KLMS | MLX5_PERM_UMR_EN;
 		mr->max_descs = ndescs;
+	} else if (mr_type == IB_MR_TYPE_FIXED_SIZE) {
+		MLX5_SET(mkc, mkc, translations_octword_size,
+			 ALIGN(max_num_sg + 1, 4));
+		MLX5_SET(mkc, mkc, log_page_size, 31);
+		mr->access_mode = MLX5_MKC_ACCESS_MODE_KSM | MLX5_PERM_UMR_EN;
+		mr->max_descs = ndescs;
 	} else {
 		mlx5_ib_warn(dev, "Invalid mr type %d\n", mr_type);
 		err = -EINVAL;
