@@ -229,13 +229,19 @@ static int nvmet_rdma_init_xrq(struct nvmet_rdma_device *ndev,
 	for (i = 0; i < srq_size; i++) {
 		xrq->ofl_srq_cmds[i].queue = queue;
 		xrq->ofl_srq_cmds[i].srq = srq;
-		nvmet_rdma_post_recv(ndev, &xrq->ofl_srq_cmds[i]);
+		ret = nvmet_rdma_post_recv(ndev, &xrq->ofl_srq_cmds[i]);
+		if (ret) {
+			pr_err("initial post_recv failed on XRQ 0x%p\n", srq);
+			goto out_kref_put;
+		}
 	}
 
 	kfree(srq_attr.ext.nvmf.staging_buffer_pas);
 
 	return 0;
 
+out_kref_put:
+	kref_put(&ndev->ref, nvmet_rdma_free_dev);
 out_free_cmds:
 	nvmet_rdma_free_cmds(ndev, xrq->ofl_srq_cmds, srq_size, false);
 out_destroy_srq:
