@@ -193,7 +193,7 @@ static bool reset_fw_if_needed(struct mlx5_core_dev *dev)
 #define MLX5_NIC_STATE_POLL_MS	5
 void mlx5_enter_error_state(struct mlx5_core_dev *dev, bool force)
 {
-	unsigned long end, delay_ms = MLX5_CRDUMP_WAIT_MS;
+	unsigned long end, delay_ms = MLX5_FW_RESET_WAIT_MS;
 	u32 fatal_error, err;
 	int lock = -EBUSY;
 
@@ -226,7 +226,8 @@ void mlx5_enter_error_state(struct mlx5_core_dev *dev, bool force)
 			if (err)
 				mlx5_core_err(dev, "Failed to collect crdump area err %d\n", err);
 			reset_fw_if_needed(dev);
-			delay_ms = MLX5_FW_RESET_WAIT_MS;
+		} else {
+			delay_ms = MLX5_CRDUMP_WAIT_MS;
 		}
 	}
 
