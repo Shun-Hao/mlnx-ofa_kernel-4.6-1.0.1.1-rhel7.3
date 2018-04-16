@@ -210,6 +210,8 @@ void mlx5_enter_error_state(struct mlx5_core_dev *dev, bool force)
 		mlx5_unlock_cmdif(dev);
 	}
 
+	mlx5_core_event(dev, MLX5_DEV_EVENT_SYS_ERROR, 1);
+
 	if (force)
 		goto err_state_done;
 
@@ -247,7 +249,6 @@ void mlx5_enter_error_state(struct mlx5_core_dev *dev, bool force)
 		lock_sem_sw_reset(dev, UNLOCK);
 
 err_state_done:
-	mlx5_core_event(dev, MLX5_DEV_EVENT_SYS_ERROR, 1);
 	mlx5_core_err(dev, "end\n");
 
 unlock:
