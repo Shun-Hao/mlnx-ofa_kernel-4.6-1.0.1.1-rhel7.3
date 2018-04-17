@@ -307,12 +307,12 @@ static int parent_set_mtu(struct parent *parent)
 
 	parent_for_each_slave_rcu(parent, slave)
 		mtu = min(slave->dev->mtu, mtu);
+	rcu_read_unlock_bh();
 
 	if (parent->dev->mtu != mtu) {
 		dev_set_mtu(parent->dev, mtu);
 		ret = 1;
 	}
-	rcu_read_unlock_bh();
 
 	return ret;
 }
