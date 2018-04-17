@@ -117,6 +117,14 @@ struct ip_member {
 	struct list_head list;
 };
 
+enum igmp_ver {
+	IGMP_V2 = 2,
+	IGMP_V3 = 3,
+};
+
+enum {
+	ETH_IPOIB_SEND_IGMP_QUERY	= 0,
+};
 /*
  * for each slave (emac) saves all the ip over that mac.
  * the parent keeps that list for live migration/teaming.
@@ -197,7 +205,7 @@ struct parent {
 	rwlock_t lock;
 	struct   port_stats port_stats;
 	struct   list_head parent_list;
-	u16      flags;
+	unsigned long      flags;
 	struct   workqueue_struct *wq;
 	s8       kill_timers;
 	struct   delayed_work vif_learn_work;
@@ -252,7 +260,10 @@ void free_ip_ent_in_emac_rec(struct parent *parent, u8 *emac, u16 vlan,
 struct slave *get_slave_by_mac_and_vlan(struct parent *parent, u8 *mac,
 					u16 vlan);
 
-
 void handle_igmp_join_req(struct slave *slave, struct iphdr  *iph);
 int add_mc_neigh(struct slave *slave, __be32 ip);
+int send_igmp_query(struct parent *parent, struct slave *slave,
+		    enum igmp_ver igmp_ver);
+int add_vlan_and_send(struct parent *parent, int vlan_tag,
+		      struct napi_struct *napi, struct sk_buff *skb);
 #endif /* _LINUX_ETH_IPOIB_H */

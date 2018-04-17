@@ -33,6 +33,11 @@
 #include "eth_ipoib.h"
 #include <linux/igmp.h>
 
+/* according to the RFC in igmpv1/2/3, fixed daddr and options */
+u8 daddr_ip[4] = {224, 0, 0, 1};
+u8 options[4] = {0x94, 0x04, 0x00, 0x00};
+u8 src_mc_eth_mac_addr[ETH_ALEN] = {0};
+
 static inline char *__trans_mc_proto(unsigned short p)
 {
 	switch (p) {
@@ -126,86 +131,108 @@ void handle_igmp_join_req(struct slave *slave, struct iphdr  *iph)
 	}
 }
 
-#if 0
-/*generate igmp query to verify validity of mc address.*/
-int send_mc_verification_packet(struct slave_t *slave, struct neigh_t *neigh)
+/*
+ * The function creates igmp v2 packet, according to the next structure:
+ *
+ *       0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ *       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *       |      Type     | Max Resp Time |           Checksum            |
+ *       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *       |                         Group Address                         |
+ *       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*/
+struct sk_buff *gen_igmp_v2_query(struct slave *slave)
 {
-		struct sk_buff *skb;
-		struct ethhdr  *ethhdr;
-		struct iphdr   *iph;
-		struct igmphdr *igmph;
-		int rc = 0;
-		struct net_device *dev = slave->dev->master;
-		/*according to the RFC in igmpv1/2/3*/
-		u8 daddr_ip[4] = {224, 0, 0, 1};
-		u8 options[4] = {0x94, 0x04, 0x00, 0x00};
-		u8 *p_options;
-		u8 src_mc_eth_mac_addr[ETH_ALEN] = {0};
+	struct sk_buff *skb;
+	struct ethhdr  *ethhdr;
+	struct iphdr   *iph;
+	struct igmphdr *igmph;
+	struct net_device *dev = netdev_master_upper_dev_get(slave->dev);
+	u8 *p_options;
 
+	skb = dev_alloc_skb(sizeof(struct igmphdr)
+			    + sizeof(struct iphdr)
+			    + sizeof(struct ethhdr));
+	if (!skb) {
+		pr_err("%s: %s no mem for igmp query skb\n",
+		       __func__, slave->dev->name);
+		return NULL;
+	}
 
-		skb = dev_alloc_skb(ETH_ALEN + LL_ALLOCATED_SPACE(dev) +
-				    sizeof(*iph) +
-				     4 +
-				    sizeof(*igmph) + LL_ALLOCATED_SPACE(dev));
-		if (!skb) {
-				eipoib_err(slave->dev->name,
-					   "%s: no mem for skb\n"
-					   , __func__);
-				return -ENOMEM;
-		}
+	skb_reserve(skb, LL_RESERVED_SPACE(dev));
+	skb_reset_network_header(skb);
+	skb->dev = dev;
+	skb->ip_summed = CHECKSUM_UNNECESSARY;
 
-		skb_reserve(skb, LL_RESERVED_SPACE(dev));
-		skb_reset_network_header(skb);
-		skb->dev = dev;
-		skb->ip_summed = CHECKSUM_UNNECESSARY;
+	/* eth headers */
+	ip_eth_mc_map(*daddr_ip, src_mc_eth_mac_addr);
+	ethhdr = (struct ethhdr *)skb_put(skb, sizeof(*ethhdr));
+	memcpy(ethhdr->h_dest, src_mc_eth_mac_addr, ETH_ALEN);
+	memcpy(ethhdr->h_source, slave->emac, ETH_ALEN);
+	ethhdr->h_proto = htons(ETH_P_IP);
 
-		/*eth headers*/
-		ip_eth_mc_map(*daddr_ip, src_mc_eth_mac_addr);
-		ethhdr = (struct ethhdr *)skb_put(skb, sizeof *ethhdr);
-		memcpy(ethhdr->h_dest, src_mc_eth_mac_addr, ETH_ALEN);
-		memcpy(ethhdr->h_source, slave->emac, ETH_ALEN);
-		ethhdr->h_proto = htons(ETH_P_IP);
+	/* ip header */
+	iph = (struct iphdr *)skb_put(skb, sizeof(*iph));
+	memset(iph, 0, sizeof(*iph));
+	iph->ihl        = 6; /* includes options */
+	iph->version    = IPVERSION;
+	iph->tos        = 0;
+	iph->tot_len    = htons((iph->ihl * 4) + sizeof(*igmph));
+	iph->id         = htons(1);
+	iph->frag_off   = 0;
+	iph->ttl        = 1;
+	iph->protocol   = IPPROTO_IGMP;
+	iph->check      = 0;
+	iph->saddr      = 0;
+	memcpy((u8 *)(&(iph->daddr)), daddr_ip, 4);
+	p_options = (u8 *)skb_put(skb, 4);
+	memcpy(p_options, options, 4);
+	iph->check = ip_fast_csum(iph, iph->ihl);
 
-		/*ip header*/
-		iph = (struct iphdr *)skb_put(skb, sizeof(*iph));
-		memset(iph, 0, sizeof(*iph));
-		iph->ihl        = 6; /*includes options*/
-		iph->version    = IPVERSION;
-		iph->tos        = 0;
-		iph->tot_len    = htons((iph->ihl * 4) + sizeof(*igmph));
-		iph->id         = htons(1);
-		iph->frag_off   = 0;
-		iph->ttl        = 1;
-		iph->protocol   = IPPROTO_IGMP;
-		iph->check      = 0;
-		iph->saddr      = 0;
-		memcpy((u8 *)(&(iph->daddr)), daddr_ip, 4);
-		p_options = (u8 *)skb_put(skb, 4);
-		memcpy(p_options, options, 4);
-		iph->check = ip_fast_csum(iph, iph->ihl);
+	/* igmp header */
+	igmph = (struct igmphdr *)skb_put(skb, sizeof(*igmph));
+	/* set time_to_response field */
+	memset(igmph, 100, sizeof(*igmph));
+	igmph->type = IGMP_HOST_MEMBERSHIP_QUERY;
+	igmph->group = 0;
+	igmph->csum = 0;
+	igmph->csum = ip_compute_csum(igmph, sizeof(*igmph));
 
-		/*igmp header*/
-		igmph = (struct igmphdr *) skb_put(skb, sizeof(*igmph));
-		/* set time_to_response field */
-		memset(igmph, 100, sizeof(*igmph));
-		igmph->type = IGMP_HOST_MEMBERSHIP_QUERY;
-		igmph->group = 0;
-		igmph->csum = 0;
-		igmph->csum = ip_compute_csum(igmph, sizeof(*igmph));
+	skb->protocol = htons(ETH_P_IP);
+	eth_type_trans(skb, skb->dev);
+	skb->pkt_type = PACKET_MULTICAST;
 
-		skb->protocol = htons(ETH_P_IP);
-		eth_type_trans(skb, skb->dev);
-		skb->pkt_type = PACKET_MULTICAST;
-
-		skb_dump("mc_verification_packet-skb", skb, 0, 0);
-		eipoib_dbg_mc(__func__, "Sending IGMP-general-query\n");
-
-		/* receiv succeed */
-		rc = netif_receive_skb(skb);
-		if (rc != NET_XMIT_SUCCESS)
-				eipoib_err(slave->dev->name, "%s: ERROR TX, (ret = %d)\n",
-					   __func__, rc);
-		return rc;
+	return skb;
 }
 
-#endif//0
+int send_igmp_query(struct parent *parent, struct slave *slave,
+		    enum igmp_ver igmp_ver)
+{
+	struct sk_buff *skb;
+	int ret;
+	int vlan_tag;
+
+	switch (igmp_ver) {
+	case IGMP_V2:
+		skb = gen_igmp_v2_query(slave);
+		break;
+	default:
+		pr_err("%s: No such igmp version: %d\n", __func__, igmp_ver);
+		return -EINVAL;
+	}
+
+	if (!skb) {
+		pr_err("%s failed to get skb\n", __func__);
+		return -ENOMEM;
+	}
+
+	/* send the packet up to the guest via the recieve flow */
+	vlan_tag = slave->vlan & 0xfff;
+
+	ret = add_vlan_and_send(parent, vlan_tag, NULL, skb);
+	if (ret != NET_XMIT_SUCCESS)
+		pr_err("%s: %s Error RX for igmp packet, (ret = %d)\n",
+		       __func__, slave->dev->name, ret);
+	return ret;
+}
+

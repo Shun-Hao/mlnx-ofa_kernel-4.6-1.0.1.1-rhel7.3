@@ -456,11 +456,19 @@ static void eipoib_reap_neigh(struct work_struct *work)
 	struct parent *parent =
 		container_of(work, struct parent, neigh_reap_task.work);
 	struct slave *slave;
+	int is_send_igmp_query;
+	int ret;
 
 	pr_debug("%s for %s\n", __func__, parent->dev->name);
+	/* sending igmp query every second time */
+	is_send_igmp_query =
+		__test_and_change_bit(ETH_IPOIB_SEND_IGMP_QUERY, &parent->flags);
 
 	rcu_read_lock();
 	parent_for_each_slave_rcu(parent, slave) {
+		if (is_send_igmp_query) {
+			ret = send_igmp_query(parent, slave, IGMP_V2);
+		}
 		slave_neigh_reap(parent, slave);
 	}
 	rcu_read_unlock();
@@ -934,7 +942,7 @@ static void slave_neigh_flush(struct slave *slave)
 static void slave_neigh_reap(struct parent *parent, struct slave *slave)
 {
 	int i;
-	unsigned long neigh_obsolete;
+	unsigned long neigh_obsolete, neigh_obsolete_mc, cur_neigh_obsolete;
 	unsigned long dt;
 
 	spin_lock_bh(&slave->hash_lock);
@@ -943,16 +951,35 @@ static void slave_neigh_reap(struct parent *parent, struct slave *slave)
 	dt = 2 * arp_tbl.gc_interval;
 	neigh_obsolete = jiffies - dt;
 
+	/*
+	 * the parent sends igmp_join_query each second time of that call.
+	 * so, we assume that at the most the mc entry should be after 4
+	 * times gc_interval.
+	 */
+	neigh_obsolete_mc = jiffies - (2 * dt);
+
 	for (i = 0; i < NEIGH_HASH_SIZE; i++) {
 		struct neigh *neigh;
 		struct hlist_node *n;
 		hlist_for_each_entry_safe(neigh, n, &slave->hash[i], hlist) {
+			int is_mc_neigh = 0;
 			/* check if the time is bigger than allowed */
 			/* was the neigh idle for two GC periods */
-			if (time_after(neigh_obsolete, neigh->alive)) {
+			cur_neigh_obsolete = neigh_obsolete;
+			if (unlikely(is_multicast_ether_addr(neigh->emac))) {
+				cur_neigh_obsolete = neigh_obsolete_mc;
+				is_mc_neigh = 1;
+			}
+
+			if (time_after(cur_neigh_obsolete, neigh->alive)) {
 				pr_debug("%s: Delete neigh: (%pM -> %pI6)\n",
 					 __func__, neigh->emac, neigh->imac);
+
 				eipoib_neigh_put(neigh);
+
+				/* decrease ref count for kernel mc entry */
+				if (unlikely(is_mc_neigh))
+					dev_mc_del(slave->dev, neigh->imac);
 			}
 		}
 	}
