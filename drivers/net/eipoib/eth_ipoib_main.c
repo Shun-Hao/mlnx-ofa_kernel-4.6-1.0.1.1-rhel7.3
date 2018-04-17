@@ -1803,8 +1803,8 @@ static struct sk_buff *get_slave_skb(struct slave *slave, struct sk_buff *skb)
 
 	if ((neigh && nskb == skb) ||
 	    (is_broadcast_ether_addr(ethh->h_dest) && nskb == skb)) {
-		/* ucast & bc for arp done already.*/
-		if (dev_hard_header(nskb, dev, ntohs(skb->protocol), rimac,
+		/* ucast & bc, arp done already, currently support only IPv4 */
+		if (dev_hard_header(nskb, dev, ETH_P_IP, rimac,
 				    dev->dev_addr, nskb->len) < 0) {
 			pr_warn("%s: dev_hard_header failed\n",
 				dev->name);
