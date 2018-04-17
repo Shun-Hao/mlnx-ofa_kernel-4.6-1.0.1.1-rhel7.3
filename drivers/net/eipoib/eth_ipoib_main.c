@@ -2045,6 +2045,30 @@ static rx_handler_result_t eipoib_handle_frame(struct sk_buff **pskb)
 	return RX_HANDLER_CONSUMED;
 }
 
+/*Remove the 802.1Q header and put the vlan in the skb.*/
+static void prepare_802_1Q_skb(struct sk_buff *skb)
+{
+	struct ethhdr *ethh;
+	struct vlan_ethhdr *vethh = (struct vlan_ethhdr *)(skb->data);
+	int ret;
+	u16 vlan;
+	__be16 proto = vethh->h_vlan_encapsulated_proto;
+
+	ret = __vlan_get_tag(skb, &vlan);
+	if (ret) {
+		pr_err("%s: failed to get vlan id, ret: %d\n", __func__, ret);
+		return;
+	}
+
+	ethh = (struct ethhdr *)skb->data;
+	memmove(skb->data + VLAN_HLEN, ethh, ETH_ALEN * 2);
+	skb_pull(skb, VLAN_HLEN);
+	ethh = (struct ethhdr *)skb->data;
+	__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vlan);
+	ethh->h_proto = proto;
+	skb->protocol = proto;
+}
+
 static netdev_tx_t parent_tx(struct sk_buff *skb, struct net_device *dev)
 {
 	struct parent *parent = netdev_priv(dev);
@@ -2058,8 +2082,15 @@ static netdev_tx_t parent_tx(struct sk_buff *skb, struct net_device *dev)
 	rcu_read_lock_bh();
 
 	if (unlikely(!IS_E_IPOIB_PROTO(ethh->h_proto))) {
-		++parent->port_stats.tx_proto_errors;
-		goto drop;
+		if (ethh->h_proto == htons(ETH_P_8021Q))
+			prepare_802_1Q_skb(skb);
+		ethh = (struct ethhdr *)(skb->data);
+		if (unlikely(!IS_E_IPOIB_PROTO(ethh->h_proto))) {
+			pr_debug("%s Dropping packet from type: 0x%x\n ",
+				 __func__, ethh->h_proto);
+			++parent->port_stats.tx_proto_errors;
+			goto drop;
+		}
 	}
 	/* assume: only orphan skb's */
 	if (unlikely(skb_shared(skb))) {
