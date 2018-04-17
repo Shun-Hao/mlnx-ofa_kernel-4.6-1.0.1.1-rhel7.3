@@ -385,13 +385,14 @@ static ssize_t parent_show_served(struct device *d,
 
 }
 
-#define IP_ADDR_LEN 48/* in bytes: x.y.z.w*/
+#define IP_ADDR_LEN 16 /* in bytes: x.y.z.w */
 
 static ssize_t parent_store_served(struct device *d,
 				   struct device_attribute *attr,
 				   const char *buffer, size_t count)
 {
-	char command[512] = { 0, };
+	/*input format format: +52:54:00:ca:0b:0f 11.134.45.1 7*/
+	char command[128] = { 0, };/*mac + ip + vlan at the most is 128 bytes*/
 	char *mac_str;
 	char ip_str[IP_ADDR_LEN] = { 0, };
 	u8 mac[ETH_ALEN];

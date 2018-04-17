@@ -465,8 +465,19 @@ static void eipoib_reap_neigh(struct work_struct *work)
 	struct slave *slave;
 	int is_send_igmp_query;
 	int ret;
-	DECLARE_BITMAP(all_v, VLAN_N_VID + 1);
 
+	int array_size = sizeof(unsigned long) * BITS_TO_LONGS(VLAN_N_VID + 1);
+	unsigned long *all_v;
+
+	/* needs to allocate mem instead of DECLARE_BITMAP macro,
+	 * in order to avoid memroy stack overflow
+	 */
+	all_v = kzalloc(array_size, GFP_KERNEL);
+
+	if (!all_v) {
+		pr_err("%s failed to allocate mem: %d\n", __func__, array_size);
+		return;
+	}
 	bitmap_zero(all_v, VLAN_N_VID + 1);
 
 	pr_debug("%s for %s\n", __func__, parent->dev->name);
@@ -495,6 +506,7 @@ static void eipoib_reap_neigh(struct work_struct *work)
 		queue_delayed_work(parent->wq, &parent->neigh_reap_task,
 				   NEIGH_GC_TASK_TIME);
 	read_unlock_bh(&parent->lock);
+	kfree(all_v);
 }
 
 /* enslave device <slave> to parent device <master> */
