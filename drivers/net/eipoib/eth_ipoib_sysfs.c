@@ -266,7 +266,7 @@ static ssize_t parent_store_slaves(struct device *d,
 	if (!rtnl_trylock()) {/* because __dev_get_by_name */
 		pr_warn("%s: %s not available right now\n",
 			parent->dev->name, __func__);
-		return restart_syscall();
+		return -EPERM;
 	}
 
 	sscanf(buffer, "%16s", command);
