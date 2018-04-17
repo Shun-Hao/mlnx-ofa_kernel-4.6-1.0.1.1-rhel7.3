@@ -311,7 +311,7 @@ static int parent_set_mtu(struct parent *parent)
 	rcu_read_unlock_bh();
 
 	if (parent->dev->mtu != mtu) {
-		dev_set_mtu(parent->dev, mtu);
+		dev_set_mtu(parent->dev, min(parent->dev->mtu, mtu));
 		ret = 1;
 	}
 
@@ -2474,6 +2474,9 @@ static int parent_master_netdev_event(unsigned long event,
 	case NETDEV_CHANGENAME:
 		pr_info("%s: got NETDEV_CHANGENAME event", parent_dev->name);
 		return parent_event_changename(event_parent);
+	case NETDEV_CHANGEMTU:
+		parent_set_mtu(event_parent);
+		break;
 	default:
 		break;
 	}
