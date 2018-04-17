@@ -119,8 +119,8 @@ struct slave *get_slave_by_dev(struct parent *parent,
 	return found ? slave : NULL;
 }
 
-struct slave *get_slave_by_mac_and_vlan(struct parent *parent, u8 *mac,
-					u16 vlan)
+inline struct slave *get_slave_by_mac_and_vlan(struct parent *parent, u8 *mac,
+					       u16 vlan)
 {
 	struct slave *slave, *slave_tmp;
 	int found = 0;

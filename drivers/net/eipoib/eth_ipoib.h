@@ -253,8 +253,8 @@ int add_emac_ip_info(struct net_device *parent_dev, __be32 ip,
 			    u8 *mac, u16 vlan, gfp_t mem_flag);
 void free_ip_ent_in_emac_rec(struct parent *parent, u8 *emac, u16 vlan,
 			     __be32 ip);
-inline struct slave *get_slave_by_mac_and_vlan(struct parent *parent, u8 *mac,
-					       u16 vlan);
+struct slave *get_slave_by_mac_and_vlan(struct parent *parent, u8 *mac,
+					u16 vlan);
 
 
 #endif /* _LINUX_ETH_IPOIB_H */
