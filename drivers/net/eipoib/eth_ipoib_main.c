@@ -351,6 +351,14 @@ static void parent_attach_slave(struct parent *parent,
 {
 	list_add_tail_rcu(&new_slave->list, &parent->slave_list);
 	parent->slave_cnt++;
+	/*
+	 * master_dev used in data-path, and when not under RTNL_LOCK.
+	 * will be used for kernels bigger than 3.9 only,
+	 * the rest use dev->master.
+	 * assume that the guest is under rcu so cannot be deleted
+	 * in the middle.
+	*/
+	new_slave->master_dev = parent->dev;
 }
 
 static void parent_detach_slave(struct parent *parent, struct slave *slave)

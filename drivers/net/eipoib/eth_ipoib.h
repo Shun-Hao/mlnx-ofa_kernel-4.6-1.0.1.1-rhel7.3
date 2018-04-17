@@ -165,6 +165,8 @@ struct neigh {
 
 struct slave {
 	struct net_device *dev;
+	/*kernels after 3.7 doesn't keep it in dev->master, keep it local*/
+	struct net_device *master_dev;
 	struct list_head list;
 	struct rcu_head rcu;
 	u16    pkey;
