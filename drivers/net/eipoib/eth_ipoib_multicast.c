@@ -172,7 +172,7 @@ struct sk_buff *gen_igmp_v2_query(struct slave *slave)
 	ip_eth_mc_map(*daddr_ip, src_mc_eth_mac_addr);
 	ethhdr = (struct ethhdr *)skb_put(skb, sizeof(*ethhdr));
 	memcpy(ethhdr->h_dest, src_mc_eth_mac_addr, ETH_ALEN);
-	memcpy(ethhdr->h_source, slave->emac, ETH_ALEN);
+	memcpy(ethhdr->h_source, dev->dev_addr, ETH_ALEN);
 	/* set the admin-bit, the packet remains in the device */
 	ethhdr->h_source[0] = ethhdr->h_source[0] | 0x2;
 
@@ -237,9 +237,11 @@ int send_igmp_query(struct parent *parent, struct slave *slave,
 	vlan_tag = slave->vlan & 0xfff;
 
 	ret = add_vlan_and_send(parent, vlan_tag, NULL, skb);
-	if (ret != NET_XMIT_SUCCESS && ret != NET_XMIT_DROP)
-		pr_err("%s: %s Error RX for igmp packet, (ret = %d)\n",
-		       __func__, slave->dev->name, ret);
-	return ret;
+	if (ret != NET_XMIT_SUCCESS && ret != NET_XMIT_DROP) {
+			pr_err("%s: %s Error RX for igmp packet, (ret = %d)\n",
+			       __func__, slave->dev->name, ret);
+			return ret;
+	}
+	return 0;
 }
 

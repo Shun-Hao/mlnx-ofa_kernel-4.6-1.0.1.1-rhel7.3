@@ -457,6 +457,9 @@ static void eipoib_reap_neigh(struct work_struct *work)
 	struct slave *slave;
 	int is_send_igmp_query;
 	int ret;
+	DECLARE_BITMAP(all_v, VLAN_N_VID + 1);
+
+	bitmap_zero(all_v, VLAN_N_VID + 1);
 
 	pr_debug("%s for %s\n", __func__, parent->dev->name);
 	/* sending igmp query every second time */
@@ -466,7 +469,14 @@ static void eipoib_reap_neigh(struct work_struct *work)
 	rcu_read_lock();
 	parent_for_each_slave_rcu(parent, slave) {
 		if (is_send_igmp_query) {
-			ret = send_igmp_query(parent, slave, IGMP_V2);
+			/* send only one per vlan */
+			if (!test_bit(slave->vlan, all_v)) {
+				ret = send_igmp_query(parent, slave, IGMP_V2);
+				if (ret)
+					pr_info("%s Failed to send igmp packet, ret: %d\n", __func__, ret);
+				else /* give it one more chance */
+					set_bit(slave->vlan, all_v);
+			}
 		}
 		slave_neigh_reap(parent, slave);
 	}
