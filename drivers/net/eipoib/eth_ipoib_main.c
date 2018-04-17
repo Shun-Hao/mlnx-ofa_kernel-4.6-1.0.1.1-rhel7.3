@@ -119,7 +119,6 @@ struct slave *get_slave_by_dev(struct parent *parent,
 	return found ? slave : NULL;
 }
 
-static inline
 struct slave *get_slave_by_mac_and_vlan(struct parent *parent, u8 *mac,
 					u16 vlan)
 {

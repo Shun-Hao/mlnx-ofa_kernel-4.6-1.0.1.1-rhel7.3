@@ -71,6 +71,30 @@ static const char parent_strings[][ETH_GSTRING_LEN] = {
 
 #define PORT_STATS_LEN (sizeof(parent_strings) / ETH_GSTRING_LEN)
 
+
+static int eipoib_get_settings(struct net_device *parent_dev,
+			       struct ethtool_link_ksettings *lks)
+{
+	int ret;
+	struct parent *parent = netdev_priv(parent_dev);
+	struct slave *slave;
+
+	rcu_read_lock_bh();
+	slave = get_slave_by_mac_and_vlan(parent, parent_dev->dev_addr,
+					  VLAN_N_VID);
+	if (!slave) {
+		pr_warn("%s: %s has no slave\n",
+			__func__, parent_dev->name);
+		rcu_read_unlock_bh();
+		return -EINVAL;
+	}
+	rcu_read_unlock_bh();
+
+	ret = __ethtool_get_link_ksettings(slave->dev, lks);
+
+	return ret;
+}
+
 static void parent_get_strings(struct net_device *parent_dev,
 			       uint32_t stringset, uint8_t *data)
 {
@@ -103,6 +127,7 @@ static int parent_get_sset_count(struct net_device *parent_dev, int sset)
 static const struct ethtool_ops parent_ethtool_ops = {
 	.get_drvinfo		= parent_ethtool_get_drvinfo,
 	.get_strings		= parent_get_strings,
+	.get_link_ksettings	= eipoib_get_settings,
 	.get_ethtool_stats	= parent_get_ethtool_stats,
 	.get_sset_count		= parent_get_sset_count,
 	.get_link		= ethtool_op_get_link,
