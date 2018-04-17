@@ -1209,8 +1209,8 @@ static int migrate_out_gen_arp_req(struct parent *parent, u8 *emac,
 
 	slave = get_slave_by_mac_and_vlan(parent, parent->dev->dev_addr, vlan);
 	if (unlikely(!slave)) {
-		pr_info_once("%s: Failed to find parent slave! %pM\n",
-			     __func__, parent->dev->dev_addr);
+		pr_debug_once("%s: Failed to find parent slave! %pM\n",
+			      __func__, parent->dev->dev_addr);
 		return -ENODEV;
 	}
 
