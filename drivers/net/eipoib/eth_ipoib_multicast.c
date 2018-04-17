@@ -149,10 +149,14 @@ struct sk_buff *gen_igmp_v2_query(struct slave *slave)
 	struct igmphdr *igmph;
 	struct net_device *dev = netdev_master_upper_dev_get(slave->dev);
 	u8 *p_options;
+	int size;
 
-	skb = dev_alloc_skb(sizeof(struct igmphdr)
-			    + sizeof(struct iphdr)
-			    + sizeof(struct ethhdr));
+	size = sizeof(struct igmphdr)
+	+ sizeof(struct iphdr)
+	+ sizeof(struct ethhdr)
+	+ LL_RESERVED_SPACE(dev);
+
+	skb = dev_alloc_skb(size);
 	if (!skb) {
 		pr_err("%s: %s no mem for igmp query skb\n",
 		       __func__, slave->dev->name);
@@ -169,6 +173,9 @@ struct sk_buff *gen_igmp_v2_query(struct slave *slave)
 	ethhdr = (struct ethhdr *)skb_put(skb, sizeof(*ethhdr));
 	memcpy(ethhdr->h_dest, src_mc_eth_mac_addr, ETH_ALEN);
 	memcpy(ethhdr->h_source, slave->emac, ETH_ALEN);
+	/* set the admin-bit, the packet remains in the device */
+	ethhdr->h_source[0] = ethhdr->h_source[0] | 0x2;
+
 	ethhdr->h_proto = htons(ETH_P_IP);
 
 	/* ip header */
@@ -230,7 +237,7 @@ int send_igmp_query(struct parent *parent, struct slave *slave,
 	vlan_tag = slave->vlan & 0xfff;
 
 	ret = add_vlan_and_send(parent, vlan_tag, NULL, skb);
-	if (ret != NET_XMIT_SUCCESS)
+	if (ret != NET_XMIT_SUCCESS && ret != NET_XMIT_DROP)
 		pr_err("%s: %s Error RX for igmp packet, (ret = %d)\n",
 		       __func__, slave->dev->name, ret);
 	return ret;
