@@ -172,11 +172,13 @@ static ssize_t parent_store_vifs(struct device *d,
 	char *ifname;
 	u8 mac[ETH_ALEN];
 	u16 vlan = VLAN_N_VID;
-	int found = 0, ret = count;
+	int found = 0, ret = count, num_of_args;
 	struct slave *slave = NULL, *slave_tmp;
 	struct parent *parent = to_parent(d);
 
-	sscanf(buffer, "%s %s %hd", command, mac_str, &vlan);
+	num_of_args = sscanf(buffer, "%s %s %hd", command, mac_str, &vlan);
+	if (num_of_args < 2)
+		goto err_no_cmd;
 
 	/* check ifname */
 	ifname = command + 1;
@@ -395,11 +397,14 @@ static ssize_t parent_store_served(struct device *d,
 	u8 mac[ETH_ALEN];
 	u16 vlan = VLAN_N_VID;
 	__be32 ip;
+	int num_of_args;
 	int ret = count, ret2 = 0;
 	struct parent *parent = to_parent(d);
 
 	/* format: +52:54:00:ca:0b:0f 11.134.45.1 7 */
-	sscanf(buffer, "%s %s %hd", command, ip_str, &vlan);
+	num_of_args = sscanf(buffer, "%s %s %hd", command, ip_str, &vlan);
+	if (num_of_args < 2)
+		goto err_no_cmd;
 
 	mac_str = command + 1;
 	if ((strlen(command) <= 1) || /*!dev_valid_name(ifname) ||*/
@@ -447,7 +452,7 @@ static ssize_t parent_store_served(struct device *d,
 	}
 
 err_no_cmd:
-	pr_err("%s USAGE: (-|+)ifname [mac]\n", DRV_NAME);
+	pr_err("%s USAGE: (-|+)mac ip [vlan]\n", DRV_NAME);
 	ret = -EPERM;
 
 	return ret;
