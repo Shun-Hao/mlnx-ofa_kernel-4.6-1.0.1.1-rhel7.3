@@ -323,14 +323,14 @@ static int parent_set_mtu(struct parent *parent)
  * take features that were at the parent netdev before.
  * drop, features that the parent shouldn't have.
  */
-static void parent_self_features(struct net_device *parent_dev, u64 *take,
-				 u64 *drop)
+static void parent_self_features(struct net_device *parent_dev, u64 features,
+				 u64 *take, u64 *drop)
 {
 	*take = 0;
 	*drop = 0;
 
 	/* basic independent features to take, if were at the parent first */
-	if (parent_dev->features & NETIF_F_GRO)
+	if (features & NETIF_F_GRO)
 		*take |= NETIF_F_GRO;
 
 	/* basic independent features to drop anyeay*/
@@ -367,7 +367,7 @@ static netdev_features_t parent_fix_features(struct net_device *dev,
 	netdev_features_t mask;
 	u64 take, drop;
 
-	parent_self_features(parent->dev, &take, &drop);
+	parent_self_features(parent->dev, features, &take, &drop);
 
 	rcu_read_lock_bh();
 
@@ -400,7 +400,7 @@ static int parent_compute_features(struct parent *parent)
 		goto done;
 
 	/* take basic features that do not depends on slaves */
-	parent_self_features(parent_dev, &take, &drop);
+	parent_self_features(parent_dev, parent_dev->features, &take, &drop);
 
 	/* starts with the max set of features mask */
 	hw_features = features = ~0LL;
