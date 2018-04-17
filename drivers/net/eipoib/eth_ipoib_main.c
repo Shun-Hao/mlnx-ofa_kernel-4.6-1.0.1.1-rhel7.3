@@ -46,6 +46,14 @@
 
 #define LIVE_MIG_PACKET 1
 
+/* defines packet type at tx flow */
+#define UK_PACKET_TYPE		0 /* unknow type */
+#define IP_PACKET_TYPE		1
+#define MC_PACKET_TYPE		2
+#define ARP_PACKET_TYPE		3
+#define BC_PACKET_TYPE		4
+#define ARP_BY_IP_PACKET_TYPE	5
+
 #define PARENT_MAC_MASK 0xe7
 
 /* forward declaration */
@@ -1468,7 +1476,20 @@ static struct sk_buff *get_slave_skb_ip(struct slave *slave,
 }
 
 /*
- * get_slave_skb -- called in TX flow
+ * get_slave_skb_multicast
+ * 2 cases:
+ *   igmp packet.
+ *   send-only packet
+ * The driver handles according to the case.
+ * anyway in both cases the driver needs to add neigh entry.
+ */
+static struct sk_buff *get_slave_skb_multicast(struct slave *slave,
+					       struct sk_buff *skb)
+{
+	return NULL;
+}
+
+/* get_slave_skb -- called in TX flow
  * get skb that can be sent thru slave xmit func,
  * if skb was adjusted (cloned, pulled, etc..) successfully
  * the old skb (if any) is freed here.
@@ -1483,56 +1504,74 @@ static struct sk_buff *get_slave_skb(struct slave *slave, struct sk_buff *skb)
 	struct neigh *neigh = NULL;
 	u8 rimac[INFINIBAND_ALEN];
 	int ret = 0;
+	int packet_type = UK_PACKET_TYPE;
 
-	/* set neigh mac */
-	if (is_multicast_ether_addr(ethh->h_dest) ||
-	    is_broadcast_ether_addr(ethh->h_dest)) {
+	/* define packet type and get neigh */
+	if (unlikely(is_broadcast_ether_addr(ethh->h_dest))) {
 		memcpy(rimac, dev->broadcast, INFINIBAND_ALEN);
-	} else {
+		/* switch between ARP to other BC */
+		if (skb->protocol == htons(ETH_P_ARP) ||
+		    skb->protocol == htons(ETH_P_RARP))
+			packet_type = ARP_PACKET_TYPE;
+		else /* regular bc packet */
+			packet_type = BC_PACKET_TYPE;
+	} else { /* unicast and multicast */
 		neigh = eipoib_neigh_get(slave, ethh->h_dest);
 		if (neigh) {
 			memcpy(rimac, neigh->imac, INFINIBAND_ALEN);
-
-		} else {
-			++parent->port_stats.tx_neigh_miss;
-			/*
-			 * assume VIF migration, tries to get the neigh by
-			 * issue arp request on behalf of the vif.
-			 */
-			if (skb->protocol == htons(ETH_P_IP)) {
-				pr_info("Missed neigh for slave: %s,"
-					"issue ARP request\n",
-					slave->dev->name);
-				get_slave_skb_arp_by_ip(slave, skb);
-				goto out_arp_sent_instead;
-			}
+			if (unlikely(skb->protocol == htons(ETH_P_ARP) ||
+				     skb->protocol == htons(ETH_P_RARP)))
+				packet_type = ARP_PACKET_TYPE;
+			else
+				packet_type = IP_PACKET_TYPE;
+		} else if (is_multicast_ether_addr(ethh->h_dest)) {
+			packet_type = MC_PACKET_TYPE;
+		} else {/* assume live migration */
+			packet_type = ARP_BY_IP_PACKET_TYPE;
 		}
 	}
 
-	if (skb->protocol == htons(ETH_P_ARP) ||
-	    skb->protocol == htons(ETH_P_RARP)) {
+	/* handle according to packet type */
+	switch (packet_type) {
+	case IP_PACKET_TYPE:
+	case BC_PACKET_TYPE:
+		nskb = get_slave_skb_ip(slave, skb);
+		break;
+	case MC_PACKET_TYPE:
+		nskb = get_slave_skb_multicast(slave, skb);
+		break;
+	case ARP_PACKET_TYPE:
 		nskb = get_slave_skb_arp(slave, skb, rimac, &ret);
 		if (!nskb && LIVE_MIG_PACKET == ret) {
 			pr_info("%s: live migration packets\n", __func__);
 			goto err;
 		}
-	} else {
-		if (!neigh && !is_broadcast_ether_addr(ethh->h_dest))
-			goto err;
-		/* pull ethernet header here */
-		nskb = get_slave_skb_ip(slave, skb);
+		break;
+	case ARP_BY_IP_PACKET_TYPE:
+		/*
+		 * assume VIF migration, tries to get the neigh by
+		 * issue arp request on behalf of the vif.
+		 */
+		++parent->port_stats.tx_neigh_miss;
+		pr_info("Missed neigh slave: %s, issue ARP request\n",
+			slave->dev->name);
+		get_slave_skb_arp_by_ip(slave, skb);
+		goto out_arp_sent_instead;
+	default:
+		pr_info("%s: Unknown packet type\n", __func__);
+		goto err;
 	}
 
 	/* if new skb could not be adjusted/allocated, abort */
 	if (!nskb) {
-		pr_err("%s get_slave_skb_ip/arp failed 0x%x\n",
-		       dev->name, skb->protocol);
+		pr_err("%s get_slave_skb_ip/arp/mc failed skb->protocol:0x%x, packet_type: %d\n",
+		       dev->name, htons(skb->protocol), packet_type);
 		goto err;
 	}
 
 	if ((neigh && nskb == skb) ||
-	    (is_broadcast_ether_addr(ethh->h_dest) && nskb == skb)) { /* ucast & bc */
-		/* dev_hard_header only for ucast, for arp done already.*/
+	    (is_broadcast_ether_addr(ethh->h_dest) && nskb == skb)) {
+		/* ucast & bc for arp done already.*/
 		if (dev_hard_header(nskb, dev, ntohs(skb->protocol), rimac,
 				    dev->dev_addr, nskb->len) < 0) {
 			pr_warn("%s: dev_hard_header failed\n",
