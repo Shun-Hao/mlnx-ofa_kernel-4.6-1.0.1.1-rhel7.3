@@ -1814,6 +1814,31 @@ err:
 	return NULL;
 }
 
+int add_vlan_and_send(struct parent *parent, int vlan_tag,
+		      struct napi_struct *napi, struct sk_buff *skb)
+{
+	int rc;
+
+	if (vlan_tag) {
+		__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vlan_tag);
+		if (!skb) {
+			pr_err("%s failed to insert VLAN tag, dropping\n",
+			       skb->dev->name);
+			dev_kfree_skb_any(skb);
+
+			return NET_RX_DROP;
+		}
+		++parent->port_stats.rx_vlan;
+	}
+
+	if (napi)
+		rc = napi_gro_receive(napi, skb);
+	else
+		rc = netif_receive_skb(skb);
+
+	return rc;
+}
+
 static int parent_rx(struct sk_buff *skb, struct slave *slave)
 {
 	struct net_device *slave_dev = skb->dev;
@@ -1854,21 +1879,8 @@ static int parent_rx(struct sk_buff *skb, struct slave *slave)
 		skb = nskb;
 
 	vlan_tag = slave->vlan & 0xfff;
-	if (vlan_tag) {
-		__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vlan_tag);
-		if (!skb) {
-			pr_err("%s failed to insert VLAN tag\n",
-			       skb->dev->name);
-			goto drop;
-		}
-		++parent->port_stats.rx_vlan;
-	}
 
-	if (napi)
-		rc = napi_gro_receive(napi, skb);
-	else
-		rc = netif_receive_skb(skb);
-
+	rc = add_vlan_and_send(parent, vlan_tag, napi, skb);
 
 	return rc;
 
