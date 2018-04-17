@@ -210,7 +210,7 @@ struct parent {
 	s8       kill_timers;
 	struct   delayed_work vif_learn_work;
 	union    ib_gid gid;
-	char     ipoib_main_interface[IFNAMSIZ];
+	char     ipoib_main_interface[IFNAMSIZ + 1];
 	/* live migration and bonding support */
 	rwlock_t emac_info_lock;
 	struct   list_head emac_ip_list;
