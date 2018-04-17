@@ -850,7 +850,7 @@ static int neigh_insert(struct slave *slave, const u8 *emac, const u8 *imac)
 	struct hlist_head *head = &slave->hash[eipoib_mac_hash(emac)];
 	struct neigh *neigh;
 
-	if (!is_valid_ether_addr(emac))
+	if (is_zero_ether_addr(emac))
 		return -EINVAL;
 
 	neigh = neigh_find(head, emac);
@@ -1475,6 +1475,46 @@ static struct sk_buff *get_slave_skb_ip(struct slave *slave,
 	return skb;
 }
 
+int add_mc_neigh(struct slave *slave, __be32 ip)
+{
+	u8 dst_mc_ib_mac_addr[INFINIBAND_ALEN] = {0};
+	u8 dst_mc_eth_mac_addr[ETH_ALEN] = {0};
+	struct neigh *neigh;
+	int ret = 0;
+
+	ip_ib_mc_map(ip, slave->dev->broadcast, dst_mc_ib_mac_addr);
+	ip_eth_mc_map(ip, dst_mc_eth_mac_addr);
+	pr_debug("%s:adding mc neigh: %pM --> %pI6\n",
+		 __func__, dst_mc_eth_mac_addr, dst_mc_ib_mac_addr + 4);
+
+	/* check if entry is being processed or already exists */
+	neigh = eipoib_neigh_get(slave, dst_mc_eth_mac_addr);
+	if (neigh) {
+		/* if exists mark it as valid.*/
+		pr_debug("%s: mc: %pM already added\n",
+			 __func__, dst_mc_eth_mac_addr);
+		eipoib_neigh_put(neigh);
+		return 0;
+	}
+
+	/* adding to the neigh list */
+	ret = eipoib_neigh_insert(slave,
+				  dst_mc_eth_mac_addr, dst_mc_ib_mac_addr);
+	if (ret) {
+		pr_err("%s: failed adding neigh(%pM -> %pI6)\n",
+		       __func__, dst_mc_eth_mac_addr, dst_mc_ib_mac_addr + 4);
+		return ret;
+	}
+
+	/* cause ipoib_set_mcast_list -> ipoib: mcast_restart_task */
+	ret = dev_mc_add(slave->dev, dst_mc_ib_mac_addr);
+	if (ret)
+		pr_err("%s: Failed to add mc (dev:%s, mc: %pI6). ret:%d\n",
+		       __func__, slave->dev->name, dst_mc_ib_mac_addr + 4, ret);
+
+	return ret;
+}
+
 /*
  * get_slave_skb_multicast
  * 2 cases:
@@ -1486,7 +1526,30 @@ static struct sk_buff *get_slave_skb_ip(struct slave *slave,
 static struct sk_buff *get_slave_skb_multicast(struct slave *slave,
 					       struct sk_buff *skb)
 {
-	return NULL;
+	struct iphdr  *iph = (struct iphdr *)(skb->data + ETH_HLEN);
+	int ret = 0;
+
+	/* if it is igmp packet, create mc address for each dest
+	 * and add it to the mc_list
+	 */
+	if (iph->protocol == IPPROTO_IGMP) {
+		pr_debug("IGMP packet for device: %s\n", slave->dev->name);
+		handle_igmp_join_req(slave, iph);
+		goto out;
+	}
+
+	/* send-only case: */
+	pr_debug("%s : send-only mc packet for group:%pI4\n",
+		 __func__, &(iph->daddr));
+	ret = add_mc_neigh(slave, iph->daddr);
+	if (ret) {
+		pr_info("%s : Failed Adding mc group for %pI4\n",
+			__func__, &(iph->daddr));
+		return NULL;
+	}
+
+out:
+	return get_slave_skb_ip(slave, skb);
 }
 
 /* get_slave_skb -- called in TX flow

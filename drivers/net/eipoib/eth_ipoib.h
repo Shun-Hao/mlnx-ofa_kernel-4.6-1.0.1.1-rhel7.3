@@ -43,7 +43,7 @@
 #include <net/netns/generic.h>
 #include <linux/if_infiniband.h>
 #include <rdma/ib_verbs.h>
-
+#include <net/ip.h>
 #include <rdma/e_ipoib.h>
 
 /* macros and definitions */
@@ -131,7 +131,7 @@ struct guest_emac_info {
 	int num_of_retries;
 };
 
-/* handles new neigh learning taskzzz*/
+/* handles new neigh learning task */
 struct learn_neigh_info {
 	struct parent *parent;
 	struct slave *slave;
@@ -253,4 +253,6 @@ struct slave *get_slave_by_mac_and_vlan(struct parent *parent, u8 *mac,
 					u16 vlan);
 
 
+void handle_igmp_join_req(struct slave *slave, struct iphdr  *iph);
+int add_mc_neigh(struct slave *slave, __be32 ip);
 #endif /* _LINUX_ETH_IPOIB_H */
