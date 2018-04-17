@@ -2123,11 +2123,8 @@ static netdev_tx_t parent_tx(struct sk_buff *skb, struct net_device *dev)
 	skb_record_rx_queue(skb, skb_get_queue_mapping(skb));
 
 	rc = dev_queue_xmit(skb);
-	if (unlikely(rc)) {
-		pr_err("slave tx method failed dev_queue_xmit returned:%d\n",
-		       rc);
+	if (unlikely(rc))
 		++parent->port_stats.tx_slave_err;
-	}
 
 	goto out;
 
