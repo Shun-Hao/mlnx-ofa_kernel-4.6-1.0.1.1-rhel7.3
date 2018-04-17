@@ -649,11 +649,9 @@ int parent_release_slave(struct net_device *parent_dev,
 
 	/* for live migration, mark its mac_ip record as invalid */
 	write_lock_bh(&parent->emac_info_lock);
+
 	emac_info = get_mac_ip_info_by_mac_and_vlan(parent, slave->emac, slave->vlan);
-	if (!emac_info)
-		pr_info("%s %s didn't find emac: %pM\n",
-			parent_dev->name, slave_dev->name, slave->emac);
-	else {
+	if (emac_info && !parent->kill_timers) {
 		emac_info->rec_state = MIGRATED_OUT;
 		emac_info->num_of_retries = MIG_OUT_MAX_ARP_RETRIES;
 		/* start GC work */
@@ -1043,10 +1041,10 @@ static void parent_work_cancel_all(struct parent *parent)
 	write_unlock_bh(&parent->lock);
 
 	if (delayed_work_pending(&parent->arp_gen_work))
-		cancel_delayed_work(&parent->arp_gen_work);
+		cancel_delayed_work_sync(&parent->arp_gen_work);
 
 	if (delayed_work_pending(&parent->neigh_reap_task))
-		cancel_delayed_work(&parent->neigh_reap_task);
+		cancel_delayed_work_sync(&parent->neigh_reap_task);
 
 }
 
@@ -2149,12 +2147,19 @@ out_rtnl:
 static void parent_free(struct parent *parent)
 {
 	struct net_device *parent_dev = parent->dev;
+	struct guest_emac_info *emac_info, *next_emac_info;
 
 	parent_work_cancel_all(parent);
 
 	parent_release_all(parent_dev);
 
 	unregister_netdevice(parent_dev);
+
+	/* make sure no more emac entries left */
+	write_lock_bh(&parent->emac_info_lock);
+	list_for_each_entry_safe(emac_info, next_emac_info, &parent->emac_ip_list, list)
+		free_emac_info_rec(emac_info);
+	write_unlock_bh(&parent->emac_info_lock);
 }
 
 static void parent_free_all(void)
