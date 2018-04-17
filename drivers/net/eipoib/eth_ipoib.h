@@ -64,6 +64,9 @@
 #define NEIGH_HASH_BITS 8
 #define NEIGH_HASH_SIZE (1 << NEIGH_HASH_BITS)
 
+#define SLAVE_HASH_BITS 8
+#define SLAVE_HASH_SIZE (1 << SLAVE_HASH_BITS)
+
 
 #define PARENT_VLAN_FEATURES (NETIF_F_HW_VLAN_RX | NETIF_F_HW_VLAN_TX)
 
@@ -172,6 +175,11 @@ struct slave {
 	/* hash & rcu for neigh objects */
 	spinlock_t		hash_lock;
 	struct hlist_head	hash[NEIGH_HASH_SIZE];
+
+	/* slave will be stored in parent's hash */
+	struct hlist_node hlist;
+	atomic_t	  refcnt;
+	u8		  hash_inserted;
 };
 
 struct port_stats {
@@ -216,6 +224,9 @@ struct parent {
 	struct   list_head emac_ip_list;
 	struct   delayed_work arp_gen_work;
 	struct delayed_work neigh_reap_task;
+	/* hash struct for slaves */
+	spinlock_t		hash_lock;
+	struct hlist_head	hash[SLAVE_HASH_SIZE];
 };
 
 #define eipoib_slave_get_rcu(dev) \

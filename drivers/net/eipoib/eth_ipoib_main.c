@@ -63,8 +63,9 @@ static int eipoib_device_event(struct notifier_block *unused,
 static void free_all_ip_ent_in_emac_rec(struct guest_emac_info *emac_info);
 static void neigh_learn_task(struct work_struct *work);
 static void slave_neigh_flush(struct slave *slave);
-static void slave_free(struct rcu_head *head);
+static void slave_rcu_free(struct rcu_head *head);
 static void slave_neigh_reap(struct parent *parent, struct slave *slave);
+static inline void slave_put(struct slave *slave, struct parent *parent);
 static const char * const version =
 	DRV_DESCRIPTION ": v" DRV_VERSION " (" DRV_RELDATE ")\n";
 
@@ -354,9 +355,7 @@ static void parent_attach_slave(struct parent *parent,
 
 static void parent_detach_slave(struct parent *parent, struct slave *slave)
 {
-	list_del_rcu(&slave->list);
-	parent->slave_cnt--;
-	call_rcu_bh(&slave->rcu, slave_free);
+	slave_put(slave, parent);
 }
 
 static netdev_features_t parent_fix_features(struct net_device *dev,
@@ -573,6 +572,7 @@ int parent_enslave(struct net_device *parent_dev,
 	}
 
 	new_slave->dev = slave_dev;
+	atomic_set(&new_slave->refcnt, 1);
 
 	write_lock_bh(&parent->lock);
 
@@ -618,13 +618,12 @@ err_undo_flags:
 	return res;
 }
 
-static void slave_free(struct rcu_head *head)
+static void slave_rcu_free(struct rcu_head *head)
 {
 	struct slave *slave
 		= container_of(head, struct slave, rcu);
 
 	slave_neigh_flush(slave);
-
 	kfree(slave);
 }
 
@@ -1066,6 +1065,119 @@ static void neigh_learn_task(struct work_struct *work)
 out:
 	kfree(learn_neigh);
 	return;
+}
+/*------------------slave handling hash -------------------------*/
+static inline int eipoib_slave_hash(const unsigned char *mac, u16 vlan)
+{
+	u32 addr = get_unaligned((u32 *)(mac));
+	int h_v;
+
+	h_v = jhash_2words(addr, vlan, 0) & (SLAVE_HASH_SIZE - 1);
+	return h_v;
+}
+static inline struct slave *slave_find(struct hlist_head *head,
+				const u8 *addr, u16 vlan)
+{
+	struct slave *slave;
+
+	hlist_for_each_entry(slave, head, hlist) {
+		if (ether_addr_equal(slave->emac, addr) && slave->vlan == vlan)
+			return slave;
+	}
+	return NULL;
+}
+
+static inline struct slave *slave_find_rcu(struct hlist_head *head,
+				const u8 *addr, u16 vlan)
+{
+	struct slave *slave;
+
+	hlist_for_each_entry_rcu(slave, head, hlist) {
+		if (ether_addr_equal(slave->emac, addr) && slave->vlan == vlan)
+			return slave;
+	}
+	return NULL;
+}
+
+static void slave_delete(struct slave *s, struct parent *parent)
+{
+	struct slave *slave;
+
+	slave = rcu_dereference(s);
+	if (slave) {
+		spin_lock_bh(&parent->hash_lock);
+		if (slave->hash_inserted)
+			hlist_del_rcu(&slave->hlist);
+		list_del_rcu(&slave->list);
+		parent->slave_cnt--;
+		spin_unlock_bh(&parent->hash_lock);
+		call_rcu_bh(&slave->rcu, slave_rcu_free);
+	}
+
+}
+
+static inline void slave_put(struct slave *slave, struct parent *parent)
+{
+	if (atomic_dec_and_test(&slave->refcnt))
+		slave_delete(slave, parent);
+}
+
+/* call under spin_lock_bh */
+static int slave_insert(struct parent *parent, const u8 *emac, u16 vlan,
+			struct slave *slave)
+{
+	struct hlist_head *head = &parent->hash[eipoib_slave_hash(emac, vlan)];
+
+	if (is_zero_ether_addr(emac))
+		return -EINVAL;
+
+	if (slave_find(head, emac, vlan)) {
+		pr_info("%s Slave: %s already exists\n",
+			__func__, slave->dev->name);
+		return -EEXIST;
+	}
+
+	hlist_add_head_rcu(&slave->hlist, head);
+	atomic_set(&slave->refcnt, 1);
+	slave->hash_inserted = 1;
+	pr_debug("%s: slave (%s) mac: %pM added\n",
+		 __func__, slave->dev->name, emac);
+
+	return 0;
+}
+
+/* Add entry for local address of interface */
+int eipoib_slave_insert(struct parent *parent, struct slave *slave,
+			const u8 *emac, u16 vlan)
+{
+	int ret;
+
+	spin_lock_bh(&parent->hash_lock);
+	ret = slave_insert(parent, emac, vlan, slave);
+	spin_unlock_bh(&parent->hash_lock);
+	return ret;
+}
+
+static inline
+struct slave *slave_get(struct parent *parent, const u8 *emac, u16 vlan)
+{
+	struct hlist_head *head;
+	struct slave *slave = NULL;
+
+	rcu_read_lock_bh();
+
+	head = &parent->hash[eipoib_slave_hash(emac, vlan)];
+
+	slave = slave_find_rcu(head, emac, vlan);
+
+	if (slave) {
+		if (!atomic_inc_not_zero(&slave->refcnt))
+			slave = NULL;/* deleted */
+	}
+
+	rcu_read_unlock_bh();
+
+	return slave;
 }
 
 static void parent_work_cancel_all(struct parent *parent)
@@ -1945,11 +2057,11 @@ static netdev_tx_t parent_tx(struct sk_buff *skb, struct net_device *dev)
 		memcpy(mac_no_admin_bit, ethh->h_source, ETH_ALEN);
 		mac_no_admin_bit[0] = mac_no_admin_bit[0] & 0xFD;
 		/* get slave, and queue packet */
-		slave = get_slave_by_mac_and_vlan(parent, mac_no_admin_bit, vlan);
+		slave = slave_get(parent, mac_no_admin_bit, vlan);
 	}
 	/* get slave, and queue packet */
 	if (!slave)
-		slave = get_slave_by_mac_and_vlan(parent, ethh->h_source, vlan);
+		slave = slave_get(parent, ethh->h_source, vlan);
 	if (unlikely(!slave)) {
 		pr_info("vif: %pM with vlan: %d miss for parent: %s\n",
 			ethh->h_source, vlan, parent->ipoib_main_interface);
@@ -1996,6 +2108,8 @@ drop:
 	dev_kfree_skb(skb);
 
 out:
+	if (likely(slave))
+		slave_put(slave, parent);
 	rcu_read_unlock_bh();
 	return NETDEV_TX_OK;
 }
@@ -2165,6 +2279,11 @@ int parent_add_vif_param(struct net_device *parent_dev,
 
 	new_slave->vlan = vlan;
 
+	ret = eipoib_slave_insert(parent, new_slave, mac, vlan);
+	if (ret)
+		pr_err("%s: Failed to insert slave: %s mac: %pM\n",
+		       __func__, new_slave->dev->name, mac);
+
 out:
 	rcu_read_unlock_bh();
 
@@ -2203,6 +2322,7 @@ static void parent_setup(struct net_device *parent_dev)
 	/* Initialize pointers */
 	parent->dev = parent_dev;
 	INIT_LIST_HEAD(&parent->slave_list);
+	spin_lock_init(&parent->hash_lock);
 	INIT_LIST_HEAD(&parent->emac_ip_list);
 	INIT_DELAYED_WORK(&parent->neigh_reap_task, eipoib_reap_neigh);
 	/* Initialize the device entry points */
