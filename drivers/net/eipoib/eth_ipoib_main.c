@@ -1951,13 +1951,6 @@ int add_vlan_and_send(struct parent *parent, int vlan_tag,
 
 	if (vlan_tag) {
 		__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vlan_tag);
-		if (!skb) {
-			pr_err("%s failed to insert VLAN tag, dropping\n",
-			       skb->dev->name);
-			dev_kfree_skb_any(skb);
-
-			return NET_RX_DROP;
-		}
 		++parent->port_stats.rx_vlan;
 	}
 
