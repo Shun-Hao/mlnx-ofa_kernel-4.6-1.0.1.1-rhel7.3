@@ -36,7 +36,7 @@
 #include <linux/etherdevice.h>
 #include <linux/jhash.h>
 
-#define EMAC_IP_GC_TIME (10 * HZ)
+#define NEIGH_GC_TASK_TIME (30 * HZ)
 
 #define GEN_ARP_REQ_ISSUE_TIME (HZ/2)
 
@@ -476,7 +476,7 @@ static void eipoib_reap_neigh(struct work_struct *work)
 	read_lock_bh(&parent->lock);
 	if (!parent->kill_timers)
 		queue_delayed_work(parent->wq, &parent->neigh_reap_task,
-				   arp_tbl.gc_interval);
+				   NEIGH_GC_TASK_TIME);
 	read_unlock_bh(&parent->lock);
 }
 
@@ -1996,7 +1996,7 @@ static int parent_open(struct net_device *parent_dev)
 	INIT_DELAYED_WORK(&parent->arp_gen_work, arp_gen_work_task);
 
 	queue_delayed_work(parent->wq, &parent->neigh_reap_task,
-			   arp_tbl.gc_interval);
+			   NEIGH_GC_TASK_TIME);
 
 	return 0;
 }
