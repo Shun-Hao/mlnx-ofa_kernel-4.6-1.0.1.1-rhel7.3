@@ -1986,6 +1986,11 @@ static int parent_rx(struct sk_buff *skb, struct slave *slave)
 	u8 remac[ETH_ALEN];
 	int vlan_tag;
 
+	/* return the skb->cb clean as it was before,
+	 * don't let the upper layers to worry about that.
+	 */
+	memset(IPOIB_HANDLER_CB(skb), 0, sizeof(struct eipoib_cb_data));
+
 	build_neigh_mac(remac, data->rx.sqpn, data->rx.slid);
 
 	if (unlikely(skb_headroom(skb) < ETH_HLEN)) {
