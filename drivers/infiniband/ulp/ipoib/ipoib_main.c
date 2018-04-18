@@ -1294,7 +1294,7 @@ static int ipoib_hard_header(struct sk_buff *skb,
 	header = skb_push(skb, sizeof(*header));
 
 	header->proto = htons(type);
-	header->reserved = 0;
+	header->tss_qpn_mask_sz = 0; /* Needed for RSS support */
 
 	/*
 	 * we don't rely on dst_entry structure,  always stuff the

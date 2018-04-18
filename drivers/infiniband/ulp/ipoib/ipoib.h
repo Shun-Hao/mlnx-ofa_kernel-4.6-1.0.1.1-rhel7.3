@@ -34,7 +34,7 @@
 
 #ifndef _IPOIB_H
 #define _IPOIB_H
-
+#include <rdma/e_ipoib.h>
 #include <linux/list.h>
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
@@ -132,7 +132,7 @@ enum {
 
 struct ipoib_header {
 	__be16	proto;
-	u16	reserved;
+	__be16 tss_qpn_mask_sz;
 };
 
 struct ipoib_pseudo_header {
@@ -253,6 +253,7 @@ struct ipoib_cm_rx {
 	unsigned long		jiffies;
 	enum ipoib_cm_state	state;
 	int			recv_count;
+	int			qpn;
 };
 
 struct ipoib_cm_tx {
@@ -829,6 +830,34 @@ extern int ipoib_recvq_size;
 extern u32 ipoib_inline_thold;
 
 extern struct ib_sa_client ipoib_sa_client;
+
+static inline void set_skb_oob_cb_data(struct sk_buff *skb, struct ib_wc *wc,
+				struct napi_struct *napi)
+{
+	struct ipoib_cm_rx *p_cm_ctx = NULL;
+	struct eipoib_cb_data *data = NULL;
+	struct ipoib_header *header;
+	unsigned int tss_mask, tss_qpn_mask_sz;
+
+	p_cm_ctx = wc->qp->qp_context;
+	data = IPOIB_HANDLER_CB(skb);
+
+	data->rx.slid = wc->slid;
+	header = (struct ipoib_header *)(skb->data - IPOIB_ENCAP_LEN);
+	if (header->tss_qpn_mask_sz & cpu_to_be16(0xF000)) {
+		tss_qpn_mask_sz = be16_to_cpu(header->tss_qpn_mask_sz) >> 12;
+		tss_mask = 0xffff >> (16 - tss_qpn_mask_sz);
+		data->rx.sqpn = wc->src_qp & tss_mask;
+	} else {
+		data->rx.sqpn = wc->src_qp;
+	}
+
+	data->rx.napi = napi;
+
+	/* in CM mode, use the "base" qpn as sqpn */
+	if (p_cm_ctx)
+		data->rx.sqpn = p_cm_ctx->qpn;
+}
 
 #ifdef CONFIG_INFINIBAND_IPOIB_DEBUG
 extern int ipoib_debug_level;
