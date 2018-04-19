@@ -363,13 +363,19 @@ static void eq_pf_action(struct work_struct *work)
 	spin_unlock_irq(&eq->pf_ctx.lock);
 }
 
-static int init_pf_ctx(struct mlx5_eq_pagefault *pf_ctx, const char *name)
+static int init_pf_ctx(struct mlx5_eq_pagefault *pf_ctx, const char *name, bool capi_enabled)
 {
 	spin_lock_init(&pf_ctx->lock);
 	INIT_WORK(&pf_ctx->work, eq_pf_action);
 
-	pf_ctx->wq = alloc_ordered_workqueue(name,
-					     WQ_MEM_RECLAIM);
+	if (capi_enabled)
+		pf_ctx->wq = alloc_workqueue(name,
+					     WQ_HIGHPRI | WQ_CPU_INTENSIVE,
+					     16);
+	else
+		pf_ctx->wq = alloc_ordered_workqueue(name,
+						     WQ_MEM_RECLAIM);
+
 	if (!pf_ctx->wq)
 		return -ENOMEM;
 
@@ -761,7 +767,7 @@ int mlx5_create_map_eq(struct mlx5_core_dev *dev, struct mlx5_eq *eq, u8 vecidx,
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	if (type == MLX5_EQ_TYPE_PF) {
-		err = init_pf_ctx(&eq->pf_ctx, name);
+		err = init_pf_ctx(&eq->pf_ctx, name, dev->capi.enabled);
 		if (err)
 			goto err_irq;
 	} else
