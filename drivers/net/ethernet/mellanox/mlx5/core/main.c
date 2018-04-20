@@ -1912,6 +1912,8 @@ static void capi_cleanup(struct mlx5_core_dev *dev)
 	if (!dev->capi.enabled)
 		return;
 
+	dev->capi.enabled = false;
+
 	if (!dev->capi.owner)
 		return;
 
@@ -2228,6 +2230,13 @@ static pci_ers_result_t mlx5_pci_err_detected(struct pci_dev *pdev,
 
 	mlx5_enter_error_state(dev, false);
 	mlx5_unload_one(dev, priv, false);
+
+#ifdef CONFIG_CXL_LIB
+	if (mlx5_core_is_pf(dev)) {
+		capi_cleanup(dev);
+		mlx5_icmd_cleanup(dev);
+	}
+#endif
 	/* In case of kernel call drain the health wq */
 	if (state) {
 		mlx5_drain_health_wq(dev);
