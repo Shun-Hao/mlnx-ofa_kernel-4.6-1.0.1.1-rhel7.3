@@ -782,15 +782,15 @@ static int mlx5e_alloc_rq(struct mlx5e_channel *c,
 		}
 	}
 
-	INIT_WORK(&rq->dim.work, mlx5e_rx_dim_work);
+	INIT_WORK(&rq->dim_obj.dim.work, mlx5e_rx_dim_work);
 
 	switch (params->rx_cq_moderation.cq_period_mode) {
 	case MLX5_CQ_PERIOD_MODE_START_FROM_CQE:
-		rq->dim.mode = NET_DIM_CQ_PERIOD_MODE_START_FROM_CQE;
+		rq->dim_obj.dim.mode = NET_DIM_CQ_PERIOD_MODE_START_FROM_CQE;
 		break;
 	case MLX5_CQ_PERIOD_MODE_START_FROM_EQE:
 	default:
-		rq->dim.mode = NET_DIM_CQ_PERIOD_MODE_START_FROM_EQE;
+		rq->dim_obj.dim.mode = NET_DIM_CQ_PERIOD_MODE_START_FROM_EQE;
 	}
 
 	return 0;
@@ -1111,7 +1111,7 @@ static void mlx5e_deactivate_rq(struct mlx5e_rq *rq)
 
 static void mlx5e_close_rq(struct mlx5e_rq *rq)
 {
-	cancel_work_sync(&rq->dim.work);
+	cancel_work_sync(&rq->dim_obj.dim.work);
 	mlx5e_destroy_rq(rq);
 	mlx5e_free_rx_descs(rq);
 	mlx5e_free_rq(rq);
@@ -1300,8 +1300,8 @@ static int mlx5e_alloc_txqsq(struct mlx5e_channel *c,
 	if (err)
 		goto err_sq_wq_destroy;
 
-	INIT_WORK(&sq->dim.work, mlx5e_tx_dim_work);
-	sq->dim.mode = params->tx_cq_moderation.cq_period_mode;
+	INIT_WORK(&sq->dim_obj.dim.work, mlx5e_tx_dim_work);
+	sq->dim_obj.dim.mode = params->tx_cq_moderation.cq_period_mode;
 
 	return 0;
 

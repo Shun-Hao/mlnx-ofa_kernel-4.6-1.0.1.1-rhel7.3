@@ -44,7 +44,8 @@ mlx5e_complete_dim_work(struct net_dim *dim, struct net_dim_cq_moder moder,
 void mlx5e_rx_dim_work(struct work_struct *work)
 {
 	struct net_dim *dim = container_of(work, struct net_dim, work);
-	struct mlx5e_rq *rq = container_of(dim, struct mlx5e_rq, dim);
+	struct mlx5e_dim *dim_obj = container_of(dim, struct mlx5e_dim, dim);
+	struct mlx5e_rq *rq = container_of(dim_obj, struct mlx5e_rq, dim_obj);
 	struct net_dim_cq_moder cur_moder =
 		net_dim_get_rx_moderation(dim->mode, dim->profile_ix);
 
@@ -54,7 +55,8 @@ void mlx5e_rx_dim_work(struct work_struct *work)
 void mlx5e_tx_dim_work(struct work_struct *work)
 {
 	struct net_dim *dim = container_of(work, struct net_dim, work);
-	struct mlx5e_txqsq *sq = container_of(dim, struct mlx5e_txqsq, dim);
+	struct mlx5e_dim *dim_obj = container_of(dim, struct mlx5e_dim, dim);
+	struct mlx5e_txqsq *sq = container_of(dim_obj, struct mlx5e_txqsq, dim_obj);
 	struct net_dim_cq_moder cur_moder =
 		net_dim_get_tx_moderation(dim->mode, dim->profile_ix);
 

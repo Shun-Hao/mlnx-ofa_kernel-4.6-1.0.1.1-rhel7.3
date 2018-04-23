@@ -393,13 +393,18 @@ struct mlx5e_sq_flow_map {
 };
 #endif
 
+struct mlx5e_dim {
+	struct net_dim dim;
+	struct net_dim_sample sample;
+};
+
 struct mlx5e_txqsq {
 	/* data path */
 
 	/* dirtied @completion */
 	u16                        cc;
 	u32                        dma_fifo_cc;
-	struct net_dim             dim; /* Adaptive Moderation */
+	struct mlx5e_dim           dim_obj; /* Adaptive Moderation */
 
 	/* dirtied @xmit */
 	u16                        pc ____cacheline_aligned_in_smp;
@@ -624,7 +629,7 @@ struct mlx5e_rq {
 	unsigned long          state;
 	int                    ix;
 
-	struct net_dim         dim; /* Dynamic Interrupt Moderation */
+	struct mlx5e_dim       dim_obj; /* Adaptive Moderation */
 
 	/* XDP */
 	struct bpf_prog       *xdp_prog;

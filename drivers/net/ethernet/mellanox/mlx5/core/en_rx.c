@@ -973,6 +973,8 @@ static inline void mlx5e_complete_rx_cqe(struct mlx5e_rq *rq,
 	stats->packets++;
 	stats->bytes += cqe_bcnt;
 	mlx5e_build_rx_skb(cqe, cqe_bcnt, rq, skb);
+	rq->dim_obj.sample.pkt_ctr  = rq->stats->packets;
+	rq->dim_obj.sample.byte_ctr = rq->stats->bytes;
 }
 
 static inline
