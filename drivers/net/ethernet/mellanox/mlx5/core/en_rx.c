@@ -969,12 +969,16 @@ static inline void mlx5e_complete_rx_cqe(struct mlx5e_rq *rq,
 					 struct sk_buff *skb)
 {
 	struct mlx5e_rq_stats *stats = rq->stats;
+	u8 l4_hdr_type = get_cqe_l4_hdr_type(cqe);
 
 	stats->packets++;
 	stats->bytes += cqe_bcnt;
 	mlx5e_build_rx_skb(cqe, cqe_bcnt, rq, skb);
-	rq->dim_obj.sample.pkt_ctr  = rq->stats->packets;
-	rq->dim_obj.sample.byte_ctr = rq->stats->bytes;
+
+	if (l4_hdr_type != CQE_L4_HDR_TYPE_TCP_ACK_NO_DATA) {
+		rq->dim_obj.sample.pkt_ctr  = rq->stats->packets;
+		rq->dim_obj.sample.byte_ctr = rq->stats->bytes;
+	}
 }
 
 static inline

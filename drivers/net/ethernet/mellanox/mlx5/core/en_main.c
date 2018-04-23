@@ -4799,12 +4799,15 @@ void mlx5e_set_tx_cq_mode_params(struct mlx5e_params *params, u8 cq_period_mode)
 				MLX5_CQ_PERIOD_MODE_START_FROM_CQE);
 }
 
+#define MLX5E_DEF_RX_DIM_PROFILE_IX 3
 void mlx5e_set_rx_cq_mode_params(struct mlx5e_params *params, u8 cq_period_mode)
 {
 	if (params->rx_dim_enabled) {
 		u8 dim_period_mode = mlx5_to_net_dim_cq_period_mode(cq_period_mode);
 
-		params->rx_cq_moderation = net_dim_get_def_rx_moderation(dim_period_mode);
+		params->rx_cq_moderation =
+			net_dim_get_rx_moderation(dim_period_mode,
+						  MLX5E_DEF_RX_DIM_PROFILE_IX);
 	} else {
 		params->rx_cq_moderation = mlx5e_get_def_rx_moderation(cq_period_mode);
 	}
