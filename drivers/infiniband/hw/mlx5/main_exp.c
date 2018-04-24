@@ -514,7 +514,7 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 
 #define KSM_LOG_ENTITY_SIZE 31
 	if (MLX5_CAP_GEN(dev->mdev, fixed_buffer_size)) {
-		props->umr_fixed_size_caps.max_entity_size = 1 << KSM_LOG_ENTITY_SIZE;
+		props->umr_fixed_size_caps.max_entity_size = 1ULL << KSM_LOG_ENTITY_SIZE;
 		props->exp_comp_mask_2 |= IB_EXP_DEVICE_ATTR_UMR_FIXED_SIZE_CAPS;
 		props->device_cap_flags2 |= IB_EXP_DEVICE_UMR_FIXED_SIZE;
 	}
