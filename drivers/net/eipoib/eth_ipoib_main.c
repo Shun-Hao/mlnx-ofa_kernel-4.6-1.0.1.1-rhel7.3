@@ -56,6 +56,7 @@ static void free_all_ip_ent_in_emac_rec(struct guest_emac_info *emac_info);
 static void neigh_learn_task(struct work_struct *work);
 static void slave_neigh_flush(struct slave *slave);
 static void slave_free(struct rcu_head *head);
+static void slave_neigh_reap(struct parent *parent, struct slave *slave);
 static const char * const version =
 	DRV_DESCRIPTION ": v" DRV_VERSION " (" DRV_RELDATE ")\n";
 
@@ -443,6 +444,27 @@ static void parent_setup_by_slave(struct net_device *parent_dev,
 
 }
 
+static void eipoib_reap_neigh(struct work_struct *work)
+{
+	struct parent *parent =
+		container_of(work, struct parent, neigh_reap_task.work);
+	struct slave *slave;
+
+	pr_debug("%s for %s\n", __func__, parent->dev->name);
+
+	rcu_read_lock();
+	parent_for_each_slave_rcu(parent, slave) {
+		slave_neigh_reap(parent, slave);
+	}
+	rcu_read_unlock();
+
+	read_lock_bh(&parent->lock);
+	if (!parent->kill_timers)
+		queue_delayed_work(parent->wq, &parent->neigh_reap_task,
+				   arp_tbl.gc_interval);
+	read_unlock_bh(&parent->lock);
+}
+
 /* enslave device <slave> to parent device <master> */
 int parent_enslave(struct net_device *parent_dev,
 		   struct net_device *slave_dev,
@@ -798,7 +820,7 @@ void eipoib_neigh_put(struct neigh *neigh)
 }
 
 static struct neigh *__eipoib_neigh_create(struct hlist_head *head,
-					 const u8 *emac, const u8 *imac)
+					   const u8 *emac, const u8 *imac)
 {
 
 	struct neigh *neigh;
@@ -812,9 +834,8 @@ static struct neigh *__eipoib_neigh_create(struct hlist_head *head,
 	hlist_add_head_rcu(&neigh->hlist, head);
 	atomic_set(&neigh->refcnt, 1);
 
-	pr_info("neigh mac %pM is set to %pI6\n", emac, imac+4);
+	pr_debug("neigh mac %pM is set to %pI6\n", emac, imac + 4);
 
-	/* TODO ref count */
 	return neigh;
 }
 
@@ -830,11 +851,13 @@ static int neigh_insert(struct slave *slave, const u8 *emac, const u8 *imac)
 	neigh = neigh_find(head, emac);
 	if (neigh) {
 		if (!memcmp(neigh->imac, imac, INFINIBAND_ALEN)) {
+			neigh->alive = jiffies;
 			return -EEXIST;
 		} else {
 			pr_info("%s: update neigh (%pM), old imac: %pI6, new imac: %pI6\n",
 				slave->dev->name, emac, neigh->imac, imac);
 			memcpy(neigh->imac, imac, INFINIBAND_ALEN);
+			neigh->alive = jiffies;
 			return 0;
 		}
 	}
@@ -842,6 +865,8 @@ static int neigh_insert(struct slave *slave, const u8 *emac, const u8 *imac)
 	neigh = __eipoib_neigh_create(head, emac, imac);
 	if (!neigh)
 		return -ENOMEM;
+
+	neigh->alive = jiffies;
 
 	return 0;
 }
@@ -900,9 +925,37 @@ static void slave_neigh_flush(struct slave *slave)
 	spin_unlock_bh(&slave->hash_lock);
 }
 
+/* goes over all slave's neigh and if long time since last access delete it */
+static void slave_neigh_reap(struct parent *parent, struct slave *slave)
+{
+	int i;
+	unsigned long neigh_obsolete;
+	unsigned long dt;
+
+	spin_lock_bh(&slave->hash_lock);
+	pr_debug("%s started for slave: %s\n", __func__, slave->dev->name);
+	/* neigh is obsolete if it was idle for two GC periods */
+	dt = 2 * arp_tbl.gc_interval;
+	neigh_obsolete = jiffies - dt;
+
+	for (i = 0; i < NEIGH_HASH_SIZE; i++) {
+		struct neigh *neigh;
+		struct hlist_node *n;
+		hlist_for_each_entry_safe(neigh, n, &slave->hash[i], hlist) {
+			/* check if the time is bigger than allowed */
+			/* was the neigh idle for two GC periods */
+			if (time_after(neigh_obsolete, neigh->alive)) {
+				pr_debug("%s: Delete neigh: (%pM -> %pI6)\n",
+					 __func__, neigh->emac, neigh->imac);
+				eipoib_neigh_put(neigh);
+			}
+		}
+	}
+	spin_unlock_bh(&slave->hash_lock);
+}
+
 struct neigh *eipoib_neigh_get(struct slave *slave, const u8 *emac)
 {
-
 	struct hlist_head *head;
 	struct neigh *neigh = NULL;
 
@@ -915,6 +968,8 @@ struct neigh *eipoib_neigh_get(struct slave *slave, const u8 *emac)
 	if (neigh) {
 		if (!atomic_inc_not_zero(&neigh->refcnt))
 			neigh = NULL;/* deleted */
+		else
+			neigh->alive = jiffies;
 	}
 
 	rcu_read_unlock_bh();
@@ -989,6 +1044,10 @@ static void parent_work_cancel_all(struct parent *parent)
 
 	if (delayed_work_pending(&parent->arp_gen_work))
 		cancel_delayed_work(&parent->arp_gen_work);
+
+	if (delayed_work_pending(&parent->neigh_reap_task))
+		cancel_delayed_work(&parent->neigh_reap_task);
+
 }
 
 static struct parent *get_parent_by_pif_name(char *pif_name)
@@ -1809,6 +1868,10 @@ static int parent_open(struct net_device *parent_dev)
 
 	parent->kill_timers = 0;
 	INIT_DELAYED_WORK(&parent->arp_gen_work, arp_gen_work_task);
+
+	queue_delayed_work(parent->wq, &parent->neigh_reap_task,
+			   arp_tbl.gc_interval);
+
 	return 0;
 }
 
@@ -1821,7 +1884,9 @@ static int parent_close(struct net_device *parent_dev)
 	write_unlock_bh(&parent->lock);
 
 	cancel_delayed_work_sync(&parent->arp_gen_work);
+	cancel_delayed_work_sync(&parent->neigh_reap_task);
 	flush_workqueue(parent->wq);
+
 	return 0;
 }
 
@@ -2001,6 +2066,7 @@ static void parent_setup(struct net_device *parent_dev)
 	parent->dev = parent_dev;
 	INIT_LIST_HEAD(&parent->slave_list);
 	INIT_LIST_HEAD(&parent->emac_ip_list);
+	INIT_DELAYED_WORK(&parent->neigh_reap_task, eipoib_reap_neigh);
 	/* Initialize the device entry points */
 	ether_setup(parent_dev);
 	/* parent_dev->hard_header_len is adjusted later */

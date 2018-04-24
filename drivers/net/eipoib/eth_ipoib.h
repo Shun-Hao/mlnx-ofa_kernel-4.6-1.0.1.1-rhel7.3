@@ -151,6 +151,7 @@ struct neigh {
 	struct rcu_head rcu;
 	struct hlist_node hlist;
 	atomic_t refcnt;
+	unsigned long alive;
 };
 
 struct slave {
@@ -208,6 +209,7 @@ struct parent {
 	rwlock_t emac_info_lock;
 	struct   list_head emac_ip_list;
 	struct   delayed_work arp_gen_work;
+	struct delayed_work neigh_reap_task;
 };
 
 #define eipoib_slave_get_rcu(dev) \
