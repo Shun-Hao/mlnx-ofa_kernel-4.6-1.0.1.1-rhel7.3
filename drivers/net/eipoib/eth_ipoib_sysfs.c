@@ -125,31 +125,6 @@ static ssize_t parent_show_neighs(struct device *d,
 	return (ssize_t)(p - buf);
 }
 
-struct neigh *parent_get_neigh_cmd(char op,
-				   char *ifname, u8 *remac, u8 *rimac)
-{
-	struct neigh *neigh_cmd;
-
-	neigh_cmd = kzalloc(sizeof *neigh_cmd, GFP_ATOMIC);
-	if (!neigh_cmd) {
-		pr_err("%s cannot allocate neigh struct\n", ifname);
-		goto out;
-	}
-
-	/*
-	 * populate emac field so it can be used easily
-	 * in neigh_cmd_find_by_mac()
-	 */
-	memcpy(neigh_cmd->emac, remac, ETH_ALEN);
-	memcpy(neigh_cmd->imac, rimac, INFINIBAND_ALEN);
-
-	/* prepare the command as a string */
-	sprintf(neigh_cmd->cmd, "%c%s %pM %pM:%pM:%pM:%.2x:%.2x",
-		op, ifname, remac, rimac, rimac + 6, rimac + 12, rimac[18], rimac[19]);
-out:
-	return neigh_cmd;
-}
-
 static DEVICE_ATTR(neighs, S_IRUGO, parent_show_neighs,
 		   NULL);
 

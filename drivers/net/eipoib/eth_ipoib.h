@@ -144,8 +144,6 @@ struct neigh {
 	struct list_head list;
 	u8 emac[ETH_ALEN];
 	u8 imac[INFINIBAND_ALEN];
-	/* this part is used for neigh_add_list */
-	char cmd[PAGE_SIZE];
 
 	/* new implementation for hash & rcu */
 	struct rcu_head rcu;
@@ -239,8 +237,6 @@ int parent_enslave(struct net_device *parent_dev,
 		   struct netlink_ext_ack *extack);
 int parent_release_slave(struct net_device *parent_dev,
 			 struct net_device *slave_dev);
-struct neigh *parent_get_neigh_cmd(char op, char *ifname,
-				   u8 *remac, u8 *rimac);
 struct slave *parent_get_vif_cmd(char op, char *ifname, u8 *lemac);
 ssize_t __parent_store_neighs(struct device *d,
 			      struct device_attribute *attr,
