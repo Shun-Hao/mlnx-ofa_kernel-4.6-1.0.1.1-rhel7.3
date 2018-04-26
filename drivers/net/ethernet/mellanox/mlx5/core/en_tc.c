@@ -3037,7 +3037,7 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
 
 static bool is_peer_flow_needed(struct mlx5_core_dev *dev)
 {
-	return false;
+	return mlx5_lag_is_active(dev);
 }
 
 static void get_flags(int flags, u16 *flow_flags)
