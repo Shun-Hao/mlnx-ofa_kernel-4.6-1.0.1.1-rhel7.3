@@ -169,6 +169,11 @@ void tclass_get_tclass(struct mlx5_ib_dev *dev,
 		       u8 port,
 		       u8 *tclass);
 
+struct mlx5_ttl_data {
+	int val;
+	struct kobject kobj;
+};
+
 struct mlx5_dc_tracer {
 	struct page	*pg;
 	dma_addr_t	dma;
@@ -203,6 +208,8 @@ static inline struct mlx5_ib_dc_target *to_mdct(struct ib_dct *ibdct)
 }
 int init_tc_sysfs(struct mlx5_ib_dev *dev);
 void cleanup_tc_sysfs(struct mlx5_ib_dev *dev);
+int init_ttl_sysfs(struct mlx5_ib_dev *dev);
+void cleanup_ttl_sysfs(struct mlx5_ib_dev *dev);
 
 struct ib_dct *mlx5_ib_create_dc_target(struct ib_pd *pd,
 				  struct ib_dct_init_attr *attr,

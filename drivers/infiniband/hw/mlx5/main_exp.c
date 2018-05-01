@@ -2067,6 +2067,107 @@ void cleanup_tc_sysfs(struct mlx5_ib_dev *dev)
 	}
 }
 
+struct ttl_attribute {
+	struct attribute attr;
+	ssize_t (*show)(struct mlx5_ttl_data *, struct ttl_attribute *, char *buf);
+	ssize_t (*store)(struct mlx5_ttl_data *, struct ttl_attribute *,
+			 const char *buf, size_t count);
+};
+
+#define TTL_ATTR(_name, _mode, _show, _store) \
+struct ttl_attribute ttl_attr_##_name = __ATTR(_name, _mode, _show, _store)
+
+static ssize_t ttl_show(struct mlx5_ttl_data *ttld, struct ttl_attribute *unused, char *buf)
+{
+	return sprintf(buf, "%d\n", ttld->val);
+}
+
+static ssize_t ttl_store(struct mlx5_ttl_data *ttld, struct ttl_attribute *unused,
+				   const char *buf, size_t count)
+{
+	unsigned long var;
+
+	if (kstrtol(buf, 0, &var) || var > 0xff)
+		return -EINVAL;
+
+	ttld->val = var;
+	return count;
+}
+
+static TTL_ATTR(ttl, 0644, ttl_show, ttl_store);
+
+static struct attribute *ttl_attrs[] = {
+	&ttl_attr_ttl.attr,
+	NULL
+};
+
+static ssize_t ttl_attr_show(struct kobject *kobj,
+			    struct attribute *attr, char *buf)
+{
+	struct ttl_attribute *ttl_attr = container_of(attr, struct ttl_attribute, attr);
+	struct mlx5_ttl_data *d = container_of(kobj, struct mlx5_ttl_data, kobj);
+
+	return ttl_attr->show(d, ttl_attr, buf);
+}
+
+static ssize_t ttl_attr_store(struct kobject *kobj,
+			     struct attribute *attr, const char *buf, size_t count)
+{
+	struct ttl_attribute *ttl_attr = container_of(attr, struct ttl_attribute, attr);
+	struct mlx5_ttl_data *d = container_of(kobj, struct mlx5_ttl_data, kobj);
+
+	return ttl_attr->store(d, ttl_attr, buf, count);
+}
+
+static const struct sysfs_ops ttl_sysfs_ops = {
+	.show = ttl_attr_show,
+	.store = ttl_attr_store
+};
+
+static struct kobj_type ttl_type = {
+	.sysfs_ops     = &ttl_sysfs_ops,
+	.default_attrs = ttl_attrs
+};
+
+int init_ttl_sysfs(struct mlx5_ib_dev *dev)
+{
+	struct device *device = &dev->ib_dev.dev;
+	int port;
+	int err;
+
+	dev->ttl_kobj = kobject_create_and_add("ttl", &device->kobj);
+	if (!dev->ttl_kobj)
+		return -ENOMEM;
+	for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
+		struct mlx5_ttl_data *ttld = &dev->ttld[port - 1];
+
+		err = kobject_init_and_add(&ttld->kobj, &ttl_type, dev->ttl_kobj, "%d", port);
+		if (err)
+			goto err;
+		ttld->val = 0;
+	}
+	return 0;
+err:
+	cleanup_ttl_sysfs(dev);
+	return err;
+}
+
+void cleanup_ttl_sysfs(struct mlx5_ib_dev *dev)
+{
+	if (dev->ttl_kobj) {
+		int port;
+
+		kobject_put(dev->ttl_kobj);
+		dev->ttl_kobj = NULL;
+		for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
+			struct mlx5_ttl_data *ttld = &dev->ttld[port - 1];
+
+			if (ttld->kobj.state_initialized)
+				kobject_put(&ttld->kobj);
+		}
+	}
+}
+
 static phys_addr_t idx2pfn(struct mlx5_ib_dev *dev, int idx)
 {
 	int fw_uars_per_page = MLX5_CAP_GEN(dev->mdev, uar_4k) ? MLX5_UARS_IN_PAGE : 1;
