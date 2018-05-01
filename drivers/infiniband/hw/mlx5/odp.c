@@ -43,7 +43,7 @@
 
 /* Timeout in ms to wait for an active mmu notifier to complete when handling
  * a pagefault. */
-#define MMU_NOTIFIER_TIMEOUT 1000
+#define MMU_NOTIFIER_TIMEOUT 60000
 
 #define MLX5_IMR_MTT_BITS (30 - PAGE_SHIFT)
 #define MLX5_IMR_MTT_SHIFT (MLX5_IMR_MTT_BITS + PAGE_SHIFT)
@@ -689,8 +689,8 @@ out:
 			if (!wait_for_completion_timeout(
 					&odp->notifier_completion,
 					timeout)) {
-				mlx5_ib_warn(dev, "timeout waiting for mmu notifier. seq %d against %d\n",
-					     current_seq, odp->notifiers_seq);
+				mlx5_ib_warn(dev, "timeout waiting for mmu notifier. seq %d against %d. notifiers_count=%d\n",
+					     current_seq, odp->notifiers_seq, odp->notifiers_count);
 			}
 		} else {
 			/* The MR is being killed, kill the QP as well. */
