@@ -59,7 +59,7 @@
 /* forward declaration */
 static rx_handler_result_t eipoib_handle_frame(struct sk_buff **pskb);
 static int eipoib_device_event(struct notifier_block *unused,
-			       unsigned long event, void *ptr);
+			       unsigned long event, struct net_device *dev);
 static void free_all_ip_ent_in_emac_rec(struct guest_emac_info *emac_info);
 static void neigh_learn_task(struct work_struct *work);
 static void slave_neigh_flush(struct slave *slave);
@@ -131,7 +131,7 @@ struct slave *get_slave_by_dev(struct parent *parent,
 inline struct slave *get_slave_by_mac_and_vlan(struct parent *parent, u8 *mac,
 					       u16 vlan)
 {
-	struct slave *slave, *slave_tmp;
+	struct slave *slave = NULL, *slave_tmp;
 	int found = 0;
 
 	rcu_read_lock_bh();
@@ -2573,7 +2573,7 @@ static int parent_slave_netdev_event(unsigned long event,
 static int eipoib_netdev_event(struct notifier_block *this,
 			       unsigned long event, void *ptr)
 {
-	struct net_device *event_dev = (struct net_device *)ptr;
+	struct net_device *event_dev = netdev_notifier_info_to_dev(ptr);
 
 	if (dev_net(event_dev) != &init_net)
 		return NOTIFY_DONE;
@@ -2587,7 +2587,7 @@ static int eipoib_netdev_event(struct notifier_block *this,
 	 * general network device triggers event, check if it is new
 	 * ib interface that we want to enslave.
 	 */
-	return eipoib_device_event(this, event, ptr);
+	return eipoib_device_event(this, event, event_dev);
 }
 
 static struct notifier_block parent_netdev_notifier = {
@@ -2595,9 +2595,8 @@ static struct notifier_block parent_netdev_notifier = {
 };
 
 static int eipoib_device_event(struct notifier_block *unused,
-			       unsigned long event, void *ptr)
+			       unsigned long event, struct net_device *dev)
 {
-	struct net_device *dev = ptr;
 	struct parent *parent;
 
 	if (!is_ipoib_pif_intf(dev))
