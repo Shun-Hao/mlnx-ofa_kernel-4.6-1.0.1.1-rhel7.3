@@ -2590,6 +2590,19 @@ struct pci_dev *nvme_find_pdev_from_bdev(struct block_device *bdev)
 }
 EXPORT_SYMBOL_GPL(nvme_find_pdev_from_bdev);
 
+unsigned nvme_find_ns_id_from_bdev(struct block_device *bdev)
+{
+	struct nvme_ns *ns;
+
+	if (!disk_is_nvme(bdev->bd_disk))
+		return 0;
+
+	ns = bdev->bd_disk->private_data;
+
+	return ns->head->ns_id;
+}
+EXPORT_SYMBOL_GPL(nvme_find_ns_id_from_bdev);
+
 static int nvme_dev_map(struct nvme_dev *dev)
 {
 	struct pci_dev *pdev = to_pci_dev(dev->dev);
