@@ -245,6 +245,7 @@ extern int eipoib_net_id;
 extern struct list_head parent_dev_list;
 
 /* functions prototypes */
+struct net_device *master_upper_dev_get(struct net_device *dev);
 int mod_create_sysfs(struct eipoib_net *eipoib_n);
 void mod_destroy_sysfs(struct eipoib_net *eipoib_n);
 void parent_destroy_sysfs_entry(struct parent *parent);
