@@ -173,6 +173,7 @@ int ipoib_transport_dev_init(struct net_device *dev, struct ib_device *ca)
 			return ret;
 
 	req_vec = (priv->port - 1) * 2;
+	req_vec += priv->child_index;
 
 	cq_attr.cqe = size;
 	cq_attr.comp_vector = req_vec % priv->ca->num_comp_vectors;

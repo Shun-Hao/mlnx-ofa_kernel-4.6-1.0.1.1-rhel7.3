@@ -2460,20 +2460,47 @@ static ssize_t ipoib_set_mac_using_sysfs(struct device *dev,
 }
 static DEVICE_ATTR(set_mac, S_IWUSR, NULL, ipoib_set_mac_using_sysfs);
 
+int parse_child(struct device *dev, const char *buf, int *pkey,
+		int *child_index)
+{
+	int ret;
+	struct ipoib_dev_priv *priv = netdev_priv(to_net_dev(dev));
+
+	*pkey = *child_index = -1;
+
+	/* 'pkey' or 'pkey.child_index' or '.child_index' are allowed */
+	ret = sscanf(buf, "%i.%i", pkey, child_index);
+	if (ret == 1)  /* just pkey, implicit child index is 0 */
+		*child_index = 0;
+	else  if (ret != 2) { /* pkey same as parent, specified child index */
+		*pkey = priv->pkey;
+		ret  = sscanf(buf, ".%i", child_index);
+		if (ret != 1 || *child_index == 0)
+			return -EINVAL;
+	}
+
+	if (*child_index < 0 || *child_index > 0xff)
+		return -EINVAL;
+
+	if (*pkey <= 0 || *pkey > 0xffff || *pkey == 0x8000)
+		return -EINVAL;
+
+	ipoib_dbg(priv, "parse_child inp %s out pkey %04x index %d\n",
+		buf, *pkey, *child_index);
+	return 0;
+}
+
 static ssize_t create_child(struct device *dev,
 			    struct device_attribute *attr,
 			    const char *buf, size_t count)
 {
-	int pkey;
+	int pkey, child_index;
 	int ret;
 
-	if (sscanf(buf, "%i", &pkey) != 1)
+	if (parse_child(dev, buf, &pkey, &child_index))
 		return -EINVAL;
 
-	if (pkey <= 0 || pkey > 0xffff || pkey == 0x8000)
-		return -EINVAL;
-
-	ret = ipoib_vlan_add(to_net_dev(dev), pkey);
+	ret = ipoib_vlan_add(to_net_dev(dev), pkey, child_index);
 
 	return ret ? ret : count;
 }
@@ -2483,16 +2510,13 @@ static ssize_t delete_child(struct device *dev,
 			    struct device_attribute *attr,
 			    const char *buf, size_t count)
 {
-	int pkey;
+	int pkey, child_index;
 	int ret;
 
-	if (sscanf(buf, "%i", &pkey) != 1)
+	if (parse_child(dev, buf, &pkey, &child_index))
 		return -EINVAL;
 
-	if (pkey < 0 || pkey > 0xffff)
-		return -EINVAL;
-
-	ret = ipoib_vlan_delete(to_net_dev(dev), pkey);
+	ret = ipoib_vlan_delete(to_net_dev(dev), pkey, child_index);
 
 	return ret ? ret : count;
 
