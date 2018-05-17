@@ -2398,6 +2398,7 @@ static void parent_setup(struct net_device *parent_dev)
 	/* Initialize the device entry points */
 	ether_setup(parent_dev);
 	/* parent_dev->hard_header_len is adjusted later */
+	parent_dev->needed_headroom = INFINIBAND_ALEN;
 	parent_dev->netdev_ops = &parent_netdev_ops;
 	parent_set_ethtool_ops(parent_dev);
 
