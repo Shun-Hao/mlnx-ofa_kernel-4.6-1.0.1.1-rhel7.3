@@ -34,6 +34,7 @@
 #include <rdma/ib_umem_odp.h>
 #include <linux/kernel.h>
 #include <linux/debugfs.h>
+#include <linux/sched/mm.h>
 
 #include "mlx5_ib.h"
 #include "cmd.h"
@@ -379,10 +380,15 @@ static int handle_capi_pg_fault(struct mlx5_ib_dev *dev, struct mm_struct *mm,
 {
 	int err;
 
+	if (!mmget_not_zero(mm))
+		return -EPERM;
+
 	if (pfault->type & MLX5_PAGE_FAULT_RESUME_WRITE)
 		err = cxllib_handle_fault(mm, va, sz, DSISR_ISSTORE);
 	else
 		err = cxllib_handle_fault(mm, va, sz, 0);
+
+	mmput(mm);
 	return err;
 }
 #else

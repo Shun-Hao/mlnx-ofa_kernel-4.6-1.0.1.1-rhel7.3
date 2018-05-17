@@ -39,6 +39,9 @@
 #include <linux/device.h>
 #include <linux/sysfs.h>
 #include <linux/sched/signal.h>
+#ifdef CONFIG_CXL_LIB
+#include <linux/sched/mm.h>
+#endif
 #include <rdma/ib_umem.h>
 #include <rdma/ib_umem_odp.h>
 #include <rdma/ib_verbs.h>
@@ -1382,8 +1385,11 @@ struct ib_mr *mlx5_ib_reg_user_mr(struct ib_pd *pd,
 		populate_mtts = true;
 
 		/* it is safe to do this because current is running */
-	//umem->mm = current->mm;
+#ifdef CONFIG_CXL_LIB
+		//umem->mm = current->mm;
 		umem->owning_mm = current->mm;
+		mmgrab(umem->mm);
+#endif
 	} else if (use_umr(dev, order)) {
 		mr = alloc_mr_from_cache(pd, umem, virt_addr, length, ncont,
 					 page_shift, order, access_flags);
@@ -1777,6 +1783,10 @@ int mlx5_ib_dereg_mr(struct ib_mr *ibmr)
 	int ret = 0;
 	int allocated_from_cache = mr->allocated_from_cache;
 
+#ifdef CONFIG_CXL_LIB
+	if (mr->umem && mr->umem->mm)
+		mmdrop(mr->umem->mm);
+#endif
 	if (atomic_inc_return(&mr->invalidated) > 1) {
 		/* In case there is inflight invalidation call pending for its termination */
 		wait_for_completion(&mr->invalidation_comp);
