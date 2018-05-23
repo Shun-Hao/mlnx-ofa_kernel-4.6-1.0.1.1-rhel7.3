@@ -291,9 +291,16 @@ void mlx5_sriov_cleanup(struct mlx5_core_dev *dev)
 
 bool mlx5_sriov_lag_prereq(struct mlx5_core_dev *dev0, struct mlx5_core_dev *dev1)
 {
-	if (mlx5_sriov_is_enabled(dev0) ||
-	    mlx5_sriov_is_enabled(dev1))
-		return false;
-	else
+	if (!mlx5_sriov_is_enabled(dev0) &&
+	    !mlx5_sriov_is_enabled(dev1))
 		return true;
+
+	if (MLX5_CAP_ESW(dev0, merged_eswitch) &&
+	    MLX5_VPORT_MANAGER(dev0) &&
+	    dev0->priv.eswitch->mode == SRIOV_OFFLOADS &&
+	    MLX5_VPORT_MANAGER(dev1) &&
+	    dev1->priv.eswitch->mode == SRIOV_OFFLOADS)
+		return true;
+
+	return false;
 }
