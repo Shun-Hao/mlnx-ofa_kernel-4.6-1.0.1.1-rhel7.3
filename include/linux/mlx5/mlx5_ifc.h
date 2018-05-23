@@ -198,6 +198,9 @@ enum {
 	MLX5_CMD_OP_DEALLOC_XRCD                  = 0x80f,
 	MLX5_CMD_OP_ALLOC_TRANSPORT_DOMAIN        = 0x816,
 	MLX5_CMD_OP_DEALLOC_TRANSPORT_DOMAIN      = 0x817,
+	MLX5_CMD_OP_QUERY_DIAGNOSTIC_PARAMS       = 0x819,
+	MLX5_CMD_OP_SET_DIAGNOSTIC_PARAMS         = 0x820,
+	MLX5_CMD_OP_QUERY_DIAGNOSTIC_COUNTERS     = 0x821,
 	MLX5_CMD_OP_QUERY_CONG_STATUS             = 0x822,
 	MLX5_CMD_OP_MODIFY_CONG_STATUS            = 0x823,
 	MLX5_CMD_OP_QUERY_CONG_PARAMS             = 0x824,
@@ -716,14 +719,29 @@ struct mlx5_ifc_qos_cap_bits {
 	u8         reserved_at_100[0x700];
 };
 
+struct mlx5_ifc_diagnostic_cntr_layout_bits {
+	u8         sync[0x1];
+	u8         reserved_at_1[0xf];
+	u8         counter_id[0x10];
+};
+
 struct mlx5_ifc_debug_cap_bits {
-	u8         reserved_at_0[0x20];
+	u8         core_dump_general[0x1];
+	u8         core_dump_qp[0x1];
+	u8         reserved_at_2[0x16];
+	u8         log_max_samples[0x8];
 
-	u8         reserved_at_20[0x2];
+	u8         single[0x1];
+	u8         repetitive[0x1];
+	/*The below field OFED name was health_mon_rx_activity and Upstream
+	 * stall_detect, for now i take the upstream one*/
 	u8         stall_detect[0x1];
-	u8         reserved_at_23[0x1d];
+	u8         reserved_at_23[0x15];
+	u8         log_min_sample_period[0x8];
 
-	u8         reserved_at_40[0x7c0];
+	u8         reserved_at_40[0x1c0];
+
+	struct mlx5_ifc_diagnostic_cntr_layout_bits diagnostic_counter[0];
 };
 
 struct mlx5_ifc_per_protocol_networking_offload_caps_bits {
@@ -1151,7 +1169,7 @@ struct mlx5_ifc_cmd_hca_cap_bits {
 	u8         lag_master[0x1];
 	u8         num_lag_ports[0x4];
 
-	u8         reserved_at_280[0x10];
+	u8         num_of_diagnostic_counters[0x10];
 	u8         max_wqe_sz_sq[0x10];
 
 	u8         reserved_at_2a0[0x10];
@@ -2492,6 +2510,7 @@ union mlx5_ifc_hca_cap_union_bits {
 	struct mlx5_ifc_e_switch_cap_bits e_switch_cap;
 	struct mlx5_ifc_vector_calc_cap_bits vector_calc_cap;
 	struct mlx5_ifc_qos_cap_bits qos_cap;
+	struct mlx5_ifc_debug_cap_bits debug_cap;
 	struct mlx5_ifc_fpga_cap_bits fpga_cap;
 	struct mlx5_ifc_nvmf_cap_bits nvmf_cap;
 	u8         reserved_at_0[0x8000];
@@ -5415,6 +5434,108 @@ struct mlx5_ifc_query_dct_in_bits {
 	u8         dctn[0x18];
 
 	u8         reserved_at_60[0x20];
+};
+
+struct mlx5_ifc_diagnostic_cntr_struct_bits {
+	u8         counter_id[0x10];
+	u8         sample_id[0x10];
+
+	u8         time_stamp_31_0[0x20];
+
+	u8         counter_value_h[0x20];
+
+	u8         counter_value_l[0x20];
+};
+
+enum {
+	MLX5_DIAGNOSTIC_PARAMS_CONTEXT_ENABLE_ENABLE   = 0x1,
+	MLX5_DIAGNOSTIC_PARAMS_CONTEXT_ENABLE_DISABLE  = 0x0,
+};
+
+struct mlx5_ifc_counter_id_bits {
+	u8         reserved_at_0[0x10];
+	u8         counter_id[0x10];
+};
+
+struct mlx5_ifc_diagnostic_params_context_bits {
+	u8         num_of_counters[0x10];
+	u8         reserved_at_10[0x8];
+	u8         log_num_of_samples[0x8];
+
+	u8         single[0x1];
+	u8         repetitive[0x1];
+	u8         sync[0x1];
+	u8         clear[0x1];
+	u8         on_demand[0x1];
+	u8         enable[0x1];
+	u8         reserved_at_26[0x12];
+	u8         log_sample_period[0x8];
+
+	u8         reserved_at_40[0x80];
+
+	struct mlx5_ifc_counter_id_bits counter_id[0];
+};
+
+struct mlx5_ifc_query_diagnostic_cntrs_in_bits {
+	u8         opcode[0x10];
+	u8         reserved_at_10[0x10];
+
+	u8         reserved_at_20[0x10];
+	u8         op_mod[0x10];
+
+	u8         num_of_samples[0x10];
+	u8         sample_index[0x10];
+
+	u8         reserved_at_60[0x20];
+};
+
+struct mlx5_ifc_query_diagnostic_cntrs_out_bits {
+	u8         status[0x8];
+	u8         reserved_at_8[0x18];
+
+	u8         syndrome[0x20];
+
+	u8         reserved_at_40[0x40];
+
+	struct mlx5_ifc_diagnostic_cntr_struct_bits diag_counter[0];
+};
+
+struct mlx5_ifc_query_diagnostic_params_in_bits {
+	u8         opcode[0x10];
+	u8         reserved_at_10[0x10];
+
+	u8         reserved_at_20[0x10];
+	u8         op_mod[0x10];
+
+	u8         reserved_at_40[0x40];
+};
+
+struct mlx5_ifc_query_diagnostic_params_out_bits {
+	u8         status[0x8];
+	u8         reserved_at_8[0x18];
+
+	u8         syndrome[0x20];
+
+	struct mlx5_ifc_diagnostic_params_context_bits diagnostic_params_context;
+};
+
+struct mlx5_ifc_set_diagnostic_params_in_bits {
+	u8         opcode[0x10];
+	u8         reserved_at_10[0x10];
+
+	u8         reserved_at_20[0x10];
+	u8         op_mod[0x10];
+
+	struct mlx5_ifc_diagnostic_params_context_bits diagnostic_params_context;
+};
+
+struct mlx5_ifc_set_diagnostic_params_out_bits {
+	u8         status[0x8];
+	u8         reserved_at_8[0x18];
+
+	u8         syndrome[0x20];
+
+	u8         reserved_at_40[0x40];
 };
 
 struct mlx5_ifc_query_cq_out_bits {

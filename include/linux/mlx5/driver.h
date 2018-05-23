@@ -916,6 +916,22 @@ struct mlx5_as_notify {
 	u64                     response_bar_address;
 };
 
+struct mlx5_diag_cnt_id {
+	u16                     id;
+	bool                    enabled;
+};
+
+struct mlx5_diag_cnt {
+	struct dentry            *debugfs;
+	struct mlx5_diag_cnt_id  *cnt_id;
+	u8                        num_cnt_id;
+	u8                        log_num_of_samples;
+	u8                        log_sample_period;
+	u8                        flag;
+	u16                       num_of_samples;
+	u16                       sample_index;
+};
+
 struct mlx5_core_dev {
 	struct pci_dev	       *pdev;
 	/* sync pci state */
@@ -969,6 +985,7 @@ struct mlx5_core_dev {
 	struct mlx5_special_contexts special_contexts;
 	struct mlx5_fw_tracer   *tracer;
 	struct mlx5_as_notify as_notify;
+	struct mlx5_diag_cnt    diag_cnt;
 };
 
 struct mlx5_db {

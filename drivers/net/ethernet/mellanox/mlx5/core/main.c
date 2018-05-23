@@ -71,6 +71,7 @@
 #ifdef HAVE_PNV_PCI_AS_NOTIFY
 #include <asm/pnv-pci.h>
 #endif
+#include "diag/diag_cnt.h"
 
 MODULE_AUTHOR("Eli Cohen <eli@mellanox.com>");
 MODULE_DESCRIPTION("Mellanox 5th generation network adapters (ConnectX series) core driver");
@@ -1485,6 +1486,8 @@ static int mlx5_load_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
 		goto err_sriov;
 	}
 
+	mlx5_diag_cnt_init(dev);
+
 	if (mlx5_device_registered(dev)) {
 		mlx5_attach_device(dev);
 	} else {
@@ -1502,6 +1505,7 @@ out:
 	return 0;
 
 err_reg_dev:
+	mlx5_diag_cnt_cleanup(dev);
 	mlx5_sriov_detach(dev);
 
 err_sriov:
@@ -1587,6 +1591,7 @@ static int mlx5_unload_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
 	if (mlx5_device_registered(dev))
 		mlx5_detach_device(dev);
 
+	mlx5_diag_cnt_cleanup(dev);
 	mlx5_sriov_detach(dev);
 	mlx5_cleanup_fs(dev);
 	mlx5_accel_ipsec_cleanup(dev);
