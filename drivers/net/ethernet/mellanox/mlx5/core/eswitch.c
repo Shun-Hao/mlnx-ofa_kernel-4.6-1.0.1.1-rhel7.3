@@ -2296,8 +2296,8 @@ int mlx5_eswitch_get_vport_config(struct mlx5_eswitch *esw,
 int __mlx5_eswitch_set_vport_vlan(struct mlx5_eswitch *esw, int vport, u16 vlan,
 				  u8 qos, __be16 proto, u8 set_flags)
 {
-	bool vst_mode_steering = esw_vst_mode_is_steering(esw);
 	struct mlx5_vport *evport;
+	bool vst_mode_steering;
 	int err = 0;
 
 	if (!ESW_ALLOWED(esw))
@@ -2306,6 +2306,8 @@ int __mlx5_eswitch_set_vport_vlan(struct mlx5_eswitch *esw, int vport, u16 vlan,
 		return -EINVAL;
 	if (proto != htons(ETH_P_8021Q) && proto != htons(ETH_P_8021AD))
 		return -EINVAL;
+
+	vst_mode_steering = esw_vst_mode_is_steering(esw);
 
 	if (proto == htons(ETH_P_8021AD) && !vst_mode_steering)
 		return -EPROTONOSUPPORT;
