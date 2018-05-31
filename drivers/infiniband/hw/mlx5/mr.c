@@ -1784,8 +1784,10 @@ int mlx5_ib_dereg_mr(struct ib_mr *ibmr)
 	int allocated_from_cache = mr->allocated_from_cache;
 
 #ifdef CONFIG_CXL_LIB
-	if (mr->umem && mr->umem->mm)
-		mmdrop(mr->umem->mm);
+	if (mlx5_ib_capi_enabled(dev) && mr->umem && mr->umem->mm) {
+		if (virt_addr_valid(mr->umem->mm))
+			mmdrop(mr->umem->mm);
+	}
 #endif
 	if (atomic_inc_return(&mr->invalidated) > 1) {
 		/* In case there is inflight invalidation call pending for its termination */
