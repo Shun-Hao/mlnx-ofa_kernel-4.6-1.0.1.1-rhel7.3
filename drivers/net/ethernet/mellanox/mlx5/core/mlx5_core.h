@@ -209,6 +209,7 @@ int mlx5_sriov_attach(struct mlx5_core_dev *dev);
 void mlx5_sriov_detach(struct mlx5_core_dev *dev);
 int mlx5_core_sriov_configure(struct pci_dev *dev, int num_vfs);
 bool mlx5_sriov_is_enabled(struct mlx5_core_dev *dev);
+bool mlx5_sriov_lag_prereq(struct mlx5_core_dev *dev0, struct mlx5_core_dev *dev1);
 int mlx5_sriov_sysfs_init(struct mlx5_core_dev *dev);
 void mlx5_sriov_sysfs_cleanup(struct mlx5_core_dev *dev);
 int mlx5_create_vfs_sysfs(struct mlx5_core_dev *dev, int num_vfs);
@@ -365,8 +366,7 @@ static inline int mlx5_lag_is_lacp_owner(struct mlx5_core_dev *dev)
 		    MLX5_CAP_GEN(dev, lag_master);
 }
 
-int mlx5_lag_allow(struct mlx5_core_dev *dev);
-int mlx5_lag_forbid(struct mlx5_core_dev *dev);
+void mlx5_lag_update(struct mlx5_core_dev *dev);
 struct mlx5_core_dev *mlx5_lag_get_peer_mdev(struct mlx5_core_dev *dev);
 struct net_device *mlx5_lag_get_peer_netdev(struct mlx5_core_dev *dev);
 

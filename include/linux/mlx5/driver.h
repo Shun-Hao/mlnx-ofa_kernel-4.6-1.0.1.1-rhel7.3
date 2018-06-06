@@ -758,6 +758,8 @@ struct mlx5_priv {
 	struct list_head	waiting_events_list;
 	bool			is_accum_events;
 
+	bool			lag_disabled;
+
 	struct mlx5_flow_steering *steering;
 	struct mlx5_mpfs        *mpfs;
 	struct mlx5_eswitch     *eswitch;

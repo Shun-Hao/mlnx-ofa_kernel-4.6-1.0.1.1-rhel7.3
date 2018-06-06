@@ -1893,6 +1893,8 @@ int mlx5_eswitch_enable_sriov(struct mlx5_eswitch *esw, int nvfs, int mode)
 	esw_info(esw->dev, "E-Switch enable SRIOV: nvfs(%d) mode (%d)\n", nvfs, mode);
 	esw->mode = mode;
 
+	mlx5_lag_update(esw->dev);
+
 	if (mode == SRIOV_LEGACY) {
 		err = esw_create_legacy_fdb_table(esw);
 	} else {
@@ -1960,6 +1962,8 @@ void mlx5_eswitch_disable_sriov(struct mlx5_eswitch *esw)
 
 	old_mode = esw->mode;
 	esw->mode = SRIOV_NONE;
+
+	mlx5_lag_update(esw->dev);
 
 	if (old_mode == SRIOV_OFFLOADS)
 		mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_IB);
