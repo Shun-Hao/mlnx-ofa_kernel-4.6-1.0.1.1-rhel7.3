@@ -2943,6 +2943,13 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
 			if (switchdev_port_same_parent_id(priv->netdev,
 							  out_dev) ||
 			    is_merged_eswitch_dev(priv, out_dev)) {
+				struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
+				struct mlx5e_rep_priv *uplink_rpriv = mlx5_eswitch_get_uplink_priv(esw, REP_ETH);
+				struct net_device *uplink_dev = uplink_rpriv->netdev;
+				struct net_device *upper_lag = mlx5_upper_lag_dev_get(uplink_dev);
+
+				if (upper_lag == out_dev)
+					out_dev = uplink_dev;
 				action |= MLX5_FLOW_CONTEXT_ACTION_FWD_DEST |
 					  MLX5_FLOW_CONTEXT_ACTION_COUNT;
 				out_priv = netdev_priv(out_dev);
