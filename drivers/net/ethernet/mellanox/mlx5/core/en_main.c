@@ -2132,12 +2132,16 @@ static int mlx5e_open_channel(struct mlx5e_priv *priv, int ix,
 #ifdef CONFIG_MLX5_EN_SPECIAL_SQ
 	c->num_special_sq = params->num_rl_txqs / params->num_channels +
 		!!(ix < params->num_rl_txqs % params->num_channels);
+	if (!c->num_special_sq)
+		goto no_special_sq;
+
 	c->special_sq = kzalloc_node(sizeof(struct mlx5e_txqsq) * c->num_special_sq,
 				      GFP_KERNEL, cpu_to_node(cpu));
 	if (!c->special_sq) {
 		err = -ENOMEM;
 		goto err_ch_free;
 	}
+no_special_sq:
 #endif
 
 	mlx5_vector2eqn(priv->mdev, ix, &eqn, &irq);
