@@ -1611,6 +1611,9 @@ static int ib_resolve_eth_dmac(struct ib_device *device,
 {
 	int ret = 0;
 
+	if (!rdma_check_gid_user_access(ah_attr->grh.sgid_attr))
+		return -ENODEV;
+
 	if (rdma_is_multicast_addr((struct in6_addr *)ah_attr->grh.dgid.raw)) {
 		if (ipv6_addr_v4mapped((struct in6_addr *)ah_attr->grh.dgid.raw)) {
 			__be32 addr = 0;
