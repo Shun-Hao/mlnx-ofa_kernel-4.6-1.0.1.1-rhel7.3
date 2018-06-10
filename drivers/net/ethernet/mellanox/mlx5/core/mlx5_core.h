@@ -312,6 +312,9 @@ int mlx5_pciconf_set_sem_addr_space(struct mlx5_core_dev *dev,
 int mlx5_block_op_pciconf(struct mlx5_core_dev *dev,
 			  unsigned int offset, u32 *data,
 			  int length);
+int mlx5_block_op_pciconf_fast(struct mlx5_core_dev *dev,
+			       u32 *data,
+			       int length);
 int mlx5_mst_dump_init(struct mlx5_core_dev *dev);
 int mlx5_mst_capture(struct mlx5_core_dev *dev);
 u32 mlx5_mst_dump(struct mlx5_core_dev *dev, void *buff, u32 buff_sz);
@@ -338,6 +341,7 @@ struct mlx5_fw_crdump {
 	struct mutex crspace_mutex;
 	u32	vsec_addr;
 	u8	*crspace;
+	u16	space;
 };
 
 int mlx5_cr_protected_capture(struct mlx5_core_dev *dev);
