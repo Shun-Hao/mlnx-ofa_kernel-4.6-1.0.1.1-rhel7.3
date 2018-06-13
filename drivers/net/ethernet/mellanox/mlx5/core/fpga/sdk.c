@@ -434,3 +434,13 @@ struct device *mlx5_fpga_dev(struct mlx5_fpga_device *fdev)
 	return &fdev->mdev->pdev->dev;
 }
 EXPORT_SYMBOL(mlx5_fpga_dev);
+
+void mlx5_fpga_get_cap(struct mlx5_fpga_device *fdev, u32 *fpga_caps)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&fdev->state_lock, flags);
+	memcpy(fpga_caps, &fdev->mdev->caps.fpga, sizeof(fdev->mdev->caps.fpga));
+	spin_unlock_irqrestore(&fdev->state_lock, flags);
+}
+EXPORT_SYMBOL(mlx5_fpga_get_cap);
