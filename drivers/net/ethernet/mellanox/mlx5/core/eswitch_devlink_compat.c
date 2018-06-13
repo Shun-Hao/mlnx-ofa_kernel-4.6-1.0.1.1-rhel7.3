@@ -168,6 +168,9 @@ int mlx5_eswitch_compat_sysfs_init(struct net_device *netdev)
 	int i;
 	int err;
 
+	if (!MLX5_VPORT_MANAGER(priv->mdev))
+		return 0;
+
 	priv->compat_kobj = kobject_create_and_add("compat",
 						   &netdev->dev.kobj);
 	if (!priv->compat_kobj)
