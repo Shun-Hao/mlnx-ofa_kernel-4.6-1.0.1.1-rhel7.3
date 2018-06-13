@@ -365,7 +365,11 @@ static ssize_t _show_port_gid_attr(
 	if (IS_ERR(gid_attr))
 		return PTR_ERR(gid_attr);
 
-	ret = print(gid_attr, buf);
+	if (rdma_check_gid_user_access(gid_attr))
+		ret = print(gid_attr, buf);
+	else
+		ret = -EINVAL;
+
 	rdma_put_gid_attr(gid_attr);
 	return ret;
 }
@@ -394,7 +398,11 @@ static ssize_t show_port_gid(struct ib_port *p, struct port_attribute *attr,
 		return sprintf(buf, "%pI6\n", zgid.raw);
 	}
 
-	ret = sprintf(buf, "%pI6\n", gid_attr->gid.raw);
+	if (rdma_check_gid_user_access(gid_attr))
+		ret = sprintf(buf, "%pI6\n", gid_attr->gid.raw);
+	else
+		ret = sprintf(buf, "%pI6\n", zgid.raw);
+
 	rdma_put_gid_attr(gid_attr);
 	return ret;
 }

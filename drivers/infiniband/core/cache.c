@@ -1527,3 +1527,31 @@ void ib_cache_cleanup_one(struct ib_device *device)
 	 */
 	flush_workqueue(ib_wq);
 }
+/**
+ * rdma_check_gid_user_access - Check if user process can access
+ * this GID entry or not.
+ * @attr: Pointer to GID entry attribute
+ *
+ * rdma_check_gid_user_access() returns true if user process can access
+ * this GID attribute otherwise returns false. This API should be called
+ * from the userspace process context.
+ */
+bool rdma_check_gid_user_access(const struct ib_gid_attr *attr)
+{
+	bool allow;
+	/*
+	 * For IB and iWarp, there is no netdevice associate with GID entry,
+	 * For RoCE consider the netdevice's net ns to validate against the
+	 * calling process.
+	 */
+	rcu_read_lock();
+	if (!attr->ndev ||
+	    (attr->ndev &&
+	     net_eq(dev_net(attr->ndev), current->nsproxy->net_ns)))
+		allow = true;
+	else
+		allow = false;
+	rcu_read_unlock();
+	return allow;
+}
+
