@@ -1259,6 +1259,32 @@ void rdma_hold_gid_attr(const struct ib_gid_attr *attr)
 EXPORT_SYMBOL(rdma_hold_gid_attr);
 
 /**
+ * rdma_is_gid_attr_valid - Check if referenced GID attribute is valid or not
+ *
+ * @attr:		Pointer to the GID attribute
+ *
+ * Returns true if the GID attribute is valid, or false otherwise.
+ *
+ */
+bool rdma_is_gid_attr_valid(const struct ib_gid_attr *attr)
+{
+	struct ib_gid_table_entry *entry =
+			container_of(attr, struct ib_gid_table_entry, attr);
+	struct ib_device *device = entry->attr.device;
+	u8 port_num = entry->attr.port_num;
+	struct ib_gid_table *table;
+	unsigned long flags;
+	bool valid;
+
+	table = rdma_gid_table(device, port_num);
+
+	read_lock_irqsave(&table->rwlock, flags);
+	valid = is_gid_entry_valid(table->data_vec[attr->index]);
+	read_unlock_irqrestore(&table->rwlock, flags);
+	return valid;
+}
+
+/**
  * rdma_read_gid_attr_ndev_rcu - Read GID attribute netdevice
  * which must be in UP state.
  *
