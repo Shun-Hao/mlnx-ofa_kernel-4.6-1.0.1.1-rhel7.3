@@ -512,6 +512,8 @@ struct mlx5_core_qp {
 	struct mlx5_rsc_debug	*dbg;
 	int			pid;
 	u16			uid;
+	struct mlx5_pagefault *pfault_req;
+	struct mlx5_pagefault *pfault_res;
 };
 
 struct mlx5_core_dct {

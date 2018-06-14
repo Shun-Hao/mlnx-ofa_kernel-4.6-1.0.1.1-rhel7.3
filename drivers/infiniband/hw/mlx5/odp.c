@@ -1276,10 +1276,18 @@ static void mlx5_ib_mr_wqe_pfault_handler(struct mlx5_ib_dev *dev,
 	int requestor = pfault->type & MLX5_PFAULT_REQUESTOR;
 	struct mlx5_core_qp *mqp = (struct mlx5_core_qp *)pfault->wqe.common;
 	struct mlx5_ib_qp *qp;
+	bool drop = false;
+	unsigned long flags;
 
 	if (!mqp)
 		return;
 	qp = to_mibqp(mqp);
+
+	mutex_lock(&qp->mutex);
+	if (pfault->wqe.ignore) {
+		drop = true;
+		goto resolve_page_fault;
+	}
 
 	buffer = (char *)__get_free_page(GFP_KERNEL);
 	if (!buffer) {
@@ -1322,10 +1330,28 @@ static void mlx5_ib_mr_wqe_pfault_handler(struct mlx5_ib_dev *dev,
 
 	resume_with_error = 0;
 resolve_page_fault:
-	mlx5_ib_page_fault_resume(dev, pfault, resume_with_error);
-	mlx5_ib_dbg(dev, "PAGE FAULT completed. QP 0x%x resume_with_error=%d, type: 0x%x\n",
-		    pfault->wqe.wq_num, resume_with_error,
-		    pfault->type);
+	if (!drop) {
+		mlx5_ib_page_fault_resume(dev, pfault, resume_with_error);
+		mlx5_ib_dbg(dev, "PAGE FAULT completed. QP 0x%x resume_with_error=%d, type: 0x%x\n",
+			    pfault->wqe.wq_num, resume_with_error,
+			    pfault->type);
+	} else {
+		mlx5_ib_dbg(dev, "PAGE FAULT dropped. QP 0x%x type: 0x%x\n",
+			    pfault->wqe.wq_num, pfault->type);
+	}
+	spin_lock_irqsave(&mqp->common.lock, flags);
+	/* check if current pagefault event is also the last for the QP.
+	 * If yes, clear from QP
+	 */
+	if (requestor) {
+		if (pfault == mqp->pfault_req)
+			mqp->pfault_req = NULL;
+	} else {
+		if (pfault == mqp->pfault_res)
+			mqp->pfault_res = NULL;
+	}
+	spin_unlock_irqrestore(&mqp->common.lock, flags);
+	mutex_unlock(&qp->mutex);
 	free_page((unsigned long)buffer);
 }
 

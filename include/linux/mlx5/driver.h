@@ -498,6 +498,8 @@ struct mlx5_core_rsc_common {
 	atomic_t		refcount;
 	struct completion	free;
 	u64			async_events_mask;
+	/* lock parallel access to QP */
+	spinlock_t		lock;
 };
 
 struct mlx5_core_srq {
@@ -824,6 +826,11 @@ struct mlx5_pagefault {
 			 */
 			u16	wqe_index;
 			struct mlx5_core_rsc_common *common;
+			/* Ignore this page fault flag. Set to false until something
+			 * happens that requires us to drop it. For example, QP moved
+			 * to RESET state
+			 */
+			bool ignore;
 		} wqe;
 		/* RDMA responder pagefault details */
 		struct {

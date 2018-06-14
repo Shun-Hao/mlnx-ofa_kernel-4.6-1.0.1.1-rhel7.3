@@ -34,6 +34,7 @@
 #include <linux/module.h>
 #include <linux/mlx5/driver.h>
 #include <linux/mlx5/cmd.h>
+#include <linux/mlx5/qp.h>
 #ifdef CONFIG_RFS_ACCEL
 #include <linux/cpu_rmap.h>
 #endif
@@ -300,6 +301,29 @@ static void eq_pf_process(struct mlx5_eq *eq)
 				      pfault->wqe.wqe_index);
 			pfault->wqe.common = mlx5_core_get_rsc(eq->dev,
 							       pfault->wqe.wq_num);
+
+			if (pfault->wqe.common  &&
+			    pfault->wqe.common->res == MLX5_RES_QP) {
+				int requestor = pfault->type & MLX5_PFAULT_REQUESTOR;
+				struct mlx5_core_qp *mqp = (struct mlx5_core_qp *)pfault->wqe.common;
+				unsigned long flags;
+
+				/* after QP is modified to RESET it is possible that new
+				 * pagefault event arrives. This implies that the pending pagefault
+				 * is no long relevant
+				 */
+				spin_lock_irqsave(&mqp->common.lock, flags);
+				if (requestor) {
+					if (mqp->pfault_req)
+						mqp->pfault_req->wqe.ignore = true;
+					mqp->pfault_req = pfault;
+				} else {
+					if (mqp->pfault_res)
+						mqp->pfault_res->wqe.ignore = true;
+					mqp->pfault_res = pfault;
+				}
+				spin_unlock_irqrestore(&mqp->common.lock, flags);
+			}
 			break;
 
 		default:
