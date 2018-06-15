@@ -2119,6 +2119,21 @@ static int ipoib_get_vf_stats(struct net_device *dev, int vf,
 	return ib_get_vf_stats(priv->ca, vf, priv->port, vf_stats);
 }
 
+static int ipoib_set_vf_local_mac(struct net_device *dev, void *addr)
+{
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
+	struct sockaddr_storage *ss = addr;
+	int ret = 0;
+
+	netif_addr_lock_bh(dev);
+	if (memcmp(dev->dev_addr, ss->__data, 4 + sizeof(union ib_gid))) {
+		ipoib_warn(priv, "mac address change is unsupported.\n");
+		ret = -EINVAL;
+	}
+	netif_addr_unlock_bh(dev);
+	return ret;
+}
+
 static const struct header_ops ipoib_header_ops = {
 	.create	= ipoib_hard_header,
 };
@@ -2154,6 +2169,7 @@ static const struct net_device_ops ipoib_netdev_ops_vf = {
 	.ndo_tx_timeout		 = ipoib_timeout,
 	.ndo_set_rx_mode	 = ipoib_set_mcast_list,
 	.ndo_get_iflink		 = ipoib_get_iflink,
+	.ndo_set_mac_address	 = ipoib_set_vf_local_mac,
 	.ndo_get_stats64	 = ipoib_get_stats,
 	.ndo_do_ioctl		 = ipoib_ioctl,
 };
