@@ -2480,7 +2480,7 @@ int parse_child(struct device *dev, const char *buf, int *pkey,
 		int *child_index)
 {
 	int ret;
-	struct ipoib_dev_priv *priv = netdev_priv(to_net_dev(dev));
+	struct ipoib_dev_priv *priv = ipoib_priv(to_net_dev(dev));
 
 	*pkey = *child_index = -1;
 
