@@ -158,7 +158,7 @@ out_early:
 int ipoib_vlan_add(struct net_device *pdev, unsigned short pkey,
 		unsigned char child_index)
 {
-	struct ipoib_dev_priv *ppriv, *priv;
+	struct ipoib_dev_priv *ppriv, *priv = NULL;
 	char intf_name[IFNAMSIZ];
 	struct net_device *ndev;
 	int result;
