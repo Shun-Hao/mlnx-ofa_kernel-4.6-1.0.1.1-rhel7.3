@@ -1060,6 +1060,12 @@ int ib_uverbs_exp_create_cq(struct ib_uverbs_file *file,
 	return 0;
 }
 
+static void set_dc_ini_ah_fields(struct ib_device *device, struct rdma_ah_attr *ah)
+{
+	ah->static_rate = IB_RATE_PORT_CURRENT;
+	ah->port_num = rdma_start_port(device);
+}
+
 int ib_uverbs_exp_modify_qp(struct ib_uverbs_file *file,
 			    struct ib_udata *ucore, struct ib_udata *uhw)
 {
@@ -1140,8 +1146,16 @@ int ib_uverbs_exp_modify_qp(struct ib_uverbs_file *file,
 		}
 	}
 
-	if (cmd.attr_mask & IB_QP_AV)
+	if (cmd.attr_mask & IB_QP_AV) {
 		copy_ah_attr_from_uverbs(qp, &attr->ah_attr, &cmd.dest);
+		/* When modifying a DC INI from INIT to RTR, only the SL is valid.
+		 * Since old applications set zeros or invalid values for the rest
+		 * of the fields, we might fail down the road in rdma_check_ah_attr.
+		 * Change those values to avoid failures and backward compatibility issues.
+		 */
+		if (qp->qp_type == IB_EXP_QPT_DC_INI)
+			set_dc_ini_ah_fields(qp->device, &attr->ah_attr);
+	}
 	if (cmd.attr_mask & IB_QP_ALT_PATH)
 		copy_ah_attr_from_uverbs(qp, &attr->alt_ah_attr,
 					 &cmd.alt_dest);
