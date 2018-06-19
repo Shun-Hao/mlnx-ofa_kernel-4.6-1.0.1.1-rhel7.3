@@ -3500,6 +3500,8 @@ static void mlx5e_build_indir_tir_ctx_common(struct mlx5e_priv *priv,
 	MLX5_SET(tirc, tirc, transport_domain, priv->mdev->mlx5e_res.td.tdn);
 	MLX5_SET(tirc, tirc, disp_type, MLX5_TIRC_DISP_TYPE_INDIRECT);
 	MLX5_SET(tirc, tirc, indirect_table, rqtn);
+	MLX5_SET(tirc, tirc, tunneled_offload_en,
+		 priv->channels.params.tunneled_stateless_offload);
 
 	mlx5e_build_tir_ctx_lro(&priv->channels.params, tirc);
 }
@@ -3524,7 +3526,6 @@ static void mlx5e_build_inner_indir_tir_ctx(struct mlx5e_priv *priv,
 {
 	mlx5e_build_indir_tir_ctx_common(priv, priv->indir_rqt.rqtn, tirc);
 	mlx5e_build_indir_tir_ctx_hash(&priv->channels.params, tt, tirc, true);
-	MLX5_SET(tirc, tirc, tunneled_offload_en, 0x1);
 }
 
 int mlx5e_create_indirect_tirs(struct mlx5e_priv *priv, bool inner_ttc)
@@ -4941,6 +4942,8 @@ void mlx5e_build_nic_params(struct mlx5_core_dev *mdev,
 	/* RQ */
 	mlx5e_build_rq_params(mdev, params);
 
+	params->tunneled_stateless_offload =
+		mlx5e_tunnel_inner_ft_supported(mdev);
 	/* HW LRO */
 
 	/* TODO: && MLX5_CAP_ETH(mdev, lro_cap) */
