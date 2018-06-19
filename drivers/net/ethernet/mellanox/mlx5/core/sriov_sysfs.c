@@ -485,6 +485,35 @@ static ssize_t link_state_show(struct mlx5_sriov_vf *g,
 	return sprintf(buf, "usage: write <Up|Down|Follow> to set VF State\n");
 }
 
+static ssize_t vepa_show(struct mlx5_sriov_vf *g,
+			 struct vf_attributes *oa,
+			 char *buf)
+{
+	return sprintf(buf,
+		       "usage: write <ON|OFF> to turn ON|OFF Virtual Ethernet Port Aggregator mode\n"
+		       );
+}
+
+static ssize_t vepa_store(struct mlx5_sriov_vf *g,
+			  struct vf_attributes *oa,
+			  const char *buf,
+			  size_t count)
+{
+	struct mlx5_core_dev *dev = g->dev;
+	bool settings;
+	int err;
+
+	if (sysfs_streq(buf, "ON"))
+		settings = true;
+	else if (sysfs_streq(buf, "OFF"))
+		settings = false;
+	else
+		return -EINVAL;
+
+	err = mlx5_eswitch_set_vport_vepa(dev->priv.eswitch, g->vf + 1, settings);
+	return err ? err : count;
+}
+
 static ssize_t link_state_store(struct mlx5_sriov_vf *g,
 				struct vf_attributes *oa,
 				const char *buf,
@@ -679,6 +708,7 @@ static ssize_t config_show(struct mlx5_sriov_vf *g, struct vf_attributes *oa,
 	p += _sprintf(p, buf, "VGT+       : %s\n",
 		      !!bitmap_weight(ivi->vlan_trunk_8021q_bitmap, VLAN_N_VID) ?
 		      "ON" : "OFF");
+	p += _sprintf(p, buf, "VEPA      : %s\n", ivi->vepa ? "ON" : "OFF");
 	mutex_unlock(&esw->state_lock);
 
 	return (ssize_t)(p - buf);
@@ -794,6 +824,7 @@ VF_ATTR(min_tx_rate);
 VF_ATTR(config);
 VF_ATTR(trunk);
 VF_ATTR(stats);
+VF_ATTR(vepa);
 
 static struct attribute *vf_eth_attrs[] = {
 	&vf_attr_node.attr,
@@ -807,6 +838,7 @@ static struct attribute *vf_eth_attrs[] = {
 	&vf_attr_config.attr,
 	&vf_attr_trunk.attr,
 	&vf_attr_stats.attr,
+	&vf_attr_vepa.attr,
 	NULL
 };
 
