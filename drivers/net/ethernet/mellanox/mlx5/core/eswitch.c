@@ -570,8 +570,10 @@ static int esw_del_mc_addr(struct mlx5_eswitch *esw, struct vport_addr *vaddr)
 	/* Remove this multicast mac from all the mc promiscuous vports */
 	update_allmulti_vports(esw, vaddr, esw_mc);
 
-	if (esw_mc->uplink_rule)
+	if (esw_mc->uplink_rule) {
 		mlx5_del_flow_rules(esw_mc->uplink_rule);
+		esw_mc->uplink_rule = NULL;
+	}
 
 	l2addr_hash_del(esw_mc);
 	return 0;
@@ -820,7 +822,9 @@ promisc:
 /* Sync vport rx mode from vport context */
 static void esw_update_vport_rx_mode(struct mlx5_eswitch *esw, u32 vport_num)
 {
+	struct esw_mc_addr *allmulti_addr = &esw->mc_promisc;
 	struct mlx5_vport *vport = &esw->vports[vport_num];
+	struct mlx5_core_dev *dev = vport->dev;
 	int promisc_all = 0;
 	int promisc_uc = 0;
 	int promisc_mc = 0;
@@ -831,8 +835,30 @@ static void esw_update_vport_rx_mode(struct mlx5_eswitch *esw, u32 vport_num)
 					   &promisc_uc,
 					   &promisc_mc,
 					   &promisc_all);
-	if (err)
+	if (err) {
+		if (!pci_channel_offline(dev->pdev) &&
+		    dev->state != MLX5_DEVICE_STATE_INTERNAL_ERROR)
+			return;
+
+		/* EEH or PCI error. Delete promisc, multi and uplink multi rules */
+		if (vport->allmulti_rule) {
+			mlx5_del_flow_rules(vport->allmulti_rule);
+			vport->allmulti_rule = NULL;
+
+			allmulti_addr->refcnt --;
+			if (!allmulti_addr->refcnt && allmulti_addr->uplink_rule) {
+				mlx5_del_flow_rules(allmulti_addr->uplink_rule);
+				allmulti_addr->uplink_rule = NULL;
+			}
+		}
+
+		if (vport->promisc_rule) {
+			mlx5_del_flow_rules(vport->promisc_rule);
+			vport->promisc_rule = NULL;
+		}
+
 		return;
+	}
 	esw_debug(esw->dev, "vport[%d] context update rx mode promisc_all=%d, all_multi=%d\n",
 		  vport_num, promisc_all, promisc_mc);
 
