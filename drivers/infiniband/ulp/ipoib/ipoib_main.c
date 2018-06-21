@@ -2493,6 +2493,8 @@ int parse_child(struct device *dev, const char *buf, int *pkey,
 		ret  = sscanf(buf, ".%i", child_index);
 		if (ret != 1 || *child_index == 0)
 			return -EINVAL;
+		if (priv->ca->alloc_rdma_netdev && ipoib_enhanced_enabled)
+			return -EOPNOTSUPP;
 	}
 
 	if (*child_index < 0 || *child_index > 0xff)
