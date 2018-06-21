@@ -9,7 +9,7 @@
 #include "eswitch.h"
 #include "en.h"
 
-#if defined(USE_DEVLINK_COMPAT) && defined(CONFIG_MLX5_ESWITCH)
+#ifdef CONFIG_MLX5_ESWITCH
 
 static char *mode_to_str[] = {
 	[DEVLINK_ESWITCH_MODE_LEGACY] = "legacy",

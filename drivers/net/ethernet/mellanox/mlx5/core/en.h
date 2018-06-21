@@ -812,6 +812,11 @@ struct mlx5e_priv {
 
 	struct kobject *ecn_root_kobj;
 
+#ifdef CONFIG_MLX5_ESWITCH
+	struct kobject *compat_kobj;
+	struct kobject *devlink_kobj;
+	void *devlink_attributes;
+#endif
 	struct mlx5e_ecn_ctx ecn_ctx[MLX5E_CONG_PROTOCOL_NUM];
 	struct mlx5e_ecn_enable_ctx ecn_enable_ctx[MLX5E_CONG_PROTOCOL_NUM][8];
 	struct mlx5e_delay_drop delay_drop;
