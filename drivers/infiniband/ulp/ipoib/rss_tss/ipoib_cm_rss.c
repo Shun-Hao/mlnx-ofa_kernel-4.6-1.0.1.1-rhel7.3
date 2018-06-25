@@ -638,13 +638,13 @@ timeout:
 		struct ipoib_send_ring *send_ring;
 		u16 queue_index;
 		tx_req = &p->tx_ring[p->tx_tail & (priv->sendq_size - 1)];
+		queue_index = skb_get_queue_mapping(tx_req->skb);
+		send_ring = priv->send_ring + queue_index;
 		/* Checking whether inline was used - nothing to unmap */
 		if (!tx_req->is_inline)
 			ipoib_dma_unmap_tx(priv, tx_req);
 		dev_kfree_skb_any(tx_req->skb);
 		++p->tx_tail;
-		queue_index = skb_get_queue_mapping(tx_req->skb);
-		send_ring = priv->send_ring + queue_index;
 		netif_tx_lock_bh(p->dev);
 		++send_ring->tx_tail;
 		if (send_ring->tx_head - send_ring->tx_tail ==
