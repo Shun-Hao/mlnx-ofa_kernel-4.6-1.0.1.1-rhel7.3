@@ -299,6 +299,7 @@ static void eq_pf_process(struct mlx5_eq *eq)
 			pfault->wqe.common = mlx5_core_get_rsc(eq->dev,
 							       pfault->wqe.wq_num);
 
+			pfault->wqe.ignore = false;
 			if (pfault->wqe.common  &&
 			    pfault->wqe.common->res == MLX5_RES_QP) {
 				int requestor = pfault->type & MLX5_PFAULT_REQUESTOR;
