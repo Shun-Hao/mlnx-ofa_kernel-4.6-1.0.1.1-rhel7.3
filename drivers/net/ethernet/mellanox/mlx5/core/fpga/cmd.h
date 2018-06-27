@@ -44,21 +44,22 @@ enum mlx5_fpga_id {
 
 enum mlx5_fpga_image {
 	MLX5_FPGA_IMAGE_USER = 0,
-	MLX5_FPGA_IMAGE_FACTORY,
+	MLX5_FPGA_IMAGE_FACTORY = 1,
 	MLX5_FPGA_IMAGE_MAX = MLX5_FPGA_IMAGE_FACTORY,
+	MLX5_FPGA_IMAGE_FACTORY_FAILOVER = 2,
 };
 
 enum mlx5_fpga_status {
 	MLX5_FPGA_STATUS_SUCCESS = 0,
 	MLX5_FPGA_STATUS_FAILURE = 1,
 	MLX5_FPGA_STATUS_IN_PROGRESS = 2,
-	MLX5_FPGA_STATUS_NONE = 0xFFFF,
+	MLX5_FPGA_STATUS_DISCONNECTED = 3,
 };
 
 struct mlx5_fpga_query {
 	enum mlx5_fpga_image admin_image;
 	enum mlx5_fpga_image oper_image;
-	enum mlx5_fpga_status status;
+	enum mlx5_fpga_status image_status;
 };
 
 enum mlx5_fpga_qpc_field_select {

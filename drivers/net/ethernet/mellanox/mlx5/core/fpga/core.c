@@ -109,7 +109,7 @@ static struct mlx5_fpga_device *mlx5_fpga_device_alloc(void)
 
 	spin_lock_init(&fdev->state_lock);
 	init_completion(&fdev->load_event);
-	fdev->state = MLX5_FPGA_STATUS_NONE;
+	fdev->fdev_state = MLX5_FDEV_STATE_NONE;
 	INIT_LIST_HEAD(&fdev->client_data_list);
 	return fdev;
 }
@@ -156,18 +156,19 @@ static int mlx5_fpga_device_load_check(struct mlx5_fpga_device *fdev)
 
 	fdev->last_admin_image = query.admin_image;
 	fdev->last_oper_image = query.oper_image;
+	fdev->image_status = query.image_status;
 
 	mlx5_fpga_info(fdev, "Status %u; Admin image %u; Oper image %u\n",
-		       query.status, query.admin_image, query.oper_image);
+		       query.image_status, query.admin_image, query.oper_image);
 
-	/* Failure of User image is valid case for Morse project */
-	if (query.status != MLX5_FPGA_STATUS_SUCCESS &&
-	    (MLX5_CAP_FPGA(fdev->mdev, fpga_id) != MLX5_FPGA_MORSE ||
-	     query.admin_image != MLX5_FPGA_IMAGE_USER)
-	   ) {
+	/* For Morse project FPGA has no influence to network functionality */
+	if (MLX5_CAP_FPGA(fdev->mdev, fpga_id) == MLX5_FPGA_MORSE)
+		return 0;
+
+	if (query.image_status != MLX5_FPGA_STATUS_SUCCESS) {
 		mlx5_fpga_err(fdev, "%s image failed to load; status %u\n",
 			      mlx5_fpga_image_name(fdev->last_oper_image),
-			      query.status);
+			      query.image_status);
 		return -EIO;
 	}
 
@@ -305,7 +306,7 @@ err_rsvd_gid:
 	mlx5_core_unreserve_gids(mdev, max_num_qps);
 out:
 	spin_lock_irqsave(&fdev->state_lock, flags);
-	fdev->state = err ? MLX5_FPGA_STATUS_FAILURE : MLX5_FPGA_STATUS_SUCCESS;
+	fdev->fdev_state = err ? MLX5_FDEV_STATE_FAILURE : MLX5_FDEV_STATE_SUCCESS;
 	spin_unlock_irqrestore(&fdev->state_lock, flags);
 	return err;
 }
@@ -354,11 +355,11 @@ void mlx5_fpga_device_stop(struct mlx5_core_dev *mdev)
 		return;
 
 	spin_lock_irqsave(&fdev->state_lock, flags);
-	if (fdev->state != MLX5_FPGA_STATUS_SUCCESS) {
+	if (fdev->fdev_state != MLX5_FDEV_STATE_SUCCESS) {
 		spin_unlock_irqrestore(&fdev->state_lock, flags);
 		return;
 	}
-	fdev->state = MLX5_FPGA_STATUS_NONE;
+	fdev->fdev_state = MLX5_FDEV_STATE_NONE;
 	spin_unlock_irqrestore(&fdev->state_lock, flags);
 
 	if (fdev->last_oper_image == MLX5_FPGA_IMAGE_USER) {
@@ -449,12 +450,12 @@ void mlx5_fpga_event(struct mlx5_core_dev *mdev, u8 event, void *data)
 	}
 
 	spin_lock_irqsave(&fdev->state_lock, flags);
-	switch (fdev->state) {
-	case MLX5_FPGA_STATUS_SUCCESS:
+	switch (fdev->fdev_state) {
+	case MLX5_FDEV_STATE_SUCCESS:
 		mlx5_fpga_warn(fdev, "Error %u: %s\n", syndrome, event_name);
 		teardown = true;
 		break;
-	case MLX5_FPGA_STATUS_IN_PROGRESS:
+	case MLX5_FDEV_STATE_IN_PROGRESS:
 		if (syndrome != MLX5_FPGA_ERROR_EVENT_SYNDROME_IMAGE_CHANGED)
 			mlx5_fpga_warn(fdev, "Error while loading %u: %s\n",
 				       syndrome, event_name);
@@ -496,7 +497,7 @@ void mlx5_fpga_client_register(struct mlx5_fpga_client *client)
 			continue;
 
 		spin_lock_irqsave(&fdev->state_lock, flags);
-		call_add = (fdev->state == MLX5_FPGA_STATUS_SUCCESS);
+		call_add = (fdev->fdev_state == MLX5_FDEV_STATE_SUCCESS);
 		spin_unlock_irqrestore(&fdev->state_lock, flags);
 
 		if (call_add) {
