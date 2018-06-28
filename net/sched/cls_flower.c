@@ -391,7 +391,7 @@ static bool __fl_delete(struct tcf_proto *tp, struct cls_fl_filter *f)
 		call_rcu(&f->rcu, fl_destroy_filter);
 	else
 #endif
-		__fl_destroy_filter(f);
+	call_rcu(&f->rcu, fl_destroy_filter);
 
 	return last;
 }
