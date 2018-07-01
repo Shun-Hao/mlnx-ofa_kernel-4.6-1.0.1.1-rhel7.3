@@ -1619,7 +1619,7 @@ static void get_slave_skb_arp_by_ip(struct slave *slave,
 	struct net_device *master_dev = master_upper_dev_get(slave->dev);
 	int ret;
 
-	pr_info("Sending arp on behalf of slave %s, from %pI4"
+	pr_debug("Sending arp on behalf of slave %s, from %pI4"
 		" to %pI4" , slave->dev->name, &(iph->saddr),
 		&(iph->daddr));
 
