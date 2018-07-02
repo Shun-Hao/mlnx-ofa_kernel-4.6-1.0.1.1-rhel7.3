@@ -3389,23 +3389,25 @@ int mlx5e_stats_flower(struct mlx5e_priv *priv,
 	struct rhashtable *tc_ht = get_tc_ht(priv, flags);
 	struct mlx5e_tc_flow *flow;
 	struct mlx5_fc *counter;
-	u64 bytes;
-	u64 packets;
-	u64 lastuse;
+	u64 lastuse = 0;
+	u64 packets = 0;
+	u64 bytes = 0;
 
 	flow = rhashtable_lookup_fast(tc_ht, &f->cookie, tc_ht_params);
 	if (!flow || !same_flow_direction(flow, flags))
 		return -EINVAL;
 
-	if (!(flow->flags & MLX5E_TC_FLOW_OFFLOADED))
-		return 0;
+	if (flow->flags & MLX5E_TC_FLOW_OFFLOADED) {
+		counter = mlx5e_tc_get_counter(flow);
+		if (!counter)
+			return 0;
 
-	counter = mlx5e_tc_get_counter(flow);
-	if (!counter)
-		return 0;
+		mlx5_fc_query_cached(counter, &bytes, &packets, &lastuse);
+	}
 
-	mlx5_fc_query_cached(counter, &bytes, &packets, &lastuse);
-
+	/* Under multipath it's possible for one rule to be currently
+	 * un-offloaded while the other rule is offloaded.
+	 */
 	if ((flow->flags & MLX5E_TC_FLOW_DUP) &&
 	    (flow->peer_flow->flags & MLX5E_TC_FLOW_OFFLOADED)) {
 		u64 bytes2;
@@ -3413,6 +3415,8 @@ int mlx5e_stats_flower(struct mlx5e_priv *priv,
 		u64 lastuse2;
 
 		counter =  mlx5e_tc_get_counter(flow->peer_flow);
+		if (!counter)
+			goto no_peer_counter;
 		mlx5_fc_query_cached(counter, &bytes2, &packets2, &lastuse2);
 
 		bytes += bytes2;
@@ -3420,6 +3424,7 @@ int mlx5e_stats_flower(struct mlx5e_priv *priv,
 		lastuse = max_t(u64, lastuse, lastuse2);
 	}
 
+no_peer_counter:
 
 	tcf_exts_stats_update(f->exts, bytes, packets, lastuse);
 
