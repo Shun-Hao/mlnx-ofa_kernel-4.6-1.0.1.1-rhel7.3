@@ -126,19 +126,21 @@ static const char *mlx5_fpga_image_name(enum mlx5_fpga_image image)
 	}
 }
 
-static const char *mlx5_fpga_device_name(u32 device)
+static const char *mlx5_fpga_name(u32 fpga_id)
 {
-	switch (device) {
-	case MLX5_FPGA_DEVICE_KU040:
-		return "ku040";
-	case MLX5_FPGA_DEVICE_KU060:
-		return "ku060";
-	case MLX5_FPGA_DEVICE_KU060_2:
-		return "ku060_2";
-	case MLX5_FPGA_DEVICE_UNKNOWN:
-	default:
-		return "unknown";
+	static char ret[32];
+
+	switch (fpga_id) {
+	case MLX5_FPGA_NEWTON:
+		return "Newton";
+	case MLX5_FPGA_EDISON:
+		return "Edison";
+	case MLX5_FPGA_MORSE:
+		return "Morse";
 	}
+
+	snprintf(ret, sizeof(ret), "Unknown %d", fpga_id);
+	return ret;
 }
 
 static int mlx5_fpga_device_load_check(struct mlx5_fpga_device *fdev)
@@ -155,8 +157,8 @@ static int mlx5_fpga_device_load_check(struct mlx5_fpga_device *fdev)
 	fdev->last_admin_image = query.admin_image;
 	fdev->last_oper_image = query.oper_image;
 
-	mlx5_fpga_dbg(fdev, "Status %u; Admin image %u; Oper image %u\n",
-		      query.status, query.admin_image, query.oper_image);
+	mlx5_fpga_info(fdev, "Status %u; Admin image %u; Oper image %u\n",
+		       query.status, query.admin_image, query.oper_image);
 
 	if (query.status != MLX5_FPGA_STATUS_SUCCESS) {
 		mlx5_fpga_err(fdev, "%s image failed to load; status %u\n",
@@ -199,7 +201,7 @@ int mlx5_fpga_device_start(struct mlx5_core_dev *mdev)
 	struct mlx5_fpga_conn *conn;
 	unsigned int max_num_qps;
 	unsigned long flags;
-	u32 fpga_device_id;
+	u32 fpga_id;
 	u32 vid;
 	u16 pid;
 	int err;
@@ -215,11 +217,12 @@ int mlx5_fpga_device_start(struct mlx5_core_dev *mdev)
 	if (err)
 		goto out;
 
-	fpga_device_id = MLX5_CAP_FPGA(fdev->mdev, fpga_device);
-	mlx5_fpga_info(fdev, "%s:%u; %s image, version %u; SBU %06x:%04x version %d\n",
-		       mlx5_fpga_device_name(fpga_device_id),
-		       fpga_device_id,
+	fpga_id = MLX5_CAP_FPGA(fdev->mdev, fpga_id);
+	mlx5_fpga_info(fdev, "FPGA card %s:%u\n", mlx5_fpga_name(fpga_id), fpga_id);
+
+	mlx5_fpga_info(fdev, "%s(%d): image, version %u; SBU %06x:%04x version %d\n",
 		       mlx5_fpga_image_name(fdev->last_oper_image),
+		       fdev->last_oper_image,
 		       MLX5_CAP_FPGA(fdev->mdev, image_version),
 		       MLX5_CAP_FPGA(fdev->mdev, ieee_vendor_id),
 		       MLX5_CAP_FPGA(fdev->mdev, sandbox_product_id),
