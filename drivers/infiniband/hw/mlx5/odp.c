@@ -355,18 +355,14 @@ void mlx5_ib_internal_fill_odp_caps(struct mlx5_ib_dev *dev)
 
 static void mlx5_ib_page_fault_resume(struct mlx5_ib_dev *dev,
 				      struct mlx5_pagefault *pfault,
+				      bool drop,
 				      int error)
 {
-	int wq_num = pfault->event_subtype == MLX5_PFAULT_SUBTYPE_WQE ?
-		     pfault->wqe.wq_num : pfault->token;
-	int ret = mlx5_core_page_fault_resume(dev->mdev,
-					      pfault->token,
-					      wq_num,
-					      pfault->type,
-					      error);
+	int ret = mlx5_core_page_fault_resume(dev->mdev, pfault, drop, error);
+
 	if (ret)
-		mlx5_ib_err(dev, "Failed to resolve the page fault on WQ 0x%x\n",
-			    wq_num);
+		mlx5_ib_err(dev, "Failed to resume the page fault (%d)\n", ret);
+
 	if (likely(!error))
 		ib_umem_odp_account_fault_handled(&dev->ib_dev);
 	else
@@ -1330,15 +1326,8 @@ static void mlx5_ib_mr_wqe_pfault_handler(struct mlx5_ib_dev *dev,
 
 	resume_with_error = 0;
 resolve_page_fault:
-	if (!drop) {
-		mlx5_ib_page_fault_resume(dev, pfault, resume_with_error);
-		mlx5_ib_dbg(dev, "PAGE FAULT completed. QP 0x%x resume_with_error=%d, type: 0x%x\n",
-			    pfault->wqe.wq_num, resume_with_error,
-			    pfault->type);
-	} else {
-		mlx5_ib_dbg(dev, "PAGE FAULT dropped. QP 0x%x type: 0x%x\n",
-			    pfault->wqe.wq_num, pfault->type);
-	}
+	mlx5_ib_page_fault_resume(dev, pfault, drop, resume_with_error);
+
 	spin_lock_irqsave(&mqp->common.lock, flags);
 	/* check if current pagefault event is also the last for the QP.
 	 * If yes, clear from QP
@@ -1401,14 +1390,14 @@ static void mlx5_ib_mr_rdma_pfault_handler(struct mlx5_ib_dev *dev,
 		/* We're racing with an invalidation, don't prefetch */
 		prefetch_activated = 0;
 	} else if (ret < 0 || pages_in_range(address, length) > ret) {
-		mlx5_ib_page_fault_resume(dev, pfault, 1);
+		mlx5_ib_page_fault_resume(dev, pfault, false, 1);
 		if (ret != -ENOENT)
 			mlx5_ib_dbg(dev, "PAGE FAULT error %d. QP 0x%x, type: 0x%x\n",
 				    ret, pfault->token, pfault->type);
 		return;
 	}
 
-	mlx5_ib_page_fault_resume(dev, pfault, 0);
+	mlx5_ib_page_fault_resume(dev, pfault, false, 0);
 	mlx5_ib_dbg(dev, "PAGE FAULT completed. QP 0x%x, type: 0x%x, prefetch_activated: %d\n",
 		    pfault->token, pfault->type,
 		    prefetch_activated);
@@ -1432,12 +1421,18 @@ static void mlx5_ib_mr_rdma_pfault_handler(struct mlx5_ib_dev *dev,
 	}
 }
 
+void mlx5_ib_pfault_done(struct mlx5_pagefault *pfault, void *context)
+{
+}
+
 void mlx5_ib_pfault(struct mlx5_core_dev *mdev, void *context,
 		    struct mlx5_pagefault *pfault)
 {
 	struct mlx5_ib_dev *dev = context;
 	u8 event_subtype = pfault->event_subtype;
 
+	pfault->done_cb = mlx5_ib_pfault_done;
+	pfault->done_context = dev;
 	switch (event_subtype) {
 	case MLX5_PFAULT_SUBTYPE_WQE:
 		mlx5_ib_mr_wqe_pfault_handler(dev, pfault);
@@ -1448,7 +1443,7 @@ void mlx5_ib_pfault(struct mlx5_core_dev *mdev, void *context,
 	default:
 		mlx5_ib_err(dev, "Invalid page fault event subtype: 0x%x\n",
 			    event_subtype);
-		mlx5_ib_page_fault_resume(dev, pfault, 1);
+		mlx5_ib_page_fault_resume(dev, pfault, false, 1);
 	}
 }
 

@@ -224,10 +224,6 @@ static void eqe_pf_action(struct work_struct *work)
 	struct mlx5_eq *eq = pfault->eq;
 
 	mlx5_core_page_fault(eq->dev, pfault);
-	if ((pfault->event_subtype == MLX5_PFAULT_SUBTYPE_WQE) &&
-	    pfault->wqe.common)
-		mlx5_core_put_rsc(pfault->wqe.common);
-	mempool_free(pfault, eq->pf_ctx.pool);
 }
 
 static void eq_pf_process(struct mlx5_eq *eq)
@@ -335,6 +331,7 @@ static void eq_pf_process(struct mlx5_eq *eq)
 			 */
 		}
 
+		pfault->done_cb = NULL;
 		pfault->eq = eq;
 		INIT_WORK(&pfault->work, eqe_pf_action);
 		queue_work(eq->pf_ctx.wq, &pfault->work);
@@ -410,20 +407,58 @@ err_wq:
 	return -ENOMEM;
 }
 
-int mlx5_core_page_fault_resume(struct mlx5_core_dev *dev, u32 token,
-				u32 wq_num, u8 type, int error)
+static void page_fault_resume_callback(int status, void *context)
 {
-	u32 out[MLX5_ST_SZ_DW(page_fault_resume_out)] = {0};
-	u32 in[MLX5_ST_SZ_DW(page_fault_resume_in)]   = {0};
+	struct mlx5_pagefault *pfault = context;
 
-	MLX5_SET(page_fault_resume_in, in, opcode,
-		 MLX5_CMD_OP_PAGE_FAULT_RESUME);
-	MLX5_SET(page_fault_resume_in, in, error, !!error);
-	MLX5_SET(page_fault_resume_in, in, page_fault_type, type);
-	MLX5_SET(page_fault_resume_in, in, wq_number, wq_num);
-	MLX5_SET(page_fault_resume_in, in, token, token);
+	if (pfault->done_cb)
+		pfault->done_cb(pfault, pfault->done_context);
 
-	return mlx5_cmd_exec(dev, in, sizeof(in), out, sizeof(out));
+	if (status)
+		mlx5_core_err(pfault->eq->dev, "Resolve the page fault failed with status %d\n",
+			      status);
+	if (pfault->event_subtype == MLX5_PFAULT_SUBTYPE_WQE &&
+	    pfault->wqe.common)
+		mlx5_core_put_rsc(pfault->wqe.common);
+
+	mempool_free(pfault, pfault->eq->pf_ctx.pool);
+}
+
+int mlx5_core_page_fault_resume(struct mlx5_core_dev *dev,
+				struct mlx5_pagefault *pfault,
+				bool drop,
+				int error)
+{
+	int ret;
+
+	if (likely(!drop)) {
+		u32 *out = pfault->out_pf_resume;
+		u32 *in = pfault->in_pf_resume;
+		u32 token = pfault->token;
+		int wq_num = pfault->event_subtype == MLX5_PFAULT_SUBTYPE_WQE ?
+			pfault->wqe.wq_num : pfault->token;
+		u8 type = pfault->type;
+
+		memset(out, 0, MLX5_ST_SZ_BYTES(page_fault_resume_out));
+		memset(in, 0, MLX5_ST_SZ_BYTES(page_fault_resume_in));
+
+		MLX5_SET(page_fault_resume_in, in, opcode,
+			 MLX5_CMD_OP_PAGE_FAULT_RESUME);
+		MLX5_SET(page_fault_resume_in, in, error, !!error);
+		MLX5_SET(page_fault_resume_in, in, page_fault_type, type);
+		MLX5_SET(page_fault_resume_in, in, wq_number, wq_num);
+		MLX5_SET(page_fault_resume_in, in, token, token);
+
+		ret = mlx5_cmd_exec_cb(dev,
+				       in, MLX5_ST_SZ_BYTES(page_fault_resume_in),
+				       out, MLX5_ST_SZ_BYTES(page_fault_resume_out),
+				       page_fault_resume_callback, pfault);
+	} else {
+		page_fault_resume_callback(0, pfault);
+		ret = 0;
+	}
+
+	return ret;
 }
 EXPORT_SYMBOL_GPL(mlx5_core_page_fault_resume);
 #endif

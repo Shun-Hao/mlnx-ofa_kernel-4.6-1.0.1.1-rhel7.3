@@ -801,8 +801,17 @@ enum mlx5_pagefault_type_flags {
 	MLX5_PFAULT_RDMA      = 1 << 2,
 };
 
+struct mlx5_pagefault;
+typedef void (*mlx5_pagefault_done_cb)(struct mlx5_pagefault *pfault, void *context);
+
 /* Contains the details of a pagefault. */
 struct mlx5_pagefault {
+	u32 out_pf_resume[MLX5_ST_SZ_DW(page_fault_resume_out)];
+	u32 in_pf_resume[MLX5_ST_SZ_DW(page_fault_resume_in)];
+
+	mlx5_pagefault_done_cb	done_cb;
+	void			*done_context;
+
 	u32			bytes_committed;
 	u32			token;
 	u8			event_subtype;
@@ -1293,8 +1302,10 @@ int mlx5_query_odp_caps(struct mlx5_core_dev *dev,
 int mlx5_core_query_ib_ppcnt(struct mlx5_core_dev *dev,
 			     u8 port_num, void *out, size_t sz);
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
-int mlx5_core_page_fault_resume(struct mlx5_core_dev *dev, u32 token,
-				u32 wq_num, u8 type, int error);
+int mlx5_core_page_fault_resume(struct mlx5_core_dev *dev,
+				struct mlx5_pagefault *pfault,
+				bool drop,
+				int error);
 #endif
 
 int mlx5_init_rl_table(struct mlx5_core_dev *dev);
