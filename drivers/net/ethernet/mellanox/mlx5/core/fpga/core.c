@@ -220,6 +220,9 @@ int mlx5_fpga_device_start(struct mlx5_core_dev *mdev)
 	fpga_id = MLX5_CAP_FPGA(fdev->mdev, fpga_id);
 	mlx5_fpga_info(fdev, "FPGA card %s:%u\n", mlx5_fpga_name(fpga_id), fpga_id);
 
+	if (fpga_id == MLX5_FPGA_MORSE)
+		goto out;
+
 	mlx5_fpga_info(fdev, "%s(%d): image, version %u; SBU %06x:%04x version %d\n",
 		       mlx5_fpga_image_name(fdev->last_oper_image),
 		       fdev->last_oper_image,
@@ -341,6 +344,9 @@ void mlx5_fpga_device_stop(struct mlx5_core_dev *mdev)
 	int err;
 
 	if (!fdev)
+		return;
+
+	if (MLX5_CAP_FPGA(mdev, fpga_id) == MLX5_FPGA_MORSE)
 		return;
 
 	spin_lock_irqsave(&fdev->state_lock, flags);
