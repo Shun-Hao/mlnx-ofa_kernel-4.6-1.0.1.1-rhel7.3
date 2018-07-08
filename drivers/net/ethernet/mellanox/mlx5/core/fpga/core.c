@@ -160,7 +160,11 @@ static int mlx5_fpga_device_load_check(struct mlx5_fpga_device *fdev)
 	mlx5_fpga_info(fdev, "Status %u; Admin image %u; Oper image %u\n",
 		       query.status, query.admin_image, query.oper_image);
 
-	if (query.status != MLX5_FPGA_STATUS_SUCCESS) {
+	/* Failure of User image is valid case for Morse project */
+	if (query.status != MLX5_FPGA_STATUS_SUCCESS &&
+	    (MLX5_CAP_FPGA(fdev->mdev, fpga_id) != MLX5_FPGA_MORSE ||
+	     query.admin_image != MLX5_FPGA_IMAGE_USER)
+	   ) {
 		mlx5_fpga_err(fdev, "%s image failed to load; status %u\n",
 			      mlx5_fpga_image_name(fdev->last_oper_image),
 			      query.status);
@@ -209,11 +213,11 @@ int mlx5_fpga_device_start(struct mlx5_core_dev *mdev)
 	if (!fdev)
 		return 0;
 
-	err = mlx5_fpga_device_load_check(fdev);
+	err = mlx5_fpga_caps(fdev->mdev);
 	if (err)
 		goto out;
 
-	err = mlx5_fpga_caps(fdev->mdev);
+	err = mlx5_fpga_device_load_check(fdev);
 	if (err)
 		goto out;
 
