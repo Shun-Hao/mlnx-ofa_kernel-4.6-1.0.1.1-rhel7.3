@@ -423,6 +423,8 @@ int mlx5_fpga_flash_select(struct mlx5_fpga_device *fdev,
 	err = mlx5_fpga_image_select(fdev->mdev, image);
 	if (err)
 		mlx5_fpga_err(fdev, "Failed to select flash image: %d\n", err);
+	else
+		fdev->last_admin_image = image;
 	return err;
 }
 EXPORT_SYMBOL(mlx5_fpga_flash_select);
