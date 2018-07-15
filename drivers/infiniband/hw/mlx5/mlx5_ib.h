@@ -938,6 +938,44 @@ struct mlx5_ib_dbg_ooo {
 	struct dentry		*ooo_debugfs;
 };
 
+enum {
+	HIST_1MS = 1,
+	HIST_4MS = 4,
+	HIST_16MS = 16,
+	HIST_64MS = 64,
+	HIST_256MS = 256,
+	HIST_1SEC = 1000,
+	HIST_2SEC = 2000,
+	HIST_4SEC = 4000,
+	HIST_8SEC = 8000,
+	HIST_16SEC = 16000
+};
+
+#define MAX_HIST 10
+static inline int convert_duration_to_hist(unsigned long duration)
+{
+	if (duration <= HIST_1MS)
+		return 0;
+	else if (duration <= HIST_4MS)
+		return 1;
+	else if (duration <= HIST_16MS)
+		return 2;
+	else if (duration <= HIST_64MS)
+		return 3;
+	else if (duration <= HIST_256MS)
+		return 4;
+	else if (duration <= HIST_1SEC)
+		return 5;
+	else if (duration <= HIST_2SEC)
+		return 6;
+	else if (duration <= HIST_4SEC)
+		return 7;
+	else if (duration <= HIST_8SEC)
+		return 8;
+	else
+		return 9;
+}
+
 struct mlx5_ib_dev {
 	struct ib_device		ib_dev;
 	const struct uverbs_object_tree_def *driver_trees[7];
@@ -1006,6 +1044,12 @@ struct mlx5_ib_dev {
 	struct kobject          mr_cache;
 
 	struct mlx5_ib_dbg_ooo	ooo;
+
+	u64 pf_count;
+	u64 pf_int_total_hist[MAX_HIST];
+	u64 pf_int_wq_hist[MAX_HIST];
+	u64 pf_cxl_hist[MAX_HIST];
+	u64 inv_hist[MAX_HIST];
 };
 
 static inline struct mlx5_ib_cq *to_mibcq(struct mlx5_core_cq *mcq)

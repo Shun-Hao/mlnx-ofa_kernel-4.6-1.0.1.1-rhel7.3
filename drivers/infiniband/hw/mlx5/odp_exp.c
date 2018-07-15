@@ -95,12 +95,80 @@ int mlx5_ib_exp_invalidate_range(struct ib_device *device, struct ib_mr *ibmr,
 {
 #ifdef CONFIG_CXL_LIB
 	struct mlx5_ib_dev *dev = to_mdev(device);
+	unsigned int duration;
+	int err, index;
 
-	return mlx5_core_invalidate_range(dev->mdev);
+	err = mlx5_core_invalidate_range(dev->mdev, &duration);
+	index =	convert_duration_to_hist(duration);
+	dev->inv_hist[index]++;
+
+	return err;
+
 #else
 	return -ENOTSUPP;
 #endif
 }
+
+#define ODP_HIST_PRINT_SZ 1000
+static ssize_t odp_hist_read(struct file *filp, char __user *buf,
+			     size_t count, loff_t *pos)
+{
+	struct mlx5_ib_dev *dev = filp->private_data;
+	char kbuf[ODP_HIST_PRINT_SZ] = {0};
+	int len = 0;
+	int i;
+
+	if (*pos)
+		return 0;
+
+	for (i = 0; i < MAX_HIST; i++)
+		len += sprintf(kbuf + len, "int_total[%d]=%10llu, int_wq[%d]=%10llu, cxl[%d]=%10llu, inv_hist[%d]=%10llu\n",
+			       i, dev->pf_int_total_hist[i],
+			       i, dev->pf_int_wq_hist[i],
+			       i, dev->pf_cxl_hist[i],
+			       i, dev->inv_hist[i]);
+
+	len = min_t(int, len, count);
+	if (copy_to_user(buf, kbuf, len))
+		len = 0;
+
+	*pos = len;
+	return len;
+}
+
+#define ODP_HIST_WRITE_BUF_LEN 6
+static ssize_t odp_hist_write(struct file *filp, const char __user *buf,
+			      size_t count, loff_t *pos)
+{
+	struct mlx5_ib_dev *dev = filp->private_data;
+	char kbuf[ODP_HIST_WRITE_BUF_LEN] = {0};
+	int i;
+
+	if (*pos || count > ODP_HIST_WRITE_BUF_LEN)
+		return -EINVAL;
+
+	if (copy_from_user(kbuf, buf, count))
+		return -EFAULT;
+
+	if (strncmp(kbuf, "clear", ODP_HIST_WRITE_BUF_LEN - 1))
+		return -EINVAL;
+
+	for (i = 0; i < MAX_HIST; i++) {
+		dev->pf_int_total_hist[i] = 0;
+		dev->pf_int_wq_hist[i] = 0;
+		dev->pf_cxl_hist[i] = 0;
+		dev->inv_hist[i] = 0;
+	}
+
+	return count;
+}
+
+static const struct file_operations odp_hist_fops = {
+	.owner	= THIS_MODULE,
+	.open	= simple_open,
+	.write	= odp_hist_write,
+	.read	= odp_hist_read,
+};
 
 int mlx5_ib_exp_odp_init_one(struct mlx5_ib_dev *ibdev)
 {
@@ -141,6 +209,12 @@ int mlx5_ib_exp_odp_init_one(struct mlx5_ib_dev *ibdev)
 	dbgfs_entry = debugfs_create_atomic_t("num_prefetch", 0400,
 					      ibdev->odp_stats.odp_debugfs,
 					      &ibdev->num_prefetch);
+	if (!dbgfs_entry)
+		goto out_debugfs;
+
+	dbgfs_entry = debugfs_create_file("odp_hist", 0400,
+					  ibdev->odp_stats.odp_debugfs,
+					  ibdev, &odp_hist_fops);
 	if (!dbgfs_entry)
 		goto out_debugfs;
 

@@ -374,15 +374,22 @@ static void mlx5_ib_page_fault_resume(struct mlx5_ib_dev *dev,
 static int handle_capi_pg_fault(struct mlx5_ib_dev *dev, struct mm_struct *mm,
 				u64 va, size_t sz, struct mlx5_pagefault *pfault)
 {
-	int err;
+	int err, index;
+	unsigned long start;
+	unsigned int duration;
 
 	if (!mmget_not_zero(mm))
 		return -EPERM;
 
+	start = jiffies;
 	if (pfault->type & MLX5_PAGE_FAULT_RESUME_WRITE)
 		err = cxllib_handle_fault(mm, va, sz, DSISR_ISSTORE);
 	else
 		err = cxllib_handle_fault(mm, va, sz, 0);
+
+	duration = jiffies_to_msecs(jiffies - start);
+	index =	convert_duration_to_hist(duration);
+	dev->pf_cxl_hist[index]++;
 
 	mmput(mm);
 	return err;
@@ -1423,6 +1430,13 @@ static void mlx5_ib_mr_rdma_pfault_handler(struct mlx5_ib_dev *dev,
 
 void mlx5_ib_pfault_done(struct mlx5_pagefault *pfault, void *context)
 {
+	struct mlx5_ib_dev *dev = context;
+	unsigned int duration;
+	int index;
+
+	duration = jiffies_to_msecs(jiffies - pfault->start);
+	index =	convert_duration_to_hist(duration);
+	dev->pf_int_total_hist[index]++;
 }
 
 void mlx5_ib_pfault(struct mlx5_core_dev *mdev, void *context,
@@ -1430,6 +1444,12 @@ void mlx5_ib_pfault(struct mlx5_core_dev *mdev, void *context,
 {
 	struct mlx5_ib_dev *dev = context;
 	u8 event_subtype = pfault->event_subtype;
+	unsigned int duration;
+	int index;
+
+	duration = jiffies_to_msecs(jiffies - pfault->start);
+	index =	convert_duration_to_hist(duration);
+	dev->pf_int_wq_hist[index]++;
 
 	pfault->done_cb = mlx5_ib_pfault_done;
 	pfault->done_context = dev;

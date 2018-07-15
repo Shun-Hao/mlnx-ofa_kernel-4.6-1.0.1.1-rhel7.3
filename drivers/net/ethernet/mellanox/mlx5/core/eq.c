@@ -247,6 +247,7 @@ static void eq_pf_process(struct mlx5_eq *eq)
 		pfault->bytes_committed = be32_to_cpu(pf_eqe->bytes_committed);
 		pfault->wqe.common = NULL;
 
+		pfault->start = jiffies;
 		mlx5_core_dbg(dev,
 			      "PAGE_FAULT: subtype: 0x%02x, bytes_committed: 0x%06x\n",
 			      eqe->sub_type, pfault->bytes_committed);
