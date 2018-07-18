@@ -288,14 +288,18 @@ int mlx5e_attr_get(struct net_device *dev, struct switchdev_attr *attr)
 {
 	struct mlx5e_priv *priv = netdev_priv(dev);
 	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
-	struct mlx5e_rep_priv *uplink_rpriv = mlx5_eswitch_get_uplink_priv(esw,
-						REP_ETH);
-	struct net_device *uplink_dev = uplink_rpriv->netdev;
-	struct mlx5e_priv *uplink_priv = netdev_priv(uplink_dev);
-	struct net_device *uplink_upper = netdev_master_upper_dev_get(uplink_dev);
+ 	struct mlx5e_rep_priv *uplink_rpriv;
+	struct net_device *uplink_dev;
+	struct mlx5e_priv *uplink_priv;
+	struct net_device *uplink_upper;
 
 	if (esw->mode == SRIOV_NONE)
 		return -EOPNOTSUPP;
+
+ 	uplink_rpriv = mlx5_eswitch_get_uplink_priv(esw, REP_ETH);
+	uplink_dev = uplink_rpriv->netdev;
+	uplink_priv = netdev_priv(uplink_dev);
+	uplink_upper = netdev_master_upper_dev_get(uplink_dev);
 
 	switch (attr->id) {
 	case SWITCHDEV_ATTR_ID_PORT_PARENT_ID:
