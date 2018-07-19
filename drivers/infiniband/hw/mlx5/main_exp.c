@@ -1614,7 +1614,7 @@ static size_t tclass_print_tclass(struct tclass_match *match,
 	return snprintf(buf, size, "tclass=%d\n", match->tclass);
 }
 
-static int tclass_check_string_match(const char *str, const char *str2)
+static int check_string_match(const char *str, const char *str2)
 {
 	int str2_len;
 	int str_len;
@@ -1692,7 +1692,7 @@ static int tclass_parse_input(char *str, struct tclass_match *match)
 			const struct tclass_parse_node *node;
 
 			node = &parse_tree[i];
-			if (!tclass_check_string_match(p, node->pattern)) {
+			if (!check_string_match(p, node->pattern)) {
 				ret = parse_tree[i].parse(p +
 							  strlen(node->pattern),
 							  (char *)match +
@@ -2065,6 +2065,244 @@ void cleanup_tc_sysfs(struct mlx5_ib_dev *dev)
 				kobject_put(&tcd->kobj);
 		}
 	}
+}
+
+struct steering_attribute {
+	struct attribute attr;
+	ssize_t (*show)(struct mlx5_steering_data *,
+			struct steering_attribute *, char *buf);
+	ssize_t (*store)(struct mlx5_steering_data *,
+			 struct steering_attribute *,
+			 const char *buf, size_t count);
+};
+
+static ssize_t ingress_log_flow_table_size_show(struct mlx5_steering_data *sd,
+					       struct steering_attribute *unused,
+					       char *buf)
+{
+	struct mlx5_ib_dev *dev = sd->ibdev;
+	size_t count = 0;
+	int i = 0;
+
+	mutex_lock(&dev->flow_db->lock);
+	for (i = 0; i < MLX5_BY_PASS_NUM_REGULAR_PRIOS; i++) {
+		int user_prio = i * 2;
+
+		count += snprintf(buf + count, PAGE_SIZE - count ,
+				  "priority=%d,\t\tlog_flow_table_size=%d \n",
+				  i, sd->ingress_log_ft_size[user_prio]);
+	}
+	count += snprintf(buf + count, PAGE_SIZE - count ,
+			  "priority=multicast,\tlog_flow_table_size=%d \n",
+			  sd->ingress_log_ft_size[MLX5_IB_FLOW_MCAST_PRIO]);
+	mutex_unlock(&dev->flow_db->lock);
+	return count;
+}
+
+static int ingress_parse_input(char *cmd, int *prio, int *size, int *is_multicast)
+{
+	char *p1;
+	char *p2;
+
+	p1 = strsep(&cmd, ",");
+	if (!p1 || check_string_match(p1, "prio=") ||
+	    check_string_match(cmd, "log_flow_table_size="))
+		return -EINVAL;
+
+	p2 = strsep(&p1, "=");
+	if (!p2)
+		return -EINVAL;
+
+	if (!strcmp(p1, "mc"))
+		*is_multicast = true;
+	else {
+		if (kstrtoint(p1, 0, prio))
+		    return -EINVAL;
+		if (*prio < 0 || *prio >= MLX5_BY_PASS_NUM_REGULAR_PRIOS)
+			return -EINVAL;
+		*is_multicast = false;
+	}
+
+	p1 = strsep(&cmd, "=");
+	if (!p1)
+		return -EINVAL;
+	if (kstrtoint(cmd, 0, size))
+		return -EINVAL;
+	if (*size < 0)
+		return -EINVAL;
+
+	return 0;
+}
+
+static int flow_table_already_created(struct mlx5_ib_dev *dev,
+				      int kernel_prio)
+{
+	if (dev->flow_db->prios[kernel_prio].flow_table)
+		return true;
+	return false;
+}
+
+static int set_mc_size(struct mlx5_steering_data *sd,
+		       int size)
+{
+	struct mlx5_ib_dev *dev = sd->ibdev;
+
+	if (flow_table_already_created(dev, MLX5_IB_FLOW_MCAST_PRIO)) {
+		mlx5_ib_err(dev, "Multicast flow table already created\n");
+		return -EBUSY;
+	}
+	sd->ingress_log_ft_size[MLX5_IB_FLOW_MCAST_PRIO] = size;
+
+	return 0;
+}
+
+static int set_uc_size(struct mlx5_steering_data *sd,
+		       int user_prio, int size)
+{
+	struct mlx5_ib_dev *dev = sd->ibdev;
+	int kernel_prio;
+
+	kernel_prio = 2 * user_prio;
+	if (flow_table_already_created(dev, kernel_prio) ||
+	    flow_table_already_created(dev, kernel_prio + 1)) {
+		mlx5_ib_err(dev, "Flow table in prio %d already created\n",
+			    user_prio);
+		return -EBUSY;
+	}
+	sd->ingress_log_ft_size[kernel_prio] = size;
+	sd->ingress_log_ft_size[kernel_prio + 1] = size;
+
+	return 0;
+}
+
+#define INGRESS_MAX_CMD 100
+static ssize_t ingress_log_flow_table_size_store(struct mlx5_steering_data *sd,
+						 struct steering_attribute *unused,
+						 const char *buf, size_t count)
+{
+	struct mlx5_ib_dev *dev = sd->ibdev;
+	char cmd[INGRESS_MAX_CMD + 1] = {};
+	int user_prio;
+	int is_mc;
+	int size;
+	int err;
+
+	if (count > INGRESS_MAX_CMD)
+		return -EINVAL;
+	memcpy(cmd, buf, count);
+	if (ingress_parse_input(cmd, &user_prio, &size, &is_mc))
+		return -EINVAL;
+
+	if (size > MLX5_CAP_FLOWTABLE_NIC_RX(dev->mdev, log_max_ft_size))
+		return -EOPNOTSUPP;
+
+	mutex_lock(&dev->flow_db->lock);
+	if (is_mc)
+		err = set_mc_size(sd, size);
+	else
+		err = set_uc_size(sd, user_prio, size);
+	mutex_unlock(&dev->flow_db->lock);
+
+	return err ? err : count;
+}
+
+#define STEERING_ATTR(_name, _mode, _show, _store) \
+	struct steering_attribute steering_attr_##_name = __ATTR(_name, _mode, _show, _store)
+
+static STEERING_ATTR(ingress_log_flow_table_size, 0644,
+		     ingress_log_flow_table_size_show,
+		     ingress_log_flow_table_size_store);
+
+static struct attribute *steering_attrs[] = {
+	&steering_attr_ingress_log_flow_table_size.attr,
+	NULL
+};
+
+static ssize_t steering_attr_show(struct kobject *kobj,
+				  struct attribute *attr, char *buf)
+{
+	struct steering_attribute *steering_attr =
+		container_of(attr, struct steering_attribute, attr);
+	struct mlx5_steering_data *d = container_of(kobj,
+						    struct mlx5_steering_data,
+						    kobj);
+
+	if (!steering_attr->show)
+		return -EIO;
+
+	return steering_attr->show(d, steering_attr, buf);
+}
+
+static ssize_t steering_attr_store(struct kobject *kobj,
+				   struct attribute *attr, const char *buf,
+				   size_t count)
+{
+	struct steering_attribute *steering_attr =
+		container_of(attr, struct steering_attribute, attr);
+	struct mlx5_steering_data *d = container_of(kobj,
+						    struct mlx5_steering_data,
+						    kobj);
+
+	if (!steering_attr->store)
+		return -EIO;
+
+	return steering_attr->store(d, steering_attr, buf, count);
+}
+
+static const struct sysfs_ops steering_sysfs_ops = {
+	.show = steering_attr_show,
+	.store = steering_attr_store
+};
+
+static struct kobj_type steering_type = {
+	.sysfs_ops     = &steering_sysfs_ops,
+	.default_attrs = steering_attrs
+};
+
+void cleanup_steering_sysfs(struct mlx5_ib_dev *dev)
+{
+	if (dev->steering_kobj) {
+		int port;
+
+		for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
+			struct mlx5_steering_data *data =
+				&dev->steering_data[port - 1];
+
+			if (data->initialized)
+				kobject_put(&data->kobj);
+		}
+		kobject_put(dev->steering_kobj);
+		dev->steering_kobj = NULL;
+	}
+}
+
+int init_steering_sysfs(struct mlx5_ib_dev *dev)
+{
+	struct device *device = &dev->ib_dev.dev;
+	int port;
+	int err;
+	int ft;
+
+	dev->steering_kobj = kobject_create_and_add("steering", &device->kobj);
+	if (!dev->steering_kobj)
+		return -ENOMEM;
+
+	for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
+		struct mlx5_steering_data *data = &dev->steering_data[port - 1];
+
+		err = kobject_init_and_add(&data->kobj, &steering_type,
+					   dev->steering_kobj, "%d", port);
+		if (err)
+			goto err;
+		data->ibdev = dev;
+		data->initialized = true;
+		for (ft = 0; ft < MLX5_BY_PASS_NUM_PRIOS; ft++)
+			data->ingress_log_ft_size[ft] = MLX5_FS_LOG_MAX_ENTRIES;
+	}
+	return 0;
+err:
+	cleanup_steering_sysfs(dev);
+	return err;
 }
 
 struct ttl_attribute {

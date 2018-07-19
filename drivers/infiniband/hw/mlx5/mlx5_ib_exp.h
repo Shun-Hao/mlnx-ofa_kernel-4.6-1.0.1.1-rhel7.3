@@ -163,6 +163,16 @@ struct mlx5_tc_data {
 	struct mlx5_ib_dev *ibdev;
 };
 
+#define MLX5_FS_MAX_TYPES	 6
+#define MLX5_FS_LOG_MAX_ENTRIES	 16
+
+struct mlx5_steering_data {
+	unsigned int ingress_log_ft_size[MLX5_BY_PASS_NUM_PRIOS];
+	struct kobject kobj;
+	struct mlx5_ib_dev *ibdev;
+	int initialized;
+};
+
 void tclass_get_tclass(struct mlx5_ib_dev *dev,
 		       struct mlx5_tc_data *tcd,
 		       const struct rdma_ah_attr *ah,
@@ -206,6 +216,9 @@ static inline struct mlx5_ib_dc_target *to_mdct(struct ib_dct *ibdct)
 {
 	return container_of(ibdct, struct mlx5_ib_dc_target, ibdct);
 }
+
+int init_steering_sysfs(struct mlx5_ib_dev *dev);
+void cleanup_steering_sysfs(struct mlx5_ib_dev *dev);
 int init_tc_sysfs(struct mlx5_ib_dev *dev);
 void cleanup_tc_sysfs(struct mlx5_ib_dev *dev);
 int init_ttl_sysfs(struct mlx5_ib_dev *dev);

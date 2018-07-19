@@ -3127,7 +3127,6 @@ enum flow_table_type {
 
 #define MLX5_FS_MAX_TYPES	 6
 #define MLX5_FS_MAX_ENTRIES	 BIT(16)
-
 static struct mlx5_ib_flow_prio *_get_prio(struct mlx5_flow_namespace *ns,
 					   struct mlx5_ib_flow_prio *prio,
 					   int priority,
@@ -3176,6 +3175,7 @@ static struct mlx5_ib_flow_prio *get_flow_table(struct mlx5_ib_dev *dev,
 		if (ft_type == MLX5_IB_FT_RX) {
 			fn_type = MLX5_FLOW_NAMESPACE_BYPASS;
 			prio = &dev->flow_db->prios[priority];
+			num_entries = 1 << dev->steering_data->ingress_log_ft_size[priority];
 			if (!dev->rep &&
 			    MLX5_CAP_FLOWTABLE_NIC_RX(dev->mdev, decap))
 				flags |= MLX5_FLOW_TABLE_TUNNEL_EN_DECAP;
@@ -3187,6 +3187,7 @@ static struct mlx5_ib_flow_prio *get_flow_table(struct mlx5_ib_dev *dev,
 			max_table_size =
 				BIT(MLX5_CAP_FLOWTABLE_NIC_TX(dev->mdev,
 							      log_max_ft_size));
+			num_entries = MLX5_FS_MAX_ENTRIES;
 			fn_type = MLX5_FLOW_NAMESPACE_EGRESS;
 			prio = &dev->flow_db->egress_prios[priority];
 			if (!dev->rep &&
@@ -3194,7 +3195,6 @@ static struct mlx5_ib_flow_prio *get_flow_table(struct mlx5_ib_dev *dev,
 				flags |= MLX5_FLOW_TABLE_TUNNEL_EN_REFORMAT;
 		}
 		ns = mlx5_get_flow_namespace(dev->mdev, fn_type);
-		num_entries = MLX5_FS_MAX_ENTRIES;
 		num_groups = MLX5_FS_MAX_TYPES;
 	} else if (flow_attr->type == IB_FLOW_ATTR_ALL_DEFAULT ||
 		   flow_attr->type == IB_FLOW_ATTR_MC_DEFAULT) {
@@ -6395,6 +6395,23 @@ static void mlx5_ib_stage_rep_reg_cleanup(struct mlx5_ib_dev *dev)
 	mlx5_ib_unregister_vport_reps(dev);
 }
 
+int mlx5_ib_stage_steering_sysfs_init(struct mlx5_ib_dev *dev)
+{
+	int err;
+	err = init_steering_sysfs(dev);
+	if (err) {
+		mlx5_ib_err(dev, "Fail to init steering sysfs\n");
+		return err;
+	}
+
+	return 0;
+}
+
+void mlx5_ib_stage_steering_sysfs_cleanup(struct mlx5_ib_dev *dev)
+{
+	cleanup_steering_sysfs(dev);
+}
+
 int mlx5_ib_stage_tc_sysfs_init(struct mlx5_ib_dev *dev)
 {
 	int err;
@@ -6610,6 +6627,9 @@ static const struct mlx5_ib_profile pf_profile = {
 	STAGE_CREATE(MLX5_IB_STAGE_TTL_SYSFS,
 		     mlx5_ib_stage_ttl_sysfs_init,
 		     mlx5_ib_stage_ttl_sysfs_cleanup), 
+	STAGE_CREATE(MLX5_IB_STAGE_STEERING_SYSFS,
+		     mlx5_ib_stage_steering_sysfs_init,
+		     mlx5_ib_stage_steering_sysfs_cleanup),
 };
 
 static const struct mlx5_ib_profile nic_rep_profile = {
@@ -6664,6 +6684,9 @@ static const struct mlx5_ib_profile nic_rep_profile = {
 	STAGE_CREATE(MLX5_IB_STAGE_TTL_SYSFS,
 		     mlx5_ib_stage_ttl_sysfs_init,
 		     mlx5_ib_stage_ttl_sysfs_cleanup), 
+	STAGE_CREATE(MLX5_IB_STAGE_STEERING_SYSFS,
+		     mlx5_ib_stage_steering_sysfs_init,
+		     mlx5_ib_stage_steering_sysfs_cleanup),
 };
 
 static void *mlx5_ib_add_slave_port(struct mlx5_core_dev *mdev)

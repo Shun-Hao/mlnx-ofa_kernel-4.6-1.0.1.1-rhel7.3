@@ -837,6 +837,7 @@ enum mlx5_ib_stages {
 	MLX5_IB_STAGE_REP_REG,
 	MLX5_IB_STAGE_OOO_DEBUGFS,
 	MLX5_IB_STAGE_TTL_SYSFS,
+	MLX5_IB_STAGE_STEERING_SYSFS,
 	MLX5_IB_STAGE_MAX,
 };
 
@@ -982,9 +983,11 @@ struct mlx5_ib_dev {
 	struct mlx5_dc_data	*dcd[MLX5_MAX_PORTS];
 	struct mlx5_tc_data	tcd[MLX5_MAX_PORTS];
 	struct mlx5_ttl_data	ttld[MLX5_MAX_PORTS];
+	struct mlx5_steering_data steering_data[MLX5_MAX_PORTS];
 	struct kobject		*dc_kobj;
 	struct kobject		*tc_kobj;
 	struct kobject		*ttl_kobj;
+	struct kobject		*steering_kobj;
 	/* Array with num_ports elements */
 	struct mlx5_ib_port	*port;
 	struct mlx5_sq_bfreg	bfreg;
