@@ -4637,7 +4637,7 @@ static u8 wq_sig(void *wqe)
 }
 
 static int set_data_inl_seg(struct mlx5_ib_qp *qp, const struct ib_send_wr *wr,
-			    void **wqe, int *sz, void **cur_edge)
+			    void **wqe, int *wqe_sz, void **cur_edge)
 {
 	struct mlx5_wqe_inline_seg *seg;
 	size_t offset;
@@ -4668,15 +4668,15 @@ static int set_data_inl_seg(struct mlx5_ib_qp *qp, const struct ib_send_wr *wr,
 			*wqe += copysz;
 			offset += copysz;
 			handle_post_send_edge(&qp->sq, wqe,
-					      *sz + (offset >> 4), cur_edge);
+					      *wqe_sz + (offset >> 4), cur_edge);
 		}
 	}
 
 	seg->byte_count = cpu_to_be32(inl | MLX5_INLINE_SEG);
 
-	*sz =  DIV_ROUND_UP(inl + sizeof(seg->byte_count), 16);
+	*wqe_sz +=  DIV_ROUND_UP(inl + sizeof(seg->byte_count), 16);
 	*wqe = PTR_ALIGN(*wqe, 16);
-	handle_post_send_edge(&qp->sq, wqe, *sz, cur_edge);
+	handle_post_send_edge(&qp->sq, wqe, *wqe_sz, cur_edge);
 
 	return 0;
 }
@@ -5356,6 +5356,7 @@ static int _mlx5_ib_post_send(struct ib_qp *ibqp, const struct ib_send_wr *wr,
 			set_datagram_seg(seg, wr);
 			seg += sizeof(struct mlx5_wqe_datagram_seg);
 			size += sizeof(struct mlx5_wqe_datagram_seg) / 16;
+			handle_post_send_edge(&qp->sq, &seg, size, &cur_edge);
 
 			/* handle qp that supports ud offload */
 			if (qp->flags & IB_QP_CREATE_IPOIB_UD_LSO) {
@@ -5394,15 +5395,12 @@ static int _mlx5_ib_post_send(struct ib_qp *ibqp, const struct ib_send_wr *wr,
 		}
 
 		if (wr->send_flags & IB_SEND_INLINE && num_sge) {
-			int uninitialized_var(sz);
-
-			err = set_data_inl_seg(qp, wr, &seg, &sz, &cur_edge);
+			err = set_data_inl_seg(qp, wr, &seg, &size, &cur_edge);
 			if (unlikely(err)) {
 				mlx5_ib_warn(dev, "\n");
 				*bad_wr = wr;
 				goto out;
 			}
-			size += sz;
 		} else {
 			for (i = 0; i < num_sge; i++) {
 				if (likely(wr->sg_list[i].length)) {
