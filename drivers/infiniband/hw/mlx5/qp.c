@@ -5394,6 +5394,8 @@ static int _mlx5_ib_post_send(struct ib_qp *ibqp, const struct ib_send_wr *wr,
 			break;
 		}
 
+		handle_post_send_edge(&qp->sq, &seg, size, &cur_edge);
+
 		if (wr->send_flags & IB_SEND_INLINE && num_sge) {
 			err = set_data_inl_seg(qp, wr, &seg, &size, &cur_edge);
 			if (unlikely(err)) {
