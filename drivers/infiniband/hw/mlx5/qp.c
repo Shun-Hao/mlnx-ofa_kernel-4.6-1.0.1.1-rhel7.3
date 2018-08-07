@@ -3834,6 +3834,7 @@ static int __mlx5_ib_modify_qp(struct ib_qp *ibqp,
 		qp->sq.head = 0;
 		qp->sq.tail = 0;
 		qp->sq.cur_post = 0;
+		qp->sq.cur_edge = get_sq_edge(&qp->sq, 0);
 		qp->sq.last_poll = 0;
 		if (qp->db.db) {
 			qp->db.db[MLX5_RCV_DBR] = 0;
