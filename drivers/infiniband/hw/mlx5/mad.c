@@ -576,6 +576,9 @@ int mlx5_query_mad_ifc_port(struct ib_device *ibdev, u8 port,
 			if (out_mad->data[62] >> 4 == 4)
 				props->active_speed = IB_SPEED_HDR;
 		}
+
+		if (props->port_cap_flags2 & IB_PORT_LINK_WIDTH_2X_SUP)
+			props->active_width = out_mad->data[31] & 0x1f;
 	}
 
 	/* Check if extended speeds (EDR/FDR/...) are supported */
