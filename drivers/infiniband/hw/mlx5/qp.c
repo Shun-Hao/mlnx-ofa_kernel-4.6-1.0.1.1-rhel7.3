@@ -5024,6 +5024,9 @@ static int set_reg_wr(struct mlx5_ib_qp *qp,
 	if (umr_inline) {
 		memcpy_send_wqe(&qp->sq, cur_edge, seg, size, mr->descs,
 				mr_list_size);
+		/* UMR XLT alignment equal to MLX5_SEND_WQE_BB */
+		*seg = PTR_ALIGN(*seg, MLX5_SEND_WQE_BB);
+		*size = ALIGN(*size, MLX5_SEND_WQE_BB >> 4);
 	} else {
 		set_reg_data_seg(*seg, mr, pd);
 		*seg += sizeof(struct mlx5_wqe_data_seg);
