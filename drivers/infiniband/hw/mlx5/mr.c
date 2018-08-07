@@ -1272,23 +1272,6 @@ struct ib_mr *mlx5_ib_reg_dm_mr(struct ib_pd *pd, struct ib_dm *dm,
 				    attr->access_flags);
 }
 
-struct ib_mr *mlx5_ib_get_dm_mr(struct ib_pd *pd,
-		struct ib_mr_init_attr *attr)
-{
-	struct ib_mr *mr;
-
-	/* Registration of dm buffer is not allowed with certain
-	 * access flags.
-	 */
-	if (attr->access_flags & ~MLX5_IB_DM_ALLOWED_ACCESS)
-		return ERR_PTR(-EINVAL);
-
-	mr = mlx5_ib_get_memic_mr(pd, attr->dm->dev_addr + attr->start,
-				attr->length, attr->access_flags);
-
-	return mr;
-}
-
 struct ib_mr *mlx5_ib_reg_user_mr(struct ib_pd *pd,
 				  struct ib_mr_init_attr *attr,
 				  struct ib_udata *udata)
@@ -1303,6 +1286,7 @@ struct ib_mr *mlx5_ib_reg_user_mr(struct ib_pd *pd,
 	int order;
 	int err;
 	struct ib_peer_memory_client *ib_peer_mem;
+	struct ib_dm_mr_attr dm_mr_attr = {0};
 	struct mlx5_ib_peer_id *mlx5_ib_peer_id = NULL;
 	int access_flags = attr->access_flags;
 	u64 length = attr->length;
@@ -1314,6 +1298,17 @@ struct ib_mr *mlx5_ib_reg_user_mr(struct ib_pd *pd,
 
 	if (access_flags & IB_EXP_ACCESS_PHYSICAL_ADDR)
 		return mlx5_ib_phys_addr(pd, length, virt_addr, access_flags);
+
+	if (attr->mr_type == IB_MR_TYPE_DM) {
+		if (!attr->dm)
+			return ERR_PTR(-EINVAL);
+
+		dm_mr_attr.length = length;
+		dm_mr_attr.offset = start;
+		dm_mr_attr.access_flags = access_flags;
+
+		return mlx5_ib_reg_dm_mr(pd, attr->dm, &dm_mr_attr, NULL);
+	}
 
 	mlx5_ib_dbg(dev, "start 0x%llx, virt_addr 0x%llx, length 0x%llx, access_flags 0x%x\n",
 		    start, virt_addr, length, access_flags);

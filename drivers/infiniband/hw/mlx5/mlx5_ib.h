@@ -582,7 +582,8 @@ enum mlx5_ib_mtt_access_flags {
 struct mlx5_ib_dm {
 	struct ib_dm		ibdm;
 	phys_addr_t		dev_addr;
-	void *dm_base_addr;
+	void		       *dm_base_addr;
+	u64			size;
 };
 
 #define MLX5_IB_MTT_PRESENT (MLX5_IB_MTT_READ | MLX5_IB_MTT_WRITE)
@@ -1242,8 +1243,6 @@ int mlx5_ib_dealloc_dm(struct ib_dm *ibdm);
 struct ib_mr *mlx5_ib_reg_dm_mr(struct ib_pd *pd, struct ib_dm *dm,
 				struct ib_dm_mr_attr *attr,
 				struct uverbs_attr_bundle *attrs);
-struct ib_mr *mlx5_ib_get_dm_mr(struct ib_pd *pd,
-		struct ib_mr_init_attr *attr);
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 void mlx5_ib_internal_fill_odp_caps(struct mlx5_ib_dev *dev);

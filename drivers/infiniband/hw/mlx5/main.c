@@ -2338,6 +2338,9 @@ int mlx5_ib_dealloc_dm(struct ib_dm *ibdm)
 	u32 page_idx;
 	int ret;
 
+	if (dm->dm_base_addr)
+		iounmap(dm->dm_base_addr);
+
 	ret = mlx5_cmd_dealloc_memic(memic, dm->dev_addr, act_size);
 	if (ret)
 		return ret;
@@ -6078,9 +6081,6 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 		dev->ib_dev.alloc_dm = mlx5_ib_alloc_dm;
 		dev->ib_dev.dealloc_dm = mlx5_ib_dealloc_dm;
 		dev->ib_dev.reg_dm_mr = mlx5_ib_reg_dm_mr;
-	}
-
-	if (MLX5_CAP_DEVICE_MEM(mdev, memic)) {
 		dev->ib_dev.exp_alloc_dm = mlx5_ib_exp_alloc_dm;
 		dev->ib_dev.exp_free_dm = mlx5_ib_exp_free_dm;
 		dev->ib_dev.exp_memcpy_dm = mlx5_ib_exp_memcpy_dm;

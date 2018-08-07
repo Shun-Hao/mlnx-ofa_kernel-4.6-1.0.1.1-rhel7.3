@@ -749,10 +749,6 @@ struct mlx5_priv {
 	spinlock_t		mkey_lock;
 	u8			mkey_key;
 
-	/* memic page allocation bitmap */
-	spinlock_t		memic_lock;
-	DECLARE_BITMAP(memic_alloc_pages, MLX5_MAX_MEMIC_PAGES);
-
 	struct list_head        dev_list;
 	struct list_head        ctx_list;
 	spinlock_t              ctx_lock;
@@ -1231,9 +1227,6 @@ int mlx5_core_create_mkey_cb(struct mlx5_core_dev *dev,
 			     u32 *in, int inlen,
 			     u32 *out, int outlen,
 			     mlx5_cmd_cbk_t callback, void *context);
-int mlx5_core_alloc_memic(struct mlx5_core_dev *dev, phys_addr_t *address,
-			  u64 length);
-int mlx5_core_dealloc_memic(struct mlx5_core_dev *dev, u64 addr, u64 length);
 int mlx5_core_create_mkey(struct mlx5_core_dev *dev,
 			  struct mlx5_core_mkey *mkey,
 			  u32 *in, int inlen);

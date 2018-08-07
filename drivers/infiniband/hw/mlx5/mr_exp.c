@@ -36,11 +36,17 @@
 
 struct ib_mr *mlx5_ib_exp_alloc_mr(struct ib_pd *pd, struct ib_mr_init_attr *attr)
 {
+	struct ib_dm_mr_attr dm_mr_attr = {0};
 
-	if (attr->dm)
-		return mlx5_ib_get_dm_mr(pd, attr);
-	else
+	if ((attr->mr_type == IB_MR_TYPE_DM) && attr->dm) {
+		dm_mr_attr.length = attr->length;
+		dm_mr_attr.offset = attr->start;
+		dm_mr_attr.access_flags = attr->access_flags;
+
+		return mlx5_ib_reg_dm_mr(pd, attr->dm, &dm_mr_attr, NULL);
+	} else {
 		return mlx5_ib_alloc_mr(pd, attr->mr_type, attr->max_num_sg);
+	}
 }
 
 static int get_arg(unsigned long offset)

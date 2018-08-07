@@ -2495,9 +2495,10 @@ struct ib_dm *mlx5_ib_exp_alloc_dm(struct ib_device *ibdev,
 				   u64 length, u64 uaddr,
 				   struct ib_udata *uhw)
 {
-	u32 map_size = DIV_ROUND_UP(length, PAGE_SIZE) * PAGE_SIZE;
+	struct mlx5_memic *memic = &to_mdev(ibdev)->memic;
+	u64 act_size = roundup(length, MLX5_MEMIC_BASE_SIZE);
+	u64 map_size = roundup(act_size, PAGE_SIZE);
 	phys_addr_t memic_addr, memic_pfn;
-	u64 act_size = roundup(length, 64);
 	struct vm_area_struct *vma;
 	struct mlx5_ib_dm *dm;
 	pgprot_t prot;
@@ -2507,8 +2508,7 @@ struct ib_dm *mlx5_ib_exp_alloc_dm(struct ib_device *ibdev,
 	if (!dm)
 		return ERR_PTR(-ENOMEM);
 
-	if (mlx5_core_alloc_memic(to_mdev(ibdev)->mdev, &memic_addr,
-				  act_size)) {
+	if (mlx5_cmd_alloc_memic(memic, &memic_addr, act_size, 0)) {
 		ret = -EFAULT;
 		goto err_free;
 	}
@@ -2545,7 +2545,7 @@ struct ib_dm *mlx5_ib_exp_alloc_dm(struct ib_device *ibdev,
 		}
 	}
 
-	dm->ibdm.dev_addr = memic_addr;
+	dm->dev_addr = dm->ibdm.dev_addr = memic_addr;
 
 	return &dm->ibdm;
 
@@ -2553,7 +2553,7 @@ err_vma:
 	up_read(&current->mm->mmap_sem);
 
 err_map:
-	mlx5_core_dealloc_memic(to_mdev(ibdev)->mdev, memic_addr, act_size);
+	mlx5_cmd_dealloc_memic(memic, memic_addr, act_size);
 
 err_free:
 	kfree(dm);
@@ -2563,19 +2563,7 @@ err_free:
 
 int mlx5_ib_exp_free_dm(struct ib_dm *ibdm)
 {
-	struct mlx5_ib_dev *dev = to_mdev(ibdm->device);
-	struct mlx5_ib_dm *dm = to_mdm(ibdm);
-	int ret;
-
-	if (dm->dm_base_addr)
-		iounmap(dm->dm_base_addr);
-
-	ret = mlx5_core_dealloc_memic(dev->mdev, ibdm->dev_addr,
-				      roundup(ibdm->length, 64));
-
-	kfree(dm);
-
-	return ret;
+	return mlx5_ib_dealloc_dm(ibdm);
 }
 
 int mlx5_ib_exp_memcpy_dm(struct ib_dm *ibdm,
