@@ -898,7 +898,8 @@ int ib_uverbs_exp_reg_mr(struct ib_uverbs_file *file,
 			goto err_put;
 		}
 
-		if (cmd.start >= dm->length) {
+		if (cmd.start > dm->length ||
+		    cmd.length > dm->length - cmd.start) {
 			ret = -EFAULT;
 			goto err_put;
 		}
