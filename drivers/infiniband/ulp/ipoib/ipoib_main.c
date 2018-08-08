@@ -1100,7 +1100,7 @@ void ipoib_repath_ah(struct work_struct *work)
 	path_from_cache = __path_find(dev, &repath->sgid);
 
 	if (path_from_cache) {
-		lid_from_cache = be16_to_cpu(sa_path_get_dlid(&path_from_cache->pathrec));
+		lid_from_cache = be32_to_cpu(sa_path_get_dlid(&path_from_cache->pathrec));
 		/*check if we have the same path in the path cache:*/
 		if ((lid_from_cache && repath->lid) &&
 		    (repath->lid != lid_from_cache)) {
