@@ -886,6 +886,13 @@ static void nvme_rdma_stop_ctrl(struct nvme_ctrl *nctrl)
 
 	cancel_work_sync(&ctrl->err_work);
 	cancel_delayed_work_sync(&ctrl->reconnect_work);
+
+	if (ctrl->ctrl.queue_count > 1) {
+		nvme_stop_queues(&ctrl->ctrl);
+		nvme_rdma_stop_io_queues(ctrl);
+		blk_mq_tagset_busy_iter(&ctrl->tag_set, nvme_cancel_request,
+					&ctrl->ctrl);
+	}
 }
 
 static void nvme_rdma_free_ctrl(struct nvme_ctrl *nctrl)
@@ -1812,7 +1819,12 @@ static const struct blk_mq_ops nvme_rdma_admin_mq_ops = {
 
 static void nvme_rdma_shutdown_ctrl(struct nvme_rdma_ctrl *ctrl, bool shutdown)
 {
-	nvme_rdma_teardown_io_queues(ctrl, shutdown);
+	if (ctrl->ctrl.queue_count > 1) {
+		if (shutdown)
+			nvme_start_queues(&ctrl->ctrl);
+		nvme_rdma_destroy_io_queues(ctrl, shutdown);
+	}
+
 	if (shutdown)
 		nvme_shutdown_ctrl(&ctrl->ctrl);
 	else

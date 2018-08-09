@@ -3157,6 +3157,7 @@ static void nvme_ns_remove(struct nvme_ns *ns)
 	nvme_fault_inject_fini(ns);
 	if (ns->disk && ns->disk->flags & GENHD_FL_UP) {
 		del_gendisk(ns->disk);
+		blk_mq_unquiesce_queue(ns->queue);
 		blk_cleanup_queue(ns->queue);
 		if (blk_get_integrity(ns->disk))
 			blk_integrity_unregister(ns->disk);
