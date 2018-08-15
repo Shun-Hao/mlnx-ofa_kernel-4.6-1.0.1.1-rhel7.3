@@ -34,9 +34,9 @@ Change-Id=I8cc16fa1321ab72b52094886cf833776ff79ebeb; subject=IB/uverbs: Allow So
 Change-Id=I5ca2bafe953c636b0e7b422345e65aae4df5e57f; subject=net/mlx5: Initialize pfault ignore to false; feature=mlx5_ib_bugs; upstream_status=in_progress; general=;
 Change-Id=Ia27e99b06792557b42bfa42cdef120a54c18ea21; subject=IB/mlx5: Fix kernel panic in switchdev mode; feature=odp_mr; upstream_status=in_progress; general=;
 Change-Id=I6013587c8563052a6ee2d479bbba4831daf1308c; subject={net, IB}/mlx5: DC RoCE LAG support; feature=mlx5_dc_roce_lag; upstream_status=NA; general=;
-Change-Id=I4aad6b2295af22181bba14fb78a8c53718a266ae; subject=fixup! IB/mlx5: Adjust hop-limit for R-RoCE; feature=mlx5_ib_bugs; upstream_status=NA; general=;
 Change-Id=I124466aab1bc1f455ac2a3819b4cdf4ab9f3616c; subject=fixup! IB/mlx5: Add TTL global value sysfs; feature=mlx5_set_ttl; upstream_status=NA; general=;
 Change-Id=Iebe034cb5171381fbd5cd8974ba4367e8fc03d7d; subject=Revert "{net, IB}/mlx5: DC RoCE LAG support"; feature=mlx5_dc_roce_lag; upstream_status=NA; general=;
 Change-Id=I7239e83b9c5eef504e82da3070821d0616b8b38c; subject=IB/mlx5: Assign affinity for DCT and DCI in RoCE LAG mode; feature=mlx5_dc_roce_lag; upstream_status=in_progress; general=;
 Change-Id=I7cce69cb1e753d301fce8dabe2e9c054a4fd70dc; subject=IB/mlx5: Create DCT in LAG only when supported; feature=mlx5_dc_roce_lag; upstream_status=in_progress; general=;
 Change-Id=I61807fa5e81631e986cd9dec00bbdafe49d49cf2; subject=RDMA/mlx5: Fix fence type for IB_WR_LOCAL_INV WR; feature=rebase; upstream_status=accepted; general=;
+Change-Id=I012fdf1d0f44f89a943346722f37333bee1a83d3; subject=IB/uverbs: Fix experimental create QP flow; feature=tag_matching; upstream_status=NA; general=;

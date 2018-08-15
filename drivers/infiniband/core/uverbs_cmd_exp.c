@@ -134,7 +134,7 @@ int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
 				srq = uobj_get_obj_read(srq, UVERBS_OBJECT_SRQ,
 							cmd_exp->srq_handle,
 							file);
-				if (!srq || srq->srq_type != IB_SRQT_XRC) {
+				if (!srq || srq->srq_type == IB_SRQT_XRC) {
 					ret = -EINVAL;
 					goto err_put;
 				}
