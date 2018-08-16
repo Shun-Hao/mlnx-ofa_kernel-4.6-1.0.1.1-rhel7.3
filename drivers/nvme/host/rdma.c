@@ -957,17 +957,17 @@ static int nvme_rdma_setup_ctrl(struct nvme_rdma_ctrl *ctrl, bool new)
 
 	ret = nvme_init_identify(&ctrl->ctrl);
 	if (ret)
-		goto stop_admin;
+		goto disable_ctrl;
 
 	if (ctrl->ctrl.icdoff) {
 		dev_err(ctrl->ctrl.device, "icdoff is not supported!\n");
-		goto stop_admin;
+		goto disable_ctrl;
 	}
 
 	if (!(ctrl->ctrl.sgls & (1 << 2))) {
 		dev_err(ctrl->ctrl.device,
 			"Mandatory keyed sgls are not supported!\n");
-		goto stop_admin;
+		goto disable_ctrl;
 	}
 
 	if (ctrl->ctrl.opts->queue_size > ctrl->ctrl.sqsize + 1) {
@@ -989,7 +989,7 @@ static int nvme_rdma_setup_ctrl(struct nvme_rdma_ctrl *ctrl, bool new)
 	if (ctrl->ctrl.queue_count > 1) {
 		ret = nvme_rdma_configure_io_queues(ctrl, new);
 		if (ret)
-			goto stop_admin;
+			goto disable_ctrl;
 	}
 
 	changed = nvme_change_ctrl_state(&ctrl->ctrl, NVME_CTRL_LIVE);
@@ -1006,6 +1006,11 @@ static int nvme_rdma_setup_ctrl(struct nvme_rdma_ctrl *ctrl, bool new)
 destroy_io:
 	if (ctrl->ctrl.queue_count > 1)
 		nvme_rdma_destroy_io_queues(ctrl, new);
+disable_ctrl:
+	if (new)
+		nvme_shutdown_ctrl(&ctrl->ctrl);
+	else
+		nvme_disable_ctrl(&ctrl->ctrl, ctrl->ctrl.cap);
 stop_admin:
 	nvme_rdma_stop_queue(&ctrl->queues[0]);
 destroy_admin:

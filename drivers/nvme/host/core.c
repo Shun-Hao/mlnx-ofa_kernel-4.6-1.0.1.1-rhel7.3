@@ -1767,7 +1767,10 @@ int nvme_disable_ctrl(struct nvme_ctrl *ctrl, u64 cap)
 	if (ctrl->quirks & NVME_QUIRK_DELAY_BEFORE_CHK_RDY)
 		msleep(NVME_QUIRK_DELAY_AMOUNT);
 
-	return nvme_wait_ready(ctrl, cap, false);
+	ret = nvme_wait_ready(ctrl, cap, false);
+	nvme_stop_keep_alive(ctrl);
+
+	return ret;
 }
 EXPORT_SYMBOL_GPL(nvme_disable_ctrl);
 
@@ -1799,7 +1802,14 @@ int nvme_enable_ctrl(struct nvme_ctrl *ctrl, u64 cap)
 	ret = ctrl->ops->reg_write32(ctrl, NVME_REG_CC, ctrl->ctrl_config);
 	if (ret)
 		return ret;
-	return nvme_wait_ready(ctrl, cap, true);
+
+	ret = nvme_wait_ready(ctrl, cap, true);
+	if (ret)
+		return ret;
+
+	nvme_start_keep_alive(ctrl);
+
+	return 0;
 }
 EXPORT_SYMBOL_GPL(nvme_enable_ctrl);
 
@@ -1829,6 +1839,8 @@ int nvme_shutdown_ctrl(struct nvme_ctrl *ctrl)
 			return -ENODEV;
 		}
 	}
+
+	nvme_stop_keep_alive(ctrl);
 
 	return ret;
 }
@@ -3474,7 +3486,6 @@ EXPORT_SYMBOL_GPL(nvme_complete_async_event);
 void nvme_stop_ctrl(struct nvme_ctrl *ctrl)
 {
 	nvme_mpath_stop(ctrl);
-	nvme_stop_keep_alive(ctrl);
 	flush_work(&ctrl->async_event_work);
 	flush_work(&ctrl->scan_work);
 	cancel_work_sync(&ctrl->fw_act_work);
@@ -3485,9 +3496,6 @@ EXPORT_SYMBOL_GPL(nvme_stop_ctrl);
 
 void nvme_start_ctrl(struct nvme_ctrl *ctrl)
 {
-	if (ctrl->kato)
-		nvme_start_keep_alive(ctrl);
-
 	if (ctrl->queue_count > 1) {
 		nvme_queue_scan(ctrl);
 		nvme_enable_aen(ctrl);

@@ -2645,7 +2645,7 @@ nvme_fc_create_association(struct nvme_fc_ctrl *ctrl)
 
 	ret = nvme_init_identify(&ctrl->ctrl);
 	if (ret)
-		goto out_disconnect_admin_queue;
+		goto out_disable_ctrl;
 
 	/* sanity checks */
 
@@ -2653,7 +2653,7 @@ nvme_fc_create_association(struct nvme_fc_ctrl *ctrl)
 	if (ctrl->ctrl.icdoff) {
 		dev_err(ctrl->ctrl.device, "icdoff %d is not supported!\n",
 				ctrl->ctrl.icdoff);
-		goto out_disconnect_admin_queue;
+		goto out_disable_ctrl;
 	}
 
 	/* FC-NVME supports normal SGL Data Block Descriptors */
@@ -2703,6 +2703,8 @@ nvme_fc_create_association(struct nvme_fc_ctrl *ctrl)
 
 out_term_aen_ops:
 	nvme_fc_term_aen_ops(ctrl);
+out_disable_ctrl:
+	nvme_disable_ctrl(&ctrl->ctrl, ctrl->ctrl.cap);
 out_disconnect_admin_queue:
 	/* send a Disconnect(association) LS to fc-nvme target */
 	nvme_fc_xmt_disconnect_assoc(ctrl);
@@ -2771,6 +2773,7 @@ nvme_fc_delete_association(struct nvme_fc_ctrl *ctrl)
 	 * use blk_mq_tagset_busy_itr() and the transport routine to
 	 * terminate the exchanges.
 	 */
+	nvme_stop_keep_alive(&ctrl->ctrl);
 	blk_mq_quiesce_queue(ctrl->ctrl.admin_q);
 	blk_mq_tagset_busy_iter(&ctrl->admin_tag_set,
 				nvme_fc_terminate_exchange, &ctrl->ctrl);
