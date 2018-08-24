@@ -65,9 +65,4 @@ static int uverbs_exp_free_dct(struct ib_uobject *uobject,
 DECLARE_UVERBS_NAMED_OBJECT(UVERBS_OBJECT_DCT,
 			    UVERBS_TYPE_ALLOC_IDR_SZ(sizeof(struct ib_udct_object),
                             uverbs_exp_free_dct));
-/*
- 
-DECLARE_UVERBS_OBJECT(uverbs_object_dm, UVERBS_OBJECT_DM,
-		      &UVERBS_TYPE_ALLOC_IDR(2, uverbs_exp_free_dm));
- */
 
