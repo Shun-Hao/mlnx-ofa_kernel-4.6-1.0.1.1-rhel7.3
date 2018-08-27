@@ -1717,6 +1717,17 @@ static void dereg_mr(struct mlx5_ib_dev *dev, struct mlx5_ib_mr *mr)
 	int npages = mr->npages;
 	struct ib_umem *umem = mr->umem;
 
+#ifdef CONFIG_CXL_LIB
+	if (mlx5_ib_capi_enabled(dev) &&
+	    (mr->access_flags | IB_ACCESS_ON_DEMAND) &&
+	    umem && umem->mm) {
+		if (virt_addr_valid(umem->mm))
+			mmdrop(umem->mm);
+		else
+			mlx5_ib_warn(dev, "invalid mm =%p\n", umem->mm);
+	}
+#endif
+
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	if (umem && umem->is_odp) {
 		struct ib_umem_odp *umem_odp = to_ib_umem_odp(umem);
@@ -1783,12 +1794,6 @@ int mlx5_ib_dereg_mr(struct ib_mr *ibmr)
 	int ret = 0;
 	int allocated_from_cache = mr->allocated_from_cache;
 
-#ifdef CONFIG_CXL_LIB
-	if (mlx5_ib_capi_enabled(dev) && mr->umem && mr->umem->mm) {
-		if (virt_addr_valid(mr->umem->mm))
-			mmdrop(mr->umem->mm);
-	}
-#endif
 	if (atomic_inc_return(&mr->invalidated) > 1) {
 		/* In case there is inflight invalidation call pending for its termination */
 		wait_for_completion(&mr->invalidation_comp);
