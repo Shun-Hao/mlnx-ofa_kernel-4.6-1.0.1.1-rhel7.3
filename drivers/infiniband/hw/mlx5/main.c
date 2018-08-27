@@ -6055,9 +6055,6 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	dev->ib_dev.exp_prefetch_mr	= mlx5_ib_prefetch_mr;
-
-	if (mlx5_ib_capi_enabled(dev))
-		dev->ib_dev.exp_invalidate_range = mlx5_ib_exp_invalidate_range;
 #endif
 	dev->umr_fence = mlx5_get_umr_fence(MLX5_CAP_GEN(mdev, umr_fence));
 

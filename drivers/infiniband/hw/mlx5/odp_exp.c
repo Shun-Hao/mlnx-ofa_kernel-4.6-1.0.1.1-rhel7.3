@@ -90,25 +90,6 @@ int mlx5_ib_prefetch_mr(struct ib_mr *ibmr, u64 start, u64 length, u32 flags)
 
 }
 
-int mlx5_ib_exp_invalidate_range(struct ib_device *device, struct ib_mr *ibmr,
-				 u64 start, u64 length, u32 flags)
-{
-#ifdef CONFIG_CXL_LIB
-	struct mlx5_ib_dev *dev = to_mdev(device);
-	unsigned int duration;
-	int err, index;
-
-	err = mlx5_core_invalidate_range(dev->mdev, &duration);
-	index =	convert_duration_to_hist(duration);
-	dev->inv_hist[index]++;
-
-	return err;
-
-#else
-	return -ENOTSUPP;
-#endif
-}
-
 #define ODP_HIST_PRINT_SZ 1000
 static ssize_t odp_hist_read(struct file *filp, char __user *buf,
 			     size_t count, loff_t *pos)
@@ -122,11 +103,10 @@ static ssize_t odp_hist_read(struct file *filp, char __user *buf,
 		return 0;
 
 	for (i = 0; i < MAX_HIST; i++)
-		len += sprintf(kbuf + len, "int_total[%d]=%10llu, int_wq[%d]=%10llu, cxl[%d]=%10llu, inv_hist[%d]=%10llu\n",
+		len += sprintf(kbuf + len, "int_total[%d]=%10llu, int_wq[%d]=%10llu, cxl[%d]=%10llu\n",
 			       i, dev->pf_int_total_hist[i],
 			       i, dev->pf_int_wq_hist[i],
-			       i, dev->pf_cxl_hist[i],
-			       i, dev->inv_hist[i]);
+			       i, dev->pf_cxl_hist[i]);
 
 	len = min_t(int, len, count);
 	if (copy_to_user(buf, kbuf, len))
@@ -157,7 +137,6 @@ static ssize_t odp_hist_write(struct file *filp, const char __user *buf,
 		dev->pf_int_total_hist[i] = 0;
 		dev->pf_int_wq_hist[i] = 0;
 		dev->pf_cxl_hist[i] = 0;
-		dev->inv_hist[i] = 0;
 	}
 
 	return count;

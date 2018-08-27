@@ -239,8 +239,6 @@ int mlx5_ib_exp_modify_cq(struct ib_cq *cq, struct ib_cq_attr *cq_attr,
 int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			     struct ib_exp_device_attr *props,
 			     struct ib_udata *uhw);
-int mlx5_ib_exp_invalidate_range(struct ib_device *device, struct ib_mr *ibmr,
-				 u64 start, u64 length, u32 flags);
 
 int mlx5_ib_exp_is_scat_cqe_dci(struct mlx5_ib_dev *dev,
 				enum ib_sig_type sig_type,

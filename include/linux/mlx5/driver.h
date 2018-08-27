@@ -1538,7 +1538,4 @@ struct mlx5_diag_dump {
 	u32	module_status;
 	char	dump[0];
 } __packed;
-
-int mlx5_core_invalidate_range(struct mlx5_core_dev *dev,
-			       unsigned int *duration);
 #endif /* MLX5_DRIVER_H */
