@@ -1533,4 +1533,15 @@ static inline bool mlx5_ib_capi_enabled(struct mlx5_ib_dev *dev)
 	return dev->mdev->capi.enabled;
 }
 
+static bool host_support_p9_atomic(void)
+{
+	/* We don't have a way to check it yet. */
+	return true;
+}
+
+static inline bool mlx5_ib_tunnel_atomic_supported(struct mlx5_ib_dev *dev)
+{
+	return MLX5_CAP_GEN(dev->mdev, tunneled_atomic) &&
+	       host_support_p9_atomic();
+}
 #endif /* MLX5_IB_H */

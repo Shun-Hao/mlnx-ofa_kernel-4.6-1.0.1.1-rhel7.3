@@ -4521,7 +4521,9 @@ static int set_reg_umr_segment(struct mlx5_ib_dev *dev,
 	if (!wr->num_sge)
 		umr->flags |= MLX5_UMR_INLINE;
 
-	if (umrwr->access_flags & IB_EXP_ACCESS_TUNNELED_ATOMIC) {
+	if (mlx5_ib_tunnel_atomic_supported(dev) &&
+	    (umrwr->access_flags & IB_EXP_ACCESS_TUNNELED_ATOMIC) &&
+	    (wr->send_flags & (MLX5_IB_SEND_UMR_ENABLE_MR | MLX5_IB_SEND_UMR_DISABLE_MR))) {
 		umr->mkey_mask |= get_umr_tunneled_atomic_mask();
 		umr->mkey_mask |= get_umr_enable_umr_mask();
 		umr->mkey_mask |= get_umr_update_access_mask(0);
@@ -4567,8 +4569,7 @@ static void set_linv_mkey_seg(struct mlx5_mkey_seg *seg)
 	seg->status = MLX5_MKEY_STATUS_FREE;
 }
 
-static void set_reg_mkey_segment(struct mlx5_mkey_seg *seg,
-				 const struct ib_send_wr *wr)
+static void set_reg_mkey_segment(struct mlx5_mkey_seg *seg, const struct ib_send_wr *wr, bool atomic_supported)
 {
 	const struct mlx5_umr_wr *umrwr = umr_wr(wr);
 
@@ -4583,10 +4584,17 @@ static void set_reg_mkey_segment(struct mlx5_mkey_seg *seg,
 	    !umrwr->length)
 		seg->flags_pd |= cpu_to_be32(MLX5_MKEY_LEN64);
 
-	if (umrwr->access_flags & IB_EXP_ACCESS_TUNNELED_ATOMIC) {
-		seg->tunneled_atomic |= MLX5_MKEY_TUNNELED_ATOMIC;
+	if (atomic_supported && (umrwr->access_flags & IB_EXP_ACCESS_TUNNELED_ATOMIC)) {
+		if (wr->send_flags & MLX5_IB_SEND_UMR_ENABLE_MR)
+			seg->tunneled_atomic |= MLX5_MKEY_TUNNELED_ATOMIC;
+		else if (wr->send_flags & MLX5_IB_SEND_UMR_DISABLE_MR)
+			seg->tunneled_atomic &= ~MLX5_MKEY_TUNNELED_ATOMIC;
+		else
+			goto out_tunnel_atomic;
 		seg->flags |= MLX5_PERM_UMR_EN;
 	}
+
+out_tunnel_atomic:
 	seg->start_addr = cpu_to_be64(umrwr->virt_addr);
 	seg->len = cpu_to_be64(umrwr->length);
 	seg->log2_page_size = umrwr->page_shift;
@@ -5388,7 +5396,7 @@ static int _mlx5_ib_post_send(struct ib_qp *ibqp, const struct ib_send_wr *wr,
 			seg += sizeof(struct mlx5_wqe_umr_ctrl_seg);
 			size += sizeof(struct mlx5_wqe_umr_ctrl_seg) / 16;
 			handle_post_send_edge(&qp->sq, &seg, size, &cur_edge);
-			set_reg_mkey_segment(seg, wr);
+			set_reg_mkey_segment(seg, wr, mlx5_ib_tunnel_atomic_supported(dev));
 			seg += sizeof(struct mlx5_mkey_seg);
 			size += sizeof(struct mlx5_mkey_seg) / 16;
 			handle_post_send_edge(&qp->sq, &seg, size, &cur_edge);

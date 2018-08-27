@@ -68,12 +68,6 @@ enum {
 	MLX5_STANDARD_ATOMIC_SIZE = 0x8,
 };
 
-static bool host_support_p9_atomic(void)
-{
-	/* We don't have a way to check it yet. */
-	return true;
-}
-
 void mlx5_ib_config_atomic_responder(struct mlx5_ib_dev *dev,
 				     struct ib_exp_device_attr *props)
 {
@@ -504,8 +498,7 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_MAX_DM_SIZE;
 	}
 
-	if (MLX5_CAP_GEN(dev->mdev, tunneled_atomic) &&
-	    host_support_p9_atomic()) {
+	if (mlx5_ib_tunnel_atomic_supported(dev)) {
 		props->tunneled_atomic_caps |= IB_EXP_TUNNELED_ATOMIC_SUPPORTED;
 		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_TUNNELED_ATOMIC;
 	}

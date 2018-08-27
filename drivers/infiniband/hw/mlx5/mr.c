@@ -1355,7 +1355,7 @@ struct ib_mr *mlx5_ib_reg_user_mr(struct ib_pd *pd,
 	}
 
 	if (access_flags & IB_EXP_ACCESS_TUNNELED_ATOMIC) {
-		if (!MLX5_CAP_GEN(dev->mdev, tunneled_atomic)) {
+		if (!mlx5_ib_tunnel_atomic_supported(dev)) {
 			err = -EINVAL;
 			mlx5_ib_dbg(dev, "Tunneled atomic is not supported");
 			goto error;
@@ -1485,6 +1485,11 @@ static int unreg_umr(struct mlx5_ib_dev *dev, struct mlx5_ib_mr *mr)
 	umrwr.wr.opcode = MLX5_IB_WR_UMR;
 	umrwr.mkey = mr->mmkey.key;
 	mr->free = 1;
+
+	/* Need to explicitly clear the atomic bit in the mkey */
+	if (mlx5_ib_tunnel_atomic_supported(dev) &&
+	    (mr->access_flags & IB_EXP_ACCESS_TUNNELED_ATOMIC))
+		umrwr.access_flags |= IB_EXP_ACCESS_TUNNELED_ATOMIC;
 
 	return mlx5_ib_post_send_wait(dev, &umrwr);
 }
