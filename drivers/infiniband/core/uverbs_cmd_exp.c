@@ -1615,6 +1615,7 @@ int ib_uverbs_exp_alloc_dm(struct ib_uverbs_file *file,
 	dm->device  = ib_dev;
 	dm->length  = cmd.length;
 	dm->uobject = uobj;
+	atomic_set(&dm->usecnt, 0);
 
 	uobj->object = dm;
 

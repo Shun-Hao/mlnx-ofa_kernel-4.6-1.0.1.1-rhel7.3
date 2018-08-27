@@ -40,12 +40,6 @@
 #include "uverbs.h"
 #include "uverbs_exp.h"
 
-static int uverbs_exp_free_dm(struct ib_uobject *uobject,
-			      enum rdma_remove_reason why)
-{
-	return ib_exp_free_dm((struct ib_dm *)uobject->object);
-}
-
 static int uverbs_exp_free_dct(struct ib_uobject *uobject,
 			       enum rdma_remove_reason why)
 {
