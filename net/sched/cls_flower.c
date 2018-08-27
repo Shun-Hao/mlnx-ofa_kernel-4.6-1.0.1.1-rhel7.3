@@ -62,6 +62,13 @@
 	nla_parse_nested(tb, act, tca, policy)
 #endif
 
+#define FL_KEY_MEMBER_OFFSET(member) offsetof(struct fl_flow_key, member)
+#define FL_KEY_MEMBER_SIZE(member) (sizeof(((struct fl_flow_key *)0)->member))
+
+#define FL_KEY_IS_MASKED(mask, member)					\
+	memchr_inv(((char *)mask) + FL_KEY_MEMBER_OFFSET(member),	\
+		   0, FL_KEY_MEMBER_SIZE(member))			\
+
 struct fl_flow_key {
 	int	indev_ifindex;
 	struct flow_dissector_key_control control;
@@ -200,6 +207,11 @@ static int fl_classify(struct sk_buff *skb, const struct tcf_proto *tp,
 
 	// commented out by Paul.
 	if (!atomic_read(&head->ht.nelems))
+		return -1;
+
+	if ((skb->protocol == htons(ETH_P_8021Q) ||
+	     skb_vlan_tag_present(skb)) &&
+	    !FL_KEY_IS_MASKED(&head->mask.key, vlan))
 		return -1;
 
 	fl_clear_masked_range(&skb_key, &head->mask);
@@ -802,13 +814,6 @@ static int fl_init_hashtable(struct cls_fl_head *head,
 
 	return rhashtable_init(&head->ht, &head->ht_params);
 }
-
-#define FL_KEY_MEMBER_OFFSET(member) offsetof(struct fl_flow_key, member)
-#define FL_KEY_MEMBER_SIZE(member) (sizeof(((struct fl_flow_key *) 0)->member))
-
-#define FL_KEY_IS_MASKED(mask, member)						\
-	memchr_inv(((char *)mask) + FL_KEY_MEMBER_OFFSET(member),		\
-		   0, FL_KEY_MEMBER_SIZE(member))				\
 
 #define FL_KEY_SET(keys, cnt, id, member)					\
 	do {									\
