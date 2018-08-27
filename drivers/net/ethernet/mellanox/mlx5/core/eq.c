@@ -391,7 +391,7 @@ static int init_pf_ctx(struct mlx5_eq_pagefault *pf_ctx, const char *name, bool 
 	INIT_WORK(&pf_ctx->work, eq_pf_action);
 
 	pf_ctx->wq = alloc_workqueue(name,
-				     WQ_HIGHPRI | WQ_CPU_INTENSIVE,
+				     WQ_HIGHPRI | WQ_CPU_INTENSIVE | WQ_UNBOUND,
 				     MLX5_NUM_CMD_EQE);
 
 	if (!pf_ctx->wq)
