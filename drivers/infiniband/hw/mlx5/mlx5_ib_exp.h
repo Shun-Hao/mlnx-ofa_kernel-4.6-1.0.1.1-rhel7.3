@@ -210,6 +210,8 @@ struct mlx5_ib_exp_odp_stats {
 	atomic_t                num_mrs_not_found;
 	/* Number of instances when the page fault encountered an error */
 	atomic_t                num_failed_resolutions;
+	/* Number of instances of timeout waiting for mmu notifier */
+	atomic_t                num_timeout_mmu_notifier;
 };
 
 static inline struct mlx5_ib_dc_target *to_mdct(struct ib_dct *ibdct)

@@ -206,6 +206,12 @@ int mlx5_ib_exp_odp_init_one(struct mlx5_ib_dev *ibdev)
 	if (!dbgfs_entry)
 		goto out_debugfs;
 
+	dbgfs_entry = debugfs_create_atomic_t("num_timeout_mmu_notifier", 0400,
+					      ibdev->odp_stats.odp_debugfs,
+					      &ibdev->odp_stats.num_timeout_mmu_notifier);
+	if (!dbgfs_entry)
+		goto out_debugfs;
+
 	dbgfs_entry = debugfs_create_atomic_t("num_prefetch", 0400,
 					      ibdev->odp_stats.odp_debugfs,
 					      &ibdev->num_prefetch);
