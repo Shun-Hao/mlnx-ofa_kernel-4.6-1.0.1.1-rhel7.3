@@ -3593,6 +3593,9 @@ static void mlx4_en_bond_work(struct work_struct *work)
 	int err = 0;
 	struct mlx4_dev *dev = bond->priv->mdev->dev;
 
+	if (mlx4_is_slave(dev))
+		return;
+
 	if (bond->is_bonded) {
 		if (!mlx4_is_bonded(dev)) {
 			err = mlx4_bond(dev);
