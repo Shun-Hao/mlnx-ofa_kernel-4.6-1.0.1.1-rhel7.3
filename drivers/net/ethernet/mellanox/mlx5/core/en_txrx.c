@@ -83,11 +83,6 @@ int mlx5e_napi_poll(struct napi_struct *napi, int budget)
 
 	busy |= mlx5e_poll_xdpsq_cq(&c->xdpsq.cq);
 
-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-	for (i = 0; i < c->num_special_sq; i++)
-		busy |= mlx5e_poll_tx_cq(&c->special_sq[i].cq, budget);
-#endif
-
 	if (c->xdp)
 		busy |= mlx5e_poll_xdpsq_cq(&c->rq.xdpsq.cq);
 
@@ -115,11 +110,6 @@ int mlx5e_napi_poll(struct napi_struct *napi, int budget)
 		mlx5e_handle_tx_dim(&c->sq[i]);
 		mlx5e_cq_arm(&c->sq[i].cq);
 	}
-
-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-	for (i = 0; i < c->num_special_sq; i++)
-		mlx5e_cq_arm(&c->special_sq[i].cq);
-#endif
 
 	mlx5e_handle_rx_dim(&c->rq);
 

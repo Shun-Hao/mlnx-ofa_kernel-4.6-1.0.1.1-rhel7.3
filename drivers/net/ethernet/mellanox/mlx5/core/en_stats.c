@@ -1262,14 +1262,9 @@ static int mlx5e_grp_channels_get_num_stats(struct mlx5e_priv *priv)
 
 	return (NUM_RQ_STATS * max_nch) +
 	       (NUM_CH_STATS * max_nch) +
-#ifndef CONFIG_MLX5_EN_SPECIAL_SQ
 	       (NUM_SQ_STATS * max_nch * priv->max_opened_tc) +
 	       (NUM_RQ_XDPSQ_STATS * max_nch) +
 	       (NUM_XDPSQ_STATS * max_nch);
-#else
-		(NUM_SQ_STATS * (max_nch * priv->max_opened_tc +
-		priv->channels.params.num_rl_txqs * MLX5E_GET_PFLAG(&(priv)->channels.params, MLX5E_PFLAG_PER_CH_STATS)));
-#endif /*CONFIG_MLX5_EN_SPECIAL_SQ*/
 }
 
 static int mlx5e_grp_channels_fill_strings(struct mlx5e_priv *priv, u8 *data,
@@ -1304,16 +1299,6 @@ static int mlx5e_grp_channels_fill_strings(struct mlx5e_priv *priv, u8 *data,
 			sprintf(data + (idx++) * ETH_GSTRING_LEN,
 				xdpsq_stats_desc[j].format, i);
 
-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-	/* Special TX queue counters */
-	for (i = 0; i < priv->channels.params.num_rl_txqs * MLX5E_GET_PFLAG(&(priv)->channels.params, MLX5E_PFLAG_PER_CH_STATS); i++)
-		for (j = 0; j < NUM_SQ_STATS; j++)
-			sprintf(data + (idx++) * ETH_GSTRING_LEN,
-				sq_stats_desc[j].format,
-				i + priv->channels.params.num_channels *
-				priv->channels.params.num_tc);
-#endif
-
 	return idx;
 }
 
@@ -1321,7 +1306,6 @@ static int mlx5e_grp_channels_fill_stats(struct mlx5e_priv *priv, u64 *data,
 					 int idx)
 {
 	int max_nch = mlx5e_get_netdev_max_channels(priv->netdev);
-	struct mlx5e_channels *channels = &priv->channels;
 	int i, j, tc;
 
 	for (i = 0; i < max_nch; i++)
@@ -1353,16 +1337,6 @@ static int mlx5e_grp_channels_fill_stats(struct mlx5e_priv *priv, u64 *data,
 			data[idx++] =
 				MLX5E_READ_CTR64_CPU(&priv->channel_stats[i].xdpsq,
 						     xdpsq_stats_desc, j);
-
-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-	/* Special TX queue counters */
-	for (i = 0; i < max_nch; i++)
-		for (tc = 0; tc < channels->c[i]->num_special_sq; tc++)
-			for (j = 0; j < NUM_SQ_STATS; j++)
-				data[idx++] = MLX5E_READ_CTR64_CPU(
-						&channels->c[i]->special_sq[tc].stats,
-						sq_stats_desc, j);
-#endif
 	return idx;
 }
 
