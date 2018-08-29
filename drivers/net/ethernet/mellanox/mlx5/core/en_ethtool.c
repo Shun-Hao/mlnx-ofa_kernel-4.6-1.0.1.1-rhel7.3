@@ -321,7 +321,7 @@ void mlx5e_ethtool_get_channels(struct mlx5e_priv *priv,
 	ch->max_combined   = mlx5e_get_netdev_max_channels(priv->netdev);
 	ch->combined_count = priv->channels.params.num_channels;
 #ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-	ch->max_other      = priv->mdev->mlx5e_res.max_rl_queues;
+	ch->max_other      = MLX5E_MAX_RL_QUEUES;
 	ch->other_count    = priv->channels.params.num_rl_txqs;
 #endif
 }
@@ -362,9 +362,9 @@ int mlx5e_ethtool_set_channels(struct mlx5e_priv *priv,
 	}
 
 #ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-	if (ch->other_count > priv->mdev->mlx5e_res.max_rl_queues) {
+	if (ch->other_count > MLX5E_MAX_RL_QUEUES) {
 		netdev_info(priv->netdev, "%s: other_count (%d) > max (%d)\n",
-			    __func__, ch->other_count, priv->mdev->mlx5e_res.max_rl_queues);
+			    __func__, ch->other_count, MLX5E_MAX_RL_QUEUES);
 		return -EINVAL;
 	}
 

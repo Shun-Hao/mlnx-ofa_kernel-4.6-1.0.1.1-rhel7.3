@@ -5336,12 +5336,8 @@ struct net_device *mlx5e_create_netdev(struct mlx5_core_dev *mdev,
 	struct net_device *netdev;
 	int err;
 
-	if (MLX5_CAP_GEN(mdev, qos) &&
-	    MLX5_CAP_QOS(mdev, packet_pacing))
-		mdev->mlx5e_res.max_rl_queues = MLX5E_MAX_RL_QUEUES;
-
 	netdev = alloc_etherdev_mqs(sizeof(struct mlx5e_priv),
-				    nch * profile->max_tc + mdev->mlx5e_res.max_rl_queues,
+				    nch * profile->max_tc + MLX5E_MAX_RL_QUEUES,
 				    nch);
 	if (!netdev) {
 		mlx5_core_err(mdev, "alloc_etherdev_mqs() failed\n");
