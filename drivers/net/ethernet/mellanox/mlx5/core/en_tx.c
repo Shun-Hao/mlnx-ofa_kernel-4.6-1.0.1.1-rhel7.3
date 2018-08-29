@@ -109,76 +109,14 @@ static inline int mlx5e_get_dscp_up(struct mlx5e_priv *priv, struct sk_buff *skb
 }
 #endif
 
-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-static u16 mlx5e_select_queue_assigned(struct mlx5e_priv *priv,
-				       struct sk_buff *skb)
-{
-	struct mlx5e_sq_flow_map *flow_map;
-	int sk_ix = sk_tx_queue_get(skb->sk);
-	u32 key_all, key_dip, key_dport;
-	u16 dport;
-	u32 dip;
-
-	if (sk_ix >= priv->channels.params.num_channels)
-		return sk_ix;
-
-	if (vlan_get_protocol(skb) == htons(ETH_P_IP)) {
-		dip = ip_hdr(skb)->daddr;
-		if (ip_hdr(skb)->protocol == IPPROTO_UDP ||
-		    ip_hdr(skb)->protocol == IPPROTO_TCP)
-			dport = udp_hdr(skb)->dest;
-		else
-			goto fallback;
-	} else {
-		goto fallback;
-	}
-
-	key_all = dip ^ dport;
-	hash_for_each_possible_rcu(priv->flow_map_hash, flow_map,
-				   hlist, key_all)
-		if (flow_map->dst_ip == dip && flow_map->dst_port == dport)
-			return flow_map->queue_index;
-
-	key_dip = dip;
-	hash_for_each_possible_rcu(priv->flow_map_hash, flow_map,
-				   hlist, key_dip)
-		if (flow_map->dst_ip == dip)
-			return flow_map->queue_index;
-
-	key_dport = dport;
-	hash_for_each_possible_rcu(priv->flow_map_hash, flow_map,
-				   hlist, key_dport)
-		if (flow_map->dst_port == dport)
-			return flow_map->queue_index;
-
-fallback:
-	return 0;
-}
-#endif
-
 u16 mlx5e_select_queue(struct net_device *dev, struct sk_buff *skb,
 		       struct net_device *sb_dev,
 		       select_queue_fallback_t fallback)
 {
 	struct mlx5e_priv *priv = netdev_priv(dev);
-	int channel_ix;
+	int channel_ix = fallback(dev, skb, NULL);
 	u16 num_channels;
-	int up;
-
-
-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-	if (priv->channels.params.num_rl_txqs) {
-		u16 ix = mlx5e_select_queue_assigned(priv, skb);
-
-		if (ix) {
-			sk_tx_queue_set(skb->sk, ix);
-			return ix;
-		}
-	}
-#endif
-
-	channel_ix = fallback(dev, skb, NULL);
-	up = 0;
+	int up = 0;
 
 	if (!netdev_get_num_tc(dev))
 		return channel_ix;

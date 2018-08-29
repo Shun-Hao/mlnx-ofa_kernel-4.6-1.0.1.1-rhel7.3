@@ -2540,28 +2540,6 @@ static void mlx5e_build_channel_param(struct mlx5e_priv *priv,
 	mlx5e_build_ico_cq_param(priv, icosq_log_wq_sz, &cparam->icosq_cq);
 }
 
-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-static int mlx5e_rl_init(struct mlx5e_priv *priv,
-			 struct mlx5e_params params)
-{
-	int err;
-
-	err = mlx5e_rl_init_sysfs(priv->netdev, params);
-	if (!err) {
-		WARN_ON(!hash_empty(priv->flow_map_hash));
-		hash_init(priv->flow_map_hash);
-	}
-
-	return err;
-}
-
-static void mlx5e_rl_cleanup(struct mlx5e_priv *priv)
-{
-	mlx5e_rl_remove_sysfs(priv);
-	hash_init(priv->flow_map_hash);
-}
-#endif
-
 int mlx5e_open_channels(struct mlx5e_priv *priv,
 			struct mlx5e_channels *chs)
 {
@@ -3148,19 +3126,10 @@ void mlx5e_activate_priv_channels(struct mlx5e_priv *priv)
 	mlx5e_redirect_rqts_to_channels(priv, &priv->channels);
 
 
-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-	if (mlx5e_rl_init(priv, priv->channels.params)) {
-		mlx5e_rl_cleanup(priv);
-		mlx5_core_err(priv->mdev, "failed to init rate limit\n");
-	}
-#endif
 }
 
 void mlx5e_deactivate_priv_channels(struct mlx5e_priv *priv)
 {
-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-	mlx5e_rl_cleanup(priv);
-#endif
 	mlx5e_redirect_rqts_to_drop(priv);
 
 	if (MLX5_ESWITCH_MANAGER(priv->mdev))
