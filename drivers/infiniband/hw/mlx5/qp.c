@@ -1081,6 +1081,7 @@ static int create_kernel_qp(struct mlx5_ib_dev *dev,
 	int err;
 
 	if (init_attr->create_flags & ~(IB_QP_CREATE_SIGNATURE_EN |
+					IB_QP_CREATE_SIGNATURE_PIPELINE |
 					IB_QP_CREATE_BLOCK_MULTICAST_LOOPBACK |
 					IB_QP_CREATE_IPOIB_UD_LSO |
 					IB_QP_CREATE_NETIF_QP |
@@ -1150,6 +1151,11 @@ static int create_kernel_qp(struct mlx5_ib_dev *dev,
 	if (init_attr->create_flags & mlx5_ib_create_qp_sqpn_qp1()) {
 		MLX5_SET(qpc, qpc, deth_sqpn, 1);
 		qp->flags |= MLX5_IB_QP_SQPN_QP1;
+	}
+
+	if (init_attr->create_flags & IB_QP_CREATE_SIGNATURE_PIPELINE) {
+		MLX5_SET(qpc, qpc, drain_sigerr, 1);
+		qp->flags |= MLX5_IB_QP_DRAIN_SIGERR;
 	}
 
 	mlx5_fill_page_frag_array(&qp->buf,
@@ -6022,6 +6028,8 @@ int mlx5_ib_query_qp(struct ib_qp *ibqp, struct ib_qp_attr *qp_attr,
 		qp_init_attr->create_flags |= IB_QP_CREATE_MANAGED_RECV;
 	if (qp->flags & MLX5_IB_QP_SQPN_QP1)
 		qp_init_attr->create_flags |= mlx5_ib_create_qp_sqpn_qp1();
+	if (qp->flags & MLX5_IB_QP_DRAIN_SIGERR)
+		qp_init_attr->create_flags |= IB_QP_CREATE_SIGNATURE_PIPELINE;
 
 	qp_init_attr->sq_sig_type = qp->sq_signal_bits & MLX5_WQE_CTRL_CQ_UPDATE ?
 		IB_SIGNAL_ALL_WR : IB_SIGNAL_REQ_WR;
