@@ -41,6 +41,12 @@
 #include "user_exp.h"
 #include "mlx5_ib_exp.h"
 
+static int __mlx5_ib_modify_qp(struct ib_qp *ibqp,
+			       const struct ib_qp_attr *attr, int attr_mask,
+			       enum ib_qp_state cur_state,
+			       enum ib_qp_state new_state,
+			       const struct mlx5_ib_modify_qp *ucmd);
+
 /* not supported currently */
 static int wq_signature;
 static int get_user_data(struct mlx5_ib_dev *dev, struct ib_pd *pd,
@@ -143,6 +149,11 @@ struct mlx5_modify_raw_qp_param {
 	u8 rq_q_ctr_id;
 };
 
+struct mlx5_ib_sqd {
+	struct mlx5_ib_qp *qp;
+	struct work_struct work;
+};
+
 static void get_cqs(enum ib_qp_type qp_type,
 		    struct ib_cq *ib_send_cq, struct ib_cq *ib_recv_cq,
 		    struct mlx5_ib_cq **send_cq, struct mlx5_ib_cq **recv_cq);
@@ -229,6 +240,100 @@ int mlx5_ib_read_user_wqe(struct mlx5_ib_qp *qp, int send, int wqe_index,
 	return wqe_length;
 }
 
+static int query_wqe_idx(struct mlx5_ib_qp *qp)
+{
+	struct mlx5_ib_dev *dev = to_mdev(qp->ibqp.device);
+	int outlen = MLX5_ST_SZ_BYTES(query_qp_out);
+	struct mlx5_qp_context *context;
+	u32 *outb;
+	int ret;
+
+	mutex_lock(&qp->mutex);
+	outb = kzalloc(outlen, GFP_KERNEL);
+	if (!outb) {
+		ret = -ENOMEM;
+		goto out;
+	}
+	ret = mlx5_core_qp_query(dev->mdev, &qp->trans_qp.base.mqp, outb,
+				 outlen);
+	if (ret)
+		goto out_free;
+
+	context =
+		(struct mlx5_qp_context *)MLX5_ADDR_OF(query_qp_out, outb, qpc);
+	mutex_unlock(&qp->mutex);
+
+	return be16_to_cpu(context->hw_sq_wqe_counter) & (qp->sq.wqe_cnt - 1);
+
+out_free:
+	kfree(outb);
+out:
+	mutex_unlock(&qp->mutex);
+	return ret;
+}
+
+static int mlx5_handle_sig_pipelining(struct mlx5_ib_qp *qp)
+{
+	int wqe_idx, ret = 0;
+
+	wqe_idx = query_wqe_idx(qp);
+	if (wqe_idx < 0) {
+		ret = wqe_idx;
+		pr_err("Failed to query QP 0x%x wqe index\n",
+		       qp->trans_qp.base.mqp.qpn);
+		goto out;
+	}
+
+	if (qp->sq.wr_data[wqe_idx] == MLX5_IB_WR_SIG_PIPED) {
+		struct mlx5_ib_dev *dev = to_mdev(qp->ibqp.device);
+		struct mlx5_wqe_ctrl_seg *cwqe;
+
+		cwqe = mlx5_frag_buf_get_wqe(&qp->sq.fbc, wqe_idx);
+		cwqe->opmod_idx_opcode = cpu_to_be32(
+			(be32_to_cpu(cwqe->opmod_idx_opcode) & 0xffffff00) |
+			MLX5_OPCODE_NOP);
+		qp->sq.wr_data[wqe_idx] = MLX5_IB_WR_SIG_CANCELED;
+		mlx5_ib_dbg(dev, "Cancel QP 0x%x wqe_index 0x%x\n",
+			    qp->trans_qp.base.mqp.qpn, wqe_idx);
+	}
+out:
+	return ret;
+}
+
+static void mlx5_ib_sqd_work(struct work_struct *work)
+{
+	struct mlx5_ib_sqd *sqd;
+	struct mlx5_ib_qp *qp;
+	struct ib_qp_attr qp_attr;
+
+	sqd = container_of(work, struct mlx5_ib_sqd, work);
+	qp = sqd->qp;
+
+	if (mlx5_handle_sig_pipelining(qp))
+		goto out;
+
+	mutex_lock(&qp->mutex);
+	if (__mlx5_ib_modify_qp(&qp->ibqp, &qp_attr, 0, IB_QPS_SQD, IB_QPS_RTS,
+				NULL))
+		pr_err("Failed to resume QP 0x%x\n", qp->trans_qp.base.mqp.qpn);
+	mutex_unlock(&qp->mutex);
+out:
+	kfree(sqd);
+}
+
+static void mlx5_ib_sigerr_sqd_event(struct mlx5_ib_qp *qp)
+{
+	struct mlx5_ib_sqd *sqd;
+
+	sqd = kzalloc(sizeof(*sqd), GFP_ATOMIC);
+	if (!sqd)
+		return;
+
+	sqd->qp = qp;
+	INIT_WORK(&sqd->work, mlx5_ib_sqd_work);
+	queue_work(mlx5_ib_sigerr_sqd_wq, &sqd->work);
+}
+
 /**
  * mlx5_ib_qp_event() - Raise an IB event on dedicated qp.
  *
@@ -243,6 +348,12 @@ static void mlx5_ib_qp_event(struct mlx5_core_qp *qp, int event_info)
 	struct ib_event event;
 	u8 type = event_info & 0xff;
 	u8 error_type = (event_info >> 8) & 0xff;
+
+	if (type == MLX5_EVENT_TYPE_SQ_DRAINED &&
+	    to_mibqp(qp)->state != IB_QPS_SQD) {
+		mlx5_ib_sigerr_sqd_event(to_mibqp(qp));
+		return;
+	}
 
 	if (type == MLX5_EVENT_TYPE_PATH_MIG) {
 		/* This event is only valid for trans_qps */

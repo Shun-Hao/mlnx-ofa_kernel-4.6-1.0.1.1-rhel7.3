@@ -71,6 +71,8 @@
 
 #define MLX5_MKEY_PAGE_SHIFT_MASK __mlx5_mask(mkc, log_page_size)
 
+extern struct workqueue_struct *mlx5_ib_sigerr_sqd_wq;
+
 enum {
 	MLX5_IB_MMAP_CMD_SHIFT	= 8,
 	MLX5_IB_MMAP_CMD_MASK	= 0xff,
@@ -245,6 +247,7 @@ struct mlx5_ib_flow_db {
 #define MLX5_IB_QPT_DCT		IB_QPT_RESERVED4
 #define MLX5_IB_WR_UMR		IB_WR_RESERVED1
 #define MLX5_IB_WR_SIG_PIPED	IB_WR_RESERVED2
+#define MLX5_IB_WR_SIG_CANCELED	IB_WR_RESERVED3
 
 #define MLX5_IB_UMR_OCTOWORD	       16
 #define MLX5_IB_UMR_XLT_ALIGNMENT      64

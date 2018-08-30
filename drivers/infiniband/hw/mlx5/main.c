@@ -107,6 +107,8 @@ static DEFINE_MUTEX(mlx5_ib_multiport_mutex);
 static unsigned long xlt_emergency_page;
 static struct mutex xlt_emergency_page_mutex;
 
+struct workqueue_struct *mlx5_ib_sigerr_sqd_wq;
+
 struct mlx5_ib_dev *mlx5_ib_get_ibdev_from_mpi(struct mlx5_ib_multiport_info *mpi)
 {
 	struct mlx5_ib_dev *dev;
@@ -6944,8 +6946,15 @@ static int __init mlx5_ib_init(void)
 
 	mlx5_ib_event_wq = alloc_ordered_workqueue("mlx5_ib_event_wq", 0);
 	if (!mlx5_ib_event_wq) {
-		free_page(xlt_emergency_page);
-		return -ENOMEM;
+		err = -ENOMEM;
+		goto err_free_xlt_page;
+	}
+
+	mlx5_ib_sigerr_sqd_wq =
+		create_singlethread_workqueue("mlx5_ib_sigerr_sqd_wq");
+	if (!mlx5_ib_sigerr_sqd_wq) {
+		err = -ENOMEM;
+		goto err_destroy_ib_wq;
 	}
 
 	mlx5_ib_odp_init();
@@ -6953,11 +6962,19 @@ static int __init mlx5_ib_init(void)
 	err = mlx5_register_interface(&mlx5_ib_interface);
 
 	return err;
+
+err_destroy_ib_wq:
+	destroy_workqueue(mlx5_ib_event_wq);
+err_free_xlt_page:
+	free_page(xlt_emergency_page);
+
+	return err;
 }
 
 static void __exit mlx5_ib_cleanup(void)
 {
 	mlx5_unregister_interface(&mlx5_ib_interface);
+	destroy_workqueue(mlx5_ib_sigerr_sqd_wq);
 	destroy_workqueue(mlx5_ib_event_wq);
 	mutex_destroy(&xlt_emergency_page_mutex);
 	free_page(xlt_emergency_page);
