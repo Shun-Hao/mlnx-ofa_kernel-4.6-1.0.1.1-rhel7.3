@@ -713,6 +713,9 @@ static int handle_hca_cap(struct mlx5_core_dev *dev)
 	/* disable cmdif checksum */
 	MLX5_SET(cmd_hca_cap, set_hca_cap, cmdif_checksum, 0);
 
+	/* enable drain sigerr */
+	MLX5_SET(cmd_hca_cap, set_hca_cap, drain_sigerr, 1);
+
 	if (prof->mask & MLX5_PROF_MASK_DCT) {
 		if (prof->dct_enable) {
 			if (MLX5_CAP_GEN_MAX(dev, dct)) {

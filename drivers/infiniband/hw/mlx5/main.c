@@ -838,6 +838,9 @@ int mlx5_ib_query_device(struct ib_device *ibdev,
 	if (MLX5_CAP_GEN(mdev, end_pad))
 		props->device_cap_flags |= IB_DEVICE_PCI_WRITE_END_PADDING;
 
+	if (MLX5_CAP_GEN(mdev, drain_sigerr))
+		props->device_cap_flags |= IB_DEVICE_SIGNATURE_PIPELINE;
+
 	props->vendor_part_id	   = mdev->pdev->device;
 	props->hw_ver		   = mdev->pdev->revision;
 
