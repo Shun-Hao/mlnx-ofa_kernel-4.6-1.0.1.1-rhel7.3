@@ -258,6 +258,7 @@ enum ib_device_cap_flags {
 	IB_DEVICE_RDMA_NETDEV_OPA_VNIC		= (1ULL << 35),
 	/* The device supports padding incoming writes to cacheline. */
 	IB_DEVICE_PCI_WRITE_END_PADDING		= (1ULL << 36),
+	IB_DEVICE_SIGNATURE_PIPELINE		= (1ULL << 37),
 	/* Jump to this value to minimize conflicts with upstream */
 	IB_DEVICE_NVMF_TARGET_OFFLOAD		= (1ULL << 60),
 };
@@ -998,7 +999,8 @@ enum ib_wc_status {
 	IB_WC_INV_EEC_STATE_ERR,
 	IB_WC_FATAL_ERR,
 	IB_WC_RESP_TIMEOUT_ERR,
-	IB_WC_GENERAL_ERR
+	IB_WC_GENERAL_ERR,
+	IB_WC_SIG_PIPELINE_CANCELED
 };
 
 const char *__attribute_const__ ib_wc_status_msg(enum ib_wc_status status);
@@ -1187,6 +1189,7 @@ enum ib_qp_create_flags {
 	IB_QP_CREATE_CVLAN_STRIPPING		= 1 << 9,
 	IB_QP_CREATE_SOURCE_QPN			= 1 << 10,
 	IB_QP_CREATE_PCI_WRITE_END_PADDING	= 1 << 11,
+	IB_QP_CREATE_SIGNATURE_PIPELINE		= 1 << 12,
 	/* EXP stuff */
 	IB_QP_EXP_CREATE_ATOMIC_BE_REPLY	= 1 << 15,
 	IB_QP_EXP_CREATE_RX_END_PADDING		= 1 << 16,
@@ -1400,6 +1403,7 @@ enum ib_send_flags {
 	IB_SEND_SOLICITED	= (1<<2),
 	IB_SEND_INLINE		= (1<<3),
 	IB_SEND_IP_CSUM		= (1<<4),
+	IB_SEND_SIG_PIPELINED	= (1<<5),
 
 	/* reserve bits 26-31 for low level drivers' internal use */
 	IB_SEND_RESERVED_START	= (1 << 26),

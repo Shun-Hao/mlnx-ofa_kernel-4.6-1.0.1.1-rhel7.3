@@ -112,6 +112,7 @@ static const char * const wc_statuses[] = {
 	[IB_WC_FATAL_ERR]		= "fatal error",
 	[IB_WC_RESP_TIMEOUT_ERR]	= "response timeout error",
 	[IB_WC_GENERAL_ERR]		= "general error",
+	[IB_WC_SIG_PIPELINE_CANCELED]	= "pipelined WR canceled",
 };
 
 const char *__attribute_const__ ib_wc_status_msg(enum ib_wc_status status)
