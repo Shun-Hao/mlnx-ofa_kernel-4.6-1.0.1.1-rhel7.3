@@ -990,7 +990,7 @@ static void esw_destroy_offloads_fast_fdb_tables(struct mlx5_eswitch *esw)
 }
 
 #define MAX_PF_SQ 256
-#define MAX_SQ_NVPORTS 32
+#define MAX_SQ_NVPORTS 256
 
 static int esw_create_offloads_fdb_tables(struct mlx5_eswitch *esw, int nvports)
 {
