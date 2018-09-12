@@ -209,3 +209,16 @@ out_debugfs:
 
 	return -ENOMEM;
 }
+
+int mlx5_ib_odp_async_prefetch_init(struct mlx5_ib_dev *dev)
+{
+	init_completion(&dev->comp_prefetch);
+	atomic_set(&dev->num_prefetch, 1);
+	return 0;
+}
+
+void mlx5_ib_odp_async_prefetch_cleanup(struct mlx5_ib_dev *dev)
+{
+	if (!atomic_dec_and_test(&dev->num_prefetch))
+		wait_for_completion(&dev->comp_prefetch);
+}

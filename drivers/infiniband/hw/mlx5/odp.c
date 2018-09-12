@@ -1510,19 +1510,10 @@ int mlx5_ib_odp_init_one(struct mlx5_ib_dev *dev)
 		}
 	}
 
-	init_completion(&dev->comp_prefetch);
-	atomic_set(&dev->num_prefetch, 1);
-
 	return 0;
 out_srcu:
 	cleanup_srcu_struct(&dev->mr_srcu);
 	return ret;
-}
-
-void mlx5_ib_odp_shutdown_one(struct mlx5_ib_dev *dev)
-{
-	if (!atomic_dec_and_test(&dev->num_prefetch))
-		wait_for_completion(&dev->comp_prefetch);
 }
 
 int mlx5_ib_odp_init(void)
