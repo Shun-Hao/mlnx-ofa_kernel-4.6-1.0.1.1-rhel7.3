@@ -49,6 +49,7 @@
 #include <rdma/mlx5-abi.h>
 #include <rdma/uverbs_ioctl.h>
 #include <rdma/mlx5_user_ioctl_cmds.h>
+#include <rdma/mlx5_user_ioctl_verbs.h>
 #include "mlx5_ib_exp.h"
 
 #define mlx5_ib_dbg(_dev, format, arg...)                                      \
@@ -586,16 +587,17 @@ struct mlx5_ib_dm {
 	struct ib_dm		ibdm;
 	phys_addr_t		dev_addr;
 	void		       *dm_base_addr;
+	u32			type;
 	u64			size;
 };
 
 #define MLX5_IB_MTT_PRESENT (MLX5_IB_MTT_READ | MLX5_IB_MTT_WRITE)
 
-#define MLX5_IB_DM_ALLOWED_ACCESS (IB_ACCESS_LOCAL_WRITE   |\
-				   IB_ACCESS_REMOTE_WRITE  |\
-				   IB_ACCESS_REMOTE_READ   |\
-				   IB_ACCESS_REMOTE_ATOMIC |\
-				   IB_ZERO_BASED)
+#define MLX5_IB_DM_MEMIC_ALLOWED_ACCESS (IB_ACCESS_LOCAL_WRITE   |\
+					 IB_ACCESS_REMOTE_WRITE  |\
+					 IB_ACCESS_REMOTE_READ   |\
+					 IB_ACCESS_REMOTE_ATOMIC |\
+					 IB_ZERO_BASED)
 
 struct mlx5_ib_mr {
 	struct ib_mr		ibmr;
@@ -885,9 +887,9 @@ struct mlx5_ib_flow_action {
 	};
 };
 
-struct mlx5_memic {
+struct mlx5_dm_mgr {
 	struct mlx5_core_dev *dev;
-	spinlock_t		memic_lock;
+	spinlock_t		dm_lock;
 	DECLARE_BITMAP(memic_alloc_pages, MLX5_MAX_MEMIC_PAGES);
 };
 
@@ -1044,7 +1046,7 @@ struct mlx5_ib_dev {
 	u8			umr_fence;
 	struct list_head	ib_dev_list;
 	u64			sys_image_guid;
-	struct mlx5_memic	memic;
+	struct mlx5_dm_mgr	dm_mgr;
 	u16			devx_whitelist_uid;
 	struct kobject          mr_cache;
 

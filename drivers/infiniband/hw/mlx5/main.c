@@ -2272,41 +2272,44 @@ static int mlx5_ib_mmap(struct ib_ucontext *ibcontext, struct vm_area_struct *vm
 	return 0;
 }
 
-struct ib_dm *mlx5_ib_alloc_dm(struct ib_device *ibdev,
-			       struct ib_ucontext *context,
-			       struct ib_dm_alloc_attr *attr,
-			       struct uverbs_attr_bundle *attrs)
+static inline int check_dm_type_support(struct mlx5_ib_dev *dev,
+					u32 type)
 {
-	u64 act_size = roundup(attr->length, MLX5_MEMIC_BASE_SIZE);
-	struct mlx5_memic *memic = &to_mdev(ibdev)->memic;
-	phys_addr_t memic_addr;
-	struct mlx5_ib_dm *dm;
+	switch (type) {
+	case MLX5_IB_UAPI_DM_TYPE_MEMIC:
+		if (!MLX5_CAP_DEV_MEM(dev->mdev, memic))
+			return -EOPNOTSUPP;
+		break;
+	}
+
+	return 0;
+}
+
+static int handle_alloc_dm_memic(struct ib_ucontext *ctx,
+				 struct mlx5_ib_dm *dm,
+				 struct ib_dm_alloc_attr *attr,
+				 struct uverbs_attr_bundle *attrs)
+{
+	struct mlx5_dm_mgr *dm_mgr = &to_mdev(ctx->device)->dm_mgr;
 	u64 start_offset;
 	u32 page_idx;
 	int err;
 
-	dm = kzalloc(sizeof(*dm), GFP_KERNEL);
-	if (!dm)
-		return ERR_PTR(-ENOMEM);
+	dm->size = roundup(attr->length, MLX5_MEMIC_BASE_SIZE);
 
-	mlx5_ib_dbg(to_mdev(ibdev), "alloc_memic req: user_length=0x%llx act_length=0x%llx log_alignment=%d\n",
-		    attr->length, act_size, attr->alignment);
-
-	err = mlx5_cmd_alloc_memic(memic, &memic_addr,
-				   act_size, attr->alignment);
+	err = mlx5_cmd_alloc_memic(dm_mgr, &dm->dev_addr,
+				   dm->size, attr->alignment);
 	if (err)
-		goto err_free;
+		return err;
 
-	start_offset = memic_addr & ~PAGE_MASK;
-	page_idx = (memic_addr - pci_resource_start(memic->dev->pdev, 0) -
-		    MLX5_CAP64_DEV_MEM(memic->dev, memic_bar_start_addr)) >>
-		    PAGE_SHIFT;
+	page_idx = (dm->dev_addr - pci_resource_start(dm_mgr->dev->pdev, 0) -
+		    MLX5_CAP64_DEV_MEM(dm_mgr->dev, memic_bar_start_addr)) >>
+		PAGE_SHIFT;
 
-	err = uverbs_copy_to(attrs,
-			     MLX5_IB_ATTR_ALLOC_DM_RESP_START_OFFSET,
-			     &start_offset, sizeof(start_offset));
-	if (err)
+	if (!uverbs_attr_is_valid(attrs, MLX5_IB_ATTR_ALLOC_DM_RESP_PAGE_INDEX)) {
+		err = -EINVAL;
 		goto err_dealloc;
+	}
 
 	err = uverbs_copy_to(attrs,
 			     MLX5_IB_ATTR_ALLOC_DM_RESP_PAGE_INDEX,
@@ -2314,16 +2317,67 @@ struct ib_dm *mlx5_ib_alloc_dm(struct ib_device *ibdev,
 	if (err)
 		goto err_dealloc;
 
-	bitmap_set(to_mucontext(context)->dm_pages, page_idx,
-		   DIV_ROUND_UP(act_size, PAGE_SIZE));
+	start_offset = dm->dev_addr & ~PAGE_MASK;
+	err = uverbs_copy_to(attrs,
+			     MLX5_IB_ATTR_ALLOC_DM_RESP_START_OFFSET,
+			     &start_offset, sizeof(start_offset));
+	if (err)
+		goto err_dealloc;
 
-	dm->dev_addr = memic_addr;
+	bitmap_set(to_mucontext(ctx)->dm_pages, page_idx,
+		   DIV_ROUND_UP(dm->size, PAGE_SIZE));
+
+	return 0;
+
+err_dealloc:
+	mlx5_cmd_dealloc_memic(dm_mgr, dm->dev_addr, dm->size);
+
+	return err;
+}
+
+struct ib_dm *mlx5_ib_alloc_dm(struct ib_device *ibdev,
+			       struct ib_ucontext *context,
+			       struct ib_dm_alloc_attr *attr,
+			       struct uverbs_attr_bundle *attrs)
+{
+	struct mlx5_ib_dm *dm;
+	u64 type;
+	int err;
+
+	err = uverbs_get_const_default(&type, attrs,
+				       MLX5_IB_ATTR_ALLOC_DM_REQ_TYPE,
+				       MLX5_IB_UAPI_DM_TYPE_MEMIC);
+	if (err)
+		return ERR_PTR(err);
+
+	mlx5_ib_dbg(to_mdev(ibdev), "alloc_dm req: dm_type=0x%llx user_length=0x%llx log_alignment=%d\n",
+		    type, attr->length, attr->alignment);
+
+	err = check_dm_type_support(to_mdev(ibdev), type);
+	if (err)
+		return ERR_PTR(err);
+
+	dm = kzalloc(sizeof(*dm), GFP_KERNEL);
+	if (!dm)
+		return ERR_PTR(-ENOMEM);
+
+	dm->type = type;
+
+	switch (type) {
+	case MLX5_IB_UAPI_DM_TYPE_MEMIC:
+		err = handle_alloc_dm_memic(context, dm,
+					    attr,
+					    attrs);
+		break;
+	default:
+		err = -EOPNOTSUPP;
+	}
+
+	if (err)
+		goto err_free;
 
 	return &dm->ibdm;
 
-err_dealloc:
-	mlx5_cmd_dealloc_memic(memic, memic_addr,
-			       act_size);
 err_free:
 	kfree(dm);
 	return ERR_PTR(err);
@@ -2331,25 +2385,30 @@ err_free:
 
 int mlx5_ib_dealloc_dm(struct ib_dm *ibdm)
 {
-	struct mlx5_memic *memic = &to_mdev(ibdm->device)->memic;
+	struct mlx5_dm_mgr *dm_mgr = &to_mdev(ibdm->device)->dm_mgr;
 	struct mlx5_ib_dm *dm = to_mdm(ibdm);
-	u64 act_size = roundup(dm->ibdm.length, MLX5_MEMIC_BASE_SIZE);
 	u32 page_idx;
 	int ret;
 
 	if (dm->dm_base_addr)
 		iounmap(dm->dm_base_addr);
 
-	ret = mlx5_cmd_dealloc_memic(memic, dm->dev_addr, act_size);
-	if (ret)
-		return ret;
+	switch (dm->type) {
+	case MLX5_IB_UAPI_DM_TYPE_MEMIC:
+		ret = mlx5_cmd_dealloc_memic(dm_mgr, dm->dev_addr, dm->size);
+		if (ret)
+			return ret;
 
-	page_idx = (dm->dev_addr - pci_resource_start(memic->dev->pdev, 0) -
-		    MLX5_CAP64_DEV_MEM(memic->dev, memic_bar_start_addr)) >>
-		    PAGE_SHIFT;
-	bitmap_clear(to_mucontext(ibdm->uobject->context)->dm_pages,
-		     page_idx,
-		     DIV_ROUND_UP(act_size, PAGE_SIZE));
+		page_idx = (dm->dev_addr - pci_resource_start(dm_mgr->dev->pdev, 0) -
+			    MLX5_CAP64_DEV_MEM(dm_mgr->dev, memic_bar_start_addr)) >>
+			    PAGE_SHIFT;
+		bitmap_clear(to_mucontext(ibdm->uobject->context)->dm_pages,
+			     page_idx,
+			     DIV_ROUND_UP(dm->size, PAGE_SIZE));
+		break;
+	default:
+		return -EOPNOTSUPP;
+	}
 
 	kfree(dm);
 
@@ -5704,7 +5763,10 @@ ADD_UVERBS_ATTRIBUTES_SIMPLE(
 			    UA_MANDATORY),
 	UVERBS_ATTR_PTR_OUT(MLX5_IB_ATTR_ALLOC_DM_RESP_PAGE_INDEX,
 			    UVERBS_ATTR_TYPE(u16),
-			    UA_MANDATORY));
+			    UA_OPTIONAL),
+	UVERBS_ATTR_CONST_IN(MLX5_IB_ATTR_ALLOC_DM_REQ_TYPE,
+			     enum mlx5_ib_uapi_dm_type,
+			     UA_OPTIONAL));
 
 ADD_UVERBS_ATTRIBUTES_SIMPLE(
 	mlx5_ib_flow_action,
@@ -5865,8 +5927,8 @@ int mlx5_ib_stage_init_init(struct mlx5_ib_dev *dev)
 	INIT_LIST_HEAD(&dev->qp_list);
 	spin_lock_init(&dev->reset_flow_resource_lock);
 
-	spin_lock_init(&dev->memic.memic_lock);
-	dev->memic.dev = mdev;
+	spin_lock_init(&dev->dm_mgr.dm_lock);
+	dev->dm_mgr.dev = mdev;
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	err = init_srcu_struct(&dev->mr_srcu);

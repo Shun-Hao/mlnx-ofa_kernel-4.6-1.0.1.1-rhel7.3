@@ -2498,7 +2498,7 @@ struct ib_dm *mlx5_ib_exp_alloc_dm(struct ib_device *ibdev,
 				   u64 length, u64 uaddr,
 				   struct ib_udata *uhw)
 {
-	struct mlx5_memic *memic = &to_mdev(ibdev)->memic;
+	struct mlx5_dm_mgr *dm_mgr = &to_mdev(ibdev)->dm_mgr;
 	u64 act_size = roundup(length, MLX5_MEMIC_BASE_SIZE);
 	u64 map_size = roundup(act_size, PAGE_SIZE);
 	phys_addr_t memic_addr, memic_pfn;
@@ -2511,7 +2511,7 @@ struct ib_dm *mlx5_ib_exp_alloc_dm(struct ib_device *ibdev,
 	if (!dm)
 		return ERR_PTR(-ENOMEM);
 
-	if (mlx5_cmd_alloc_memic(memic, &memic_addr, act_size, 0)) {
+	if (mlx5_cmd_alloc_memic(dm_mgr, &memic_addr, act_size, 0)) {
 		ret = -EFAULT;
 		goto err_free;
 	}
@@ -2556,7 +2556,7 @@ err_vma:
 	up_read(&current->mm->mmap_sem);
 
 err_map:
-	mlx5_cmd_dealloc_memic(memic, memic_addr, act_size);
+	mlx5_cmd_dealloc_memic(dm_mgr, memic_addr, act_size);
 
 err_free:
 	kfree(dm);

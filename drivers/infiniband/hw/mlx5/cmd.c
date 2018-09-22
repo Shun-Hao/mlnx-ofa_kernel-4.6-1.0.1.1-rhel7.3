@@ -74,10 +74,10 @@ int mlx5_cmd_query_cong_params(struct mlx5_core_dev *dev, int cong_point,
 	return mlx5_cmd_exec(dev, in, sizeof(in), out, out_size);
 }
 
-int mlx5_cmd_alloc_memic(struct mlx5_memic *memic, phys_addr_t *addr,
-			  u64 length, u32 alignment)
+int mlx5_cmd_alloc_memic(struct mlx5_dm_mgr *dm_mgr, phys_addr_t *addr,
+			 u64 length, u32 alignment)
 {
-	struct mlx5_core_dev *dev = memic->dev;
+	struct mlx5_core_dev *dev = dm_mgr->dev;
 	u64 num_memic_hw_pages = MLX5_CAP_DEV_MEM(dev, memic_bar_size)
 					>> PAGE_SHIFT;
 	u64 hw_start_addr = MLX5_CAP64_DEV_MEM(dev, memic_bar_start_addr);
@@ -107,17 +107,17 @@ int mlx5_cmd_alloc_memic(struct mlx5_memic *memic, phys_addr_t *addr,
 		 mlx5_alignment);
 
 	while (page_idx < num_memic_hw_pages) {
-		spin_lock(&memic->memic_lock);
-		page_idx = bitmap_find_next_zero_area(memic->memic_alloc_pages,
+		spin_lock(&dm_mgr->dm_lock);
+		page_idx = bitmap_find_next_zero_area(dm_mgr->memic_alloc_pages,
 						      num_memic_hw_pages,
 						      page_idx,
 						      num_pages, 0);
 
 		if (page_idx < num_memic_hw_pages)
-			bitmap_set(memic->memic_alloc_pages,
+			bitmap_set(dm_mgr->memic_alloc_pages,
 				   page_idx, num_pages);
 
-		spin_unlock(&memic->memic_lock);
+		spin_unlock(&dm_mgr->dm_lock);
 
 		if (page_idx >= num_memic_hw_pages)
 			break;
@@ -127,10 +127,10 @@ int mlx5_cmd_alloc_memic(struct mlx5_memic *memic, phys_addr_t *addr,
 
 		ret = mlx5_cmd_exec(dev, in, sizeof(in), out, sizeof(out));
 		if (ret) {
-			spin_lock(&memic->memic_lock);
-			bitmap_clear(memic->memic_alloc_pages,
+			spin_lock(&dm_mgr->dm_lock);
+			bitmap_clear(dm_mgr->memic_alloc_pages,
 				     page_idx, num_pages);
-			spin_unlock(&memic->memic_lock);
+			spin_unlock(&dm_mgr->dm_lock);
 
 			if (ret == -EAGAIN) {
 				page_idx++;
@@ -149,9 +149,9 @@ int mlx5_cmd_alloc_memic(struct mlx5_memic *memic, phys_addr_t *addr,
 	return -ENOMEM;
 }
 
-int mlx5_cmd_dealloc_memic(struct mlx5_memic *memic, u64 addr, u64 length)
+int mlx5_cmd_dealloc_memic(struct mlx5_dm_mgr *dm_mgr, u64 addr, u64 length)
 {
-	struct mlx5_core_dev *dev = memic->dev;
+	struct mlx5_core_dev *dev = dm_mgr->dev;
 	u64 hw_start_addr = MLX5_CAP64_DEV_MEM(dev, memic_bar_start_addr);
 	u32 num_pages = DIV_ROUND_UP(length, PAGE_SIZE);
 	u32 out[MLX5_ST_SZ_DW(dealloc_memic_out)] = {0};
@@ -169,10 +169,10 @@ int mlx5_cmd_dealloc_memic(struct mlx5_memic *memic, u64 addr, u64 length)
 	err =  mlx5_cmd_exec(dev, in, sizeof(in), out, sizeof(out));
 
 	if (!err) {
-		spin_lock(&memic->memic_lock);
-		bitmap_clear(memic->memic_alloc_pages,
+		spin_lock(&dm_mgr->dm_lock);
+		bitmap_clear(dm_mgr->memic_alloc_pages,
 			     start_page_idx, num_pages);
-		spin_unlock(&memic->memic_lock);
+		spin_unlock(&dm_mgr->dm_lock);
 	}
 
 	return err;

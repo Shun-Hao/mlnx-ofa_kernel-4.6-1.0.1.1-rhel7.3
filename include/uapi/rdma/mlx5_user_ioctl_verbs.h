@@ -51,5 +51,9 @@ enum mlx5_ib_uapi_flow_action_packet_reformat_type {
 	MLX5_IB_UAPI_FLOW_ACTION_PACKET_REFORMAT_TYPE_L2_TO_L3_TUNNEL = 0x3,
 };
 
+enum mlx5_ib_uapi_dm_type {
+	MLX5_IB_UAPI_DM_TYPE_MEMIC,
+};
+
 #endif
 
