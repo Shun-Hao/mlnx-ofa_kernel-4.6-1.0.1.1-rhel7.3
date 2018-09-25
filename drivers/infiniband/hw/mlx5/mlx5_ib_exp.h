@@ -401,4 +401,23 @@ int mlx5_ib_set_vma_data(struct vm_area_struct *vma,
 			 struct mlx5_ib_ucontext *ctx,
 			 struct mlx5_ib_vma_private_data *vma_prv);
 
+static inline pgprot_t mlx5_ib_pgprot_writecombine(pgprot_t prot)
+{
+#if defined(CONFIG_ARM64)
+	/*
+	 * Fix up arm64 braindamage of using NORMAL_NC for write
+	 * combining when Device GRE exists specifically for the
+	 * purpose. Needed on ThunderX2.
+	 */
+	switch (read_cpuid_id() & MIDR_CPU_MODEL_MASK) {
+	case MIDR_CPU_MODEL(ARM_CPU_IMP_BRCM, BRCM_CPU_PART_VULCAN):
+	case MIDR_CPU_MODEL(0x43, 0x0af):  /* Cavium ThunderX2 */
+		prot = __pgprot_modify(prot, PTE_ATTRINDX_MASK,
+				       PTE_ATTRINDX(MT_DEVICE_GRE) |
+				       PTE_PXN | PTE_UXN);
+	}
+#endif
+	return prot;
+}
+
 #endif

@@ -2476,8 +2476,9 @@ int alloc_and_map_wc(struct mlx5_ib_dev *dev,
 	}
 	pfn = idx2pfn(dev, uar_index);
 
+
+	vma->vm_page_prot = mlx5_ib_pgprot_writecombine(vma->vm_page_prot);
 /*
-	vma->vm_page_prot = pgprot_writecombine(vma->vm_page_prot);
 	if (io_remap_pfn_range(vma, vma->vm_start, pfn,
 			       PAGE_SIZE, vma->vm_page_prot)) {
 		mlx5_ib_err(dev, "io remap failed\n");
