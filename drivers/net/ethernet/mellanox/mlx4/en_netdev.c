@@ -3593,9 +3593,6 @@ static void mlx4_en_bond_work(struct work_struct *work)
 	int err = 0;
 	struct mlx4_dev *dev = bond->priv->mdev->dev;
 
-	if (mlx4_is_slave(dev))
-		return;
-
 	if (bond->is_bonded) {
 		if (!mlx4_is_bonded(dev)) {
 			err = mlx4_bond(dev);
@@ -3683,6 +3680,9 @@ int mlx4_en_netdev_event(struct notifier_block *this,
 		return NOTIFY_DONE;
 
 	priv = netdev_priv(ndev);
+	if (mlx4_is_slave(priv->mdev->dev))
+		return NOTIFY_DONE;
+
 	if (do_bond) {
 		struct netdev_notifier_bonding_info *notifier_info = ptr;
 		struct netdev_bonding_info *bonding_info =
