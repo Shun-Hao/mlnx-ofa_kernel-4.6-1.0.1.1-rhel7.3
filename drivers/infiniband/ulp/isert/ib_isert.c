@@ -143,6 +143,9 @@ isert_create_qp(struct isert_conn *isert_conn,
 	if (device->pi_capable)
 		attr.create_flags |= IB_QP_CREATE_SIGNATURE_EN;
 
+	if (device->sig_pipeline)
+		attr.create_flags |= IB_QP_CREATE_SIGNATURE_PIPELINE;
+
 	ret = rdma_create_qp(cma_id, device->pd, &attr);
 	if (ret) {
 		isert_err("rdma_create_qp failed for cma_id %d\n", ret);
@@ -1811,16 +1814,35 @@ isert_send_done(struct ib_cq *cq, struct ib_wc *wc)
 	struct ib_device *ib_dev = isert_conn->cm_id->device;
 	struct iser_tx_desc *tx_desc = cqe_to_tx_desc(wc->wr_cqe);
 	struct isert_cmd *isert_cmd = tx_desc_to_cmd(tx_desc);
+	struct se_cmd *cmd = &isert_cmd->iscsi_cmd->se_cmd;
 
 	if (unlikely(wc->status != IB_WC_SUCCESS)) {
 		isert_print_wc(wc, "send");
-		if (wc->status != IB_WC_WR_FLUSH_ERR)
-			iscsit_cause_connection_reinstatement(isert_conn->conn, 0);
-		isert_completion_put(tx_desc, isert_cmd, ib_dev, true);
+		if (wc->status == IB_WC_SIG_PIPELINE_CANCELED) {
+			isert_check_pi_status(cmd, isert_cmd->rw.sig->sig_mr);
+			isert_rdma_rw_ctx_destroy(isert_cmd, isert_conn);
+			/*
+			 * transport_generic_request_failure() expects to have
+			 * plus two references to handle queue-full, so re-add
+			 * one here as target-core will have already dropped
+			 * it after the first isert_put_datain() callback.
+			 */
+			kref_get(&cmd->cmd_kref);
+			transport_generic_request_failure(cmd, cmd->pi_err);
+		} else {
+			if (wc->status != IB_WC_WR_FLUSH_ERR)
+				iscsit_cause_connection_reinstatement(
+					isert_conn->conn, 0);
+			isert_completion_put(tx_desc, isert_cmd, ib_dev, true);
+		}
 		return;
 	}
 
 	isert_dbg("Cmd %p\n", isert_cmd);
+
+	/* To reuse the signature MR later, we need to mark it as checked. */
+	if (isert_cmd->send_sig_pipelined)
+		isert_check_pi_status(cmd, isert_cmd->rw.sig->sig_mr);
 
 	switch (isert_cmd->iscsi_cmd->i_state) {
 	case ISTATE_SEND_TASKMGTRSP:
@@ -2207,10 +2229,17 @@ isert_put_datain(struct iscsi_conn *conn, struct iscsi_cmd *cmd)
 	isert_dbg("Cmd: %p RDMA_WRITE data_length: %u\n",
 		 isert_cmd, se_cmd->data_length);
 
-	if (isert_prot_cmd(isert_conn, se_cmd)) {
+	if (!isert_conn->sig_pipeline && isert_prot_cmd(isert_conn, se_cmd)) {
 		isert_cmd->tx_desc.tx_cqe.done = isert_rdma_write_done;
 		cqe = &isert_cmd->tx_desc.tx_cqe;
 	} else {
+		int send_flags = IB_SEND_SIGNALED;
+
+		if (isert_prot_cmd(isert_conn, se_cmd)) {
+			send_flags |= IB_SEND_SIG_PIPELINED;
+			isert_cmd->send_sig_pipelined = true;
+		}
+
 		/*
 		 * Build isert_conn->tx_desc for iSCSI response PDU and attach
 		 */
@@ -2219,8 +2248,9 @@ isert_put_datain(struct iscsi_conn *conn, struct iscsi_cmd *cmd)
 		iscsit_build_rsp_pdu(cmd, conn, true, (struct iscsi_scsi_rsp *)
 				     &isert_cmd->tx_desc.iscsi_header);
 		isert_init_tx_hdrs(isert_conn, &isert_cmd->tx_desc);
-		isert_init_send_wr(isert_conn, isert_cmd,
-				   &isert_cmd->tx_desc.send_wr);
+		isert_init_send_wr_flags(isert_conn, isert_cmd,
+					 &isert_cmd->tx_desc.send_wr,
+					 send_flags);
 
 		rc = isert_post_recv(isert_conn, isert_cmd->rx_desc);
 		if (rc) {
