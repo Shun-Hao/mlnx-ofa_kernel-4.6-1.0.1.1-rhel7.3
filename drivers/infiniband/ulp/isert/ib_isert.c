@@ -947,8 +947,10 @@ isert_init_tx_hdrs(struct isert_conn *isert_conn,
 }
 
 static void
-isert_init_send_wr(struct isert_conn *isert_conn, struct isert_cmd *isert_cmd,
-		   struct ib_send_wr *send_wr)
+isert_init_send_wr_flags(struct isert_conn *isert_conn,
+			 struct isert_cmd *isert_cmd,
+			 struct ib_send_wr *send_wr,
+			 int send_flags)
 {
 	struct iser_tx_desc *tx_desc = &isert_cmd->tx_desc;
 
@@ -964,7 +966,15 @@ isert_init_send_wr(struct isert_conn *isert_conn, struct isert_cmd *isert_cmd,
 
 	send_wr->sg_list = &tx_desc->tx_sg[0];
 	send_wr->num_sge = isert_cmd->tx_desc.num_sge;
-	send_wr->send_flags = IB_SEND_SIGNALED;
+	send_wr->send_flags = send_flags;
+}
+
+static inline void
+isert_init_send_wr(struct isert_conn *isert_conn, struct isert_cmd *isert_cmd,
+		   struct ib_send_wr *send_wr)
+{
+	isert_init_send_wr_flags(isert_conn, isert_cmd, send_wr,
+				 IB_SEND_SIGNALED);
 }
 
 static int
