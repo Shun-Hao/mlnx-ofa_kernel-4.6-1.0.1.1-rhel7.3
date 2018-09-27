@@ -260,11 +260,11 @@ isert_alloc_comps(struct isert_device *device)
 	device->comps_used = min(ISERT_MAX_CQ, min_t(int, num_online_cpus(),
 				 device->ib_device->num_comp_vectors));
 
-	isert_info("Using %d CQs, %s supports %d vectors support "
-		   "pi_capable %d\n",
+	isert_info("Using %d CQs, %s supports %d vectors support pi_capable %d sig_pipeline %d\n",
 		   device->comps_used, dev_name(&device->ib_device->dev),
 		   device->ib_device->num_comp_vectors,
-		   device->pi_capable);
+		   device->pi_capable,
+		   device->sig_pipeline);
 
 	device->comps = kcalloc(device->comps_used, sizeof(struct isert_comp),
 				GFP_KERNEL);
@@ -318,6 +318,9 @@ isert_create_device_ib_res(struct isert_device *device)
 	/* Check signature cap */
 	device->pi_capable = ib_dev->attrs.device_cap_flags &
 			     IB_DEVICE_SIGNATURE_HANDOVER ? true : false;
+
+	device->sig_pipeline = ib_dev->attrs.device_cap_flags &
+			       IB_DEVICE_SIGNATURE_HANDOVER ? true : false;
 
 	return 0;
 
@@ -1922,12 +1925,14 @@ isert_get_sup_prot_ops(struct iscsi_conn *conn)
 		if (device->pi_capable) {
 			isert_info("conn %p PI offload enabled\n", isert_conn);
 			isert_conn->pi_support = true;
+			isert_conn->sig_pipeline = device->sig_pipeline;
 			return TARGET_PROT_ALL;
 		}
 	}
 
 	isert_info("conn %p PI offload disabled\n", isert_conn);
 	isert_conn->pi_support = false;
+	isert_conn->sig_pipeline = false;
 
 	return TARGET_PROT_NORMAL;
 }
