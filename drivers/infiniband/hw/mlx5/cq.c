@@ -135,6 +135,7 @@ static void handle_good_req(struct ib_wc *wc, struct mlx5_cqe64 *cqe,
 	case MLX5_OPCODE_SEND_IMM:
 		wc->wc_flags |= IB_WC_WITH_IMM;
 		/* fall through */
+	case MLX5_OPCODE_NOP:
 	case MLX5_OPCODE_SEND:
 	case MLX5_OPCODE_SEND_INVAL:
 		wc->opcode    = IB_WC_SEND;
@@ -599,7 +600,10 @@ repoll:
 		handle_atomics(*cur_qp, cqe64, wq->last_poll, idx);
 		wc->wr_id = wq->wrid[idx];
 		wq->tail = wq->wqe_head[idx] + 1;
-		wc->status = IB_WC_SUCCESS;
+		if (unlikely(wq->wr_data[idx] == MLX5_IB_WR_SIG_CANCELED))
+			wc->status = IB_WC_SIG_PIPELINE_CANCELED;
+		else
+			wc->status = IB_WC_SUCCESS;
 		break;
 	case MLX5_CQE_RESP_WR_IMM:
 	case MLX5_CQE_RESP_SEND:
