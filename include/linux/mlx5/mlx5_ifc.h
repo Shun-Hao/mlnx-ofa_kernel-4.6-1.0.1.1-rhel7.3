@@ -139,6 +139,7 @@ enum {
 	MLX5_CMD_OP_DESTROY_XRC_SRQ               = 0x706,
 	MLX5_CMD_OP_QUERY_XRC_SRQ                 = 0x707,
 	MLX5_CMD_OP_ARM_XRC_SRQ                   = 0x708,
+	MLX5_CMD_OP_CREATE_DCT_LAG                = 0x709,
 	MLX5_CMD_OP_CREATE_DCT                    = 0x710,
 	MLX5_CMD_OP_DESTROY_DCT                   = 0x711,
 	MLX5_CMD_OP_DRAIN_DCT                     = 0x712,
@@ -1174,7 +1175,9 @@ struct mlx5_ifc_cmd_hca_cap_bits {
 	u8         reserved_at_263[0x8];
 	u8         log_bf_reg_size[0x5];
 
-	u8         reserved_at_270[0xb];
+	u8         reserved_at_270[0x6];
+	u8         lag_dct[0x2];
+	u8         reserved_at_278[0x3];
 	u8         lag_master[0x1];
 	u8         num_lag_ports[0x4];
 
@@ -7903,6 +7906,32 @@ struct mlx5_ifc_arm_dct_in_bits {
 	u8         dct_number[0x18];
 
 	u8         reserved_at_60[0x20];
+};
+
+struct mlx5_ifc_create_dct_lag_out_bits {
+	u8         status[0x8];
+	u8         reserved_at_8[0x18];
+
+	u8         syndrome[0x20];
+
+	u8         reserved_at_40[0x40];
+};
+
+struct mlx5_ifc_create_dct_lag_in_bits {
+	u8         opcode[0x10];
+	u8         uid[0x10];
+
+	u8         reserved_at_20[0x10];
+	u8         op_mod[0x10];
+
+	u8         reserved_at_40[0x40];
+
+	u8         reserved_at_80[0x8];
+	u8         dctn0[0x18];
+	u8         reserved_at_a0[0x8];
+	u8         dctn1[0x18];
+
+	u8         reserved_at_c0[0x120];
 };
 
 struct mlx5_ifc_alloc_xrcd_out_bits {

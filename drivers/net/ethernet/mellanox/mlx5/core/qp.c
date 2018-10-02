@@ -156,10 +156,19 @@ int mlx5_rsc_event(struct mlx5_core_dev *dev, u32 rsn, int event_info)
 		break;
 	case MLX5_RES_DCT:
 		dct = (struct mlx5_core_dct *)common;
-		if (event_type == MLX5_EVENT_TYPE_DCT_DRAINED)
+		if (event_type == MLX5_EVENT_TYPE_DCT_DRAINED) {
 			complete(&dct->drained);
-		else
+		} else {
+			/*
+			 * When working in RoCE LAG, async events can be
+			 * triggered on any of the device sub DCTs, and should
+			 * be reported by SW to verbs on the single logical
+			 * DCT.
+			 */
+			if (dct->parent_dct)
+				dct = dct->parent_dct;
 			dct->mqp.event(&dct->mqp, event_type);
+		}
 		break;
 	default:
 		mlx5_core_warn(dev, "invalid resource type for 0x%x\n", rsn);
@@ -207,9 +216,9 @@ static void destroy_resource_common(struct mlx5_core_dev *dev,
 	wait_for_completion(&qp->common.free);
 }
 
-int mlx5_core_create_dct(struct mlx5_core_dev *dev,
-			 struct mlx5_core_dct *dct,
-			 u32 *in, int inlen)
+int mlx5_core_create_dct_common(struct mlx5_core_dev *dev,
+				struct mlx5_core_dct *dct,
+				u32 *in, int inlen)
 {
 	u32 out[MLX5_ST_SZ_DW(create_dct_out)]   = {0};
 	u32 din[MLX5_ST_SZ_DW(destroy_dct_in)]   = {0};
@@ -240,6 +249,72 @@ err_cmd:
 	mlx5_cmd_exec(dev, (void *)&in, sizeof(din),
 		      (void *)&out, sizeof(dout));
 	return err;
+}
+
+int mlx5_core_create_dct_lag(struct mlx5_core_dev *dev,
+			     struct mlx5_core_dct *dct_array)
+{
+	u32 in[MLX5_ST_SZ_DW(create_dct_lag_in)] = {0};
+	u32 out[MLX5_ST_SZ_DW(create_dct_lag_out)] = {0};
+
+	MLX5_SET(create_dct_lag_in, in, opcode, MLX5_CMD_OP_CREATE_DCT_LAG);
+	MLX5_SET(create_dct_lag_in, in, dctn0, dct_array[0].mqp.qpn);
+	MLX5_SET(create_dct_lag_in, in, dctn1, dct_array[1].mqp.qpn);
+
+	return mlx5_cmd_exec(dev, (void *)&in, sizeof(in),
+			     (void *)&out, sizeof(out));
+}
+
+int mlx5_core_create_lag_dct(struct mlx5_core_dev *dev,
+			     struct mlx5_core_dct *dct_array,
+			     u32 *in, int inlen)
+{
+	void *dctc;
+	int err;
+
+	err = mlx5_core_create_dct_common(dev, &dct_array[0], in, inlen);
+	if (err)
+		return err;
+
+	dctc = MLX5_ADDR_OF(create_dct_in, in, dct_context_entry);
+	MLX5_SET(dctc, dctc, port, 2);
+	err = mlx5_core_create_dct_common(dev, &dct_array[1], in, inlen);
+	if (err)
+		goto free_dct1;
+
+	dct_array[1].parent_dct = &dct_array[0];
+
+	err = mlx5_core_create_dct_lag(dev, dct_array);
+	if (err)
+		goto free_dct2;
+
+	return 0;
+
+free_dct2:
+	mlx5_core_destroy_dct(dev, &dct_array[1]);
+free_dct1:
+	mlx5_core_destroy_dct(dev, &dct_array[0]);
+	return err;
+}
+
+int mlx5_core_create_dct(struct mlx5_core_dev *dev,
+			 struct mlx5_core_dct *dct,
+			 u32 *in, int inlen)
+{
+	if (mlx5_lag_is_active(dev)) {
+		switch (MLX5_CAP_GEN(dev, lag_dct)) {
+		case MLX5_DC_LAG_NOT_SUPPORTED:
+			return -EOPNOTSUPP;
+		case MLX5_DC_LAG_SW_ASSISTED:
+			return mlx5_core_create_lag_dct(dev, dct, in, inlen);
+		case MLX5_DC_LAG_HW_ONLY:
+			return mlx5_core_create_dct_common(dev, &dct[0], in, inlen);
+		default:
+			return -EINVAL;
+		}
+	} else {
+		return mlx5_core_create_dct_common(dev, &dct[0], in, inlen);
+	}
 }
 EXPORT_SYMBOL_GPL(mlx5_core_create_dct);
 
@@ -302,8 +377,8 @@ static int mlx5_core_drain_dct(struct mlx5_core_dev *dev,
 			     (void *)&out, sizeof(out));
 }
 
-int mlx5_core_destroy_dct(struct mlx5_core_dev *dev,
-			  struct mlx5_core_dct *dct)
+int mlx5_core_destroy_dct_common(struct mlx5_core_dev *dev,
+				 struct mlx5_core_dct *dct)
 {
 	u32 out[MLX5_ST_SZ_DW(destroy_dct_out)] = {0};
 	u32 in[MLX5_ST_SZ_DW(destroy_dct_in)]   = {0};
@@ -328,6 +403,39 @@ destroy:
 	err = mlx5_cmd_exec(dev, (void *)&in, sizeof(in),
 			    (void *)&out, sizeof(out));
 	return err;
+}
+
+int mlx5_core_destroy_lag_dct(struct mlx5_core_dev *dev,
+			      struct mlx5_core_dct *dct_array)
+{
+	int err, i;
+
+	for (i = 1; i >= 0; --i) {
+		err = mlx5_core_destroy_dct_common(dev, &dct_array[i]);
+		if (err)
+			return err;
+	}
+
+	return 0;
+}
+
+int mlx5_core_destroy_dct(struct mlx5_core_dev *dev,
+			  struct mlx5_core_dct *dct)
+{
+	if (mlx5_lag_is_active(dev)) {
+		switch (MLX5_CAP_GEN(dev, lag_dct)) {
+		case MLX5_DC_LAG_NOT_SUPPORTED:
+			return -EOPNOTSUPP;
+		case MLX5_DC_LAG_SW_ASSISTED:
+			return mlx5_core_destroy_lag_dct(dev, dct);
+		case MLX5_DC_LAG_HW_ONLY:
+			return mlx5_core_destroy_dct_common(dev, &dct[0]);
+		default:
+			return -EINVAL;
+		}
+	} else {
+		return mlx5_core_destroy_dct_common(dev, &dct[0]);
+	}
 }
 EXPORT_SYMBOL_GPL(mlx5_core_destroy_dct);
 

@@ -45,7 +45,7 @@ void mlx5_cleanup_dct_table(struct mlx5_core_dev *dev)
 	mlx5_dct_debugfs_cleanup(dev);
 }
 
-int mlx5_core_arm_dct(struct mlx5_core_dev *dev, struct mlx5_core_dct *dct)
+int mlx5_core_arm_dct_common(struct mlx5_core_dev *dev, struct mlx5_core_dct *dct)
 {
 	u32 out[MLX5_ST_SZ_DW(arm_dct_out)] = {0};
 	u32 in[MLX5_ST_SZ_DW(arm_dct_in)]   = {0};
@@ -54,5 +54,36 @@ int mlx5_core_arm_dct(struct mlx5_core_dev *dev, struct mlx5_core_dct *dct)
 	MLX5_SET(arm_dct_in, in, dct_number, dct->mqp.qpn);
 	return mlx5_cmd_exec(dev, (void *)&in, sizeof(in),
 			     (void *)&out, sizeof(out));
+}
+
+int mlx5_core_arm_lag_dct(struct mlx5_core_dev *dev, struct mlx5_core_dct *dct_array)
+{
+	int err, i;
+
+	for (i = 0; i < 2; i++) {
+		err = mlx5_core_arm_dct_common(dev, &dct_array[i]);
+		if (err)
+			return err;
+	}
+
+	return 0;
+}
+
+int mlx5_core_arm_dct(struct mlx5_core_dev *dev, struct mlx5_core_dct *dct)
+{
+	if (mlx5_lag_is_active(dev)) {
+		switch (MLX5_CAP_GEN(dev, lag_dct)) {
+		case MLX5_DC_LAG_NOT_SUPPORTED:
+			return -EOPNOTSUPP;
+		case MLX5_DC_LAG_SW_ASSISTED:
+			return mlx5_core_arm_lag_dct(dev, dct);
+		case MLX5_DC_LAG_HW_ONLY:
+			return mlx5_core_arm_dct_common(dev, &dct[0]);
+		default:
+			return -EINVAL;
+		}
+	} else {
+		return mlx5_core_arm_dct_common(dev, &dct[0]);
+	}
 }
 EXPORT_SYMBOL_GPL(mlx5_core_arm_dct);

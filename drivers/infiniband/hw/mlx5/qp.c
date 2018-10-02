@@ -2876,7 +2876,7 @@ int mlx5_ib_destroy_dct(struct mlx5_ib_qp *mqp)
 	if (mqp->state == IB_QPS_RTR) {
 		int err;
 
-		err = mlx5_core_destroy_dct(dev->mdev, &mqp->dct.mdct);
+		err = mlx5_core_destroy_dct(dev->mdev, mqp->dct.mdct);
 		if (err) {
 			mlx5_ib_warn(dev, "failed to destroy DCT %d\n", err);
 			return err;
@@ -4019,15 +4019,15 @@ int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 			tmp_hop_limit  = attr->ah_attr.grh.hop_limit;
 		MLX5_SET(dctc, dctc, hop_limit, tmp_hop_limit);
 
-		err = mlx5_core_create_dct(dev->mdev, &qp->dct.mdct, qp->dct.in,
+		err = mlx5_core_create_dct(dev->mdev, qp->dct.mdct, qp->dct.in,
 					   MLX5_ST_SZ_BYTES(create_dct_in));
 		if (err)
 			return err;
 		if (udata) {
-			resp.dctn = qp->dct.mdct.mqp.qpn;
+			resp.dctn = qp->dct.mdct[0].mqp.qpn;
 			err = ib_copy_to_udata(udata, &resp, resp.response_length);
 			if (err) {
-				mlx5_core_destroy_dct(dev->mdev, &qp->dct.mdct);
+				mlx5_core_destroy_dct(dev->mdev, qp->dct.mdct);
 				return err;
 			}
 		}
@@ -5827,7 +5827,7 @@ static int mlx5_ib_dct_query_qp(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *mqp,
 				struct ib_qp_attr *qp_attr, int qp_attr_mask,
 				struct ib_qp_init_attr *qp_init_attr)
 {
-	struct mlx5_core_dct	*dct = &mqp->dct.mdct;
+	struct mlx5_core_dct	*dct = &mqp->dct.mdct[0];
 	u32 *out;
 	u32 access_flags = 0;
 	int outlen = MLX5_ST_SZ_BYTES(query_dct_out);

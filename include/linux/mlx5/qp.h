@@ -516,9 +516,16 @@ struct mlx5_core_qp {
 	struct mlx5_pagefault *pfault_res;
 };
 
+enum {
+	MLX5_DC_LAG_NOT_SUPPORTED = 0,
+	MLX5_DC_LAG_SW_ASSISTED	  = 1,
+	MLX5_DC_LAG_HW_ONLY	  = 2,
+};
+
 struct mlx5_core_dct {
 	struct mlx5_core_qp	mqp;
 	struct completion	drained;
+	struct mlx5_core_dct	*parent_dct;
 };
 
 struct mlx5_qp_path {

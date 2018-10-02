@@ -457,9 +457,10 @@ struct ib_dct *mlx5_ib_create_dc_target(struct ib_pd *pd,
 	if (err)
 		goto err_destroy;
 
-	dct->ibdct.dct_num = dct->qp->dct.mdct.mqp.qpn;
+	dct->ibdct.dct_num = dct->qp->dct.mdct[0].mqp.qpn;
 	dct->qp->dct.dc_target = dct;
-	dct->qp->dct.mdct.mqp.event = mlx5_ib_dct_event;
+	dct->qp->dct.mdct[0].mqp.event = mlx5_ib_dct_event;
+	dct->qp->dct.mdct[1].mqp.event = NULL;
 
 	return &dct->ibdct;
 err_destroy:
@@ -508,7 +509,7 @@ int mlx5_ib_query_dc_target(struct ib_dct *dct, struct ib_dct_attr *attr)
 	if (!out)
 		return -ENOMEM;
 
-	err = mlx5_core_dct_query(dev->mdev, &mdct->qp->dct.mdct, out, outlen);
+	err = mlx5_core_dct_query(dev->mdev, mdct->qp->dct.mdct, out, outlen);
 	if (err)
 		goto out;
 
@@ -557,7 +558,7 @@ int mlx5_ib_arm_dc_target(struct ib_dct *dct, struct ib_udata *udata)
 	if (ucmd.reserved0 || ucmd.reserved1)
 		return -EINVAL;
 
-	err = mlx5_core_arm_dct(dev->mdev, &mdct->qp->dct.mdct);
+	err = mlx5_core_arm_dct(dev->mdev, mdct->qp->dct.mdct);
 	if (err)
 		goto out;
 
