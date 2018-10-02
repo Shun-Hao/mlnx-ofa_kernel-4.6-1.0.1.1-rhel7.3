@@ -5295,6 +5295,20 @@ static int _mlx5_ib_post_send(struct ib_qp *ibqp, const struct ib_send_wr *wr,
 			fence = qp->next_fence;
 		}
 
+		qp->sq.wr_data[idx] = 0;
+		if ((wr->opcode == IB_WR_SEND ||
+		     wr->opcode == IB_WR_SEND_WITH_IMM ||
+		     wr->opcode == IB_WR_SEND_WITH_INV) &&
+		    (wr->send_flags & IB_SEND_SIG_PIPELINED)) {
+			if (unlikely(!(qp->flags & MLX5_IB_QP_DRAIN_SIGERR))) {
+				mlx5_ib_warn(dev, "\n");
+				err = -EINVAL;
+				*bad_wr = wr;
+				goto out;
+			}
+			qp->sq.wr_data[idx] = MLX5_IB_WR_SIG_PIPED;
+		}
+
 		switch (ibqp->qp_type) {
 		case IB_QPT_XRC_INI:
 			xrc = seg;
