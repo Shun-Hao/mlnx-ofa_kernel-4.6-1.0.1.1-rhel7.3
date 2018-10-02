@@ -611,6 +611,7 @@ static bool devx_is_general_cmd(void *in)
 	case MLX5_CMD_OP_QUERY_CONG_STATUS:
 	case MLX5_CMD_OP_QUERY_CONG_PARAMS:
 	case MLX5_CMD_OP_QUERY_CONG_STATISTICS:
+	case MLX5_CMD_OP_SYNC_STEERING:
 		return true;
 	default:
 		return false;
