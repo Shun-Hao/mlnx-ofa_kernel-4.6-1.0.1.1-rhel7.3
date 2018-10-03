@@ -111,6 +111,7 @@ bool mlx5e_xmit_xdp_frame(struct mlx5e_xdpsq *sq, struct mlx5e_xdp_info *xdpi)
 	struct mlx5_wqe_ctrl_seg *cseg = &wqe->ctrl;
 	struct mlx5_wqe_eth_seg  *eseg = &wqe->eth;
 	struct mlx5_wqe_data_seg *dseg = wqe->data;
+	struct mlx5e_priv *priv = netdev_priv(sq->channel->netdev);
 
 	struct xdp_frame *xdpf = xdpi->xdpf;
 	dma_addr_t dma_addr  = xdpi->dma_addr;
@@ -145,6 +146,9 @@ bool mlx5e_xmit_xdp_frame(struct mlx5e_xdpsq *sq, struct mlx5e_xdp_info *xdpi)
 		dma_addr += MLX5E_XDP_MIN_INLINE;
 		dseg++;
 	}
+
+	if (MLX5E_GET_PFLAG(&priv->channels.params, MLX5E_PFLAG_TX_XDP_CSUM))
+		eseg->cs_flags = MLX5_ETH_WQE_L3_CSUM | MLX5_ETH_WQE_L4_CSUM;
 
 	/* write the dma part */
 	dseg->addr       = cpu_to_be64(dma_addr);

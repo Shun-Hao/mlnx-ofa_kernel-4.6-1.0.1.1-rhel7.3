@@ -239,6 +239,7 @@ enum mlx5e_priv_flag {
 	MLX5E_PFLAG_SNIFFER = (1 << 5),
 	MLX5E_PFLAG_DROPLESS_RQ = (1 << 6),
 	MLX5E_PFLAG_PER_CH_STATS = (1 << 7),
+	MLX5E_PFLAG_TX_XDP_CSUM = (1 << 8),
 };
 
 #define MLX5E_SET_PFLAG(params, pflag, enable)			\

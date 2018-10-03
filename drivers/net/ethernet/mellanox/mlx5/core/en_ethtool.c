@@ -144,6 +144,7 @@ static const char mlx5e_priv_flags[][ETH_GSTRING_LEN] = {
 	"sniffer",
 	"dropless_rq",
 	"per_channel_stats",
+	"tx_xdp_hw_checksum",
 };
 
 int mlx5e_ethtool_get_sset_count(struct mlx5e_priv *priv, int sset)
@@ -1720,6 +1721,33 @@ static int set_pflag_dropless_rq(struct net_device *netdev,
 	return err;
 }
 
+static int set_pflag_tx_xdp_hw_checksum(struct net_device *netdev, bool new_val)
+{
+	struct mlx5e_priv *priv = netdev_priv(netdev);
+	bool curr_val = MLX5E_GET_PFLAG(&priv->channels.params, MLX5E_PFLAG_TX_XDP_CSUM);
+	struct mlx5e_channels new_channels = {};
+	int err = 0;
+
+	if (curr_val == new_val)
+		return 0;
+
+	new_channels.params = priv->channels.params;
+	MLX5E_SET_PFLAG(&new_channels.params, MLX5E_PFLAG_TX_XDP_CSUM, new_val);
+
+	if (!test_bit(MLX5E_STATE_OPENED, &priv->state)) {
+		priv->channels.params = new_channels.params;
+		return 0;
+	}
+
+	err = mlx5e_switch_priv_channels(priv, &new_channels, NULL);
+	mlx5e_dbg(DRV, priv, "MLX5E: tx_xdp_hw_checksum was turned %s err=%d\n",
+		  MLX5E_GET_PFLAG(&priv->channels.params,
+				  MLX5E_PFLAG_TX_XDP_CSUM) ? "ON" : "OFF",
+				  err);
+
+	return err;
+}
+
 static int mlx5e_handle_pflag(struct net_device *netdev,
 			      u32 wanted_flags,
 			      enum mlx5e_priv_flag flag,
@@ -1793,6 +1821,12 @@ static int mlx5e_set_priv_flags(struct net_device *netdev, u32 pflags)
 	err = mlx5e_handle_pflag(netdev, pflags,
 				 MLX5E_PFLAG_DROPLESS_RQ,
 				 set_pflag_dropless_rq);
+	if (err)
+		goto out;
+
+	err = mlx5e_handle_pflag(netdev, pflags,
+				 MLX5E_PFLAG_TX_XDP_CSUM,
+				 set_pflag_tx_xdp_hw_checksum);
 
 out:
 	mutex_unlock(&priv->state_lock);
