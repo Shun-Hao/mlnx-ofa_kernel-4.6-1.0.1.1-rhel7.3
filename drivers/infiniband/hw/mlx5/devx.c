@@ -116,6 +116,21 @@ static u64 get_enc_obj_id(u16 opcode, u32 obj_id)
 	return ((u64)opcode << 32) | obj_id;
 }
 
+bool mlx5_ib_devx_is_flow_counter(void *obj, u32 *counter_id)
+{
+	struct devx_obj *devx_obj = obj;
+	u16 opcode = MLX5_GET(general_obj_in_cmd_hdr, devx_obj->dinbox, opcode);
+
+	if (opcode == MLX5_CMD_OP_DEALLOC_FLOW_COUNTER) {
+		*counter_id = MLX5_GET(dealloc_flow_counter_in,
+				       devx_obj->dinbox,
+				       flow_counter_id);
+		return true;
+	}
+
+	return false;
+}
+
 static int devx_is_valid_obj_id(struct devx_obj *obj, const void *in)
 {
 	u16 opcode = MLX5_GET(general_obj_in_cmd_hdr, in, opcode);
