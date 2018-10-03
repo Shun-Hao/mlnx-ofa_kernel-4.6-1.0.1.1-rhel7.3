@@ -495,9 +495,9 @@ void ipoib_cm_handle_tx_wc_rss(struct net_device *dev, struct ib_wc *wc)
 	++tx->tx_tail;
 	++send_ring->tx_tail;
 
-	if (send_ring->tx_head - send_ring->tx_tail == priv->sendq_size >> 1 &&
-	    __netif_subqueue_stopped(dev, queue_index) &&
-	    test_bit(IPOIB_FLAG_ADMIN_UP, &priv->flags))
+	if (unlikely(__netif_subqueue_stopped(dev, queue_index) &&
+		     (send_ring->tx_head - send_ring->tx_tail) <= priv->sendq_size >> 1 &&
+		     test_bit(IPOIB_FLAG_ADMIN_UP, &priv->flags)))
 		netif_wake_subqueue(dev, queue_index);
 
 	if (wc->status != IB_WC_SUCCESS &&
