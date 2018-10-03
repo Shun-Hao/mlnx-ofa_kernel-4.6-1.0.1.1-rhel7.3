@@ -946,6 +946,11 @@ struct mlx5_diag_cnt {
 	u16                       sample_index;
 };
 
+struct mlx5_local_lb {
+	bool user_force_disable;
+	bool driver_state;
+};
+
 struct mlx5_core_dev {
 	struct pci_dev	       *pdev;
 	/* sync pci state */
@@ -1000,6 +1005,7 @@ struct mlx5_core_dev {
 	struct mlx5_fw_tracer   *tracer;
 	struct mlx5_as_notify as_notify;
 	struct mlx5_diag_cnt    diag_cnt;
+	struct mlx5_local_lb local_lb;
 };
 
 struct mlx5_db {

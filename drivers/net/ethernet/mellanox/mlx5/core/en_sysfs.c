@@ -911,6 +911,48 @@ static DEVICE_ATTR(vf_roce, S_IRUGO | S_IWUSR,
 		   mlx5e_store_vf_roce);
 #endif
 
+static ssize_t mlx5e_show_force_local_lb(struct device *device,
+					 struct device_attribute *attr,
+					 char *buf)
+{
+	struct net_device *dev = to_net_dev(device);
+	struct mlx5e_priv *priv = netdev_priv(dev);
+	struct mlx5_core_dev *mdev = priv->mdev;
+	bool force_disable_lb = mdev->local_lb.user_force_disable;
+	int len = 0;
+
+	len += sprintf(buf, "Force local loopback disable is %s\n", force_disable_lb ? "ON" : "OFF");
+
+	return len;
+}
+
+static ssize_t mlx5e_store_force_local_lb(struct device *device,
+					  struct device_attribute *attr,
+					  const char *buf, size_t count)
+{
+	struct net_device *dev = to_net_dev(device);
+	struct mlx5e_priv *priv = netdev_priv(dev);
+	struct mlx5_core_dev *mdev = priv->mdev;
+	bool disable;
+	int err;
+
+	err = kstrtobool(buf, &disable);
+	if (err)
+		return -EINVAL;
+
+	if (mdev->local_lb.user_force_disable != disable) {
+		mdev->local_lb.user_force_disable = disable;
+		mlx5_nic_vport_update_local_lb(mdev,
+					       mdev->local_lb.driver_state);
+	}
+
+	return count;
+}
+
+static DEVICE_ATTR(force_local_lb_disable, S_IRUGO | S_IWUSR,
+		   mlx5e_show_force_local_lb,
+		   mlx5e_store_force_local_lb);
+
 static struct attribute *mlx5e_settings_attrs[] = {
 	&dev_attr_hfunc.attr,
 	&dev_attr_pfc_stall_prevention.attr,
@@ -1007,6 +1049,13 @@ static int update_settings_sysfs(struct net_device *dev,
 					      "settings");
 	}
 #endif
+
+	if (MLX5_CAP_GEN(mdev, disable_local_lb_mc) ||
+	    MLX5_CAP_GEN(mdev, disable_local_lb_uc)) {
+		err = sysfs_add_file_to_group(&dev->dev.kobj,
+					      &dev_attr_force_local_lb_disable.attr,
+					      "settings");
+	}
 
 	return err;
 }

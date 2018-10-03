@@ -884,6 +884,7 @@ enum {
 int mlx5_nic_vport_update_local_lb(struct mlx5_core_dev *mdev, bool enable)
 {
 	int inlen = MLX5_ST_SZ_BYTES(modify_nic_vport_context_in);
+	bool disable_local_lb;
 	void *in;
 	int err;
 
@@ -891,14 +892,17 @@ int mlx5_nic_vport_update_local_lb(struct mlx5_core_dev *mdev, bool enable)
 	    !MLX5_CAP_GEN(mdev, disable_local_lb_uc))
 		return 0;
 
+	mdev->local_lb.driver_state = enable;
+	disable_local_lb = mdev->local_lb.user_force_disable || !enable;
+
 	in = kvzalloc(inlen, GFP_KERNEL);
 	if (!in)
 		return -ENOMEM;
 
 	MLX5_SET(modify_nic_vport_context_in, in,
-		 nic_vport_context.disable_mc_local_lb, !enable);
+		 nic_vport_context.disable_mc_local_lb, disable_local_lb);
 	MLX5_SET(modify_nic_vport_context_in, in,
-		 nic_vport_context.disable_uc_local_lb, !enable);
+		 nic_vport_context.disable_uc_local_lb, disable_local_lb);
 
 	if (MLX5_CAP_GEN(mdev, disable_local_lb_mc))
 		MLX5_SET(modify_nic_vport_context_in, in,
