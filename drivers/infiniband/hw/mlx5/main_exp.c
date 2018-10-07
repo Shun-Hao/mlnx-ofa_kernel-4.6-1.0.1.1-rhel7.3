@@ -512,6 +512,11 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		props->device_cap_flags2 |= IB_EXP_DEVICE_UMR_FIXED_SIZE;
 	}
 
+	if (MLX5_CAP_GEN(dev->mdev, qp_packet_based)) {
+		props->device_cap_flags2 |=
+			IB_EXP_DEVICE_PACKET_BASED_CREDIT_MODE;
+	}
+
 	return 0;
 }
 
