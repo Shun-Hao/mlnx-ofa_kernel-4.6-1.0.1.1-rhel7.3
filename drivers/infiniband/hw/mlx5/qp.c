@@ -2109,6 +2109,17 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 			}
 			qp->tunnel_offload_en = true;
 		}
+		if (init_attr->create_flags &
+			IB_QP_EXP_CREATE_PACKET_BASED_CREDIT_MODE) {
+			if (!MLX5_CAP_GEN(dev->mdev, qp_packet_based)) {
+				mlx5_ib_dbg(dev, "Packet based credit mode isn't supported by device\n");
+				return -EOPNOTSUPP;
+			} else if (init_attr->qp_type != IB_QPT_RC) {
+				mlx5_ib_dbg(dev, "Packet based credit mode is supported for RC QP only\n");
+				return -EOPNOTSUPP;
+			}
+			qp->flags |= MLX5_IB_QP_PACKET_BASED_CREDIT_MODE;
+		}
 	}
 
 	if (init_attr->sq_sig_type == IB_SIGNAL_ALL_WR)
@@ -2278,6 +2289,8 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 	if (qp->flags & MLX5_IB_QP_PCI_WRITE_END_PADDING)
 		MLX5_SET(qpc, qpc, end_padding_mode, MLX5_QP_END_PAD_MODE_ALIGN);
 	
+	if (qp->flags & MLX5_IB_QP_PACKET_BASED_CREDIT_MODE)
+		MLX5_SET(qpc, qpc, req_e2e_credit_mode, 1);
 	if (qp->scat_cqe && is_connected(init_attr->qp_type)) {
 		configure_responder_scat_cqe(init_attr, qpc);
 		configure_requester_scat_cqe(dev, init_attr,
