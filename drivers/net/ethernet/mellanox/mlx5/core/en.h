@@ -614,6 +614,7 @@ struct mlx5e_rq {
 
 	unsigned long          state;
 	int                    ix;
+	unsigned int           hw_mtu;
 
 	struct mlx5e_dim       dim_obj; /* Adaptive Moderation */
 
