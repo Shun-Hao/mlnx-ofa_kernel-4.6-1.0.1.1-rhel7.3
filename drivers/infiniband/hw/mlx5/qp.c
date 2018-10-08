@@ -4017,6 +4017,8 @@ int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 			tmp_hop_limit = IPV6_DEFAULT_HOPLIMIT;
 		else
 			tmp_hop_limit  = attr->ah_attr.grh.hop_limit;
+		tmp_hop_limit = (dev->ttld[port - 1].val) ?
+			dev->ttld[port - 1].val : tmp_hop_limit;
 		MLX5_SET(dctc, dctc, hop_limit, tmp_hop_limit);
 
 		err = mlx5_core_create_dct(dev->mdev, qp->dct.mdct, qp->dct.in,
