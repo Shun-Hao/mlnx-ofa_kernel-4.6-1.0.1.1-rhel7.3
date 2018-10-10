@@ -275,6 +275,7 @@ struct mlx5_core_dev *mlx5e_hairpin_get_mdev(struct net *net, int ifindex)
 
 static int mlx5e_hairpin_create_transport(struct mlx5e_hairpin *hp)
 {
+	u32 out[MLX5_ST_SZ_DW(create_tir_out)] = {0};
 	u32 in[MLX5_ST_SZ_DW(create_tir_in)] = {0};
 	void *tirc;
 	int err;
@@ -289,9 +290,12 @@ static int mlx5e_hairpin_create_transport(struct mlx5e_hairpin *hp)
 	MLX5_SET(tirc, tirc, inline_rqn, hp->pair->rqn[0]);
 	MLX5_SET(tirc, tirc, transport_domain, hp->tdn);
 
-	err = mlx5_core_create_tir(hp->func_mdev, in, MLX5_ST_SZ_BYTES(create_tir_in), &hp->tirn);
+	err = mlx5_core_create_tir(hp->func_mdev, in, MLX5_ST_SZ_BYTES(create_tir_in),
+				   out, MLX5_ST_SZ_BYTES(create_tir_out));
 	if (err)
 		goto create_tir_err;
+
+	hp->tirn = MLX5_GET(create_tir_out, out, tirn);
 
 	return 0;
 
@@ -357,12 +361,14 @@ static int mlx5e_hairpin_create_indirect_rqt(struct mlx5e_hairpin *hp)
 static int mlx5e_hairpin_create_indirect_tirs(struct mlx5e_hairpin *hp)
 {
 	struct mlx5e_priv *priv = hp->func_priv;
+	u32 out[MLX5_ST_SZ_DW(create_tir_out)];
 	u32 in[MLX5_ST_SZ_DW(create_tir_in)];
 	int tt, i, err;
 	void *tirc;
 
 	for (tt = 0; tt < MLX5E_NUM_INDIR_TIRS; tt++) {
 		memset(in, 0, MLX5_ST_SZ_BYTES(create_tir_in));
+		memset(out, 0, MLX5_ST_SZ_BYTES(create_tir_out));
 		tirc = MLX5_ADDR_OF(create_tir_in, in, ctx);
 
 		MLX5_SET(tirc, tirc, transport_domain, hp->tdn);
@@ -371,11 +377,14 @@ static int mlx5e_hairpin_create_indirect_tirs(struct mlx5e_hairpin *hp)
 		mlx5e_build_indir_tir_ctx_hash(&priv->channels.params, tt, tirc, false);
 
 		err = mlx5_core_create_tir(hp->func_mdev, in,
-					   MLX5_ST_SZ_BYTES(create_tir_in), &hp->indir_tirn[tt]);
+					   MLX5_ST_SZ_BYTES(create_tir_in),
+					   out, MLX5_ST_SZ_BYTES(create_tir_out));
 		if (err) {
 			mlx5_core_warn(hp->func_mdev, "create indirect tirs failed, %d\n", err);
 			goto err_destroy_tirs;
 		}
+
+		hp->indir_tirn[tt] = MLX5_GET(create_tir_out, out, tirn);
 	}
 	return 0;
 

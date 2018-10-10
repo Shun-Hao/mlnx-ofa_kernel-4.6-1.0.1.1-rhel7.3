@@ -39,12 +39,15 @@
 int mlx5e_create_tir(struct mlx5_core_dev *mdev,
 		     struct mlx5e_tir *tir, u32 *in, int inlen)
 {
+	u32 out[MLX5_ST_SZ_DW(create_tir_out)] = {0};
 	int err;
 
-	err = mlx5_core_create_tir(mdev, in, inlen, &tir->tirn);
+	err = mlx5_core_create_tir(mdev, in, inlen,
+				   out, MLX5_ST_SZ_BYTES(create_tir_out));
 	if (err)
 		return err;
 
+	tir->tirn = MLX5_GET(create_tir_out, out, tirn);
 	list_add(&tir->list, &mdev->mlx5e_res.td.tirs_list);
 
 	return 0;

@@ -1447,7 +1447,8 @@ static void destroy_raw_packet_qp_tir(struct mlx5_ib_dev *dev,
 static int create_raw_packet_qp_tir(struct mlx5_ib_dev *dev,
 				    struct mlx5_ib_rq *rq, u32 tdn,
 				    u32 *qp_flags_en,
-				    struct ib_pd *pd)
+				    struct ib_pd *pd,
+				    u32 *out, int outlen)
 {
 	u8 lb_flag = 0;
 	u32 *in;
@@ -1481,13 +1482,16 @@ static int create_raw_packet_qp_tir(struct mlx5_ib_dev *dev,
 
 	MLX5_SET(tirc, tirc, self_lb_block, lb_flag);
 
-	err = mlx5_core_create_tir(dev->mdev, in, inlen, &rq->tirn);
+	err = mlx5_core_create_tir(dev->mdev, in, inlen, out, outlen);
 
-	if (!err && MLX5_GET(tirc, tirc, self_lb_block)) {
-		err = mlx5_ib_enable_lb(dev, false, true);
+	if (!err) {
+		rq->tirn = MLX5_GET(create_tir_out, out, tirn);
+		if (MLX5_GET(tirc, tirc, self_lb_block)) {
+			err = mlx5_ib_enable_lb(dev, false, true);
+			if (err)
+				destroy_raw_packet_qp_tir(dev, rq, 0, pd);
+		}
 
-		if (err)
-			destroy_raw_packet_qp_tir(dev, rq, 0, pd);
 	}
 	kvfree(in);
 
@@ -1509,6 +1513,7 @@ static int create_raw_packet_qp(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 	int err;
 	u32 tdn = mucontext->tdn;
 	u16 uid = to_mpd(pd)->uid;
+	u32 out[MLX5_ST_SZ_DW(create_tir_out)] = {0};
 
 	if (qp->sq.wqe_cnt) {
 		err = create_raw_packet_qp_tis(dev, qp, sq, tdn, pd);
@@ -1541,7 +1546,8 @@ static int create_raw_packet_qp(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 		if (err)
 			goto err_destroy_sq;
 
-		err = create_raw_packet_qp_tir(dev, rq, tdn, &qp->flags_en, pd);
+		err = create_raw_packet_qp_tir(dev, rq, tdn, &qp->flags_en, pd,
+					       out, MLX5_ST_SZ_BYTES(create_tir_out));
 		if (err)
 			goto err_destroy_rq;
 
@@ -1631,8 +1637,10 @@ static int create_rss_raw_qp_tir(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 	struct mlx5_ib_ucontext *mucontext = to_mucontext(ucontext);
 	struct mlx5_ib_create_qp_resp resp = {};
 	int inlen;
+	int outlen;
 	int err;
 	u32 *in;
+	u32 *out;
 	void *tirc;
 	void *hfso;
 	u32 selected_fields = 0;
@@ -1750,10 +1758,12 @@ static int create_rss_raw_qp_tir(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 
 common:
 	inlen = MLX5_ST_SZ_BYTES(create_tir_in);
-	in = kvzalloc(inlen, GFP_KERNEL);
+	outlen = MLX5_ST_SZ_BYTES(create_tir_out);
+	in = kvzalloc(inlen + outlen, GFP_KERNEL);
 	if (!in)
 		return -ENOMEM;
 
+	out = in + (inlen / 4);
 	MLX5_SET(create_tir_in, in, uid, to_mpd(pd)->uid);
 	tirc = MLX5_ADDR_OF(create_tir_in, in, ctx);
 	MLX5_SET(tirc, tirc, disp_type,
@@ -1864,14 +1874,18 @@ common:
 	MLX5_SET(rx_hash_field_select, hfso, selected_fields, selected_fields);
 
 create_tir:
-	err = mlx5_core_create_tir(dev->mdev, in, inlen, &qp->rss_qp.tirn);
+	err = mlx5_core_create_tir(dev->mdev, in, inlen, out, outlen);
 
-	if (!err && MLX5_GET(tirc, tirc, self_lb_block)) {
-		err = mlx5_ib_enable_lb(dev, false, true);
+	if (!err) {
+		qp->rss_qp.tirn = MLX5_GET(create_tir_out, out, tirn);
+		if (MLX5_GET(tirc, tirc, self_lb_block)) {
+			err = mlx5_ib_enable_lb(dev, false, true);
 
-		if (err)
-			mlx5_cmd_destroy_tir(dev->mdev, qp->rss_qp.tirn,
-					     to_mpd(pd)->uid);
+			if (err)
+				mlx5_cmd_destroy_tir(dev->mdev,
+						     MLX5_GET(create_tir_out, out, tirn),
+						     to_mpd(pd)->uid);
+		}
 	}
 
 	if (err)
