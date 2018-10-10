@@ -517,6 +517,11 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			IB_EXP_DEVICE_PACKET_BASED_CREDIT_MODE;
 	}
 
+	props->pci_atomic_caps.fetch_add = MLX5_CAP_ATOMIC(dev->mdev, fetch_add_pci_atomic);
+	props->pci_atomic_caps.swap = MLX5_CAP_ATOMIC(dev->mdev, swap_pci_atomic);
+	props->pci_atomic_caps.compare_swap = MLX5_CAP_ATOMIC(dev->mdev, compare_swap_pci_atomic);
+	props->exp_comp_mask_2 |= IB_EXP_DEVICE_ATTR_PCI_ATOMIC_CAPS;
+
 	return 0;
 }
 

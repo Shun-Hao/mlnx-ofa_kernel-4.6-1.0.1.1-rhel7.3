@@ -168,6 +168,7 @@ enum ib_exp_device_attr_comp_mask {
 
 enum ib_exp_device_attr_comp_mask_2 {
 	IB_EXP_DEVICE_ATTR_UMR_FIXED_SIZE_CAPS  = 1ULL << 0,
+	IB_EXP_DEVICE_ATTR_PCI_ATOMIC_CAPS	= 1ULL << 1,
 };
 
 enum ib_exp_device_cap_flags2 {
@@ -307,6 +308,12 @@ struct ib_exp_umr_fixed_size_caps {
 	u64 max_entity_size;
 };
 
+struct ib_exp_pci_atomic_caps {
+	u16 fetch_add;
+	u16 swap;
+	u16 compare_swap;
+};
+
 struct ib_exp_device_attr {
 	struct ib_device_attr	base;
 	/* Use IB_EXP_DEVICE_ATTR_... for exp_comp_mask */
@@ -358,6 +365,7 @@ struct ib_exp_device_attr {
 	u32				tunneled_atomic_caps; /* ib_exp_tunneled_atomic_caps */
 	u64				exp_comp_mask_2;         /* ib_exp_device_attr_comp_mask_2 */
 	struct ib_exp_umr_fixed_size_caps umr_fixed_size_caps;
+	struct ib_exp_pci_atomic_caps pci_atomic_caps;
 };
 
 enum ib_dct_create_flags {

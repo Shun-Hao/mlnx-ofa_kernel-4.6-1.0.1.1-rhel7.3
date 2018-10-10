@@ -879,7 +879,14 @@ struct mlx5_ifc_atomic_caps_bits {
 	u8         reserved_at_c0[0x10];
 	u8         atomic_size_dc[0x10];
 
-	u8         reserved_at_e0[0x720];
+	u8         reserved_at_e0[0x1a0];
+
+	u8         fetch_add_pci_atomic[0x10];
+	u8         swap_pci_atomic[0x10];
+	u8         compare_swap_pci_atomic[0x10];
+	u8         reserved_at_2b0[0x10];
+
+	u8         reserved_at_2c0[0x540];
 };
 
 struct mlx5_ifc_odp_cap_bits {
