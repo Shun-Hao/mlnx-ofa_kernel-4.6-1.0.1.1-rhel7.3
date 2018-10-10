@@ -319,6 +319,13 @@ struct ib_uverbs_exp_umr_fixed_size_caps {
 	__u64 max_entity_size;
 };
 
+struct ib_uverbs_exp_pci_atomic_caps {
+	__u16 fetch_add;
+	__u16 swap;
+	__u16 compare_swap;
+	__u16 reserved;
+};
+
 struct ib_uverbs_exp_query_device_resp {
 	__u64					comp_mask;
 	struct ib_uverbs_query_device_resp	base;
@@ -358,6 +365,7 @@ struct ib_uverbs_exp_query_device_resp {
 	__u64 					max_dm_size;
 	__u64					comp_mask_2;
 	struct ib_uverbs_exp_umr_fixed_size_caps umr_fixed_size_caps;
+	struct ib_uverbs_exp_pci_atomic_caps	pci_atomic_caps;
 };
 
 enum ib_uverbs_exp_create_cq_comp_mask {

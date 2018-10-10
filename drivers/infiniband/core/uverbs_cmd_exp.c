@@ -683,6 +683,14 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 			resp->umr_fixed_size_caps.max_entity_size = exp_attr->umr_fixed_size_caps.max_entity_size;
 			resp->comp_mask_2 |= IB_EXP_DEVICE_ATTR_UMR_FIXED_SIZE_CAPS;
 		}
+
+		if (exp_attr->exp_comp_mask_2 & IB_EXP_DEVICE_ATTR_PCI_ATOMIC_CAPS) {
+			resp->pci_atomic_caps.fetch_add = exp_attr->pci_atomic_caps.fetch_add;
+			resp->pci_atomic_caps.swap = exp_attr->pci_atomic_caps.swap;
+			resp->pci_atomic_caps.compare_swap = exp_attr->pci_atomic_caps.compare_swap;
+			resp->comp_mask_2 |= IB_EXP_DEVICE_ATTR_PCI_ATOMIC_CAPS;
+		}
+
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_COMP_MASK_2;
 	}
 
