@@ -1556,6 +1556,12 @@ static int create_raw_packet_qp(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 			resp->comp_mask |= MLX5_IB_CREATE_QP_RESP_MASK_RQN;
 			resp->tirn = rq->tirn;
 			resp->comp_mask |= MLX5_IB_CREATE_QP_RESP_MASK_TIRN;
+			if (MLX5_CAP_FLOWTABLE_NIC_RX(dev->mdev, sw_owner)) {
+				resp->tir_icm_addr = MLX5_GET(create_tir_out, out, icm_address_31_0) |
+						     (u64)MLX5_GET(create_tir_out, out, icm_address_39_32) << 32 |
+						     (u64)MLX5_GET(create_tir_out, out, icm_address_63_40) << 40;
+				resp->comp_mask |= MLX5_IB_CREATE_QP_RESP_MASK_TIR_ICM_ADDR;
+			}
 		}
 	}
 
@@ -1894,6 +1900,12 @@ create_tir:
 	if (mucontext->devx_uid) {
 		resp.comp_mask |= MLX5_IB_CREATE_QP_RESP_MASK_TIRN;
 		resp.tirn = qp->rss_qp.tirn;
+		if (MLX5_CAP_FLOWTABLE_NIC_RX(dev->mdev, sw_owner)) {
+			resp.tir_icm_addr = MLX5_GET(create_tir_out, out, icm_address_31_0) |
+					    (u64)MLX5_GET(create_tir_out, out, icm_address_39_32) << 32 |
+					    (u64)MLX5_GET(create_tir_out, out, icm_address_63_40) << 40;
+			resp.comp_mask |= MLX5_IB_CREATE_QP_RESP_MASK_TIR_ICM_ADDR;
+		}
 	}
 
 	err = ib_copy_to_udata(udata, &resp, min(udata->outlen, sizeof(resp)));
