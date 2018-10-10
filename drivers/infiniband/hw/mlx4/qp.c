@@ -1100,7 +1100,10 @@ static int create_qp_common(struct mlx4_ib_dev *dev, struct ib_pd *pd,
 		}
 
 		if (qp->max_inline_data) {
-			err = mlx4_bf_alloc(dev->dev, &qp->bf, 0);
+			int numa_node;
+
+			numa_node = dev_to_node(&dev->dev->persist->pdev->dev);
+			err = mlx4_bf_alloc(dev->dev, &qp->bf, numa_node);
 			if (err) {
 				pr_debug("failed to allocate blue flame register (%d)",
 				         err);
