@@ -1286,9 +1286,14 @@ int ib_init_ah_attr_from_path(struct ib_device *device, u8 port_num,
 				      get_src_path_mask(device, port_num));
 	}
 
-	if (rec->hop_limit > 0 || sa_path_is_roce(rec))
+	if (rec->hop_limit > 0 || sa_path_is_roce(rec)) {
 		ret = init_ah_attr_grh_fields(device, port_num,
 					      rec, ah_attr, gid_attr);
+		if (!ret &&
+		    (ah_attr->grh.sgid_attr->gid_type == IB_GID_TYPE_ROCE_UDP_ENCAP))
+			rdma_ah_set_udp_sport(ah_attr,
+					      be16_to_cpu(sa_path_get_udp_sport(rec)));
+	}
 	return ret;
 }
 EXPORT_SYMBOL(ib_init_ah_attr_from_path);

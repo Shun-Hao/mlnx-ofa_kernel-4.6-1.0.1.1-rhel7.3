@@ -798,6 +798,10 @@ int ib_init_ah_attr_from_wc(struct ib_device *device, u8 port_num,
 		if (IS_ERR(sgid_attr))
 			return PTR_ERR(sgid_attr);
 
+		if ((sgid_attr->gid_type == IB_GID_TYPE_ROCE_UDP_ENCAP) &&
+		    (wc->wc_flags & IB_WC_WITH_UDP_SPORT))
+			rdma_ah_set_udp_sport(ah_attr, wc->udp_sport);
+
 		flow_class = be32_to_cpu(grh->version_tclass_flow);
 		if (ll_dest_addr && wc->wc_flags & IB_WC_WITH_VLAN &&
 				wc->wc_flags & IB_WC_WITH_SMAC) {

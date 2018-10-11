@@ -1030,6 +1030,7 @@ enum ib_wc_flags {
 	IB_WC_WITH_SMAC		= (1<<4),
 	IB_WC_WITH_VLAN		= (1<<5),
 	IB_WC_WITH_NETWORK_HDR_TYPE	= (1<<6),
+	IB_WC_WITH_UDP_SPORT	= (1<<7),
 };
 
 struct ib_wc {
@@ -1055,6 +1056,7 @@ struct ib_wc {
 	u8			port_num;	/* valid only for DR SMPs on switches */
 	u8			smac[ETH_ALEN];
 	u16			vlan_id;
+	u16			udp_sport;
 	u8			network_hdr_type;
 };
 
