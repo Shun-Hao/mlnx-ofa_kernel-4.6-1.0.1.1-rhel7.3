@@ -303,6 +303,31 @@ struct cm_id_private {
 	atomic_t work_count;
 };
 
+struct cm_hdr {
+	u8 cma_version;
+	u8 ip_version;
+	__be16 port;
+};
+
+#define SERVICE_ID_SPORT_OFFSET 48
+
+static inline __be16 cm_get_udp_sport(__u64 service_id, const void *priv_data)
+{
+	struct cm_hdr *hdr;
+	__be16 sport, dport;
+
+	dport = (__be16)(service_id >> SERVICE_ID_SPORT_OFFSET);
+	hdr = (struct cm_hdr *)priv_data;
+	sport = hdr->port;
+
+	return cm_calc_udp_sport(dport, sport);
+}
+
+static inline __be16 cm_get_udp_sport_req(struct cm_req_msg *req)
+{
+	return cm_get_udp_sport(req->service_id, req->private_data);
+}
+
 static void cm_work_handler(struct work_struct *work);
 
 static inline void cm_deref_id(struct cm_id_private *cm_id_priv)
@@ -2002,9 +2027,14 @@ static int cm_req_handler(struct cm_work *work)
 		work->path[1].rec_type = work->path[0].rec_type;
 	cm_format_paths_from_req(req_msg, &work->path[0],
 				 &work->path[1]);
-	if (cm_id_priv->av.ah_attr.type == RDMA_AH_ATTR_TYPE_ROCE)
+	if (cm_id_priv->av.ah_attr.type == RDMA_AH_ATTR_TYPE_ROCE) {
 		sa_path_set_dmac(&work->path[0],
 				 cm_id_priv->av.ah_attr.roce.dmac);
+		if (gid_attr &&
+		    (gid_attr->gid_type == IB_GID_TYPE_ROCE_UDP_ENCAP))
+			sa_path_set_udp_sport(&work->path[0],
+					      cm_get_udp_sport_req(req_msg));
+	}
 	work->path[0].hop_limit = grh->hop_limit;
 	ret = cm_init_av_by_path(&work->path[0], gid_attr, &cm_id_priv->av,
 				 cm_id_priv);
