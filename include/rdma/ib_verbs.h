@@ -952,6 +952,7 @@ struct ib_ah_attr {
 };
 
 struct roce_ah_attr {
+	u16			udp_sport;
 	u8			dmac[ETH_ALEN];
 };
 
@@ -4248,6 +4249,17 @@ static inline u32 rdma_ah_get_dlid(const struct rdma_ah_attr *attr)
 	else if (attr->type == RDMA_AH_ATTR_TYPE_OPA)
 		return attr->opa.dlid;
 	return 0;
+}
+
+static inline void rdma_ah_set_udp_sport(struct rdma_ah_attr *attr,
+					 u16 udp_sport)
+{
+	attr->roce.udp_sport = udp_sport;
+}
+
+static inline u16 rdma_ah_get_udp_sport(const struct rdma_ah_attr *attr)
+{
+	return attr->roce.udp_sport;
 }
 
 static inline void rdma_ah_set_sl(struct rdma_ah_attr *attr, u8 sl)
