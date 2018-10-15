@@ -328,6 +328,11 @@ static inline __be16 cm_get_udp_sport_req(struct cm_req_msg *req)
 	return cm_get_udp_sport(req->service_id, req->private_data);
 }
 
+static inline __be16 cm_get_udp_sport_sidr_req(struct cm_sidr_req_msg *req)
+{
+	return cm_get_udp_sport(req->service_id, req->private_data);
+}
+
 static void cm_work_handler(struct work_struct *work);
 
 static inline void cm_deref_id(struct cm_id_private *cm_id_priv)
@@ -412,7 +417,10 @@ static int cm_create_response_msg_ah(struct cm_port *port,
 				     struct ib_mad_send_buf *msg)
 {
 	struct ib_ah *ah;
+	struct cm_req_msg *m = (struct cm_req_msg *)mad_recv_wc->recv_buf.mad;
 
+	mad_recv_wc->wc->udp_sport = __be16_to_cpu(cm_get_udp_sport_req(m));
+	mad_recv_wc->wc->wc_flags |= IB_WC_WITH_UDP_SPORT;
 	ah = ib_create_ah_from_wc(port->mad_agent->qp->pd, mad_recv_wc->wc,
 				  mad_recv_wc->recv_buf.grh, port->port_num);
 	if (IS_ERR(ah))
@@ -3601,6 +3609,8 @@ static int cm_sidr_req_handler(struct cm_work *work)
 	sidr_req_msg = (struct cm_sidr_req_msg *)
 				work->mad_recv_wc->recv_buf.mad;
 	wc = work->mad_recv_wc->wc;
+	wc->udp_sport = __be16_to_cpu(cm_get_udp_sport_sidr_req(sidr_req_msg));
+	wc->wc_flags |= IB_WC_WITH_UDP_SPORT;
 	cm_id_priv->av.dgid.global.subnet_prefix = cpu_to_be64(wc->slid);
 	cm_id_priv->av.dgid.global.interface_id = 0;
 	ret = cm_init_av_for_response(work->port, work->mad_recv_wc->wc,
