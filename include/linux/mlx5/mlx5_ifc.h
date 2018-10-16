@@ -837,11 +837,17 @@ struct mlx5_ifc_device_mem_cap_bits {
 
 	u8         steering_sw_icm_start_address[0x40];
 
-	u8         reserved_at_100[0x12];
+	u8         reserved_at_100[0x8];
+	u8         log_header_modify_sw_icm_size[0x8];
+	u8         reserved_at_110[0x2];
 	u8         log_sw_icm_alloc_granularity[0x6];
 	u8         log_steering_sw_icm_size[0x8];
 
-	u8         reserved_at_120[0x6e0];
+	u8         reserved_at_120[0x20];
+
+	u8         header_modify_sw_icm_start_address[0x40];
+
+	u8         reserved_at_180[0x680];
 };
 
 enum {
