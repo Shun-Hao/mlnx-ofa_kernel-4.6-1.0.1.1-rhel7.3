@@ -104,6 +104,12 @@ int mlx5_cmd_alloc_sw_icm(struct mlx5_dm_mgr *dm_mgr, u64 *addr,
 		log_icm_size = MLX5_CAP_DEV_MEM(dev, log_steering_sw_icm_size);
 		block_map = dm_mgr->steering_sw_icm_alloc_blocks;
 		break;
+	case MLX5_IB_UAPI_DM_TYPE_HEADER_MODIFY_SW_ICM:
+		icm_start_addr = MLX5_CAP64_DEV_MEM(dev,
+						    header_modify_sw_icm_start_address);
+		log_icm_size = MLX5_CAP_DEV_MEM(dev, log_header_modify_sw_icm_size);
+		block_map = dm_mgr->header_modify_sw_icm_alloc_blocks;
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -162,6 +168,11 @@ int mlx5_cmd_dealloc_sw_icm(struct mlx5_dm_mgr *dm_mgr, u64 addr,
 		start_block_idx = (addr - MLX5_CAP64_DEV_MEM(dev, steering_sw_icm_start_address))
 			>> MLX5_LOG_SW_ICM_BLOCK_SIZE;
 		block_map = dm_mgr->steering_sw_icm_alloc_blocks;
+		break;
+	case MLX5_IB_UAPI_DM_TYPE_HEADER_MODIFY_SW_ICM:
+		start_block_idx = (addr - MLX5_CAP64_DEV_MEM(dev, header_modify_sw_icm_start_address))
+			>> MLX5_LOG_SW_ICM_BLOCK_SIZE;
+		block_map = dm_mgr->header_modify_sw_icm_alloc_blocks;
 		break;
 	default:
 		return -EINVAL;

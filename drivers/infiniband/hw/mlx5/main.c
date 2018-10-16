@@ -2413,6 +2413,7 @@ struct ib_dm *mlx5_ib_alloc_dm(struct ib_device *ibdev,
 					    attrs);
 		break;
 	case MLX5_IB_UAPI_DM_TYPE_STEERING_SW_ICM:
+	case MLX5_IB_UAPI_DM_TYPE_HEADER_MODIFY_SW_ICM:
 		err = handle_alloc_dm_sw_icm(context, dm,
 					     attr, attrs,
 					     type);
@@ -2455,6 +2456,7 @@ int mlx5_ib_dealloc_dm(struct ib_dm *ibdm)
 			     DIV_ROUND_UP(dm->size, PAGE_SIZE));
 		break;
 	case MLX5_IB_UAPI_DM_TYPE_STEERING_SW_ICM:
+	case MLX5_IB_UAPI_DM_TYPE_HEADER_MODIFY_SW_ICM:
 		ret = mlx5_cmd_dealloc_sw_icm(dm_mgr, dm->dev_addr,
 					      dm->size, dm->icm_dm.obj_id,
 					      dm->type);

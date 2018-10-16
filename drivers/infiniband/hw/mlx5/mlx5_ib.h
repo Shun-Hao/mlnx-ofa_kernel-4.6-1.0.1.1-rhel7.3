@@ -910,6 +910,7 @@ struct mlx5_dm_mgr {
 	spinlock_t		dm_lock;
 	DECLARE_BITMAP(memic_alloc_pages, MLX5_MAX_MEMIC_PAGES);
 	DECLARE_BITMAP(steering_sw_icm_alloc_blocks, MLX5_MAX_STEERING_SW_ICM_BLOCKS);
+	DECLARE_BITMAP(header_modify_sw_icm_alloc_blocks, MLX5_MAX_STEERING_SW_ICM_BLOCKS);
 };
 
 struct mlx5_read_counters_attr {
