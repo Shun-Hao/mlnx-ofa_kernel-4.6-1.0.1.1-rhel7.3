@@ -40,6 +40,7 @@
 
 #include <linux/uaccess.h>
 
+#include <rdma/ib_cache.h>
 #include <rdma/uverbs_types.h>
 #include <rdma/uverbs_std_types.h>
 #include "rdma_core.h"
@@ -1930,6 +1931,8 @@ static void copy_ah_attr_from_uverbs(struct ib_qp *qp,
 				     struct rdma_ah_attr *rdma_attr,
 				     struct ib_uverbs_qp_dest *uverb_attr)
 {
+	const struct ib_gid_attr *gattr;
+
 	rdma_attr->type = rdma_ah_find_type(qp->device, qp->real_qp->port);
 	if (uverb_attr->is_global) {
 		rdma_ah_set_grh(rdma_attr, NULL,
@@ -1941,7 +1944,17 @@ static void copy_ah_attr_from_uverbs(struct ib_qp *qp,
 	} else {
 		rdma_ah_set_ah_flags(rdma_attr, 0);
 	}
-	rdma_ah_set_dlid(rdma_attr, uverb_attr->dlid);
+
+	gattr = rdma_get_gid_attr(qp->device,
+				  uverb_attr->port_num,
+				  uverb_attr->sgid_index);
+	if (!IS_ERR(gattr)) {
+		if (gattr->gid_type == IB_GID_TYPE_ROCE_UDP_ENCAP)
+			rdma_ah_set_udp_sport(rdma_attr, uverb_attr->dlid);
+		rdma_put_gid_attr(gattr);
+	} else
+		rdma_ah_set_dlid(rdma_attr, uverb_attr->dlid);
+
 	rdma_ah_set_sl(rdma_attr, uverb_attr->sl);
 	rdma_ah_set_path_bits(rdma_attr, uverb_attr->src_path_bits);
 	rdma_ah_set_static_rate(rdma_attr, uverb_attr->static_rate);
