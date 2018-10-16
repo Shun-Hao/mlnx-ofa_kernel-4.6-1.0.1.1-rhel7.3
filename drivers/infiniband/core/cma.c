@@ -3684,6 +3684,7 @@ static int cma_resolve_ib_udp(struct rdma_id_private *id_priv,
 	void *private_data;
 	u8 offset;
 	int ret;
+	__be16 dport, sport;
 
 	memset(&req, 0, sizeof req);
 	offset = cma_user_data_offset(id_priv);
@@ -3724,6 +3725,13 @@ static int cma_resolve_ib_udp(struct rdma_id_private *id_priv,
 	req.timeout_ms = 1 << (CMA_CM_RESPONSE_TIMEOUT - 8);
 	req.max_cm_retries = CMA_MAX_CM_RETRIES;
 
+	if (req.sgid_attr &&
+	    (req.sgid_attr->gid_type == IB_GID_TYPE_ROCE_UDP_ENCAP)) {
+		dport = cma_port(cma_dst_addr(id_priv));
+		sport = cma_port(cma_src_addr(id_priv));
+		sa_path_set_udp_sport(req.path,
+				      cm_calc_udp_sport(dport, sport));
+	}
 	ret = ib_send_cm_sidr_req(id_priv->cm_id.ib, &req);
 	if (ret) {
 		ib_destroy_cm_id(id_priv->cm_id.ib);
@@ -3743,6 +3751,7 @@ static int cma_connect_ib(struct rdma_id_private *id_priv,
 	struct ib_cm_id	*id;
 	u8 offset;
 	int ret;
+	__be16 dport, sport;
 
 	memset(&req, 0, sizeof req);
 	offset = cma_user_data_offset(id_priv);
@@ -3797,6 +3806,13 @@ static int cma_connect_ib(struct rdma_id_private *id_priv,
 	req.max_cm_retries = CMA_MAX_CM_RETRIES;
 	req.srq = id_priv->srq ? 1 : 0;
 
+	if (req.ppath_sgid_attr &&
+	    (req.ppath_sgid_attr->gid_type == IB_GID_TYPE_ROCE_UDP_ENCAP)) {
+		dport = cma_port(cma_dst_addr(id_priv));
+		sport = cma_port(cma_src_addr(id_priv));
+		sa_path_set_udp_sport(req.primary_path,
+				      cm_calc_udp_sport(dport, sport));
+	}
 	ret = ib_send_cm_req(id_priv->cm_id.ib, &req);
 out:
 	if (ret && !IS_ERR(id)) {
