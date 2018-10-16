@@ -59,4 +59,8 @@ int mlx5_cmd_detach_mcg(struct mlx5_core_dev *dev, union ib_gid *mgid,
 			u32 qpn, u16 uid);
 int mlx5_cmd_xrcd_alloc(struct mlx5_core_dev *dev, u32 *xrcdn, u16 uid);
 int mlx5_cmd_xrcd_dealloc(struct mlx5_core_dev *dev, u32 xrcdn, u16 uid);
+int mlx5_cmd_alloc_sw_icm(struct mlx5_dm_mgr *dm_mgr, u64 *addr,
+			  u64 length, u32 *obj_id, int type);
+int mlx5_cmd_dealloc_sw_icm(struct mlx5_dm_mgr *dm_mgr, u64 addr,
+			    u64 length, u32 obj_id, int type);
 #endif /* MLX5_IB_CMD_H */

@@ -74,6 +74,115 @@ int mlx5_cmd_query_cong_params(struct mlx5_core_dev *dev, int cong_point,
 	return mlx5_cmd_exec(dev, in, sizeof(in), out, out_size);
 }
 
+int mlx5_cmd_alloc_sw_icm(struct mlx5_dm_mgr *dm_mgr, u64 *addr,
+			  u64 length, u32 *obj_id, int type)
+{
+	struct mlx5_core_dev *dev = dm_mgr->dev;
+	u32 num_blocks = DIV_ROUND_UP(length, MLX5_SW_ICM_BLOCK_SIZE);
+	u32 out[MLX5_ST_SZ_DW(general_obj_out_cmd_hdr)] = {0};
+	u32 in[MLX5_ST_SZ_DW(create_sw_icm_in)] = {0};
+	unsigned long *block_map;
+	u64 icm_start_addr;
+	u32 log_icm_size;
+	u32 max_blocks;
+	u64 block_idx;
+	void *sw_icm;
+	int ret;
+
+	if (!length || (length & (length - 1)) ||
+	    length & (MLX5_SW_ICM_BLOCK_SIZE - 1))
+		return -EINVAL;
+
+	MLX5_SET(general_obj_in_cmd_hdr, in, opcode,
+		 MLX5_CMD_OP_CREATE_GENERAL_OBJECT);
+	MLX5_SET(general_obj_in_cmd_hdr, in, obj_type, MLX5_OBJ_TYPE_SW_ICM);
+
+	switch (type) {
+	case MLX5_IB_UAPI_DM_TYPE_STEERING_SW_ICM:
+		icm_start_addr = MLX5_CAP64_DEV_MEM(dev,
+						    steering_sw_icm_start_address);
+		log_icm_size = MLX5_CAP_DEV_MEM(dev, log_steering_sw_icm_size);
+		block_map = dm_mgr->steering_sw_icm_alloc_blocks;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	max_blocks = BIT(log_icm_size - MLX5_LOG_SW_ICM_BLOCK_SIZE);
+	spin_lock(&dm_mgr->dm_lock);
+	block_idx = bitmap_find_next_zero_area(block_map,
+					       max_blocks,
+					       0,
+					       num_blocks, 0);
+
+	if (block_idx < max_blocks)
+		bitmap_set(block_map,
+			   block_idx, num_blocks);
+
+	spin_unlock(&dm_mgr->dm_lock);
+
+	if (block_idx >= max_blocks)
+		return -ENOMEM;
+
+	sw_icm = MLX5_ADDR_OF(create_sw_icm_in, in, sw_icm);
+	icm_start_addr += block_idx << MLX5_LOG_SW_ICM_BLOCK_SIZE;
+	MLX5_SET64(sw_icm, sw_icm, sw_icm_start_addr,
+		   icm_start_addr);
+	MLX5_SET(sw_icm, sw_icm, log_sw_icm_size, fls(length - 1));
+
+	ret = mlx5_cmd_exec(dev, in, sizeof(in), out, sizeof(out));
+	if (ret) {
+		spin_lock(&dm_mgr->dm_lock);
+		bitmap_clear(block_map,
+			     block_idx, num_blocks);
+		spin_unlock(&dm_mgr->dm_lock);
+
+		return ret;
+	}
+
+	*addr = icm_start_addr;
+	*obj_id = MLX5_GET(general_obj_out_cmd_hdr, out, obj_id);
+
+	return 0;
+}
+
+int mlx5_cmd_dealloc_sw_icm(struct mlx5_dm_mgr *dm_mgr, u64 addr,
+			    u64 length, u32 obj_id, int type)
+{
+	struct mlx5_core_dev *dev = dm_mgr->dev;
+	u32 num_blocks = DIV_ROUND_UP(length, MLX5_SW_ICM_BLOCK_SIZE);
+	u32 out[MLX5_ST_SZ_DW(general_obj_out_cmd_hdr)] = {0};
+	u32 in[MLX5_ST_SZ_DW(general_obj_in_cmd_hdr)] = {0};
+	unsigned long *block_map;
+	u64 start_block_idx;
+	int err;
+
+	switch (type) {
+	case MLX5_IB_UAPI_DM_TYPE_STEERING_SW_ICM:
+		start_block_idx = (addr - MLX5_CAP64_DEV_MEM(dev, steering_sw_icm_start_address))
+			>> MLX5_LOG_SW_ICM_BLOCK_SIZE;
+		block_map = dm_mgr->steering_sw_icm_alloc_blocks;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	MLX5_SET(general_obj_in_cmd_hdr, in, opcode, MLX5_CMD_OP_DESTROY_GENERAL_OBJECT);
+	MLX5_SET(general_obj_in_cmd_hdr, in, obj_type, MLX5_OBJ_TYPE_SW_ICM);
+	MLX5_SET(general_obj_in_cmd_hdr, in, obj_id, obj_id);
+
+	err =  mlx5_cmd_exec(dev, in, sizeof(in), out, sizeof(out));
+	if (err)
+		return err;
+
+	spin_lock(&dm_mgr->dm_lock);
+	bitmap_clear(block_map,
+		     start_block_idx, num_blocks);
+	spin_unlock(&dm_mgr->dm_lock);
+
+	return 0;
+}
+
 int mlx5_cmd_alloc_memic(struct mlx5_dm_mgr *dm_mgr, phys_addr_t *addr,
 			 u64 length, u32 alignment)
 {

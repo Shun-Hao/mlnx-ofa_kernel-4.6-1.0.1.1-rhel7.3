@@ -2280,6 +2280,15 @@ static inline int check_dm_type_support(struct mlx5_ib_dev *dev,
 		if (!MLX5_CAP_DEV_MEM(dev->mdev, memic))
 			return -EOPNOTSUPP;
 		break;
+	case MLX5_IB_UAPI_DM_TYPE_STEERING_SW_ICM:
+		if (!capable(CAP_SYS_RAWIO) ||
+		    !capable(CAP_NET_RAW))
+			return -EPERM;
+
+		if (!(MLX5_CAP_FLOWTABLE_NIC_RX(dev->mdev, sw_owner) ||
+		      MLX5_CAP_FLOWTABLE_NIC_TX(dev->mdev, sw_owner)))
+			return -EOPNOTSUPP;
+		break;
 	}
 
 	return 0;
@@ -2335,6 +2344,40 @@ err_dealloc:
 	return err;
 }
 
+static int handle_alloc_dm_sw_icm(struct ib_ucontext *ctx,
+				  struct mlx5_ib_dm *dm,
+				  struct ib_dm_alloc_attr *attr,
+				  struct uverbs_attr_bundle *attrs,
+				  int type)
+{
+	struct mlx5_dm_mgr *dm_mgr = &to_mdev(ctx->device)->dm_mgr;
+	u64 act_size;
+	int err;
+
+	/* We round it up to be a multiple of
+	 * ICM block size and a power of 2.
+	 */
+	act_size = roundup(attr->length, MLX5_SW_ICM_BLOCK_SIZE);
+	act_size = 1 << fls(act_size - 1);
+
+	dm->size = act_size;
+	err = mlx5_cmd_alloc_sw_icm(dm_mgr, &dm->dev_addr,
+				    act_size, &dm->icm_dm.obj_id,
+				    type);
+	if (err)
+		return err;
+
+	err = uverbs_copy_to(attrs,
+			     MLX5_IB_ATTR_ALLOC_DM_RESP_START_OFFSET,
+			     &dm->dev_addr, sizeof(dm->dev_addr));
+	if (err)
+		mlx5_cmd_dealloc_sw_icm(dm_mgr, dm->dev_addr,
+					dm->size, dm->icm_dm.obj_id,
+					type);
+
+	return err;
+}
+
 struct ib_dm *mlx5_ib_alloc_dm(struct ib_device *ibdev,
 			       struct ib_ucontext *context,
 			       struct ib_dm_alloc_attr *attr,
@@ -2368,6 +2411,11 @@ struct ib_dm *mlx5_ib_alloc_dm(struct ib_device *ibdev,
 		err = handle_alloc_dm_memic(context, dm,
 					    attr,
 					    attrs);
+		break;
+	case MLX5_IB_UAPI_DM_TYPE_STEERING_SW_ICM:
+		err = handle_alloc_dm_sw_icm(context, dm,
+					     attr, attrs,
+					     type);
 		break;
 	default:
 		err = -EOPNOTSUPP;
@@ -2405,6 +2453,13 @@ int mlx5_ib_dealloc_dm(struct ib_dm *ibdm)
 		bitmap_clear(to_mucontext(ibdm->uobject->context)->dm_pages,
 			     page_idx,
 			     DIV_ROUND_UP(dm->size, PAGE_SIZE));
+		break;
+	case MLX5_IB_UAPI_DM_TYPE_STEERING_SW_ICM:
+		ret = mlx5_cmd_dealloc_sw_icm(dm_mgr, dm->dev_addr,
+					      dm->size, dm->icm_dm.obj_id,
+					      dm->type);
+		if (ret)
+			return ret;
 		break;
 	default:
 		return -EOPNOTSUPP;
@@ -5784,7 +5839,9 @@ static int populate_specs_root(struct mlx5_ib_dev *dev)
 	    MLX5_ACCEL_IPSEC_CAP_DEVICE)
 		trees[num_trees++] = &mlx5_ib_flow_action;
 
-	if (MLX5_CAP_DEV_MEM(dev->mdev, memic))
+	if ((MLX5_CAP_DEV_MEM(dev->mdev, memic) ||
+	    MLX5_CAP_GEN_64(dev->mdev, general_obj_types) &
+	    MLX5_GENERAL_OBJ_TYPES_CAP_SW_ICM))
 		trees[num_trees++] = &mlx5_ib_dm;
 
 	if (MLX5_CAP_GEN_64(dev->mdev, general_obj_types) &
@@ -6146,7 +6203,9 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 			(1ull << IB_USER_VERBS_CMD_CLOSE_XRCD);
 	}
 
-	if (MLX5_CAP_DEV_MEM(mdev, memic)) {
+	if (MLX5_CAP_DEV_MEM(mdev, memic) ||
+	    MLX5_CAP_GEN_64(mdev, general_obj_types) &
+	    MLX5_GENERAL_OBJ_TYPES_CAP_SW_ICM) {
 		dev->ib_dev.alloc_dm = mlx5_ib_alloc_dm;
 		dev->ib_dev.dealloc_dm = mlx5_ib_dealloc_dm;
 		dev->ib_dev.reg_dm_mr = mlx5_ib_reg_dm_mr;
