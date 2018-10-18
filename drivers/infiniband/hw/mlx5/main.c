@@ -3282,7 +3282,8 @@ static struct mlx5_ib_flow_prio *get_flow_table(struct mlx5_ib_dev *dev,
 		if (ft_type == MLX5_IB_FT_RX) {
 			fn_type = MLX5_FLOW_NAMESPACE_BYPASS;
 			prio = &dev->flow_db->prios[priority];
-			num_entries = 1 << dev->steering_data->ingress_log_ft_size[priority];
+			num_entries = 
+				1 << dev->flow_db->steering_data->ingress_log_ft_size[priority];
 			if (!dev->rep &&
 			    MLX5_CAP_FLOWTABLE_NIC_RX(dev->mdev, decap))
 				flags |= MLX5_FLOW_TABLE_TUNNEL_EN_DECAP;

@@ -2269,7 +2269,7 @@ void cleanup_steering_sysfs(struct mlx5_ib_dev *dev)
 
 		for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
 			struct mlx5_steering_data *data =
-				&dev->steering_data[port - 1];
+				&dev->flow_db->steering_data[port - 1];
 
 			if (data->initialized)
 				kobject_put(&data->kobj);
@@ -2291,7 +2291,7 @@ int init_steering_sysfs(struct mlx5_ib_dev *dev)
 		return -ENOMEM;
 
 	for (port = 1; port <= MLX5_CAP_GEN(dev->mdev, num_ports); port++) {
-		struct mlx5_steering_data *data = &dev->steering_data[port - 1];
+		struct mlx5_steering_data *data = &dev->flow_db->steering_data[port - 1];
 
 		err = kobject_init_and_add(&data->kobj, &steering_type,
 					   dev->steering_kobj, "%d", port);

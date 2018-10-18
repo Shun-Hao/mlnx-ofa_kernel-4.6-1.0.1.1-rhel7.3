@@ -215,6 +215,7 @@ struct mlx5_ib_flow_db {
 	struct mlx5_ib_flow_prio	sniffer[MLX5_IB_NUM_SNIFFER_FTS];
 	struct mlx5_ib_flow_prio	egress[MLX5_IB_NUM_EGRESS_FTS];
 	struct mlx5_flow_table		*lag_demux_ft;
+	struct mlx5_steering_data steering_data[MLX5_MAX_PORTS];
 	/* Protect flow steering bypass flow tables
 	 * when add/del flow rules.
 	 * only single add/removal of flow steering rule could be done
@@ -1049,7 +1050,6 @@ struct mlx5_ib_dev {
 	struct mlx5_dc_data	*dcd[MLX5_MAX_PORTS];
 	struct mlx5_tc_data	tcd[MLX5_MAX_PORTS];
 	struct mlx5_ttl_data	ttld[MLX5_MAX_PORTS];
-	struct mlx5_steering_data steering_data[MLX5_MAX_PORTS];
 	struct kobject		*dc_kobj;
 	struct kobject		*tc_kobj;
 	struct kobject		*ttl_kobj;
