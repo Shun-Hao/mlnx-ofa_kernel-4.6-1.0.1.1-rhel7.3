@@ -50,5 +50,7 @@
 #define IOCTL_FPGA_QUERY     _IOR('m', 0x84, struct mlx5_fpga_query *)
 /* Get FPGA cap mailbox */
 #define IOCTL_FPGA_CAP       _IOR('m', 0x85, u32 *)
+/* Get FPGA temperature */
+#define IOCTL_FPGA_TEMPERATURE _IOWR('m', 0x86, struct mlx5_fpga_temperature *)
 
 #endif /* MLX5_UAPI_FPGA_TOOLS_H */

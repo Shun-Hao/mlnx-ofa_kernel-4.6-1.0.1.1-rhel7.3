@@ -57,6 +57,12 @@ enum mlx5_fpga_status {
 	MLX5_FPGA_STATUS_DISCONNECTED = 3,
 };
 
+enum mlx5_fpga_tee {
+	MLX5_FPGA_TEE_DISABLE = 0,
+	MLX5_FPGA_TEE_GENERATE_EVENT = 1,
+	MLX5_FPGA_TEE_GENERATE_SINGLE_EVENT = 2,
+};
+
 struct mlx5_fpga_query {
 	enum mlx5_fpga_image admin_image;
 	enum mlx5_fpga_image oper_image;
@@ -82,8 +88,25 @@ struct mlx5_fpga_shell_counters {
 	u64 ddr_write_bytes;
 };
 
+#define MLX5_FPGA_INTERNAL_SENSORS_LOW 63
+#define MLX5_FPGA_INTERNAL_SENSORS_HIGH 63
+
+struct mlx5_fpga_temperature {
+	u32 temperature;
+	u32 index;
+	u32 tee;
+	u32 max_temperature;
+	u32 temperature_threshold_hi;
+	u32 temperature_threshold_lo;
+	u32 mte;
+	u32 mtr;
+	char sensor_name[16];
+};
+
 int mlx5_fpga_caps(struct mlx5_core_dev *dev);
 int mlx5_fpga_query(struct mlx5_core_dev *dev, struct mlx5_fpga_query *query);
+int mlx5_fpga_query_mtmp(struct mlx5_core_dev *dev,
+			 struct mlx5_fpga_temperature *temp);
 int mlx5_fpga_ctrl_op(struct mlx5_core_dev *dev, u8 op);
 int mlx5_fpga_access_reg(struct mlx5_core_dev *dev, u8 size, u64 addr,
 			 void *buf, bool write);
