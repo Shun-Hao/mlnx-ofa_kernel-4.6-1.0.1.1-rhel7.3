@@ -3059,7 +3059,7 @@ static inline uint16_t folded_qp(u32 q)
 	return res;
 }
 
-static inline uint16_t calc_roce_udp_sport(struct mlx5_ib_qp *qp,
+static inline uint16_t calc_roce_udp_sport(const struct mlx5_ib_qp *qp,
 					   const struct rdma_ah_attr *ah,
 					   const struct ib_qp_attr *attr)
 {
@@ -3068,6 +3068,21 @@ static inline uint16_t calc_roce_udp_sport(struct mlx5_ib_qp *qp,
 	fqpn = folded_qp(qp->ibqp.qp_num & 0xffffff);
 	frqpn = folded_qp(attr->dest_qp_num & 0xffffff);
 	return (fqpn ^ frqpn) | 0xC000;
+}
+
+static inline void mlx5_set_path_udp_sport(struct mlx5_qp_path *path,
+					   const struct rdma_ah_attr *ah,
+					   const struct mlx5_ib_qp *qp,
+					   const struct ib_qp_attr *attr)
+{
+	if (ah->grh.sgid_attr->gid_type != IB_GID_TYPE_ROCE_UDP_ENCAP)
+		return;
+
+	if (mlx5_valid_roce_udp_sport(ah->roce.udp_sport))
+		path->udp_sport = cpu_to_be16(ah->roce.udp_sport);
+	else
+		path->udp_sport =
+			cpu_to_be16(calc_roce_udp_sport(qp, ah, attr));
 }
 
 static int mlx5_set_path(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
@@ -3110,10 +3125,7 @@ static int mlx5_set_path(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 		    qp->ibqp.qp_type == IB_QPT_UC ||
 		    qp->ibqp.qp_type == IB_QPT_XRC_INI ||
 		    qp->ibqp.qp_type == IB_QPT_XRC_TGT)
-			path->udp_sport =
-				mlx5_valid_roce_udp_sport(ah->roce.udp_sport) ?
-				cpu_to_be16(ah->roce.udp_sport) :
-				cpu_to_be16(calc_roce_udp_sport(qp, ah, attr));
+			mlx5_set_path_udp_sport(path, ah, qp, attr);
 
 		path->dci_cfi_prio_sl = (sl & 0x7) << 4;
 		gid_type = ah->grh.sgid_attr->gid_type;
