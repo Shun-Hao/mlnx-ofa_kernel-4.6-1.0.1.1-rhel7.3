@@ -1951,6 +1951,8 @@ static void copy_ah_attr_from_uverbs(struct ib_qp *qp,
 	if (!IS_ERR(gattr)) {
 		if (gattr->gid_type == IB_GID_TYPE_ROCE_UDP_ENCAP)
 			rdma_ah_set_udp_sport(rdma_attr, uverb_attr->dlid);
+		else
+			rdma_ah_set_dlid(rdma_attr, uverb_attr->dlid);
 		rdma_put_gid_attr(gattr);
 	} else
 		rdma_ah_set_dlid(rdma_attr, uverb_attr->dlid);
