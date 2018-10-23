@@ -5932,11 +5932,19 @@ void mlx5_ib_stage_init_cleanup(struct mlx5_ib_dev *dev)
 	cleanup_srcu_struct(&dev->mr_srcu);
 #endif
 	kfree(dev->port);
+
+	kfree(dev->dm_mgr.steering_sw_icm_alloc_blocks);
+
+	kfree(dev->dm_mgr.header_modify_sw_icm_alloc_blocks);
 }
 
 int mlx5_ib_stage_init_init(struct mlx5_ib_dev *dev)
 {
 	struct mlx5_core_dev *mdev = dev->mdev;
+	u64 steering_icm_blocks = BIT(MLX5_CAP_DEV_MEM(mdev, log_steering_sw_icm_size) -
+			MLX5_LOG_SW_ICM_BLOCK_SIZE);
+	u64 header_modify_icm_blocks = BIT(MLX5_CAP_DEV_MEM(mdev, log_header_modify_sw_icm_size) -
+			MLX5_LOG_SW_ICM_BLOCK_SIZE);
 	int err;
 	int i;
 
@@ -5981,6 +5989,21 @@ int mlx5_ib_stage_init_init(struct mlx5_ib_dev *dev)
 	INIT_LIST_HEAD(&dev->qp_list);
 	spin_lock_init(&dev->reset_flow_resource_lock);
 
+	if (MLX5_CAP_GEN_64(mdev, general_obj_types) &
+			MLX5_GENERAL_OBJ_TYPES_CAP_SW_ICM) {
+		dev->dm_mgr.steering_sw_icm_alloc_blocks =
+			kcalloc(BITS_TO_LONGS(steering_icm_blocks), sizeof(unsigned long),
+					GFP_KERNEL);
+		if (!dev->dm_mgr.steering_sw_icm_alloc_blocks)
+			goto err_mp;
+
+		dev->dm_mgr.header_modify_sw_icm_alloc_blocks =
+			kcalloc(BITS_TO_LONGS(header_modify_icm_blocks), sizeof(unsigned long),
+					GFP_KERNEL);
+		if (!dev->dm_mgr.header_modify_sw_icm_alloc_blocks)
+			goto err_dm;
+	}
+
 	spin_lock_init(&dev->dm_mgr.dm_lock);
 	dev->dm_mgr.dev = mdev;
 
@@ -5991,6 +6014,9 @@ int mlx5_ib_stage_init_init(struct mlx5_ib_dev *dev)
 #endif
 
 	return 0;
+err_dm:
+	kfree(dev->dm_mgr.steering_sw_icm_alloc_blocks);
+
 err_mp:
 	mlx5_ib_cleanup_multiport_master(dev);
 

@@ -133,10 +133,6 @@ struct mlx5_capi_context {
 #define MLX5_LOG_SW_ICM_BLOCK_SIZE ((14 < PAGE_SHIFT) ? (PAGE_SHIFT) : (14))
 #define MLX5_SW_ICM_BLOCK_SIZE (1 << MLX5_LOG_SW_ICM_BLOCK_SIZE)
 
-enum {
-	MLX5_MAX_STEERING_SW_ICM_BLOCKS = 0x500,
-};
-
 struct mlx5_ib_ucontext {
 	struct ib_ucontext	ibucontext;
 	struct list_head	db_page_list;
@@ -915,8 +911,8 @@ struct mlx5_dm_mgr {
 	struct mlx5_core_dev *dev;
 	spinlock_t		dm_lock;
 	DECLARE_BITMAP(memic_alloc_pages, MLX5_MAX_MEMIC_PAGES);
-	DECLARE_BITMAP(steering_sw_icm_alloc_blocks, MLX5_MAX_STEERING_SW_ICM_BLOCKS);
-	DECLARE_BITMAP(header_modify_sw_icm_alloc_blocks, MLX5_MAX_STEERING_SW_ICM_BLOCKS);
+	unsigned long *steering_sw_icm_alloc_blocks;
+	unsigned long *header_modify_sw_icm_alloc_blocks;
 };
 
 struct mlx5_read_counters_attr {
