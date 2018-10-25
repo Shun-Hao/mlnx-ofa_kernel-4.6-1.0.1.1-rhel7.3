@@ -1423,7 +1423,7 @@ static void ipoib_cm_tx_start(struct work_struct *work)
 				neigh->daddr + QPN_AND_OPTIONS_OFFSET);
 			goto free_neigh;
 		}
-		memcpy(&pathrec, &p->path->pathrec, sizeof(pathrec));
+		memcpy(&pathrec, &path->pathrec, sizeof pathrec);
 
 		spin_unlock_irqrestore(&priv->lock, flags);
 		netif_tx_unlock_bh(dev);
