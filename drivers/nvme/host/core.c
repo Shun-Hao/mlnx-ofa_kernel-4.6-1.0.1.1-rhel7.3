@@ -3686,14 +3686,31 @@ void nvme_start_queues(struct nvme_ctrl *ctrl)
 }
 EXPORT_SYMBOL_GPL(nvme_start_queues);
 
-bool disk_is_nvme(struct gendisk *disk)
+static inline bool disk_is_nvme(struct gendisk *disk)
 {
 	if (!disk_to_dev(disk)->parent)
 		return false;
 
 	return disk_to_dev(disk)->parent->class == nvme_class;
 }
-EXPORT_SYMBOL_GPL(disk_is_nvme);
+
+struct nvme_ns *disk_to_nvme_ns(struct gendisk *disk)
+{
+	struct nvme_ns *ns = NULL;
+
+#ifdef CONFIG_NVME_MULTIPATH
+	if (disk->fops == &nvme_ns_head_ops)
+		ns = nvme_find_path(disk->private_data);
+	else if (disk_is_nvme(disk))
+		ns = disk->private_data;
+#else
+	if (disk_is_nvme(disk))
+		ns = disk->private_data;
+#endif
+
+	return ns;
+}
+EXPORT_SYMBOL_GPL(disk_to_nvme_ns);
 
 int __init nvme_core_init(void)
 {

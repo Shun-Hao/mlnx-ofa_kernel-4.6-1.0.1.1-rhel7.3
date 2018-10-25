@@ -2594,14 +2594,9 @@ static const struct nvme_ctrl_ops nvme_pci_ctrl_ops = {
 
 struct pci_dev *nvme_find_pdev_from_bdev(struct block_device *bdev)
 {
-	struct nvme_ns *ns;
+	struct nvme_ns *ns = disk_to_nvme_ns(bdev->bd_disk);
 
-	if (!disk_is_nvme(bdev->bd_disk))
-		return NULL;
-
-	ns = bdev->bd_disk->private_data;
-
-	if (ns->ctrl->ops != &nvme_pci_ctrl_ops)
+	if (!ns || ns->ctrl->ops != &nvme_pci_ctrl_ops)
 		return NULL;
 
 	return to_pci_dev(to_nvme_dev(ns->ctrl)->dev);
@@ -2610,12 +2605,10 @@ EXPORT_SYMBOL_GPL(nvme_find_pdev_from_bdev);
 
 unsigned nvme_find_ns_id_from_bdev(struct block_device *bdev)
 {
-	struct nvme_ns *ns;
+	struct nvme_ns *ns = disk_to_nvme_ns(bdev->bd_disk);
 
-	if (!disk_is_nvme(bdev->bd_disk))
+	if (!ns)
 		return 0;
-
-	ns = bdev->bd_disk->private_data;
 
 	return ns->head->ns_id;
 }

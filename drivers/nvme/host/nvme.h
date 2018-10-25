@@ -568,7 +568,7 @@ static inline struct nvme_ns *nvme_get_ns_from_dev(struct device *dev)
 	return dev_to_disk(dev)->private_data;
 }
 
-bool disk_is_nvme(struct gendisk *disk);
+struct nvme_ns *disk_to_nvme_ns(struct gendisk *disk);
 int __init nvme_core_init(void);
 void nvme_core_exit(void);
 
