@@ -661,6 +661,7 @@ struct mlx5e_channel {
 	struct hwtstamp_config    *tstamp;
 	int                        ix;
 	int                        cpu;
+	cpumask_var_t              xps_cpumask;
 
 	struct dentry             *dfs_root;
 };

@@ -2051,6 +2051,26 @@ static int mlx5e_set_tx_maxrate(struct net_device *dev, int index, u32 rate)
 	return err;
 }
 
+static int mlx5e_alloc_xps_cpumask(struct mlx5e_channel *c,
+				   struct mlx5e_params *params)
+{
+	int num_comp_vectors = c->mdev->priv.eq_table.num_comp_vectors;
+	int irq;
+
+	if (!zalloc_cpumask_var(&c->xps_cpumask, GFP_KERNEL))
+		return -ENOMEM;
+
+	for (irq = c->ix; irq < num_comp_vectors; irq += params->num_channels)
+		cpumask_set_cpu(mlx5e_get_cpu(c->priv, irq), c->xps_cpumask);
+
+	return 0;
+}
+
+static void mlx5e_free_xps_cpumask(struct mlx5e_channel *c)
+{
+	free_cpumask_var(c->xps_cpumask);
+}
+
 static int mlx5e_open_channel(struct mlx5e_priv *priv, int ix,
 			      struct mlx5e_params *params,
 			      struct mlx5e_channel_param *cparam,
@@ -2079,6 +2099,10 @@ static int mlx5e_open_channel(struct mlx5e_priv *priv, int ix,
 	c->num_tc   = params->num_tc;
 	c->xdp      = !!params->xdp_prog;
 	c->stats    = &priv->channel_stats[ix].ch;
+
+	err = mlx5e_alloc_xps_cpumask(c, params);
+	if (err)
+		goto err_free_channel;
 
 	mlx5_vector2eqn(priv->mdev, ix, &eqn, &irq);
 	c->irq_desc = irq_to_desc(irq);
@@ -2165,6 +2189,9 @@ err_close_icosq_cq:
 
 err_napi_del:
 	netif_napi_del(&c->napi);
+	mlx5e_free_xps_cpumask(c);
+
+err_free_channel:
 	kvfree(c);
 
 	return err;
@@ -2177,7 +2204,7 @@ static void mlx5e_activate_channel(struct mlx5e_channel *c)
 	for (tc = 0; tc < c->num_tc; tc++)
 		mlx5e_activate_txqsq(&c->sq[tc]);
 	mlx5e_activate_rq(&c->rq);
-	netif_set_xps_queue(c->netdev, get_cpu_mask(c->cpu), c->ix);
+	netif_set_xps_queue(c->netdev, c->xps_cpumask, c->ix);
 	if (c->ix < c->priv->mdev->priv.eq_table.num_comp_vectors)
 		mlx5_rename_comp_eq(c->priv->mdev, c->ix, c->priv->netdev->name);
 }
@@ -2209,6 +2236,8 @@ static void mlx5e_close_channel(struct mlx5e_channel *c)
 	mlx5e_close_tx_cqs(c);
 	mlx5e_close_cq(&c->icosq.cq);
 	netif_napi_del(&c->napi);
+	mlx5e_free_xps_cpumask(c);
+
 	kvfree(c);
 }
 
