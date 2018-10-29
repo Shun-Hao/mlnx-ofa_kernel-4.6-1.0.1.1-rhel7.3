@@ -2517,6 +2517,8 @@ struct ib_dm *mlx5_ib_exp_alloc_dm(struct ib_device *ibdev,
 		goto err_free;
 	}
 
+	dm->size = act_size;
+
 	if (context) {
 		down_read(&current->mm->mmap_sem);
 		vma = find_vma(current->mm, uaddr & PAGE_MASK);
