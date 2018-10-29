@@ -11634,6 +11634,21 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 	],[
 	        AC_MSG_RESULT(no)
 	])
+
+	AC_MSG_CHECKING([if linux/blk-mq.h has struct blk_mq_queue_map])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/blk-mq.h>
+	],[
+		struct blk_mq_queue_map x = {};
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_BLK_MQ_QUEUE_MAP, 1,
+			  [linux/blk-mq.h has struct blk_mq_queue_map])
+	],[
+		AC_MSG_RESULT(no)
+	])
 ])
 #
 # COMPAT_CONFIG_HEADERS
