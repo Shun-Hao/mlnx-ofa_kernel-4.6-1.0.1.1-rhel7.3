@@ -1057,6 +1057,10 @@ static void devx_obj_build_destroy_cmd(void *in, void *out, void *din,
 			 MLX5_CMD_OP_DESTROY_PSV);
 		MLX5_SET(destroy_psv_in, din, psvn,
 			 MLX5_GET(create_psv_out, out, psv0_index));
+		MLX5_SET(destroy_psv_in, din, cmd_on_behalf,
+			 MLX5_GET(create_psv_in, in, cmd_on_behalf));
+		MLX5_SET(destroy_psv_in, din, function_id,
+			 MLX5_GET(create_psv_in, in, function_id));
 		break;
 #endif
 	default:
