@@ -1634,7 +1634,8 @@ static void set_exp_data(struct mlx5_ib_dev *dev,
 		MLX5_EXP_ALLOC_CTX_RESP_MASK_CQE_COMP_MAX_NUM |
 		MLX5_EXP_ALLOC_CTX_RESP_MASK_MAX_DESC_SZ_SQ_DC |
 		MLX5_EXP_ALLOC_CTX_RESP_MASK_ATOMIC_ARG_SIZES_DC |
-		MLX5_EXP_ALLOC_CTX_RESP_MASK_FLAGS;
+		MLX5_EXP_ALLOC_CTX_RESP_MASK_FLAGS |
+		MLX5_EXP_ALLOC_CTX_RESP_MASK_CLOCK_INFO;
 
 	if (PAGE_SIZE <= 4096)
 		resp->exp_data.comp_mask |=
@@ -1664,6 +1665,10 @@ static void set_exp_data(struct mlx5_ib_dev *dev,
 		resp->exp_data.rroce_udp_sport_max = MLX5_CAP_ROCE(dev->mdev,
 								   r_roce_max_src_udp_port);
 	}
+
+	if (MLX5_CAP_GEN(dev->mdev, ipoib_enhanced_offloads) ||
+	    MLX5_CAP_GEN(dev->mdev, roce))
+		resp->exp_data.clock_info_version_mask = BIT(MLX5_IB_CLOCK_INFO_V1);
 }
 
 #ifdef CONFIG_CXL_LIB
@@ -2059,10 +2064,13 @@ static int mlx5_ib_mmap_clock_info_page(struct mlx5_ib_dev *dev,
 					struct vm_area_struct *vma,
 					struct mlx5_ib_ucontext *context)
 {
+	unsigned expected_ver = (get_command(vma->vm_pgoff) == MLX5_IB_EXP_MMAP_CLOCK_INFO) ?
+				 1 : MLX5_IB_CLOCK_INFO_V1;
+
 	if (vma->vm_end - vma->vm_start != PAGE_SIZE)
 		return -EINVAL;
 
-	if (get_index(vma->vm_pgoff) != MLX5_IB_CLOCK_INFO_V1)
+	if (get_index(vma->vm_pgoff) != expected_ver)
 		return -EOPNOTSUPP;
 
 	if (vma->vm_flags & VM_WRITE)
@@ -2254,6 +2262,7 @@ static int mlx5_ib_mmap(struct ib_ucontext *ibcontext, struct vm_area_struct *vm
 			return -EAGAIN;
 		break;
 	case MLX5_IB_MMAP_CLOCK_INFO:
+	case MLX5_IB_EXP_MMAP_CLOCK_INFO:
 		return mlx5_ib_mmap_clock_info_page(dev, vma, context);
 
 	case MLX5_IB_MMAP_DEVICE_MEM:

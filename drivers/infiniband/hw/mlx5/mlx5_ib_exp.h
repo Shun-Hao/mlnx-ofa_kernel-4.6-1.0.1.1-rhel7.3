@@ -273,6 +273,7 @@ enum mlx5_ib_exp_mmap_cmd {
 	MLX5_IB_EXP_MMAP_GET_CONTIGUOUS_PAGES_CPU_NUMA  = 0xFC,
 	MLX5_IB_EXP_MMAP_GET_CONTIGUOUS_PAGES_DEV_NUMA  = 0xFD,
 	MLX5_IB_EXP_ALLOC_N_MMAP_WC                     = 0xFE,
+	MLX5_IB_EXP_MMAP_CLOCK_INFO			= 0xFF,
 };
 
 int get_pg_order(unsigned long offset);

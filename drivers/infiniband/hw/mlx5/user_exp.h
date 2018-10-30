@@ -79,13 +79,14 @@ enum mlx5_exp_ib_alloc_ucontext_data_resp_mask {
 	MLX5_EXP_ALLOC_CTX_RESP_MASK_MAX_DESC_SZ_SQ_DC		= 1 << 5,
 	MLX5_EXP_ALLOC_CTX_RESP_MASK_ATOMIC_ARG_SIZES_DC	= 1 << 6,
 	MLX5_EXP_ALLOC_CTX_RESP_MASK_FLAGS			= 1 << 7,
+	MLX5_EXP_ALLOC_CTX_RESP_MASK_CLOCK_INFO			= 1 << 8,
 };
 
 struct mlx5_exp_ib_alloc_ucontext_data_resp {
 	__u32   comp_mask; /* use mlx5_ib_exp_alloc_ucontext_data_resp_mask */
 	__u16	cqe_comp_max_num;
 	__u8	cqe_version;
-	__u8	reserved1;
+	__u8	clock_info_version_mask;
 	__u16	rroce_udp_sport_min;
 	__u16	rroce_udp_sport_max;
 	__u32	hca_core_clock_offset;
