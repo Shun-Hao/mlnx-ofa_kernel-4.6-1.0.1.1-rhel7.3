@@ -5950,10 +5950,12 @@ void mlx5_ib_stage_init_cleanup(struct mlx5_ib_dev *dev)
 int mlx5_ib_stage_init_init(struct mlx5_ib_dev *dev)
 {
 	struct mlx5_core_dev *mdev = dev->mdev;
-	u64 steering_icm_blocks = BIT(MLX5_CAP_DEV_MEM(mdev, log_steering_sw_icm_size) -
-			MLX5_LOG_SW_ICM_BLOCK_SIZE);
-	u64 header_modify_icm_blocks = BIT(MLX5_CAP_DEV_MEM(mdev, log_header_modify_sw_icm_size) -
-			MLX5_LOG_SW_ICM_BLOCK_SIZE);
+	u64 steering_icm_blocks = MLX5_CAP64_DEV_MEM(mdev, steering_sw_icm_start_address) ?
+		BIT(MLX5_CAP_DEV_MEM(mdev, log_steering_sw_icm_size) - MLX5_LOG_SW_ICM_BLOCK_SIZE) :
+		0;
+	u64 header_modify_icm_blocks = MLX5_CAP64_DEV_MEM(mdev, header_modify_sw_icm_start_address) ?
+		BIT(MLX5_CAP_DEV_MEM(mdev, log_header_modify_sw_icm_size) - MLX5_LOG_SW_ICM_BLOCK_SIZE) :
+		0;
 	int err;
 	int i;
 
