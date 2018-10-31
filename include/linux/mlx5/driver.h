@@ -882,6 +882,7 @@ struct mlx5e_resources {
 	struct mlx5_td             td;
 	struct mlx5_core_mkey      mkey;
 	struct mlx5_sq_bfreg       bfreg;
+	u32                        max_rl_queues;
 };
 
 #define MLX5_MAX_RESERVED_GIDS 8

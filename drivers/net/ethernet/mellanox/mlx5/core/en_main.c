@@ -2182,15 +2182,19 @@ static int mlx5e_open_channel(struct mlx5e_priv *priv, int ix,
 #ifdef CONFIG_MLX5_EN_SPECIAL_SQ
 	c->num_special_sq = params->num_rl_txqs / params->num_channels +
 		!!(ix < params->num_rl_txqs % params->num_channels);
+	if (!c->num_special_sq)
+		goto no_special_sq;
+
 	c->special_sq =
-		kzalloc_node(sizeof(struct mlx5e_txqsq) * c->num_special_sq,
-			     GFP_KERNEL, cpu_to_node(cpu));
+		kvzalloc_node(sizeof(struct mlx5e_txqsq) * c->num_special_sq,
+			      GFP_KERNEL, cpu_to_node(cpu));
 	if (!c->special_sq) {
 		err = -ENOMEM;
 		goto err_free_channel;
 	}
 	priv->max_opened_special_sq =  max_t(int, priv->max_opened_special_sq,
 					     params->num_rl_txqs);
+no_special_sq:
 #endif
 
 	err = mlx5e_alloc_xps_cpumask(c, params);
@@ -2598,6 +2602,11 @@ static void mlx5e_build_channel_param(struct mlx5e_priv *priv,
 }
 
 #ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+static void mlx5e_rl_cleanup(struct mlx5e_priv *priv)
+{
+	mlx5e_rl_remove_sysfs(priv);
+	hash_init(priv->flow_map_hash);
+}
 static int mlx5e_rl_init(struct mlx5e_priv *priv,
 			 struct mlx5e_params params)
 {
@@ -2613,12 +2622,6 @@ static int mlx5e_rl_init(struct mlx5e_priv *priv,
 	}
 
 	return err;
-}
-
-static void mlx5e_rl_cleanup(struct mlx5e_priv *priv)
-{
-	mlx5e_rl_remove_sysfs(priv);
-	hash_init(priv->flow_map_hash);
 }
 #endif
 
@@ -5388,11 +5391,15 @@ struct net_device *mlx5e_create_netdev(struct mlx5_core_dev *mdev,
 				       void *ppriv)
 {
 	struct net_device *netdev;
+	int num_mqs;
 	int err;
 
-	netdev = alloc_etherdev_mqs(sizeof(struct mlx5e_priv),
-				    nch * profile->max_tc + MLX5E_MAX_RL_QUEUES,
-				    nch);
+	if (MLX5_CAP_GEN(mdev, qos) &&
+	    MLX5_CAP_QOS(mdev, packet_pacing))
+		mdev->mlx5e_res.max_rl_queues = MLX5E_MAX_RL_QUEUES;
+
+	num_mqs = nch * profile->max_tc + mdev->mlx5e_res.max_rl_queues;
+	netdev = alloc_etherdev_mqs(sizeof(struct mlx5e_priv), num_mqs, nch);
 	if (!netdev) {
 		mlx5_core_err(mdev, "alloc_etherdev_mqs() failed\n");
 		return NULL;
