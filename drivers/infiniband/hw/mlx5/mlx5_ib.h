@@ -559,6 +559,7 @@ struct mlx5_ib_cq {
 struct mlx5_ib_wc {
 	struct ib_wc wc;
 	struct list_head list;
+	atomic_t in_use;
 };
 
 struct mlx5_ib_srq {
@@ -1402,7 +1403,7 @@ int mlx5_ib_gsi_post_recv(struct ib_qp *qp, const struct ib_recv_wr *wr,
 			  const struct ib_recv_wr **bad_wr);
 void mlx5_ib_gsi_pkey_change(struct mlx5_ib_gsi_qp *gsi);
 
-int mlx5_ib_generate_wc(struct ib_cq *ibcq, struct ib_wc *wc);
+void mlx5_ib_generate_wc(struct ib_cq *ibcq, struct mlx5_ib_wc *soft_wc);
 
 void mlx5_ib_free_bfreg(struct mlx5_ib_dev *dev, struct mlx5_bfreg_info *bfregi,
 			int bfregn);
