@@ -739,14 +739,10 @@ static ssize_t ib_ucm_send_req(struct ib_ucm_file *file,
 			       const char __user *inbuf,
 			       int in_len, int out_len)
 {
-	struct ib_cm_req_param param;
+	struct ib_cm_req_param param = {};
 	struct ib_ucm_context *ctx;
 	struct ib_ucm_req cmd;
 	int result;
-
-	param.private_data   = NULL;
-	param.primary_path   = NULL;
-	param.alternate_path = NULL;
 
 	if (copy_from_user(&cmd, inbuf, sizeof(cmd)))
 		return -EFAULT;
