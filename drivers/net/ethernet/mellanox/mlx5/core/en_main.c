@@ -2607,6 +2607,9 @@ static int mlx5e_rl_init(struct mlx5e_priv *priv,
 	if (!err) {
 		WARN_ON(!hash_empty(priv->flow_map_hash));
 		hash_init(priv->flow_map_hash);
+	} else {
+		mlx5e_rl_cleanup(priv);
+		mlx5_core_err(priv->mdev, "failed to init rate limit\n");
 	}
 
 	return err;
@@ -3203,20 +3206,10 @@ void mlx5e_activate_priv_channels(struct mlx5e_priv *priv)
 
 	mlx5e_wait_channels_min_rx_wqes(&priv->channels);
 	mlx5e_redirect_rqts_to_channels(priv, &priv->channels);
-
-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-	if (mlx5e_rl_init(priv, priv->channels.params)) {
-		mlx5e_rl_cleanup(priv);
-		mlx5_core_err(priv->mdev, "failed to init rate limit\n");
-	}
-#endif
 }
 
 void mlx5e_deactivate_priv_channels(struct mlx5e_priv *priv)
 {
-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-	mlx5e_rl_cleanup(priv);
-#endif
 	mlx5e_redirect_rqts_to_drop(priv);
 
 	if (mlx5e_is_vport_rep(priv))
@@ -3240,12 +3233,13 @@ int mlx5e_switch_priv_channels(struct mlx5e_priv *priv,
 	int carrier_ok;
 	int err;
 
-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-	new_num_txqs += new_chs->params.num_rl_txqs;
-#endif
-
 	carrier_ok = netif_carrier_ok(netdev);
 	netif_carrier_off(netdev);
+
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+	mlx5e_rl_cleanup(priv);
+	new_num_txqs += new_chs->params.num_rl_txqs;
+#endif
 
 	if (new_num_txqs < netdev->real_num_tx_queues) {
 		err = netif_set_real_num_tx_queues(netdev, new_num_txqs);
@@ -3276,6 +3270,10 @@ activate_channels:
 	mlx5e_activate_priv_channels(priv);
 rl_init:
 
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+	mlx5e_rl_init(priv, priv->channels.params);
+#endif
+
 	/* return carrier back if needed */
 	if (carrier_ok)
 		netif_carrier_on(netdev);
@@ -3302,6 +3300,11 @@ int mlx5e_open_locked(struct net_device *netdev)
 
 	mlx5e_refresh_tirs(priv, false);
 	mlx5e_activate_priv_channels(priv);
+
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+	mlx5e_rl_init(priv, priv->channels.params);
+#endif
+
 	mlx5e_create_debugfs(priv);
 	if (priv->profile->update_carrier)
 		priv->profile->update_carrier(priv);
@@ -3350,6 +3353,9 @@ int mlx5e_close_locked(struct net_device *netdev)
 
 	netif_carrier_off(priv->netdev);
 	mlx5e_destroy_debugfs(priv);
+#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
+	mlx5e_rl_cleanup(priv);
+#endif
 	mlx5e_deactivate_priv_channels(priv);
 	mlx5e_close_channels(&priv->channels);
 
