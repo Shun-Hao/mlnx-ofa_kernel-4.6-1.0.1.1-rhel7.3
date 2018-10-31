@@ -886,6 +886,12 @@ static void devx_obj_build_destroy_cmd(void *in, void *out, void *din,
 		break;
 	case MLX5_CMD_OP_CREATE_MKEY:
 		MLX5_SET(general_obj_in_cmd_hdr, din, opcode, MLX5_CMD_OP_DESTROY_MKEY);
+#ifdef CONFIG_BF_DEVICE_EMULATION
+		MLX5_SET(destroy_mkey_in, din, cmd_on_behalf,
+			 MLX5_GET(create_mkey_in,  in, cmd_on_behalf));
+		MLX5_SET(destroy_mkey_in, din, function_id,
+			 MLX5_GET(create_mkey_in,  in, function_id));
+#endif
 		break;
 	case MLX5_CMD_OP_CREATE_CQ:
 		MLX5_SET(general_obj_in_cmd_hdr, din, opcode, MLX5_CMD_OP_DESTROY_CQ);
