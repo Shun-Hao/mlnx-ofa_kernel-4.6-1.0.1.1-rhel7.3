@@ -790,8 +790,8 @@ static void get_lp_advertising(u32 eth_proto_lp,
 	ptys2ethtool_adver_link(lp_advertising, eth_proto_lp);
 }
 
-static int mlx5e_get_link_ksettings(struct net_device *netdev,
-				    struct ethtool_link_ksettings *link_ksettings)
+int mlx5e_get_link_ksettings(struct net_device *netdev,
+			     struct ethtool_link_ksettings *link_ksettings)
 {
 	struct mlx5e_priv *priv    = netdev_priv(netdev);
 	struct mlx5_core_dev *mdev = priv->mdev;
@@ -875,8 +875,8 @@ static u32 mlx5e_ethtool2ptys_adver_link(const unsigned long *link_modes)
 	return ptys_modes;
 }
 
-static int mlx5e_set_link_ksettings(struct net_device *netdev,
-				    const struct ethtool_link_ksettings *link_ksettings)
+int mlx5e_set_link_ksettings(struct net_device *netdev,
+			     const struct ethtool_link_ksettings *link_ksettings)
 {
 	struct mlx5e_priv *priv    = netdev_priv(netdev);
 	struct mlx5_core_dev *mdev = priv->mdev;

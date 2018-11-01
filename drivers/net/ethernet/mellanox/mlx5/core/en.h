@@ -1152,4 +1152,8 @@ static inline bool mlx5e_dropless_rq_supported(struct mlx5_core_dev *mdev)
 
 void mlx5e_rx_dim_work(struct work_struct *work);
 void mlx5e_tx_dim_work(struct work_struct *work);
+int mlx5e_get_link_ksettings(struct net_device *netdev,
+			     struct ethtool_link_ksettings *link_ksettings);
+int mlx5e_set_link_ksettings(struct net_device *netdev,
+			     const struct ethtool_link_ksettings *link_ksettings);
 #endif /* __MLX5_EN_H__ */
