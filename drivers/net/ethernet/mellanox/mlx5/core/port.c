@@ -1054,23 +1054,43 @@ void mlx5_query_port_fcs(struct mlx5_core_dev *mdev, bool *supported,
 	*enabled = !!(MLX5_GET(pcmr_reg, out, fcs_chk));
 }
 
-static const char *mlx5_pme_status[MLX5_MODULE_STATUS_NUM] = {
-	"Cable plugged",   /* MLX5_MODULE_STATUS_PLUGGED    = 0x1 */
-	"Cable unplugged", /* MLX5_MODULE_STATUS_UNPLUGGED  = 0x2 */
-	"Cable error",     /* MLX5_MODULE_STATUS_ERROR      = 0x3 */
-};
+const char *mlx5_pme_status_to_string(enum port_module_event_status_type status)
+{
+	switch (status) {
+	case MLX5_MODULE_STATUS_PLUGGED:
+		return "Cable plugged";
+	case MLX5_MODULE_STATUS_UNPLUGGED:
+		return "Cable unplugged";
+	case MLX5_MODULE_STATUS_ERROR:
+		return "Cable error";
+	default:
+		return "Unknown status";
+	}
+}
 
-static const char *mlx5_pme_error[MLX5_MODULE_EVENT_ERROR_NUM] = {
-	"Power budget exceeded",
-	"Long Range for non MLNX cable",
-	"Bus stuck(I2C or data shorted)",
-	"No EEPROM/retry timeout",
-	"Enforce part number list",
-	"Unknown identifier",
-	"High Temperature",
-	"Bad or shorted cable/module",
-	"Unknown status",
-};
+const char *mlx5_pme_error_to_string(enum port_module_event_error_type error)
+{
+	switch (error) {
+	case MLX5_MODULE_EVENT_ERROR_POWER_BUDGET_EXCEEDED:
+		return "Power budget exceeded";
+	case MLX5_MODULE_EVENT_ERROR_LONG_RANGE_FOR_NON_MLNX_CABLE_MODULE:
+		return "Long Range for non MLNX cable";
+	case MLX5_MODULE_EVENT_ERROR_BUS_STUCK:
+		return "Bus stuck (I2C or data shorted)";
+	case MLX5_MODULE_EVENT_ERROR_NO_EEPROM_RETRY_TIMEOUT:
+		return "No EEPROM/retry timeout";
+	case MLX5_MODULE_EVENT_ERROR_ENFORCE_PART_NUMBER_LIST:
+		return "Enforce part number list";
+	case MLX5_MODULE_EVENT_ERROR_UNKNOWN_IDENTIFIER:
+		return "Unknown identifier";
+	case MLX5_MODULE_EVENT_ERROR_HIGH_TEMPERATURE:
+		return "High Temperature";
+	case MLX5_MODULE_EVENT_ERROR_BAD_CABLE:
+		return "Bad or shorted cable/module";
+	default:
+		return "Unknown error";
+	}
+}
 
 void mlx5_port_module_event(struct mlx5_core_dev *dev, struct mlx5_eqe *eqe)
 {
@@ -1078,6 +1098,7 @@ void mlx5_port_module_event(struct mlx5_core_dev *dev, struct mlx5_eqe *eqe)
 	enum port_module_event_error_type error_type;
 	struct mlx5_eqe_port_module *module_event_eqe;
 	struct mlx5_priv *priv = &dev->priv;
+	const char *status_str, *error_str;
 	u8 module_num;
 
 	module_event_eqe = &eqe->data.port_module;
@@ -1087,28 +1108,27 @@ void mlx5_port_module_event(struct mlx5_core_dev *dev, struct mlx5_eqe *eqe)
 	error_type = module_event_eqe->error_type &
 		     PORT_MODULE_EVENT_ERROR_TYPE_MASK;
 
-	if (module_status < MLX5_MODULE_STATUS_ERROR) {
-		priv->pme_stats.status_counters[module_status - 1]++;
-	} else if (module_status == MLX5_MODULE_STATUS_ERROR) {
-		if (error_type >= MLX5_MODULE_EVENT_ERROR_UNKNOWN)
-			/* Unknown error type */
-			error_type = MLX5_MODULE_EVENT_ERROR_UNKNOWN;
-		priv->pme_stats.error_counters[error_type]++;
+	if (module_status < MLX5_MODULE_STATUS_NUM)
+		priv->pme_stats.status_counters[module_status]++;
+	status_str = mlx5_pme_status_to_string(module_status);
+
+	if (module_status == MLX5_MODULE_STATUS_ERROR) {
+		if (error_type < MLX5_MODULE_EVENT_ERROR_NUM)
+			priv->pme_stats.error_counters[error_type]++;
+		error_str = mlx5_pme_error_to_string(error_type);
 	}
 
 	if (!printk_ratelimit())
 		return;
 
-	if (module_status < MLX5_MODULE_STATUS_ERROR)
+	if (module_status == MLX5_MODULE_STATUS_ERROR)
+		mlx5_core_err(dev,
+			      "Port module event[error]: module %u, %s, %s\n",
+			      module_num, status_str, error_str);
+	else
 		mlx5_core_info(dev,
 			       "Port module event: module %u, %s\n",
-			       module_num, mlx5_pme_status[module_status - 1]);
-
-	else if (module_status == MLX5_MODULE_STATUS_ERROR)
-		mlx5_core_info(dev,
-			       "Port module event[error]: module %u, %s, %s\n",
-			       module_num, mlx5_pme_status[module_status - 1],
-			       mlx5_pme_error[error_type]);
+			       module_num, status_str);
 }
 
 int mlx5_query_mtpps(struct mlx5_core_dev *mdev, u32 *mtpps, u32 mtpps_size)
