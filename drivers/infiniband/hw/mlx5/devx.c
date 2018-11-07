@@ -1009,6 +1009,12 @@ static void devx_obj_build_destroy_cmd(void *in, void *out, void *din,
 		break;
 	case MLX5_CMD_OP_CREATE_QP:
 		MLX5_SET(general_obj_in_cmd_hdr, din, opcode, MLX5_CMD_OP_DESTROY_QP);
+#ifdef CONFIG_BF_DEVICE_EMULATION
+		MLX5_SET(destroy_qp_in, din, cmd_on_behalf,
+			 MLX5_GET(create_qp_in,  in, cmd_on_behalf));
+		MLX5_SET(destroy_qp_in, din, function_id,
+			 MLX5_GET(create_qp_in,  in, function_id));
+#endif
 		break;
 	case MLX5_CMD_OP_CREATE_SRQ:
 		MLX5_SET(general_obj_in_cmd_hdr, din, opcode, MLX5_CMD_OP_DESTROY_SRQ);

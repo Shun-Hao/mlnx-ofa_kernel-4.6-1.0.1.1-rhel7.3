@@ -6858,7 +6858,10 @@ struct mlx5_ifc_destroy_qp_in_bits {
 	u8         reserved_at_40[0x8];
 	u8         qpn[0x18];
 
-	u8         reserved_at_60[0x20];
+	u8         reserved_at_60[0x1];
+	u8         cmd_on_behalf[0x1];
+	u8         reserved_at_62[0xe];
+	u8         function_id[0x10];
 };
 
 struct mlx5_ifc_destroy_psv_out_bits {
@@ -7568,7 +7571,12 @@ struct mlx5_ifc_create_qp_in_bits {
 	u8         reserved_at_20[0x10];
 	u8         op_mod[0x10];
 
-	u8         reserved_at_40[0x40];
+	u8         reserved_at_40[0x20];
+
+	u8         reserved_at_60[0x1];
+	u8         cmd_on_behalf[0x1];
+	u8         reserved_at_62[0xe];
+	u8         function_id[0x10];
 
 	u8         opt_param_mask[0x20];
 

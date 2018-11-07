@@ -1,0 +1,3 @@
+sep=;
+Change-Id=I27218f7a0e37a803d7f7b3e394ef37e409ef2ebd; subject=IB/mlx5: Added support for create/destroy devx mkey on_behalf; feature=mlx5_bf; upstream_status=ignore; general=;
+Change-Id=I3be5915def82da6535e61a1da1d9c60aaaa02f86; subject=IB/mlx5: Added support for create/destroy devx qp on_behalf; feature=mlx5_bf; upstream_status=ignore; general=;
