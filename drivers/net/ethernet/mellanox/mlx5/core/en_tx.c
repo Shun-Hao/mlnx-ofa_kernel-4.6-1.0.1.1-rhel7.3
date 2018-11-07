@@ -179,6 +179,8 @@ static inline u16 mlx5e_calc_min_inline(enum mlx5_inline_modes mode,
 		 */
 		if (skb_transport_offset(skb)) {
 			hlen = mlx5e_skb_l3_header_offset(skb);
+			if (unlikely(hlen < ETH_HLEN + sizeof(struct iphdr)))
+				hlen = MLX5E_MIN_INLINE + sizeof(struct ipv6hdr);
 			break;
 		}
 		/* fall through */
