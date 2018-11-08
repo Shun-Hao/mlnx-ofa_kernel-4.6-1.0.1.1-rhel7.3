@@ -159,7 +159,7 @@ out:
 		
 	mlx5_destroy_vfs_sysfs(dev);
 
-	if (mlx5_wait_for_vf_pages(dev))
+	if (mlx5_wait_for_pages(dev, &dev->priv.vfs_pages))
 		mlx5_core_warn(dev, "timeout reclaiming VFs pages\n");
 }
 
