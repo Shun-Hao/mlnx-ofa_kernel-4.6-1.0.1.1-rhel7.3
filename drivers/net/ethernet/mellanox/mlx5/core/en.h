@@ -1080,6 +1080,7 @@ int mlx5e_create_tis(struct mlx5_core_dev *mdev, int tc,
 void mlx5e_destroy_tis(struct mlx5_core_dev *mdev, u32 tisn);
 
 int mlx5e_create_tises(struct mlx5e_priv *priv);
+void mlx5e_update_carrier(struct mlx5e_priv *priv);
 int mlx5e_close(struct net_device *netdev);
 int mlx5e_open(struct net_device *netdev);
 u32 mlx5e_choose_lro_timeout(struct mlx5_core_dev *mdev, u32 wanted_timeout);
@@ -1157,6 +1158,10 @@ static inline bool mlx5e_dropless_rq_supported(struct mlx5_core_dev *mdev)
 
 void mlx5e_rx_dim_work(struct work_struct *work);
 void mlx5e_tx_dim_work(struct work_struct *work);
+
+void mlx5e_enable_async_events(struct mlx5e_priv *priv);
+void mlx5e_disable_async_events(struct mlx5e_priv *priv);
+
 int mlx5e_get_link_ksettings(struct net_device *netdev,
 			     struct ethtool_link_ksettings *link_ksettings);
 int mlx5e_set_link_ksettings(struct net_device *netdev,

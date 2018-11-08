@@ -228,7 +228,7 @@ void mlx5e_set_rq_type(struct mlx5_core_dev *mdev, struct mlx5e_params *params)
 		MLX5_WQ_TYPE_CYCLIC;
 }
 
-static void mlx5e_update_carrier(struct mlx5e_priv *priv)
+void mlx5e_update_carrier(struct mlx5e_priv *priv)
 {
 	struct mlx5_core_dev *mdev = priv->mdev;
 	u8 port_state;
@@ -322,6 +322,18 @@ static void mlx5e_async_event(struct mlx5_core_dev *mdev, void *vpriv,
 {
 	struct mlx5e_priv *priv = vpriv;
 
+#ifdef CONFIG_MLX5_ESWITCH
+	if (MLX5_ESWITCH_MANAGER(mdev) &&
+	    mlx5_eswitch_mode(mdev->priv.eswitch) == SRIOV_OFFLOADS) {
+		struct mlx5e_rep_priv *uplink_rpriv;
+		struct net_device *uplink_dev;
+
+		uplink_rpriv = mlx5_eswitch_get_uplink_priv(mdev->priv.eswitch, REP_ETH);
+		uplink_dev = uplink_rpriv->netdev;
+		priv = netdev_priv(uplink_dev);
+	}
+#endif
+
 	if (!test_bit(MLX5E_STATE_ASYNC_EVENTS_ENABLED, &priv->state))
 		return;
 
@@ -338,12 +350,12 @@ static void mlx5e_async_event(struct mlx5_core_dev *mdev, void *vpriv,
 	}
 }
 
-static void mlx5e_enable_async_events(struct mlx5e_priv *priv)
+void mlx5e_enable_async_events(struct mlx5e_priv *priv)
 {
 	set_bit(MLX5E_STATE_ASYNC_EVENTS_ENABLED, &priv->state);
 }
 
-static void mlx5e_disable_async_events(struct mlx5e_priv *priv)
+void mlx5e_disable_async_events(struct mlx5e_priv *priv)
 {
 	clear_bit(MLX5E_STATE_ASYNC_EVENTS_ENABLED, &priv->state);
 	synchronize_irq(pci_irq_vector(priv->mdev->pdev, MLX5_EQ_VEC_ASYNC));
