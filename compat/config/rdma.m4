@@ -11649,6 +11649,26 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 	],[
 		AC_MSG_RESULT(no)
 	])
+
+	AC_MSG_CHECKING([if linux/blk-mq.h has busy_tag_iter_fn return bool])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/blk-mq.h>
+
+		static bool
+		nvme_cancel_request(struct request *req, void *data, bool reserved) {
+			return true;
+		}
+	],[
+		busy_tag_iter_fn *fn = nvme_cancel_request;
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_BLK_MQ_BUSY_TAG_ITER_FN_BOOL, 1,
+			  [linux/blk-mq.h has busy_tag_iter_fn return bool])
+	],[
+		AC_MSG_RESULT(no)
+	])
 ])
 #
 # COMPAT_CONFIG_HEADERS
