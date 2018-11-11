@@ -162,7 +162,7 @@ static int ib_umem_notifier_invalidate_range_start(struct mmu_notifier *mn,
 {
 	struct ib_ucontext_per_mm *per_mm =
 		container_of(mn, struct ib_ucontext_per_mm, mn);
-	bool call_rsync;
+	bool call_rsync = false;
 	int ret;
 
 	if (blockable)
