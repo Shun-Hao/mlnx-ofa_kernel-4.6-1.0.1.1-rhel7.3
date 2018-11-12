@@ -791,42 +791,10 @@ static int nvme_rdma_configure_admin_queue(struct nvme_rdma_ctrl *ctrl,
 		}
 	}
 
-	error = nvme_rdma_start_queue(ctrl, 0);
-	if (error)
-		goto out_cleanup_queue;
-
-	error = ctrl->ctrl.ops->reg_read64(&ctrl->ctrl, NVME_REG_CAP,
-			&ctrl->ctrl.cap);
-	if (error) {
-		dev_err(ctrl->ctrl.device,
-			"prop_get NVME_REG_CAP failed\n");
-		goto out_stop_queue;
-	}
-
-	ctrl->ctrl.sqsize =
-		min_t(int, NVME_CAP_MQES(ctrl->ctrl.cap), ctrl->ctrl.sqsize);
-
-	error = nvme_enable_ctrl(&ctrl->ctrl, ctrl->ctrl.cap);
-	if (error)
-		goto out_stop_queue;
-
-	ctrl->ctrl.max_hw_sectors =
-		(ctrl->max_fr_pages - 1) << (ilog2(SZ_4K) - 9);
-
-	error = nvme_init_identify(&ctrl->ctrl);
-	if (error)
-		goto out_stop_queue;
-
 	return 0;
 
-out_stop_queue:
-	nvme_rdma_stop_queue(&ctrl->queues[0]);
-out_cleanup_queue:
-	if (new)
-		blk_cleanup_queue(ctrl->ctrl.admin_q);
 out_free_tagset:
-	if (new)
-		nvme_rdma_free_tagset(&ctrl->ctrl, ctrl->ctrl.admin_tagset);
+	nvme_rdma_free_tagset(&ctrl->ctrl, ctrl->ctrl.admin_tagset);
 out_free_async_qe:
 	nvme_rdma_free_qe(ctrl->device->dev, &ctrl->async_event_sqe,
 		sizeof(struct nvme_command), DMA_TO_DEVICE);
@@ -965,15 +933,41 @@ static int nvme_rdma_setup_ctrl(struct nvme_rdma_ctrl *ctrl, bool new)
 	if (ret)
 		return ret;
 
+	ret = nvme_rdma_start_queue(ctrl, 0);
+	if (ret)
+		goto destroy_admin;
+
+	ret = ctrl->ctrl.ops->reg_read64(&ctrl->ctrl, NVME_REG_CAP,
+			&ctrl->ctrl.cap);
+	if (ret) {
+		dev_err(ctrl->ctrl.device,
+			"prop_get NVME_REG_CAP failed\n");
+		goto stop_admin;
+	}
+
+	ctrl->ctrl.sqsize =
+		min_t(int, NVME_CAP_MQES(ctrl->ctrl.cap), ctrl->ctrl.sqsize);
+
+	ret = nvme_enable_ctrl(&ctrl->ctrl, ctrl->ctrl.cap);
+	if (ret)
+		goto stop_admin;
+
+	ctrl->ctrl.max_hw_sectors =
+		(ctrl->max_fr_pages - 1) << (ilog2(SZ_4K) - 9);
+
+	ret = nvme_init_identify(&ctrl->ctrl);
+	if (ret)
+		goto stop_admin;
+
 	if (ctrl->ctrl.icdoff) {
 		dev_err(ctrl->ctrl.device, "icdoff is not supported!\n");
-		goto destroy_admin;
+		goto stop_admin;
 	}
 
 	if (!(ctrl->ctrl.sgls & (1 << 2))) {
 		dev_err(ctrl->ctrl.device,
 			"Mandatory keyed sgls are not supported!\n");
-		goto destroy_admin;
+		goto stop_admin;
 	}
 
 	if (ctrl->ctrl.opts->queue_size > ctrl->ctrl.sqsize + 1) {
@@ -995,7 +989,7 @@ static int nvme_rdma_setup_ctrl(struct nvme_rdma_ctrl *ctrl, bool new)
 	if (ctrl->ctrl.queue_count > 1) {
 		ret = nvme_rdma_configure_io_queues(ctrl, new);
 		if (ret)
-			goto destroy_admin;
+			goto stop_admin;
 	}
 
 	changed = nvme_change_ctrl_state(&ctrl->ctrl, NVME_CTRL_LIVE);
@@ -1012,8 +1006,9 @@ static int nvme_rdma_setup_ctrl(struct nvme_rdma_ctrl *ctrl, bool new)
 destroy_io:
 	if (ctrl->ctrl.queue_count > 1)
 		nvme_rdma_destroy_io_queues(ctrl, new);
-destroy_admin:
+stop_admin:
 	nvme_rdma_stop_queue(&ctrl->queues[0]);
+destroy_admin:
 	nvme_rdma_destroy_admin_queue(ctrl, new);
 	return ret;
 }
