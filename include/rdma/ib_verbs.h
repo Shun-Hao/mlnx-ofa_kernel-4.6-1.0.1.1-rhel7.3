@@ -268,6 +268,7 @@ enum ib_signature_prot_cap {
 	IB_PROT_T10DIF_TYPE_1 = 1,
 	IB_PROT_T10DIF_TYPE_2 = 1 << 1,
 	IB_PROT_T10DIF_TYPE_3 = 1 << 2,
+	IB_PROT_CRC32	      = 1 << 3,
 };
 
 enum ib_signature_guard_cap {

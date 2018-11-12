@@ -530,7 +530,8 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 		props->device_cap_flags2 |= IB_EXP_DEVICE_SIGNATURE_HANDOVER;
 		props->sig_caps.prot_cap = IB_PROT_T10DIF_TYPE_1 |
 					   IB_PROT_T10DIF_TYPE_2 |
-					   IB_PROT_T10DIF_TYPE_3;
+					   IB_PROT_T10DIF_TYPE_3 |
+					   IB_PROT_CRC32;
 		props->sig_caps.guard_cap = IB_GUARD_T10DIF_CRC |
 					    IB_GUARD_T10DIF_CSUM;
 		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_SIG_CAPS;

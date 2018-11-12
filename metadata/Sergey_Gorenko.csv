@@ -17,3 +17,4 @@ Change-Id=I2ce9dc2ab11c8fddb917c4e2f51b49bf76fbd7a7; subject=BACKPORTS: Add iser
 Change-Id=I64c3e02f874143a532ea407c60ab65b33bf74e4f; subject=BACKPORTS: Fix compilation warning in ib_srp; feature=backports; upstream_status=ignore; general=;
 Change-Id=I26e6837fa9e806add4c6d13164fa6b7fd22954f2; subject=IB/mlx5: Fix use-after-free in dereg_mr() function; feature=mlx5_ib_bugs; upstream_status=NA; general=;
 Change-Id=I49370a9a04ebf4cf2f7fa62785496f76bcc5b5eb; subject=BACKPORTS: Avoid excessive use of bounce buffers in ib_iser; feature=backports; upstream_status=ignore; general=;
+Change-Id=I1324280afe7284ba6479318e8799b2f669ef5905; subject=IB/{mlx5,core}: Introduce and implement new IB_PROT_CRC32; feature=sig_crc32; upstream_status=NA; general=;
