@@ -419,7 +419,7 @@ struct mlx5_bf {
 };
 
 struct mlx5_ib_dct {
-	struct mlx5_core_dct    mdct[2];
+	struct mlx5_core_dct    mdct;
 	struct mlx5_ib_dc_target *dc_target;
 	u32                     *in;
 };
