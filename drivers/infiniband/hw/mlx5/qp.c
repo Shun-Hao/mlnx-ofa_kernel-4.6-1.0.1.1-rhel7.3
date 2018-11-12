@@ -3777,7 +3777,8 @@ static int __mlx5_ib_modify_qp(struct ib_qp *ibqp,
 		    (ibqp->qp_type == IB_QPT_UC) ||
 		    (ibqp->qp_type == IB_QPT_RAW_PACKET) ||
 		    (ibqp->qp_type == IB_QPT_XRC_INI) ||
-		    (ibqp->qp_type == IB_QPT_XRC_TGT)) {
+		    (ibqp->qp_type == IB_QPT_XRC_TGT) ||
+		    (ibqp->qp_type == IB_EXP_QPT_DC_INI)) {
 			if (mlx5_lag_is_active(dev->mdev)) {
 				u8 p = mlx5_core_native_port_num(dev->mdev);
 				tx_affinity = get_tx_affinity(dev, pd, base, p);
@@ -4137,6 +4138,8 @@ int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 			      int attr_mask, struct ib_udata *udata)
 {
 	struct mlx5_ib_qp *qp = to_mqp(ibqp);
+	struct mlx5_ib_qp_base *base = &qp->trans_qp.base;
+	struct mlx5_ib_pd *pd = get_pd(qp);
 	struct mlx5_ib_dev *dev = to_mdev(ibqp->device);
 	enum ib_qp_state cur_state, new_state;
 	int err = 0;
@@ -4172,7 +4175,12 @@ int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 			MLX5_SET(dctc, dctc, rae, 1);
 		}
 		MLX5_SET(dctc, dctc, pkey_index, attr->pkey_index);
-		MLX5_SET(dctc, dctc, port, attr->port_num);
+		if (mlx5_lag_is_active(dev->mdev)){
+			u8 p = mlx5_core_native_port_num(dev->mdev);
+			MLX5_SET(dctc, dctc, port, get_tx_affinity(dev, pd, base, p));
+		}
+		else
+			MLX5_SET(dctc, dctc, port, attr->port_num);
 		MLX5_SET(dctc, dctc, counter_set_id, dev->port[attr->port_num - 1].cnts.set_id);
 
 	} else if (cur_state == IB_QPS_INIT && new_state == IB_QPS_RTR) {

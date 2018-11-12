@@ -448,6 +448,7 @@ struct ib_dct *mlx5_ib_create_dc_target(struct ib_pd *pd,
 		err = PTR_ERR(dct->qp);
 		goto err_free;
 	}
+	dct->qp->ibqp.pd = pd;
 	dct->qp->ibqp.device = pd->device;
 	err = dct_modify_qp_INIT(dct->qp, attr);
 	if (err)
