@@ -45,7 +45,8 @@ static int __mlx5_ib_modify_qp(struct ib_qp *ibqp,
 			       const struct ib_qp_attr *attr, int attr_mask,
 			       enum ib_qp_state cur_state,
 			       enum ib_qp_state new_state,
-			       const struct mlx5_ib_modify_qp *ucmd);
+			       const struct mlx5_ib_modify_qp *ucmd,
+			       bool is_exp);
 
 /* not supported currently */
 static int wq_signature;
@@ -314,7 +315,7 @@ static void mlx5_ib_sqd_work(struct work_struct *work)
 
 	mutex_lock(&qp->mutex);
 	if (__mlx5_ib_modify_qp(&qp->ibqp, &qp_attr, 0, IB_QPS_SQD, IB_QPS_RTS,
-				NULL))
+				NULL, false))
 		pr_err("Failed to resume QP 0x%x\n", qp->trans_qp.base.mqp.qpn);
 	mutex_unlock(&qp->mutex);
 out:
@@ -3693,7 +3694,8 @@ static unsigned int get_tx_affinity(struct mlx5_ib_dev *dev,
 static int __mlx5_ib_modify_qp(struct ib_qp *ibqp,
 			       const struct ib_qp_attr *attr, int attr_mask,
 			       enum ib_qp_state cur_state, enum ib_qp_state new_state,
-			       const struct mlx5_ib_modify_qp *ucmd)
+			       const struct mlx5_ib_modify_qp *ucmd,
+			       bool is_exp)
 {
 	static const u16 optab[MLX5_QP_NUM_STATE][MLX5_QP_NUM_STATE] = {
 		[MLX5_QP_STATE_RST] = {
@@ -3979,24 +3981,30 @@ static int __mlx5_ib_modify_qp(struct ib_qp *ibqp,
 		}
 
 		if (attr_mask & IB_QP_RATE_LIMIT) {
+			u32 max_burst_sz = is_exp ?
+				attr->burst_info.max_burst_sz :
+				ucmd->burst_info.max_burst_sz;
+			u16 typical_pkt_sz = is_exp ?
+				attr->burst_info.typical_pkt_sz :
+				ucmd->burst_info.typical_pkt_sz;
+
 			raw_qp_param.rl.rate = attr->rate_limit;
 
-			if (ucmd->burst_info.max_burst_sz) {
+
+			if (max_burst_sz) {
 				if (attr->rate_limit &&
 				    MLX5_CAP_QOS(dev->mdev, packet_pacing_burst_bound)) {
-					raw_qp_param.rl.max_burst_sz =
-						ucmd->burst_info.max_burst_sz;
+					raw_qp_param.rl.max_burst_sz = max_burst_sz;
 				} else {
 					err = -EINVAL;
 					goto out;
 				}
 			}
 
-			if (ucmd->burst_info.typical_pkt_sz) {
+			if (typical_pkt_sz) {
 				if (attr->rate_limit &&
 				    MLX5_CAP_QOS(dev->mdev, packet_pacing_typical_size)) {
-					raw_qp_param.rl.typical_pkt_sz =
-						ucmd->burst_info.typical_pkt_sz;
+					raw_qp_param.rl.typical_pkt_sz = typical_pkt_sz;
 				} else {
 					err = -EINVAL;
 					goto out;
@@ -4286,6 +4294,7 @@ int mlx5_ib_modify_qp(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 	size_t required_cmd_sz;
 	int err = -EINVAL;
 	int port;
+	bool is_exp = udata && (udata->src == IB_UDATA_EXP_CMD);
 
 	if (ibqp->rwq_ind_tbl)
 		return -ENOSYS;
@@ -4398,7 +4407,7 @@ int mlx5_ib_modify_qp(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 		attr_mask |= IB_EXP_QP_OOO_RW_DATA_PLACEMENT;
 
 	err = __mlx5_ib_modify_qp(ibqp, attr, attr_mask, cur_state,
-				  new_state, &ucmd);
+				  new_state, &ucmd, is_exp);
 
 	if (!err &&
 	    cur_state != IB_QPS_RESET &&
