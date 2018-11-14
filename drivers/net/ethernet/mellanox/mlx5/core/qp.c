@@ -232,6 +232,10 @@ int mlx5_core_create_dct(struct mlx5_core_dev *dev,
 	if (err)
 		goto err_cmd;
 
+	err = mlx5_debug_dct_add(dev, dct);
+	if (err)
+		mlx5_core_dbg(dev, "failed adding DCT to debug file system\n");
+
 	return 0;
 err_cmd:
 	MLX5_SET(destroy_dct_in, din, opcode, MLX5_CMD_OP_DESTROY_DCT);
@@ -321,6 +325,7 @@ int mlx5_core_destroy_dct(struct mlx5_core_dev *dev,
 	}
 	wait_for_completion(&dct->drained);
 destroy:
+	mlx5_debug_dct_remove(dev, dct);
 	destroy_resource_common(dev, &dct->mqp);
 	MLX5_SET(destroy_dct_in, in, opcode, MLX5_CMD_OP_DESTROY_DCT);
 	MLX5_SET(destroy_dct_in, in, dctn, qp->qpn);
