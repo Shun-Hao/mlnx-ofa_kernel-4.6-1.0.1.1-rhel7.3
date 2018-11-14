@@ -103,6 +103,12 @@ struct mlx5_fpga_temperature {
 	char sensor_name[16];
 };
 
+enum mlx5_fpga_connect {
+	MLX5_FPGA_CONNECT_QUERY = 0,
+	MLX5_FPGA_CONNECT_DISCONNECT = 0x9,
+	MLX5_FPGA_CONNECT_CONNECT = 0xA,
+};
+
 int mlx5_fpga_caps(struct mlx5_core_dev *dev);
 int mlx5_fpga_query(struct mlx5_core_dev *dev, struct mlx5_fpga_query *query);
 int mlx5_fpga_query_mtmp(struct mlx5_core_dev *dev,
@@ -114,6 +120,8 @@ int mlx5_fpga_sbu_caps(struct mlx5_core_dev *dev, void *caps, int size);
 int mlx5_fpga_load(struct mlx5_core_dev *dev, enum mlx5_fpga_image image);
 int mlx5_fpga_image_select(struct mlx5_core_dev *dev,
 			   enum mlx5_fpga_image image);
+int mlx5_fpga_ctrl_connect(struct mlx5_core_dev *dev,
+			   enum mlx5_fpga_connect *connect);
 int mlx5_fpga_shell_counters(struct mlx5_core_dev *dev, bool clear,
 			     struct mlx5_fpga_shell_counters *data);
 
