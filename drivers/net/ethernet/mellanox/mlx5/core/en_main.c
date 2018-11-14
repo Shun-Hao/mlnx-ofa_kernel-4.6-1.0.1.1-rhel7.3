@@ -3912,9 +3912,6 @@ static netdev_features_t mlx5e_fix_features(struct net_device *netdev,
 	return features;
 }
 
-#define MXL5_HW_MIN_MTU 64
-#define MXL5E_MIN_MTU (MXL5_HW_MIN_MTU + ETH_FCS_LEN)
-
 int mlx5e_change_mtu(struct net_device *netdev, int new_mtu,
 		     change_hw_mtu_cb set_mtu_cb)
 {
@@ -3931,7 +3928,7 @@ int mlx5e_change_mtu(struct net_device *netdev, int new_mtu,
 
 	params = &priv->channels.params;
 	max_mtu = MLX5E_HW2SW_MTU(params, max_mtu);
-	min_mtu = MLX5E_HW2SW_MTU(params, MXL5E_MIN_MTU);
+	min_mtu = ETH_MIN_MTU;
 
 	if (new_mtu > max_mtu || new_mtu < min_mtu) {
 		netdev_err(netdev,
