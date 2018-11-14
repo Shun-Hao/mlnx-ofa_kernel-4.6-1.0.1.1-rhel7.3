@@ -1200,7 +1200,9 @@ struct mlx5_ifc_cmd_hca_cap_bits {
 	u8         reserved_at_263[0x8];
 	u8         log_bf_reg_size[0x5];
 
-	u8         reserved_at_270[0xb];
+	u8         reserved_at_270[0x6];
+	u8         lag_dct[0x2];
+	u8         reserved_at_278[0x3];
 	u8         lag_master[0x1];
 	u8         num_lag_ports[0x4];
 
