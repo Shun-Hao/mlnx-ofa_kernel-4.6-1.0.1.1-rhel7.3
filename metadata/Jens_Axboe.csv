@@ -1,0 +1,6 @@
+sep=;
+Change-Id=I72738e7e2723282ebb27eca22cd66b0bab398c45; subject=blk-mq: abstract out queue map; feature=rebase; upstream_status=accepted; general=;
+Change-Id=Ie6c80c7abc09a4096dc2dd66d9dfb0c50acf4569; subject=blk-mq-tag: change busy_iter_fn to return whether to continue or not; feature=rebase; upstream_status=accepted; general=;
+Change-Id=I8e381e7dd6cd1effd604100f46966456f1a250b9; subject=block: have ->poll_fn() return number of entries polled; feature=rebase; upstream_status=accepted; general=;
+Change-Id=If9be6d12f862fdf3c8af4c291d9119a5db6bad85; subject=nvme-fc: remove ->poll implementation; feature=rebase; upstream_status=accepted; general=;
+Change-Id=Iaf43b66089fb83770e66a804f3397079853008a6; subject=blk-mq: remove 'tag' parameter from mq_ops->poll(); feature=rebase; upstream_status=accepted; general=;

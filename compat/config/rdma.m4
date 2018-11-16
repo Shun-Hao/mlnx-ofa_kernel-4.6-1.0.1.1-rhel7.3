@@ -11669,6 +11669,25 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 	],[
 		AC_MSG_RESULT(no)
 	])
+
+	AC_MSG_CHECKING([if linux/blk-mq.h has poll_fn 1 arg])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/blk-mq.h>
+
+		static int nvme_poll(struct blk_mq_hw_ctx *hctx) {
+			return 0;
+		}
+	],[
+		poll_fn *fn = nvme_poll;
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_BLK_MQ_POLL_FN_1_ARG, 1,
+			  [linux/blk-mq.h has poll_fn 1 arg])
+	],[
+		AC_MSG_RESULT(no)
+	])
 ])
 #
 # COMPAT_CONFIG_HEADERS
