@@ -10,3 +10,4 @@ Change-Id=Iba13a6eb7ced118294d9b774ec9ab52027471a1f; subject=compat: two missing
 Change-Id=I4bb3cd856987290fa2bff5d3fa59f2367d968654; subject=metadata: Update MD; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=I4f5cbf1d47b16d131557ebd786bf6ab90aec8c25; subject=net/mlx5: fixup: ifdef CONFIG_MLX5_ESWITCH in en.h; feature=mlx5_vf_lag; upstream_status=accepted; general=;
 Change-Id=I721882967ed9c755995081734504d94be655a0e3; subject=net/mlx5: fixup: ifdef CONFIG_MLX5_ESWITCH in sriov.c; feature=mlx5_vf_lag; upstream_status=accepted; general=;
+Change-Id=I3db0b0e171ea7fa4a0261e4d9980b8f7b729e91b; subject=ofed_scripts: mlx4: reenable support for CX2 cards; feature=ofed_scripts; upstream_status=ignore; general=;
