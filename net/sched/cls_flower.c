@@ -965,16 +965,16 @@ static int fl_change(struct net *net, struct sk_buff *in_skb,
 		goto errout;
 
 	if (!handle) {
-		err = idr_alloc(&head->handle_idr, fnew, 1,
-				INT_MAX, GFP_KERNEL);
+		handle = idr_alloc(&head->handle_idr, fnew, 1,
+				   INT_MAX, GFP_KERNEL);
 	} else if (!fold) {
 		/* user specifies a handle and it doesn't exist */
-		err = idr_alloc(&head->handle_idr, fnew, handle,
-				handle, GFP_KERNEL);
+		handle = idr_alloc(&head->handle_idr, fnew, handle,
+				   handle + 1, GFP_KERNEL);
 	}
-	if (IS_ERR_VALUE(err))
+	if (IS_ERR_VALUE(handle))
 		goto errout;
-	fnew->handle = (u32)err;
+	fnew->handle = handle;
 
 	if (tb[TCA_FLOWER_FLAGS]) {
 		fnew->flags = nla_get_u32(tb[TCA_FLOWER_FLAGS]);
