@@ -133,22 +133,6 @@ index xxxxxxx..xxxxxxx 100644
  	if (data_len)
  		io_dir = ((rq_data_dir(rq) == WRITE) ?
  					NVMEFC_FCP_WRITE : NVMEFC_FCP_READ);
-@@ -2329,6 +2388,7 @@ nvme_fc_queue_rq(struct blk_mq_hw_ctx *hctx,
- 	return nvme_fc_start_fcp_op(ctrl, queue, op, data_len, io_dir);
- }
- 
-+#ifdef HAVE_BLK_MQ_OPS_POLL
- static struct blk_mq_tags *
- nvme_fc_tagset(struct nvme_fc_queue *queue)
- {
-@@ -2360,6 +2420,7 @@ nvme_fc_poll(struct blk_mq_hw_ctx *hctx, unsigned int tag)
- 
- 	return ((atomic_read(&op->state) != FCPOP_STATE_ACTIVE));
- }
-+#endif
- 
- static void
- nvme_fc_submit_async_event(struct nvme_ctrl *arg)
 @@ -2413,7 +2474,11 @@ nvme_fc_complete_rq(struct request *rq)
   * status. The done path will return the io request back to the block
   * layer with an error status.
@@ -170,16 +154,6 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  }
  
- 
-@@ -2431,7 +2498,9 @@ static const struct blk_mq_ops nvme_fc_mq_ops = {
- 	.init_request	= nvme_fc_init_request,
- 	.exit_request	= nvme_fc_exit_request,
- 	.init_hctx	= nvme_fc_init_hctx,
-+#ifdef HAVE_BLK_MQ_OPS_POLL
- 	.poll		= nvme_fc_poll,
-+#endif
- 	.timeout	= nvme_fc_timeout,
- };
  
 @@ -2636,7 +2705,11 @@ nvme_fc_create_association(struct nvme_fc_ctrl *ctrl)
  	if (ret)
