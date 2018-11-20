@@ -525,9 +525,9 @@ static void mlx5_tracer_print_trace(struct tracer_string_format *str_frmt,
 				    struct mlx5_core_dev *dev,
 				    u64 trace_timestamp)
 {
-	char	tmp[512];
+	struct mlx5_fw_tracer *tracer = dev->tracer;
 
-	snprintf(tmp, sizeof(tmp), str_frmt->string,
+	sprintf(tracer->ready_string, str_frmt->string,
 		 str_frmt->params[0],
 		 str_frmt->params[1],
 		 str_frmt->params[2],
@@ -537,7 +537,7 @@ static void mlx5_tracer_print_trace(struct tracer_string_format *str_frmt,
 		 str_frmt->params[6]);
 
 	trace_mlx5_fw(dev->tracer, trace_timestamp, str_frmt->lost,
-		      str_frmt->event_id, tmp);
+			str_frmt->event_id, tracer->ready_string);
 
 	/* remove it from hash */
 	mlx5_tracer_clean_message(str_frmt);
