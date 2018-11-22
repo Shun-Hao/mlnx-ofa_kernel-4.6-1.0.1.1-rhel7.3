@@ -38,11 +38,11 @@
 
 #ifdef __KERNEL__
 #include <uapi/rdma/hfi/hfi1_ioctl.h>
+#include <uapi/rdma/rdma_user_ioctl_cmds.h>
 #else
 #include <rdma/hfi/hfi1_ioctl.h>
-#endif
-
 #include <rdma/rdma_user_ioctl_cmds.h>
+#endif
 
 /* Legacy name, for user space application which already use it */
 #define IB_IOCTL_MAGIC		RDMA_IOCTL_MAGIC
