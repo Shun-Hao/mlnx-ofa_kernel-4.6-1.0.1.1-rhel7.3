@@ -632,7 +632,7 @@ const char *__attribute_const__ ibcm_reject_msg(int reason);
  * @dport: Destination port specified in service ID
  * @sport: Source port specified in private data
  */
-inline __be16 cm_calc_udp_sport(__be16 dport, __be16 sport)
+static inline __be16 cm_calc_udp_sport(__be16 dport, __be16 sport)
 {
 	return (dport ^ sport) | IB_ROCE_UDP_SPORT_MIN;
 }
