@@ -1041,7 +1041,10 @@ static int fl_change(struct net *net, struct sk_buff *in_skb,
 	return 0;
 
 errout_idr:
-	if (fnew->handle)
+	if (fnew->handle > USER_HANDLE_START)
+		idr_remove(&head->user_handle_idr,
+			   fnew->handle - USER_HANDLE_START);
+	else
 		idr_remove(&head->handle_idr, fnew->handle);
 errout:
 	tcf_exts_destroy(&fnew->exts);
