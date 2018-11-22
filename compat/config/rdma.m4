@@ -8526,6 +8526,20 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if linux/atomic.h has atomic_fetch_add_unless])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/highmem.h>
+	],[
+		atomic_t x;
+		atomic_fetch_add_unless(&x, 1, 1);
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_ATOMIC_FETCH_ADD_UNLESS, 1,
+			  [atomic_fetch_add_unless is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if linux/net_tstamp.h has HWTSTAMP_FILTER_NTP_ALL])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/net_tstamp.h>
@@ -10803,6 +10817,28 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_TCF_BLOCK_CB_REGISTER_EXTACK, 1,
 			  [tcf_block_cb_register has fifth parameter])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if ib_umem_notifier_invalidate_range_start has parameter blockable])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/mmu_notifier.h>
+		static int notifier(struct mmu_notifier *mn,
+				    struct mm_struct *mm,
+				    unsigned long start,
+				    unsigned long end,
+				    bool blockable) {
+			return 0;
+		}
+	],[
+		static const struct mmu_notifier_ops notifiers = {
+			.invalidate_range_start = notifier
+		};
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_UMEM_NOTIFIER_PARAM_BLOCKABLE, 1,
+			  [ib_umem_notifier_invalidate_range_start has parameter blockable])
 	],[
 		AC_MSG_RESULT(no)
 	])
