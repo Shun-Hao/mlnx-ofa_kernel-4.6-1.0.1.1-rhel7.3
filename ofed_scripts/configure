@@ -272,6 +272,7 @@ CONFIG_MLX4_CORE=${CONFIG_MLX4_CORE:-''}
 CONFIG_MLXFW=${CONFIG_MLXFW:-''}
 CONFIG_MLX5_ACCEL=${CONFIG_MLX5_ACCEL:-''}
 CONFIG_MLX5_EN_ARFS=${CONFIG_MLX5_EN_ARFS:-''}
+CONFIG_MLX5_EN_RXNFC=${CONFIG_MLX5_EN_RXNFC:-''}
 CONFIG_MLX5_EN_TLS=${CONFIG_MLX5_EN_TLS:-''}
 CONFIG_MLX5_EN_IPSEC=${CONFIG_MLX5_EN_IPSEC:-''}
 CONFIG_MLX5_FPGA=${CONFIG_MLX5_FPGA:-''}
@@ -644,6 +645,7 @@ main()
                             CONFIG_MLX5_CORE_EN="y"
                             CONFIG_MLX5_CORE_EN_DCB="y"
                             CONFIG_MLX5_EN_ARFS="y"
+                            CONFIG_MLX5_EN_RXNFC="y"
                             CONFIG_MLX5_MPFS="y"
                             CONFIG_MLX5_ESWITCH="y"
                             CONFIG_MLX5_CORE_IPOIB="y"
@@ -659,6 +661,7 @@ main()
                             CONFIG_MLX5_CORE_EN=
                             CONFIG_MLX5_CORE_EN_DCB=
                             CONFIG_MLX5_EN_ARFS=
+                            CONFIG_MLX5_EN_RXNFC=
                             CONFIG_MLX5_MPFS=
                             CONFIG_MLX5_ESWITCH=
                             CONFIG_MLX5_CORE_IPOIB=
@@ -673,6 +676,7 @@ main()
                             CONFIG_MLX5_CORE_EN=
                             CONFIG_MLX5_CORE_EN_DCB=
                             CONFIG_MLX5_EN_ARFS=
+                            CONFIG_MLX5_EN_RXNFC=
                             CONFIG_MLX5_MPFS=
                             CONFIG_MLX5_ESWITCH=
                             CONFIG_MLX5_CORE_IPOIB=
@@ -687,6 +691,7 @@ main()
                             CONFIG_MLX5_CORE_EN="y"
                             CONFIG_MLX5_CORE_EN_DCB="y"
                             CONFIG_MLX5_EN_ARFS="y"
+                            CONFIG_MLX5_EN_RXNFC="y"
                             CONFIG_MLX5_MPFS="y"
                             CONFIG_MLX5_ESWITCH="y"
                             CONFIG_MLX5_CORE_IPOIB=
@@ -702,6 +707,7 @@ main()
                             CONFIG_MLX5_CORE_EN="y"
                             CONFIG_MLX5_CORE_EN_DCB="y"
                             CONFIG_MLX5_EN_ARFS="y"
+                            CONFIG_MLX5_EN_RXNFC="y"
                             CONFIG_MLX5_MPFS="y"
                             CONFIG_MLX5_ESWITCH="y"
                             CONFIG_MLX5_CORE_IPOIB=
@@ -716,6 +722,7 @@ main()
                             CONFIG_MLX5_CORE_EN=
                             CONFIG_MLX5_CORE_EN_DCB=
                             CONFIG_MLX5_EN_ARFS=
+                            CONFIG_MLX5_EN_RXNFC=
                             CONFIG_MLX5_MPFS=
                             CONFIG_MLX5_ESWITCH=
                             CONFIG_MLX5_CORE_IPOIB="y"
@@ -736,6 +743,7 @@ main()
                             CONFIG_MLX5_CORE_EN="y"
                             CONFIG_MLX5_CORE_EN_DCB="y"
                             CONFIG_MLX5_EN_ARFS="y"
+                            CONFIG_MLX5_EN_RXNFC="y"
                             CONFIG_MLX5_MPFS="y"
                             CONFIG_MLX5_ESWITCH="y"
                             CONFIG_MLX5_CORE_IPOIB="y"
@@ -747,6 +755,7 @@ main()
                             CONFIG_MLX5_CORE_EN=
                             CONFIG_MLX5_CORE_EN_DCB=
                             CONFIG_MLX5_EN_ARFS=
+                            CONFIG_MLX5_EN_RXNFC=
                             CONFIG_MLX5_MPFS=
                             CONFIG_MLX5_ESWITCH=
                             CONFIG_MLX5_CORE_IPOIB=
@@ -763,6 +772,7 @@ main()
                             CONFIG_MLX5_CORE_EN=
                             CONFIG_MLX5_CORE_EN_DCB=
                             CONFIG_MLX5_EN_ARFS=
+                            CONFIG_MLX5_EN_RXNFC=
                             CONFIG_MLX5_MPFS=
                             CONFIG_MLX5_ESWITCH=
                             CONFIG_MLX5_CORE_IPOIB=
@@ -799,6 +809,7 @@ main()
                             CONFIG_MLX5_CORE_EN="y"
                             CONFIG_MLX5_CORE_EN_DCB="y"
                             CONFIG_MLX5_EN_ARFS="y"
+                            CONFIG_MLX5_EN_RXNFC="y"
                             CONFIG_MLX5_MPFS="y"
                             CONFIG_MLX5_ESWITCH="y"
                             CONFIG_MLX5_CORE_IPOIB="y"
@@ -810,6 +821,7 @@ main()
                             CONFIG_MLX5_CORE_EN=
                             CONFIG_MLX5_CORE_EN_DCB=
                             CONFIG_MLX5_EN_ARFS=
+                            CONFIG_MLX5_EN_RXNFC=
                             CONFIG_MLX5_MPFS=
                             CONFIG_MLX5_ESWITCH=
                             CONFIG_MLX5_CORE_IPOIB=
@@ -1319,6 +1331,7 @@ CONFIG_MLXFW=${CONFIG_MLXFW}
 CONFIG_MLX5_ACCEL=${CONFIG_MLX5_ACCEL}
 CONFIG_MLX5_EN_TLS=${CONFIG_MLX5_EN_TLS}
 CONFIG_MLX5_EN_ARFS=${CONFIG_MLX5_EN_ARFS}
+CONFIG_MLX5_EN_RXNFC=${CONFIG_MLX5_EN_RXNFC}
 CONFIG_MLX5_EN_IPSEC=${CONFIG_MLX5_EN_IPSEC}
 CONFIG_MLX5_FPGA=${CONFIG_MLX5_FPGA}
 CONFIG_MLX5_FPGA_TOOLS=${CONFIG_MLX5_FPGA_TOOLS}
@@ -1493,6 +1506,11 @@ if [ "X${CONFIG_MLX5_EN_ARFS}" == "Xy" ]; then
         DEFINE_MLX5_EN_ARFS="#undef CONFIG_MLX5_EN_ARFS\n#define CONFIG_MLX5_EN_ARFS 1"
 else
         DEFINE_MLX5_EN_ARFS="#undef CONFIG_MLX5_EN_ARFS="
+fi
+if [ "X${CONFIG_MLX5_EN_RXNFC}" == "Xy" ]; then
+        DEFINE_MLX5_EN_RXNFC="#undef CONFIG_MLX5_EN_RXNFC\n#define CONFIG_MLX5_EN_RXNFC 1"
+else
+        DEFINE_MLX5_EN_RXNFC="#undef CONFIG_MLX5_EN_RXNFC="
 fi
 if [ "X${CONFIG_MLX5_EN_TLS}" == "Xy" ]; then
         DEFINE_MLX5_EN_TLS="#undef CONFIG_MLX5_EN_TLS\n#define CONFIG_MLX5_EN_TLS 1"
@@ -1835,6 +1853,7 @@ $(echo -e "${DEFINE_MLX4_CORE}" | grep -v undef)
 $(echo -e "${DEFINE_MLXFW}" | grep -v undef)
 $(echo -e "${DEFINE_MLX5_ACCEL}" | grep -v undef)
 $(echo -e "${DEFINE_MLX5_EN_ARFS}" | grep -v undef)
+$(echo -e "${DEFINE_MLX5_EN_RXNFC}" | grep -v undef)
 $(echo -e "${DEFINE_MLX5_EN_TLS}" | grep -v undef)
 $(echo -e "${DEFINE_MLX5_EN_IPSEC}" | grep -v undef)
 $(echo -e "${DEFINE_MLX5_FPGA}" | grep -v undef)
@@ -1908,6 +1927,7 @@ $(echo -e "${DEFINE_CONFIG_MLNX_BLOCK_REQUEST_MODULE}" | grep -v undef)
 #undef CONFIG_MLX5_ACCEL
 #undef CONFIG_MLX5_EN_TLS
 #undef CONFIG_MLX5_EN_ARFS
+#undef CONFIG_MLX5_EN_RXNFC
 #undef CONFIG_MLX5_EN_IPSEC
 #undef CONFIG_MLX5_FPGA
 #undef CONFIG_MLX5_FPGA_TOOLS
@@ -2003,6 +2023,7 @@ $(echo -e "${DEFINE_MLXFW}")
 $(echo -e "${DEFINE_MLX5_ACCEL}")
 $(echo -e "${DEFINE_MLX5_EN_TLS}")
 $(echo -e "${DEFINE_MLX5_EN_ARFS}")
+$(echo -e "${DEFINE_MLX5_EN_RXNFC}")
 $(echo -e "${DEFINE_MLX5_EN_IPSEC}")
 $(echo -e "${DEFINE_MLX5_FPGA}")
 $(echo -e "${DEFINE_MLX5_FPGA_TOOLS}")
