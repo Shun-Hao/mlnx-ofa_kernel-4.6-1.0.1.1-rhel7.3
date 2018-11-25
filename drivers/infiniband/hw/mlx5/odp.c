@@ -835,7 +835,7 @@ next_mr:
 		}
 
 
-		if (!to_ib_umem_odp(mr->umem)) {
+		if (!mr->umem->is_odp) {
 			mlx5_ib_dbg(dev, "skipping non ODP MR (lkey=0x%06x) in page fault handler.\n",
 				    key);
 			if (bytes_mapped)
