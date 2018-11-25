@@ -1,0 +1,8 @@
+sep=;
+Change-Id=Ica1ecf3069e0b03cbc427f163de65588d2e9e404; subject=Initial commit; feature=rebase; upstream_status=ignore; general=;
+Change-Id=I86ab9ea054db584ca2b0a3d3b53b9d4913dd9220; subject=Set base code to Linux v4.20-rc3; feature=rebase; upstream_status=ignore; general=;
+Change-Id=I096baf325ed384235fa698c9b6449d1278ba75ad; subject=Add dummy modules and standalone packages; feature=rebase; upstream_status=ignore; general=;
+Change-Id=Ic36b32e790dd2ebaed404358bbf87127de58f342; subject=configure: Add CONFIG_MLX5_EN_ARFS; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I94e8ece1110251fd2c53706c6d5523b1e1aa4c3d; subject=configure: Add CONFIG_MLX5_EN_RXNFC; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I4266fe933ccf084b8192388f0f2b79fd265f947e; subject=configure: Add Remove unwanted o files from Makefile; feature=rebase; upstream_status=ignore; general=;
+Change-Id=Id609477b701684a0dfa86f4aed54f290fa0d813e; subject=metadata: Initial MD; feature=ofed_scripts; upstream_status=ignore; general=;
