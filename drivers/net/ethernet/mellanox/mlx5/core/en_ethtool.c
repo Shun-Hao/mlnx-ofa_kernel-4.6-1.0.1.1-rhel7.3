@@ -1658,12 +1658,8 @@ static int set_pflag_rx_striding_rq(struct net_device *netdev, bool enable)
 		return 0;
 	}
 
-	err = mlx5e_open_channels(priv, &new_channels);
-	if (err)
-		return err;
-
-	mlx5e_switch_priv_channels(priv, &new_channels, NULL);
-	return 0;
+	err = mlx5e_switch_priv_channels(priv, &new_channels, NULL);
+	return err;
 }
 
 static int set_pflag_rx_no_csum_complete(struct net_device *netdev, bool enable)
