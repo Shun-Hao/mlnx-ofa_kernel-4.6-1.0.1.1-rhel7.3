@@ -45,11 +45,12 @@
 #include "uverbs.h"
 #include "core_priv.h"
 
-int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file, struct ib_device *ib_dev,
+int ib_uverbs_exp_create_qp(struct ib_uverbs_file *file,
 			    struct ib_udata *ucore, struct ib_udata *uhw)
 {
 	struct ib_uqp_object           *obj;
 	struct ib_device	       *device;
+	struct ib_device	       *ib_dev;
 	struct ib_pd                   *pd = NULL;
 	struct ib_xrcd		       *xrcd = NULL;
 	struct ib_uobject	       *xrcd_uobj = ERR_PTR(-ENOENT);
@@ -306,7 +307,7 @@ err_cmd_attr:
 	return ret;
 }
 
-int ib_uverbs_exp_modify_cq(struct ib_uverbs_file *file, struct ib_device *ib_dev,
+int ib_uverbs_exp_modify_cq(struct ib_uverbs_file *file,
 			    struct ib_udata *ucore, struct ib_udata *uhw)
 {
 	struct ib_uverbs_exp_modify_cq cmd;
@@ -338,7 +339,6 @@ int ib_uverbs_exp_modify_cq(struct ib_uverbs_file *file, struct ib_device *ib_de
 }
 
 int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
-			       struct ib_device *ib_dev,
 			       struct ib_udata *ucore, struct ib_udata *uhw)
 {
 	struct ib_uverbs_exp_query_device_resp *resp;
@@ -447,11 +447,12 @@ static int translate_exp_access_flags(u64 exp_access_flags)
 	return access_flags;
 }
 
-int ib_uverbs_exp_reg_mr(struct ib_uverbs_file *file, struct ib_device *ib_dev,
+int ib_uverbs_exp_reg_mr(struct ib_uverbs_file *file,
 			 struct ib_udata *ucore, struct ib_udata *uhw)
 {
 	struct ib_uverbs_exp_reg_mr cmd;
 	struct ib_uverbs_exp_reg_mr_resp resp;
+	struct ib_device *ib_dev;
 	struct ib_uobject *uobj;
 	struct ib_pd      *pd;
 	struct ib_mr      *mr;
@@ -536,7 +537,7 @@ err_free:
 	return ret;
 }
 
-int ib_uverbs_exp_create_cq(struct ib_uverbs_file *file, struct ib_device *ib_dev,
+int ib_uverbs_exp_create_cq(struct ib_uverbs_file *file,
 			    struct ib_udata *ucore, struct ib_udata *uhw)
 {
 	int out_len = ucore->outlen + uhw->outlen;
@@ -578,7 +579,7 @@ int ib_uverbs_exp_create_cq(struct ib_uverbs_file *file, struct ib_device *ib_de
 	return 0;
 }
 
-int ib_uverbs_exp_modify_qp(struct ib_uverbs_file *file, struct ib_device *ib_dev,
+int ib_uverbs_exp_modify_qp(struct ib_uverbs_file *file,
 			    struct ib_udata *ucore, struct ib_udata *uhw)
 {
 	struct ib_uverbs_exp_modify_qp	cmd;
