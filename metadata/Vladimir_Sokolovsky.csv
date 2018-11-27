@@ -1,2 +1,3 @@
 sep=;
 Change-Id=I44a8c791319890e3b90a23de157c8ff4814a2672; subject=mlx4_core: Added mlx4_en_only_mode module parameter; feature=mlx4_en_only_mode_param; upstream_status=NA; general=;
+Change-Id=I5d5b76da5e3b9f244ccb60e343ca62a889ef028a; subject=openibd: Enable persistent configuration of PF via ECPF; feature=ofed_scripts; upstream_status=NA; general=;
