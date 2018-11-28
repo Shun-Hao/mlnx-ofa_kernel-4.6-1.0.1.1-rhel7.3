@@ -1,0 +1,3 @@
+sep=;
+Change-Id=I943d29570b04bb70f3b521d939b700c17be1cab2; subject=net/mlx4_en: Support inline scatter; feature=mlx4_en_inline_scatter; upstream_status=in_progress; general=;
+Change-Id=I84796f43337c64e6be680d6ee5611db93a86d7e2; subject=net/mlx4_en: Add priv flag for inline scatter; feature=mlx4_en_inline_scatter; upstream_status=in_progress; general=;

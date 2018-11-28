@@ -1,0 +1,16 @@
+sep=;
+Change-Id=Ib3a47c1cec7b50c32263434982810e0b6ca0b474; subject=IB/mlx5: Add support for scatter to CQE on DCI QP; feature=mlx5_scatter_to_cqe_over_dci; upstream_status=NA; general=;
+Change-Id=Ibd05220203eb35c1654e36df5616fefb67d7f99b; subject=IB/uverbs: Fix missing assignemnt of max_inline_data; feature=ib_core_bugs; upstream_status=NA; general=;
+Change-Id=I81491801ac27302446ab7ecbfba99174b776ddfe; subject=mlx4/core: Apply self-loopback filtering for VM's raw ETH QPs; feature=mlx4_disable_multicast_loopback; upstream_status=NA; general=;
+Change-Id=I2ec557404edb069139d0562cf509ff676fd019f3; subject=IB/mlx4: Fix upstream RSS porting; feature=RSS_CX3; upstream_status=NA; general=;
+Change-Id=If87681c62bc2e7a680f6ca5f5f6a9a6017bf4229; subject=net/mlx5: Expose new device's capabilities for Striding Receive WQ; feature=mp_wr; upstream_status=NA; general=;
+Change-Id=Ie987a89524576a8c6150f045061b13e6dc94e43f; subject=net/mlx5: Support Striding Receive WQ for SRQ; feature=mp_wr; upstream_status=NA; general=;
+Change-Id=I9c61088b7fda158d8ce99fb8e865702db15ac562; subject=IB/core: Extend capabilities report for Multi-Packet WR over SRQ TM; feature=mp_wr; upstream_status=NA; general=;
+Change-Id=I9034df6495287db70b639677b492a3c832181653; subject=IB/mlx5: Support extended number of strides for "Strding RQ"; feature=mp_wr; upstream_status=NA; general=;
+Change-Id=I6c7ddf298776846d486205e6f36608c525538d20; subject=IB/mlx5: Support Multi-Packet WR in mlx5_ib_exp_create_srq; feature=mp_wr; upstream_status=NA; general=;
+Change-Id=I7055c1c9fbb9640f589c0d7baff42d70e69111cf; subject=IB/mlx5: Expose support for Multi-Packet WR over SRQ TM; feature=mp_wr; upstream_status=NA; general=;
+Change-Id=If58a1f8c42cc5865ea75c93b6e9adbe2f417adf7; subject=IB/mlx5: Use fragmented QP's buffer for in-kernel users.; feature=mlx5_frag_qps; upstream_status=in_progress; general=;
+Change-Id=I38104afcf09ad7a0eef39c3a2de693bc8f61436d; subject=IB/mlx5: Use fragmented SRQ's buffer for in-kernel users; feature=mlx5_frag_qps; upstream_status=in_progress; general=;
+Change-Id=Idbcf2bff2f1988eecb3e47f42f816f94da9c2206; subject=IB/mlx5: Fix fragmented QP data-path; feature=mlx5_frag_qps; upstream_status=in_progress; general=;
+Change-Id=Id103088cb7d1e9efda04e2c289456810f496514c; subject=IB/mlx5: Fix fragmented kernel QP in reset state; feature=mlx5_frag_qps; upstream_status=in_progress; general=;
+Change-Id=I71beaedde132048b4baf8df87e93dd5974b02f80; subject=IB/mlx5: Fix fragmented kernel QP post REG_MR WR; feature=mlx5_frag_qps; upstream_status=in_progress; general=;

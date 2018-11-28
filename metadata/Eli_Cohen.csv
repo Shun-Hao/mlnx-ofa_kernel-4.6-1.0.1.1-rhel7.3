@@ -1,0 +1,14 @@
+sep=;
+Change-Id=I5d8bea5132a1d7726f41c5711b0436a1661bc599; subject=IB/mlx5: Move mr cache control files to sysfs; feature=mr_cache sysfs; upstream_status=in_progress; general=;
+Change-Id=I9347daa4fd4830784b6ae61010c188b68178a4e7; subject=IB/mlx5: Improve memory registration time for large regions; feature=large MR registration optimization; upstream_status=in_progress; general=;
+Change-Id=Ia6dcdd4d6ae33d52942142423a6d451c7063ef09; subject=IB/mlx4: add blue flame support for kernel consumers; feature=mlx4_ib_kernel_bf; upstream_status=NA; general=;
+Change-Id=Ib9cc6e4360d86641addd69b0cc2984f425d65038; subject=IB/mlx5: Add support for NOP work request; feature=nop_wr; upstream_status=NA; general=;
+Change-Id=Iaef60ab66f00560d3fd6021091b3fcf61a2eafc6; subject=net/mlx5_core: Add icmd support; feature=mlx5_capi_v2; upstream_status=NA; general=;
+Change-Id=I7c05283dd9de74358566807886c8ebeb1b8ae81e; subject=net/mlx5_core: Implement query icmd capabilities; feature=mlx5_capi_v2; upstream_status=NA; general=;
+Change-Id=Iced5ae99190e4eae4d1e2fda5282845d383ede7e; subject=net/mlx5_core: Implement icmd access register; feature=mlx5_capi_v2; upstream_status=NA; general=;
+Change-Id=I70a757e49d52299c86f8bff2a66ad937914fd71f; subject=IB/core: Add invalidate range callback; feature=mlx5_capi_v2; upstream_status=NA; general=;
+Change-Id=I3bd1c2668a8408cff16adebf3bc8f872844dd316; subject=IB/uverbs: Add capability bit for CAPI; feature=mlx5_capi_v2; upstream_status=NA; general=;
+Change-Id=If752ae0c57560d948297225734ebbf02bbae5468; subject=mlx5: CAPI implementation; feature=mlx5_capi_v2; upstream_status=NA; general=;
+Change-Id=I1824d834f3c0c4c42401404260c3570797207d47; subject=mlx5_core: Support capi invalidation; feature=mlx5_capi_v2; upstream_status=NA; general=;
+Change-Id=Ie345cc567bde46eab5836bf2dc58b4e2a0dd7693; subject=IB/mlx5: Control TLBi globalization; feature=mlx5_capi_v2; upstream_status=NA; general=;
+Change-Id=Ic6c46469d910eef73d9d36ea631af7c6cfa6dd5c; subject=IB/mlx5: Add support for sync steering command; feature=devx; upstream_status=in_progress; general=;

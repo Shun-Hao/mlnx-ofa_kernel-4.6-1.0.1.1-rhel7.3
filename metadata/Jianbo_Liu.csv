@@ -1,0 +1,4 @@
+sep=;
+Change-Id=I5e9ccc1dae88ee413e4aba79dd22e87f6aed3bda; subject=ASAP: always enable sysfs way to configure switchdev; feature=mlx5_asap; upstream_status=NA; general=;
+Change-Id=I71158093aeeffd42a6402a8337c8ad429697dfdf; subject=net/sched: Fix incorrect match on vlan packet in centos 7.2; feature=mlx5_asap; upstream_status=NA; general=;
+Change-Id=I2d006c38040a302309631a47fc37cba05799961c; subject=net/mlx5: Fix the data structure for eswitch capabilities; feature=mlx5_asap; upstream_status=NA; general=;

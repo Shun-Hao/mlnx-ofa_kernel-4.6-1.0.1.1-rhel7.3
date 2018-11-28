@@ -1,0 +1,7 @@
+sep=;
+Change-Id=I210d57ad778d5d3e4d50370a47b60e7cce465bac; subject=mlx5: Update mlx5_ifc with Packet Based Credit bits; feature=exp_packet_based_credit; upstream_status=NA; general=;
+Change-Id=Id9452ddec0aff804a9d334a28d42e68da4a56cfa; subject=IB/core: Add experimental QP creation flag to enable Packet Based Credit Mode; feature=exp_packet_based_credit; upstream_status=NA; general=;
+Change-Id=I441f2bd51abc6fd1b3688c0d1fd861af20ce01cc; subject=IB/mlx5: Add experimental QP creation flag for Packet Based Credit Mode; feature=exp_packet_based_credit; upstream_status=NA; general=;
+Change-Id=Ia7d1eecb60f8b3d30ca20225e15691588313ca2a; subject=IB/core: Add Packet Based Credit mode experimental device capability; feature=exp_packet_based_credit; upstream_status=NA; general=;
+Change-Id=Id40b7bf19bb17d2ad481a88bec23260f98c00a06; subject=IB/mlx5: Report Packet Based Credit mode device capability; feature=exp_packet_based_credit; upstream_status=NA; general=;
+Change-Id=I11ea24cc3921be4076c8508aa2970b0d8611b4e9; subject=net/mlx5: Add a debugfs entry for DCTs; feature=mlx5_core_bugs; upstream_status=NA; general=;

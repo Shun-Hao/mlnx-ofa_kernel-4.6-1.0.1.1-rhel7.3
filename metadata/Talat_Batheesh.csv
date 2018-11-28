@@ -6,3 +6,9 @@ Change-Id=Ic36b32e790dd2ebaed404358bbf87127de58f342; subject=configure: Add CONF
 Change-Id=I94e8ece1110251fd2c53706c6d5523b1e1aa4c3d; subject=configure: Add CONFIG_MLX5_EN_RXNFC; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=I4266fe933ccf084b8192388f0f2b79fd265f947e; subject=configure: Add Remove unwanted o files from Makefile; feature=rebase; upstream_status=ignore; general=;
 Change-Id=Id609477b701684a0dfa86f4aed54f290fa0d813e; subject=metadata: Initial MD; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I5ae34ce6d1571c8cb2dbb81834e5140e80db182f; subject=IB/core: fix uverbs_cmd_exp.c prototypes; feature=exp_create_flow; upstream_status=NA; general=;
+Change-Id=Iaa4dade21518d0f640d2a3e43001443c69e54620; subject=rxe: block user space libs access kernel in.h in6.h headers; feature=rdma_rxe_bugs; upstream_status=NA; general=;
+Change-Id=I9b5ac6e412b2802009fed3e6aa0c58df8001fb45; subject=net/mlx5e: Add support for XDP TX HW checksum offload; feature=checksum_offload; upstream_status=in_progress; general=;
+Change-Id=I9ab4bd60fcd5f246c15e851ce2a0d63537be4d53; subject=net/mlx5: Fix number of max channels in mlx5e_grp_channels_fill_[strings,stats]; feature=mlx5e_counter_groups; upstream_status=NA; general=;
+Change-Id=I8a1458d013a7698c7c564f8f909c63afde6d08a7; subject=IB/ipoib: remark get_settings from ethtool_ops; feature=ipoib_ethtool_speed_support; upstream_status=NA; general=;
+Change-Id=I6a861a1b75468f9e2559b85c67793046123b23fe; subject=metadata: general metadata update for 4.20 rebase; feature=ofed_scripts; upstream_status=ignore; general=;

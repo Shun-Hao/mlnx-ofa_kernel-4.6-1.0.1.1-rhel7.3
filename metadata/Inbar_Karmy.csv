@@ -1,0 +1,5 @@
+sep=;
+Change-Id=I3110ab9cc0f68bc8fa59b1e48e7cd674aa566e45; subject=net/mlx5e: Fix error flow when creating sysfs groups; feature=mlx5_en_bugs; upstream_status=NA; general=;
+Change-Id=I3c24b0b97271982de407a0cce6fa00623c2481cc; subject=net/mlx4_en: Remove unnecessary commands in sysfs tc_num setter function; feature=mlx4_en_bugs; upstream_status=NA; general=;
+Change-Id=Ib3c89d702312d6a6067eed348d2b6c1f4d2e8984; subject=net/mlx5e: Add support for configuring pfc stall prevention through sysfs; feature=mlx5e_pfc_stall_prevention_sysfs; upstream_status=in_progress; general=;
+Change-Id=Ic0957d22560654834229301236abe88bcc0ba4ac; subject=net/mlx4_core: Vxlan offloading disable; feature=vlan_offloads; upstream_status=NA; general=;

@@ -1,0 +1,14 @@
+sep=;
+Change-Id=I0ce29ca6056331808156f313ccde21c50a0a6f8e; subject=IB/core: udp_sport support for sa_path and rdma_ah; feature=udp_sport; upstream_status=in_progress; general=;
+Change-Id=Ic409c30c256c1ff54afe6759e3672e95d71a5878; subject=IB/mlx5: rocev2 udp source port set.; feature=udp_sport; upstream_status=in_progress; general=;
+Change-Id=If68fb1573168692c06678943b6ecce8899794a88; subject=IB/cm: Calculate UDP source port for REP message; feature=udp_sport; upstream_status=in_progress; general=;
+Change-Id=I0ac04858058aa3f05180091e05d81c2892fc77d9; subject=IB/cma: Set udp source port in cma; feature=udp_sport; upstream_status=in_progress; general=;
+Change-Id=I5575f0062e4106e6c90b3ef22463e406d17514e8; subject=IB/core: Set udp_sport field when ah is initialized; feature=udp_sport; upstream_status=in_progress; general=;
+Change-Id=Ibdf116a8338ddb8c1065f5727599bda73f92a47c; subject=IB/cm: Set UDP source port for SIDR response; feature=udp_sport; upstream_status=in_progress; general=;
+Change-Id=I8759931a6b14db02a02ea86a3d3364c856a0fe4e; subject=IB/uverb: Get/Set udp sport from/to uverb; feature=udp_sport; upstream_status=in_progress; general=;
+Change-Id=I56eb2ddb0bcbc54023aaf338e66230e0de104e7b; subject=net/mlx5: Enable SW-defined rocev2 udp source port feature.; feature=udp_sport; upstream_status=in_progress; general=;
+Change-Id=I3db1bbbfe65d7a46bb8a6d6c2ed7fb079180a71e; subject=IB/mlx5: Set udp source port only for RoCEv2; feature=udp_sport; upstream_status=in_progress; general=;
+Change-Id=I981f9eaa493f5041701f828589cdfd36c41548cd; subject=IB/uverb: Set dlid in non-RoCEv2 cases; feature=udp_sport; upstream_status=in_progress; general=;
+Change-Id=Ia7036db3fda7fece95e5bbe6f432b0f79c195b84; subject=IB/core: Check if rdma_dev is null in bond master filter; feature=ib_core_bugs; upstream_status=in_progress; general=;
+Change-Id=If2a6ff789ff853a526d117ebeacc853c1fc4dc58; subject=IB/ucm: Initialize ucm request GID attribute pointer; feature=ib_core_bugs; upstream_status=in_progress; general=;
+Change-Id=Ib6f6c62b6d22e1616c0820b527994a54a0b69f6b; subject=IB/mlx5: For an outstanding wr reuse the soft WC for poll; feature=mlx5_ib_bugs; upstream_status=in_progress; general=;

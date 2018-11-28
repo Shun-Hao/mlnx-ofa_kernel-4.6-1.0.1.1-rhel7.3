@@ -1,0 +1,6 @@
+sep=;
+Change-Id=I90a8eff12b1fc9e00fd4563133e6f0f6aa34ac99; subject=Revert "net/mlx5e: Align ratelimit feature with upstream code"; feature=rate_limit_en; upstream_status=NA; general=;
+Change-Id=I63e07d20d466ffcc90711c94c7796e8eadb75a7a; subject=Revert "mlx5/core: Get pp rate limit queues based on capability"; feature=rate_limit_en; upstream_status=NA; general=;
+Change-Id=Id72862b020423bbb900925f720112307f6ce263f; subject=Revert "net/mlx5e: Adding flow mapping to queues"; feature=rate_limit_en; upstream_status=NA; general=;
+Change-Id=Ib1460aa561e245fe8298b701e76dee4d5508bc3a; subject=Revert "net/mlx5e: Support addition of special TX queues"; feature=rate_limit_en; upstream_status=NA; general=;
+Change-Id=Id7c28914228e222cb7e5471e0c5867016451dc50; subject=net/mlx4: device LAG on slaves: don't start work; feature=mlx4_core_bugs; upstream_status=in_progress; general=;

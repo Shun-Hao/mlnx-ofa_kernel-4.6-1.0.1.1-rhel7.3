@@ -1,0 +1,4 @@
+sep=;
+Change-Id=I11d12250b9bc54092908e3318d03ab1f42843a8a; subject=net/mlx5: Fold the modify lag code into function; feature=mlx5_vf_lag; upstream_status=in_progress; general=;
+Change-Id=I319de77873c24edd243c314a95ad90597397065a; subject=net/mlx5: E-Switch, Introduce flow counter affinity; feature=mlx5_vf_lag; upstream_status=in_progress; general=;
+Change-Id=Ifd2ea06a4e4e993a08f5685e527e6794eb2518a4; subject=net/mlx5e: Enhance flow counter scheme for offloaded TC eswitch rules; feature=mlx5_vf_lag; upstream_status=in_progress; general=;

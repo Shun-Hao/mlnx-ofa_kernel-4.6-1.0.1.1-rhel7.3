@@ -1,0 +1,8 @@
+sep=;
+Change-Id=I62ca70427baec1eb91ae85935e54408fc7f672dd; subject=net/mlx4: Change number of max MSIXs from 64 to 1024; feature=rebase; upstream_status=in_progress; general=;
+Change-Id=Ia413ad85baaa28226ddc9488a91f6fd42a979b21; subject=IB/mlx5: Pass HCA core clock page offset in ucontext; feature=TS; upstream_status=NA; general=;
+Change-Id=I6ec21d14560179db6ece3a873e0714049b0e2b7d; subject=net/mlx4_en: Report DMFS in ethtool; feature=mlx4_en_priv_flags; upstream_status=NA; general=;
+Change-Id=I3a6055d4bdc6ff78cbfc5012e4c719f582abe27f; subject=net/mlx4_core: Add an option to disable DMFS and its variations; feature=mlx4_flow_steering; upstream_status=NA; general=;
+Change-Id=I05a679e9ca29315ecaf84facfbc9979f6aed098b; subject=net/mlx4_core: VF should query the steering attributes; feature=mlx4_flow_steering; upstream_status=NA; general=;
+Change-Id=I648dd599fac1adf7f40d9506a2c40a1870eed96e; subject={net,IB}/mlx4: Sync EQ/CQ code with OFED 3.x; feature=mlx4_eq_pool; upstream_status=NA; general=;
+Change-Id=I57f9eb2ef09c440fa2df8e3f5da8352f10c1d52c; subject=IB/mlx4: Register dest mac when a L2 ethernet flow spec is inserted; feature=mlx4_flow_spec_gap; upstream_status=NA; general=;

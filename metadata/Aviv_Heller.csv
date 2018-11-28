@@ -1,0 +1,4 @@
+sep=;
+Change-Id=I50f43836f07e0ad648a49e1df9f44fb799e80785; subject=ASAP: add header compat infrastructure for RHEL 7.2; feature=mlx5_asap; upstream_status=NA; general=;
+Change-Id=Iac2a49bf56fd4812ff96e5683e6dd9b1d654640a; subject=ASAP: add cls_flower, tc_vlan, and tc_tunnel_key modules; feature=mlx5_asap; upstream_status=NA; general=;
+Change-Id=I05bb1194eb058b8c80aafc0195f2839bcc6adf48; subject=BACKPORTS: cls_flower: fix handle assignment; feature=mlx5_asap; upstream_status=NA; general=;

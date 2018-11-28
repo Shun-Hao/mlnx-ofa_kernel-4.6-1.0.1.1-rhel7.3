@@ -1,0 +1,2 @@
+sep=;
+Change-Id=I80548aee230c9671a23c497760231cae0e2c8604; subject=net/mlx4_en: Soften VF request to set promisc mode; feature=mlx4_en_sriov; upstream_status=NA; general=;

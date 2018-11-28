@@ -1,0 +1,4 @@
+sep=;
+Change-Id=I5a3ed42189752dc7dd2ccfc4bd5497ea3a2ecad4; subject=net/mlx4_core: New module param to enable virtualized QoS per VF; feature=mlx4_core_misc; upstream_status=NA; general=;
+Change-Id=I9d614fc1ee39728e5ae0f663acf6b547bc8bcf95; subject=net/mlx4_en: Show VF rate limit through sysfs; feature=mlx4_sysfs_vf_rate_limit; upstream_status=NA; general=;
+Change-Id=I60fcba7e4b27a3c609744f921b51a72b8a0f03bc; subject=net/mlx4_core: Memory allocation based on NUMA; feature=mlx4_core_misc; upstream_status=NA; general=;

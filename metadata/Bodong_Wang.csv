@@ -1,0 +1,15 @@
+sep=;
+Change-Id=I755a77db718a92055a63ae8ec48eb9c1eb686488; subject=IB/core: Add mcion support to mst dump; feature=mlx5_sysfs_ecn_mstdump; upstream_status=NA; general=;
+Change-Id=Ida318815f03e0e15327c47368f20e0819bedc2c7; subject=net/mlx5e: Update ethtool dump register map; feature=mlx5_sysfs_ecn_mstdump; upstream_status=NA; general=;
+Change-Id=I8a78c20c9b49d4cf6de6e9da90e99c054eac49c8; subject=IB/mlx5: Report mlx5 TSO capabilities when querying device; feature=exp_tso; upstream_status=NA; general=;
+Change-Id=I125e648401161e2a58cd3fb4e8dc0b93c6c2e0c0; subject=IB/core: Report experimental packet pacing capabilities; feature=mlx5_exp_packet_pacing; upstream_status=NA; general=;
+Change-Id=Ife560188c80901df751654d40ce50cdb2137f28b; subject=net/mlx5e: Support addition of special TX queues; feature=rate_limit_en; upstream_status=NA; general=;
+Change-Id=I52bd79cc4f763da02a70b9894c9767058064e3b8; subject=net/mlx5e: Adding flow mapping to queues; feature=rate_limit_en; upstream_status=NA; general=;
+Change-Id=Ibaabc8cf6d4991aed20f04d9823acda17df2b950; subject=IB/mlx5: Check both CONFIG_ARM and CONFIG_ARM64; feature=arm_bf; upstream_status=NA; general=;
+Change-Id=I13aaae33c3faebd616f62e508e7bc3d1d1052cf7; subject=mlx5/core: Restore IB guid/policy for virtual functions; feature=restore_ib_guid; upstream_status=in_progress; general=;
+Change-Id=I3f7734f80a34fcd7d96e84cb4a3b04557e6d657a; subject=mlx5/core: Add new module parameter to choose whether to probe VFs when mlx5_core is loaded; feature=vf_startup; upstream_status=NA; general=;
+Change-Id=I7e448fd74883e78db6ded08ebce01d427745b6a2; subject=IB/{core, uverbs}: Extend packet pacing with burst control; feature=mlx5_packet_packing_burst; upstream_status=NA; general=;
+Change-Id=Iff9d3a36af62984116beac60f2f269cd20b6f49a; subject=IB/core: Add support for tunneled atomic; feature=tunneled_atomic; upstream_status=NA; general=;
+Change-Id=I074b2ab49595acdc295700fff6955d3926782799; subject=IB/mlx5: Add support for tunneled atomic; feature=tunneled_atomic; upstream_status=NA; general=;
+Change-Id=I2130cb7b5313727b156a0e1d3f2fa1ad125e1a66; subject=mlx5/core: Get pp rate limit queues based on capability; feature=mlx5e_pp_special_queue; upstream_status=NA; general=;
+Change-Id=I86ed9d9f9ed09e0aadf86dd548478b10e19fb06b; subject=IB/mlx5: Support enablement of relaxed packet ordering(ooo) from debugfs; feature=mlx5_ooo; upstream_status=NA; general=;

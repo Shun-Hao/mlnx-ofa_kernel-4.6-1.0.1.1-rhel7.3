@@ -1,0 +1,11 @@
+sep=;
+Change-Id=Ic03afb57eef0ca59de4f653bf100aaa662a69030; subject=IB/ipoib: Move static function from sysfs.c to ib_verbs.h; feature=ipoib_ethtool_speed_support; upstream_status=in_progress; general=;
+Change-Id=I367dc51d0c9704b8c2c90ade7d275a732e39b69b; subject=IB/ipoib: Add basic support for ethtool to ipoib ports; feature=ipoib_ethtool_speed_support; upstream_status=in_progress; general=;
+Change-Id=I2efc341d36226df19566d52c368d239ba23c63c0; subject=IB/ipoib: ARP snooping for GID cache synchronize; feature=ipoib_arp_snooping; upstream_status=in_progress; general=;
+Change-Id=I051db8c3031ca0351e8ca1d135865c470efcd679; subject=IB/ipoib: ARP snooping for GID cache synchronize - RSS support; feature=ipoib_rss_tss; upstream_status=NA; general=;
+Change-Id=Ieaecfa4744ac863a2e4cf416a473ee898a54ce89; subject=net/mlx5e: IPoIB, Add basic support for ethtool to ipoib ports; feature=ipoib_ethtool_speed_support; upstream_status=in_progress; general=;
+Change-Id=I33ada9883fe751f1d90040db45e94fa2e828b713; subject=IB/ipoib: Merge INLINE_SIZE and INLINE_THOLD; feature=ipoib_bugs; upstream_status=NA; general=;
+Change-Id=I98f7cdb3c1d7ce4f5eec0713661b1556c039dc53; subject=mlx4_ib: Have enough room in steering range for pkey interfaces; feature=ipoib_bugs; upstream_status=in_progress; general=;
+Change-Id=Icbfe8e62df23898c1a6c540214591faf04717877; subject=IB/ipoib: Initialize max inline size in mlx4 qp attribute; feature=ipoib_bugs; upstream_status=NA; general=;
+Change-Id=Icedfedfb6c45ab5b167f103e07b06070efab91f5; subject=IB/ipoib: Add basic support to pkey's ethtool; feature=ipoib_bugs; upstream_status=in_progress; general=;
+Change-Id=I0709dca7371cef22019be1d3ee955987825a37be; subject=IB/ipoib: Fix wqe initialized param on ipoib set mode to connected; feature=ipoib_bugs; upstream_status=in_progress; general=;

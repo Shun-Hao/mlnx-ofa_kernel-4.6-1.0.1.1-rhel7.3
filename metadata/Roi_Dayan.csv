@@ -1,0 +1,8 @@
+sep=;
+Change-Id=I8ec7b89d7e23170c682972b5d1a15b0bafc10f81; subject=net/mlx5: Split the activate lag function into two routines; feature=mlx5_vf_lag; upstream_status=in_progress; general=;
+Change-Id=I3bd732a40228bfdf13ef8dae86b2ed7d5e0154d5; subject=net/mlx5: Add lag function to get peer mdev; feature=mlx5_vf_lag; upstream_status=in_progress; general=;
+Change-Id=I4f5dea6862cf3afc7f8afd0ce4777022dbea750b; subject=net/mlx5: Add lag function to get peer netdev; feature=mlx5_vf_lag; upstream_status=in_progress; general=;
+Change-Id=Ib8c6d703d0f007d61f112e5362813d3916a6cc3d; subject=net/mlx5: Add lag affinity info to log; feature=mlx5_vf_lag; upstream_status=in_progress; general=;
+Change-Id=I19990df3bba51f1881b056810166bd05eb8809c1; subject=net/mlx5e: E-Switch, Add peer miss rules; feature=mlx5_vf_lag; upstream_status=in_progress; general=;
+Change-Id=I2328cd1c357033f78aa9ecb2e9a33dc1ddc0331b; subject=net/mlx5e: Infrastructure for duplicated offloading of TC flows; feature=mlx5_vf_lag; upstream_status=in_progress; general=;
+Change-Id=Icf13ee04820bb946a71f0d1ab32fb2128fc1597d; subject=net/mlx5e: Apply the correct check for supporting TC esw rules split; feature=rebase; upstream_status=accepted; general=;

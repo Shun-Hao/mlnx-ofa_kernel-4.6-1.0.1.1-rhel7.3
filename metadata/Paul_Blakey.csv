@@ -1,0 +1,5 @@
+sep=;
+Change-Id=I1f515d730a919859458ab2192a97237aa4e275ee; subject=compat: Add new devlink compat; feature=mlx5_devlink_sysfs_interface; upstream_status=NA; general=;
+Change-Id=I9668ceb7083fa2898b56bc8212132ec6e3f82442; subject=compat: Enable devlink compat sysfs on more cases; feature=backports; upstream_status=ignore; general=;
+Change-Id=Ib6449f759fee7141696cf0bde5fb68dda4eb7ba6; subject=compat: Move devlink compat from debugfs to sysfs.; feature=mlx5_asap; upstream_status=NA; general=;
+Change-Id=I370e0fba0c5b8e20d5b207759572521df7b487ec; subject=compat: Enable devlink compat only on vport managers; feature=backports; upstream_status=ignore; general=;

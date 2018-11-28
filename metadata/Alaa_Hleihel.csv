@@ -1,0 +1,12 @@
+sep=;
+Change-Id=Ifa88bc5443d293f2405b077a9aca4064b1691a31; subject=drivers: Silence pr_fmt redefined warnings; feature=rebase; upstream_status=NA; general=;
+Change-Id=Iddfca99f3da1db2fcea50808419c5ca04db69e2f; subject=IB/core: Add support to EXP create flow; feature=exp_create_flow; upstream_status=NA; general=;
+Change-Id=I12b7a3d022e68c088153b121e5ed52f1843c744e; subject=net/mlx4: Fix undefined __udivdi3 issue on 32bit archs; feature=mlx4_core_bugs; upstream_status=in_progress; general=;
+Change-Id=I7a0b67eaec83e62ea56fe0918ceb98b513b3aa38; subject=net/mlx4_en: Add en_sysfs; feature=mlx4_en_sysfs; upstream_status=NA; general=;
+Change-Id=If69c40da5d3fbdd7e93b26328ec2e3f848e958f8; subject=IB/mlx4: Add ECN support; feature=mlx4_ib_ecn; upstream_status=NA; general=;
+Change-Id=I8a7103ba44fe0a647727c2ad016cad9a22b491ce; subject=net/mlx4_core: Makefile: compile with -Werror; feature=mlx4_makefile; upstream_status=NA; general=;
+Change-Id=I922feb53f5ec0b04fe9705527f598169936b6dae; subject=net/mlx4_core: Enable fast_drop option; feature=mlx4_core_misc; upstream_status=NA; general=;
+Change-Id=I0f1c5db28f7b251dd4c11330ea45ffce1d2bf040; subject=net/mlx4_en: Added udev_dev_port_dev_id module parameter; feature=mlx4_en_udev_dev_port_dev_id_param; upstream_status=NA; general=;
+Change-Id=I8220183eaf2abb14d834586c23b353e1dc00458b; subject=IB/ipoib: Print a warning when Connected Mode is not supported; feature=ipoib_cm_prints; upstream_status=NA; general=;
+Change-Id=I21323c6b4096b3f2abab57d6e5868e89bf9311fc; subject=net/mlx5e: Remove vxlan debugfs and flow rules on mlx5e_vxlan_cleanup; feature=mlx5_en_bugs; upstream_status=NA; general=;
+Change-Id=Icc5c217dd75ddeb09e6b3e082767e234554f6355; subject=IB/ipoib: Process netdevice unregister event only once; feature=ipoib_bugs; upstream_status=in_progress; general=;

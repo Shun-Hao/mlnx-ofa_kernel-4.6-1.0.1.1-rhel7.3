@@ -1,0 +1,6 @@
+sep=;
+Change-Id=Ic63cc842cf09a363db7e5975b1ed04b3f2aed20c; subject=net/mlx5: Report PCIe status in dmesg; feature=mlx5_pci_status_report; upstream_status=accepted; general=;
+Change-Id=I6a33e4b928e1a3eadddc3aea38718b822fbb02fd; subject=net/mlx5: Remove warnings when fail to query PCIe chain status; feature=mlx5_pci_status_report; upstream_status=accepted; general=;
+Change-Id=I282a935060af62a7370b0447ea479686861acadf; subject=net/mlx5e: Hold measurements for net_dim in a dedicated struct; feature=mlx5_adaptive_moderation; upstream_status=in_progress; general=;
+Change-Id=I91aa07d634e2260022d0f7babe29a1aaabea474a; subject=net/mlx5e: Remove RX ACKs count from net_dim measurements; feature=mlx5_adaptive_moderation; upstream_status=in_progress; general=;
+Change-Id=Iac97ed5e8ab06e96721be1b59ac3f98872615cf4; subject=net/dim: Update DIM start sample after each DIM iteration; feature=rebase; upstream_status=accepted; general=;

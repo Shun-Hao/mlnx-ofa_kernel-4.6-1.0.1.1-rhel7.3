@@ -1,0 +1,10 @@
+sep=;
+Change-Id=Idde6c0080bdcd3206f49d9335b9baaa342611895; subject=IB/core: Enable out of order data placement; feature=ooo; upstream_status=in_progress; general=;
+Change-Id=I2f2511066c85fd9570d80cbf6c52ff9a2146b438; subject=IB/uverbs: Define additional mask for out of order QP attribute; feature=ooo; upstream_status=in_progress; general=;
+Change-Id=I8bf3475e85194e5a02b00ab35496c64d69ad7195; subject=IB/mlx5: Enable provider driver for out of order capability; feature=ooo; upstream_status=in_progress; general=;
+Change-Id=I5b82de025824e5bf24d26d1246608e47da8f2b8a; subject=IB/core: Make ib_nl_ip_send_msg() non blocking; feature=ib_core_bugs; upstream_status=in_progress; general=;
+Change-Id=Ic162601fa5bbce864d1ae05f5fe17fd93a25ffad; subject=IB/core: Introduce rdma_is_gid_attr_valid() to check GID attribute; feature=ib_core_bugs; upstream_status=in_progress; general=;
+Change-Id=Ib3f31f528fa14e2e054faccc6b8be7a4c1f0cffa; subject=RDMA/core: Validate net ns of RoCE gid and gid attribute sysfs entries; feature=ib_core_bugs; upstream_status=in_progress; general=;
+Change-Id=I174b2c0f35f278f0c98d850097f3804c0e390011; subject=IB/core: Validate net ns of RoCE gid during destination resolve; feature=ib_core_bugs; upstream_status=in_progress; general=;
+Change-Id=I5f6c84b4339ff03c99f3b87ddce809f4e4577518; subject=IB/ipoib: Allow setting mac address for the VF; feature=ipoib_bugs; upstream_status=NA; general=;
+Change-Id=Ic19e21c74a42ef56688246065bc15dc095011cec; subject=RDMA/core: Add GIDs while changing MAC addr only for registered ndev; feature=ib_core_bugs; upstream_status=in_progress; general=;

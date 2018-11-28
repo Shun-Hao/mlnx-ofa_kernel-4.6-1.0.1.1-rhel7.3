@@ -1,0 +1,2 @@
+sep=;
+Change-Id=I44a8c791319890e3b90a23de157c8ff4814a2672; subject=mlx4_core: Added mlx4_en_only_mode module parameter; feature=mlx4_en_only_mode_param; upstream_status=NA; general=;

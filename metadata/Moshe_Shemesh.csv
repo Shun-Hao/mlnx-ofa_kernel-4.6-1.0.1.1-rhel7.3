@@ -1,0 +1,10 @@
+sep=;
+Change-Id=I6be8e6182d5c814b7f286f97f9babec8819d0237; subject=net/mlx4_core: Add an option to configure SVLAN TPID; feature=mlx4_core_misc; upstream_status=NA; general=;
+Change-Id=I0549204c2281583beda194f6f26275cbf84dc30b; subject=net/mlx5: Add SRIOV QinQ VST support; feature=mlx5_qinq_vst; upstream_status=in_progress; general=;
+Change-Id=I5051027ad080d7187bc9e43d923caacdd3f6b905; subject=net/mlx5: Add QinQ VST sysfs support; feature=mlx5_qinq_vst; upstream_status=in_progress; general=;
+Change-Id=I0072ed503da6004f02d1f768da0b084aa6b66b89; subject=net/mlx5e: Fix wrong vlan protocol 802.1ad used for the switchdev mode; feature=mlx5_en_bugs; upstream_status=NA; general=;
+Change-Id=I5be27c1257b49d3df4aa712417c40bdd8a787c8a; subject=net/mlx4_core: Fix memory leak in VGT+ structures; feature=mlx4_core_bugs; upstream_status=NA; general=;
+Change-Id=I59af93f4db4e219b071510def718025219251848; subject=net/mlx5: Enable VST with QinQ option by vport_context; feature=mlx5_qinq_vst; upstream_status=in_progress; general=;
+Change-Id=Ib422da7f51da1e5499d1e6dc89a056c4b6dfe236; subject=net/mlx5e: RX, verify received packet size in Linear Striding RQ; feature=mlx5_en_bugs; upstream_status=in_progress; general=;
+Change-Id=I3d7b7b55dddc820a8e041ec31a423a8e65f0f4e5; subject=net/mlx5e: RX, Verify MPWQE stride size is in range; feature=mlx5_en_bugs; upstream_status=in_progress; general=;
+Change-Id=Ied8c8ea516a119aa69ae8aeef464ef354d193015; subject=net/mlx5e: Expand XPS cpumask to cover all online cpus; feature=mlx5_en_bugs; upstream_status=in_progress; general=;

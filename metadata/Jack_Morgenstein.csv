@@ -1,0 +1,10 @@
+sep=;
+Change-Id=Ib471ac747dee5bef766e1246d5636c9bfeb8dd08; subject=net/mlx4_core: Add more detailed output to vhcr command failure message to assist support and debugging; feature=mlx4_core_misc; upstream_status=NA; general=;
+Change-Id=Icfd5407606aef59b0543a760ceed2aa8d426e7a9; subject=net/mlx4_core: Turn off query-port additional-macs op modifier support for VFs; feature=mlx4_core_sriov; upstream_status=NA; general=;
+Change-Id=Ia4a3e6271530f0477e51afbf1a7d88f41e5ef300; subject={net,IB}/mlx4: Fix incompatibility with old counter implementation; feature=mlx4_vf_counters; upstream_status=NA; general=;
+Change-Id=I23a56ad5c4bf98010b551debc65886465c379a67; subject=net/mlx4_core: Don't fail fw SET_IF_STAT command when running over Windows Hypervisor; feature=mlx4_vf_counters; upstream_status=NA; general=;
+Change-Id=I9db6d4f76aa644c26c57715050bf62eca4c58e3b; subject=net/mlx4_core: Reduce printout level to mlx4_dbg in VF mac count flow; feature=mlx4_core_misc; upstream_status=NA; general=;
+Change-Id=I51785d6a3fbbb9bcbacdfb5761594c6bd08d8cb6; subject=net/mlx4_core: Support IB ports for VMs with old drivers; feature=mlx4_core_sriov; upstream_status=NA; general=;
+Change-Id=I9e61ebd0d63b0afaa3c8c040687ff8dd25d534b5; subject=IB/mlx4: Fix RoCEv2 mcast gid format check to identify IPV4 gids; feature=mlx4_rocev2; upstream_status=NA; general=;
+Change-Id=I38b042b24b171fc90f19fa5965add1356ab87c54; subject=net/mlx4_core: Pass register/unregister requests per MAC to PF only once; feature=mlx4_core_sriov; upstream_status=in_progress; general=;
+Change-Id=I25b2e93c6f1ad9bd0d74a15b5e7fa62dbb8aa683; subject=net/mlx4_core: Zero out lkey field in SW2HW_MPT fw command; feature=rebase; upstream_status=accepted; general=;

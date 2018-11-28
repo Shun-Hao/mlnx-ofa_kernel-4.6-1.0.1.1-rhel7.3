@@ -1,0 +1,2 @@
+sep=;
+Change-Id=Ic2483535322ee1396c6cb01b7e1837ac53c22c0c; subject=IB/ipoib: Fix deadlock in RSS flow for PKEY subinterface; feature=ipoib_rss_tss; upstream_status=NA; general=;

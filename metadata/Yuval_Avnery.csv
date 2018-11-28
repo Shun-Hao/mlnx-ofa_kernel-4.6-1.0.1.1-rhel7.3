@@ -1,0 +1,2 @@
+sep=;
+Change-Id=If841a28258d705a29ac7825c3811814c4d5f867a; subject=net/mlx5e: Use correct number of channles when re-attaching; feature=mlx5_en_bugs; upstream_status=in_progress; general=;

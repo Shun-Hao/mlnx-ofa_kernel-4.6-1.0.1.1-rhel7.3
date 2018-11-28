@@ -1,0 +1,3 @@
+sep=;
+Change-Id=I9660c4ddfc65a58e30b43989dc827b84cfaac6b8; subject=net/mlx4_core: Enable changing default max HCA resource limits; feature=mlx4_module_params; upstream_status=NA; general=;
+Change-Id=I091b240be29faf57b221d5ff93200c6671ce07cb; subject=net/mlx4_core: Limit min profile numbers; feature=mlx4_module_params; upstream_status=NA; general=;

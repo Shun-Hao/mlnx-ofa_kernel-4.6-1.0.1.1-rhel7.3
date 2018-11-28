@@ -1,0 +1,5 @@
+sep=;
+Change-Id=I9a3cbb47c173d3a9fbce3b601dfca6c341f89092; subject=nvme-rdma: fix double free of qe's in reconnect/delete flows; feature=nvmf_bugs; upstream_status=in_progress; general=;
+Change-Id=Ia04c4bd6d760358900ef664ab9f93977b68f9024; subject=nvme: fix hang on module unload with multiple connections; feature=nvmf_bugs; upstream_status=in_progress; general=;
+Change-Id=Ic4c29dfef879e0180362a9e3e751bed5131de0eb; subject=nvme: fix hang on ns_remove in delete_ctrl under heavy loads; feature=nvmf_bugs; upstream_status=in_progress; general=;
+Change-Id=I60995b07d8c6b744861e1d312393c3862463df61; subject=nvme-rdma: Handle completions if error_recovery fails; feature=nvmf_bugs; upstream_status=in_progress; general=;

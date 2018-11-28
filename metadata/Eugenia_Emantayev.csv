@@ -1,0 +1,10 @@
+sep=;
+Change-Id=Ic58bb3aa204ee11273535c4e4bb0ce8ff4660277; subject=net/mlx4: Export functions; feature=mlx4_en_bugs; upstream_status=NA; general=;
+Change-Id=I46fd7c3ef68ba14763fb4fd879155ed6e725905f; subject=net/mlx4_core: Add missing include; feature=mlx4_en_bugs; upstream_status=in_progress; general=;
+Change-Id=I38b823a08b8f5d0d15d6cb564dd97e59d68c535b; subject=net/mlx4: Limit requested number of completion vectors; feature=mlx4_en_bugs; upstream_status=NA; general=;
+Change-Id=Iec4f512d0473479750399b9d62dce8dfefc74dba; subject=net/mlx4: Add VGT+ support; feature=mlx4_vgtp; upstream_status=NA; general=;
+Change-Id=I8738da195121c6576a5b440ee0693f0d51728afc; subject=net/mlx5: Free released pages in teardown; feature=mlx5_en_bugs; upstream_status=in_progress; general=;
+Change-Id=Ia17241bad9ed8a9f1ef22e24adb339fb7dafc858; subject=net/mlx5: Add VGT+ sysfs support; feature=sriov_sysfs; upstream_status=NA; general=;
+Change-Id=I0a2887ae53c8ed834f693e775205695bde3cb5e7; subject=net/mlx5: Add steering drop counters sysfs support; feature=sriov_sysfs; upstream_status=NA; general=;
+Change-Id=I7ff6e51c4a8804f5b9c3c8ec5b7a36ed9280ffaf; subject=net/mlx4_en: Better use of order-0 pages in RX path; feature=mlx4_en_bugs; upstream_status=in_progress; general=;
+Change-Id=I22f0d7e98f0f4edb93ae08dadf939a13371a9dd3; subject=net/mlx4: Fix memory corruption in module parameter parsing; feature=mlx4_core_bugs; upstream_status=NA; general=;

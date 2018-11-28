@@ -1,0 +1,3 @@
+sep=;
+Change-Id=Ia7b573afe09190b45eb4fa1efe2763b811efa605; subject=IB/mlx5: Use the correct UMR order limit in get_lsize(); feature=mlx5_ib_bugs; upstream_status=NA; general=;
+Change-Id=I7d213d9d3e0c1bd73067957a7d604ce4eb7fd72e; subject=IB/mlx5: Restrict range in internal kernel MRs.; feature=mlx5_ib_bugs; upstream_status=NA; general=;

@@ -1,0 +1,2 @@
+sep=;
+Change-Id=Ide561a6b31fb908b6df2fc1af1666e2b3080cf14; subject=net/mlx4_core: Limit num of MSI-X vectors for PPC arch; feature=mlx4_core_bugs; upstream_status=in_progress; general=;

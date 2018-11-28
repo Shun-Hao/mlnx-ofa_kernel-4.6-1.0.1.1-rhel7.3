@@ -1,0 +1,15 @@
+sep=;
+Change-Id=I61653468bf58cb945bd271f838c20445ece7f468; subject=IB/core, IB/mlx5: Add vlan-offloads to experimental query device; feature=vlan_offloads; upstream_status=NA; general=;
+Change-Id=Ibfe1cab1d04de2c2c9c342f0299117519926cfe3; subject=IB/uverbs: Add vlan-offloads to experimental query device; feature=vlan_offloads; upstream_status=NA; general=;
+Change-Id=Ibae761541951b1e440907de1924549f5b7747c5f; subject=IB/core: Add mic node and scif transport types; feature=scif_mic; upstream_status=NA; general=;
+Change-Id=I2307cf642da119570911383687758a39667978ef; subject=IB/core: Add mic node and scif transport types to RDMA/CM; feature=scif_mic; upstream_status=NA; general=;
+Change-Id=I3a91549dbb30df06c043fe406bceeee5771c9e70; subject=net/mlx4_core: Notifying user when using an obsolete module patameter; feature=mlx4_flow_steering; upstream_status=NA; general=;
+Change-Id=If601624ea3eda8e2b0b2b983128bb25e389de9cf; subject=mlx5_core: Provide the correct VPort index when setting Port GUID; feature=sriov_sysfs; upstream_status=NA; general=;
+Change-Id=Ic2023658f48ecf0511136be97cb7506d507b40fb; subject=net/mlx4_core: Support upto 4TB memory regsitration; feature=mlx4_core_bugs; upstream_status=NA; general=;
+Change-Id=Idf9eafa546dba9cdf3ab7f8ef8fd4b0be6feaa29; subject=IB/core: Report 0 rate when link is down; feature=ib_core_bugs; upstream_status=NA; general=;
+Change-Id=Icb97cf006385d5f7072756462adf93d7cfba3ea7; subject=net/mlx4_core: Fix ud_gid_type module parameter description; feature=mlx4_rocev2; upstream_status=NA; general=;
+Change-Id=I4d65f374a021a910fba4bb0a0e8237634a049ada; subject=IB/mlx5: Set rx_hash_symmetric according to spec; feature=rss_cx4_caps; upstream_status=in_progress; general=;
+Change-Id=I3de27ced9522413ef55f7f21ee01883f4ae00acf; subject=IB/uverbs: Allow exp_modify_wq to run with attr_mask 0; feature=vlan_offloads; upstream_status=NA; general=;
+Change-Id=I79310816427a9b755cfeea08d868ce34f5804e3c; subject=IB/core: include ratelimit.h, fix build error on kernel 3.2; feature=ib_core_bugs; upstream_status=NA; general=;
+Change-Id=Id49943410816b85ae86ca7d82390ae17a4d3f446; subject=IB/mlx5: Initialize iova for MRs allocated from MR cache; feature=mlx5_ib_bugs; upstream_status=NA; general=;
+Change-Id=Ibc4a8ad1f45cb3e29876e31aa7839ba253753be8; subject=IB/core: Update QP port for experimental verbs as well; feature=ib_core_bugs; upstream_status=NA; general=;
