@@ -1029,15 +1029,19 @@ static const struct net_device_ops mlx5e_netdev_ops_rep = {
 	.ndo_change_mtu          = mlx5e_change_rep_mtu,
 };
 
-static void mlx5e_build_rep_params(struct mlx5_core_dev *mdev,
-				   struct mlx5e_params *params, u16 mtu)
+static void mlx5e_build_rep_params(struct net_device *netdev)
 {
+	struct mlx5e_priv *priv = netdev_priv(netdev);
+	struct mlx5_core_dev *mdev = priv->mdev;
+	struct mlx5e_params *params;
+
 	u8 cq_period_mode = MLX5_CAP_GEN(mdev, cq_period_start_from_cqe) ?
 					 MLX5_CQ_PERIOD_MODE_START_FROM_CQE :
 					 MLX5_CQ_PERIOD_MODE_START_FROM_EQE;
 
+	params = &priv->channels.params;
 	params->hard_mtu    = MLX5E_ETH_HARD_MTU;
-	params->sw_mtu      = mtu;
+	params->sw_mtu      = netdev->mtu;
 	params->log_sq_size = MLX5E_REP_PARAMS_LOG_SQ_SIZE;
 
 	/* RQ */
@@ -1103,7 +1107,7 @@ static int mlx5e_init_rep(struct mlx5_core_dev *mdev,
 
 	priv->channels.params.num_channels = MLX5E_REP_PARAMS_DEF_NUM_CHANNELS;
 
-	mlx5e_build_rep_params(mdev, &priv->channels.params, netdev->mtu);
+	mlx5e_build_rep_params(netdev);
 	mlx5e_build_rep_netdev(netdev);
 
 	mlx5e_timestamp_init(priv);
