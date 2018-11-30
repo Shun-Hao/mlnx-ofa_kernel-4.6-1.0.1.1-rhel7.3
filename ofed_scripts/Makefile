@@ -61,4 +61,5 @@ ifneq ($(CONFIG_MLX5_ESWITCH),)
 	obj-$(CONFIG_COMPAT_CLS_FLOWER_MOD)     += net/sched/cls_flower.o
 	obj-$(CONFIG_COMPAT_TCF_TUNNEL_KEY_MOD) += net/sched/act_tunnel_key.o
 	obj-$(CONFIG_COMPAT_TCF_VLAN_MOD)       += net/sched/act_vlan.o
+	obj-$(CONFIG_COMPAT_TCF_PEDIT_MOD)      += net/sched/act_pedit.o
 endif

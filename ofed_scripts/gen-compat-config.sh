@@ -193,6 +193,7 @@ if [[ ! -z ${RHEL7_2} ]]; then
 	set_config CONFIG_COMPAT_CLS_FLOWER_MOD m
 	set_config CONFIG_COMPAT_TCF_TUNNEL_KEY_MOD m
 	set_config CONFIG_COMPAT_TCF_VLAN_MOD m
+	set_config CONFIG_COMPAT_TCF_PEDIT_MOD m
 fi
 
 RHEL7_4ALT_AARCH64=$(echo ${KVERSION} | grep 4.11.0-.*el7a.aarch64)
@@ -210,6 +211,7 @@ if [[ ${CONFIG_COMPAT_KERNEL_4_9} = "y" || ${CONFIG_COMPAT_KERNEL_4_11_ARM} = "y
 	set_config CONFIG_COMPAT_FLOW_DISSECTOR y
 	set_config CONFIG_COMPAT_CLS_FLOWER_MOD m
 	set_config CONFIG_COMPAT_TCF_TUNNEL_KEY_MOD m
+	set_config CONFIG_COMPAT_TCF_PEDIT_MOD m
 fi
 
 if [ -e /etc/debian_version ]; then
