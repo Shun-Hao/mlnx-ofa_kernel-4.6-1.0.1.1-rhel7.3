@@ -636,6 +636,18 @@ int ib_register_device(struct ib_device *device, const char *name,
 	list_add_tail(&device->core_list, &device_list);
 	up_write(&lists_rwsem);
 	mutex_unlock(&device_mutex);
+
+	/*
+	 * Workaround (fix) for an issue where, ip event notifier,
+	 * missed out to add GID entries, because ibdev is not yet added
+	 * to the list; and first call to roce_rescan_device() during GID
+	 * table setup also didn't add the GID, because IP was not present.
+	 * So trigger the scane one more time after ibdev is part of the
+	 * core's list.
+	 * TODO: Do a proper fix to scan only IP based GIDs without
+	 * net_rwsem and rtnl lock and still synchronize with ifa_list!
+	 */
+	rdma_roce_rescan_device(device);
 	return 0;
 
 cg_cleanup:
