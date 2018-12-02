@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/nvme/host/rdma.c
 
 Change-Id: I2d26aedcdc44d668f4dd931ab7d7511c4bad6e7d
 ---
- drivers/nvme/host/rdma.c | 163 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 163 insertions(+)
+ drivers/nvme/host/rdma.c | 159 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 159 insertions(+)
 
 diff --git a/drivers/nvme/host/rdma.c b/drivers/nvme/host/rdma.c
 index xxxxxxx..xxxxxxx 100644
@@ -317,23 +317,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static blk_status_t nvme_rdma_queue_rq(struct blk_mq_hw_ctx *hctx,
-@@ -1814,6 +1943,7 @@ err:
- 	return BLK_STS_IOERR;
- }
- 
-+#ifdef HAVE_BLK_MQ_OPS_POLL
- static int nvme_rdma_poll(struct blk_mq_hw_ctx *hctx, unsigned int tag)
- {
- 	struct nvme_rdma_queue *queue = hctx->driver_data;
-@@ -1834,6 +1964,7 @@ static int nvme_rdma_poll(struct blk_mq_hw_ctx *hctx, unsigned int tag)
- 
- 	return found;
- }
-+#endif
- 
- static void nvme_rdma_complete_rq(struct request *rq)
- {
-@@ -1843,29 +1974,61 @@ static void nvme_rdma_complete_rq(struct request *rq)
+@@ -1822,28 +1951,58 @@ static void nvme_rdma_complete_rq(struct request *rq)
  	nvme_complete_rq(rq);
  }
  
@@ -363,9 +347,6 @@ index xxxxxxx..xxxxxxx 100644
  	.init_request	= nvme_rdma_init_request,
  	.exit_request	= nvme_rdma_exit_request,
  	.init_hctx	= nvme_rdma_init_hctx,
-+#ifdef HAVE_BLK_MQ_OPS_POLL
- 	.poll		= nvme_rdma_poll,
-+#endif
  	.timeout	= nvme_rdma_timeout,
 +#if defined(HAVE_BLK_MQ_MAP_QUEUES) && defined(HAVE_BLK_MQ_TAG_SET_HAS_MQ_MAP)
  	.map_queues	= nvme_rdma_map_queues,
