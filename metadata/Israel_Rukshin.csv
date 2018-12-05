@@ -28,3 +28,4 @@ Change-Id=I14c07182f3a2d26cc6681c0007a35794f27fa768; subject=nvmet: Fix offload 
 Change-Id=Id6b5e1892d26011e7b7fb0083883aeeb64e6b4e8; subject=Revert: "nvmet: add port pointer to nvmet_ctrl structure"; feature=rebase; upstream_status=ignore; general=;
 Change-Id=I70aac15c4912a72d990fa326366bd551cfbca1f8; subject=nvme: Fix double request completion at teardown flow; feature=nvmf_bugs; upstream_status=NA; general=;
 Change-Id=Ia11f48c2919ab5b8f37e50ecf501c3f6615ca03e; subject=BACKPORTS: Add nvmf backports; feature=backports; upstream_status=ignore; general=;
+Change-Id=I2dfa680c96120741e0099a492d17ed79dc5da58e; subject=nvmet: many XRQs per offload controller; feature=nvmf_offload; upstream_status=in_progress; general=;

@@ -148,6 +148,7 @@ struct nvmet_port {
 	const struct nvmet_fabrics_ops	*ops;
 	bool				offload;
 	int				inline_data_size;
+	u32				offload_queues;
 };
 
 static inline struct nvmet_port *to_nvmet_port(struct config_item *item)
