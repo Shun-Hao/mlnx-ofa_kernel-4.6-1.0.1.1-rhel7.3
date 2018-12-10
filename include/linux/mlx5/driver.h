@@ -1463,6 +1463,11 @@ static inline bool mlx5_core_is_ecpf(struct mlx5_core_dev *dev)
 	return dev->caps.embedded_cpu;
 }
 
+static inline bool mlx5_core_is_ecpf_esw_manager(struct mlx5_core_dev *dev)
+{
+	return dev->caps.embedded_cpu && MLX5_CAP_GEN(dev, eswitch_manager);
+}
+
 /* In RH6.8 and lower pci_sriov_get_totalvfs might return -EINVAL
  * return in that case 1
  */
