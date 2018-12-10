@@ -1405,12 +1405,10 @@ struct mlx5_interface {
 	void			(*pfault)(struct mlx5_core_dev *dev,
 					  void *context,
 					  struct mlx5_pagefault *pfault);
-	void *                  (*get_dev)(void *context);
 	int			protocol;
 	struct list_head	list;
 };
 
-void *mlx5_get_protocol_dev(struct mlx5_core_dev *mdev, int protocol);
 int mlx5_register_interface(struct mlx5_interface *intf);
 void mlx5_unregister_interface(struct mlx5_interface *intf);
 int mlx5_core_query_vendor_id(struct mlx5_core_dev *mdev, u32 *vendor_id);
