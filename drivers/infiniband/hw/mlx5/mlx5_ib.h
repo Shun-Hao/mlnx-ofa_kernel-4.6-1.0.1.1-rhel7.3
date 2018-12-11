@@ -654,6 +654,7 @@ struct mlx5_ib_mr {
 	atomic_t      invalidated;
 	struct completion invalidation_comp;
 	struct mlx5_async_work  cb_work;
+	atomic_t		num_pending_prefetch;
 };
 
 struct mlx5_ib_peer_id {
@@ -1238,6 +1239,12 @@ struct ib_mr *mlx5_ib_get_dma_mr(struct ib_pd *pd, int acc);
 struct ib_mr *mlx5_ib_reg_user_mr(struct ib_pd *pd,
 				  struct ib_mr_init_attr *attr,
 				  struct ib_udata *udata);
+int mlx5_ib_advise_mr(struct ib_pd *pd,
+		      enum ib_uverbs_advise_mr_advice advice,
+		      u32 flags,
+		      struct ib_sge *sg_list,
+		      u32 num_sge,
+		      struct uverbs_attr_bundle *attrs);
 struct ib_mw *mlx5_ib_alloc_mw(struct ib_pd *pd, enum ib_mw_type type,
 			       struct ib_udata *udata);
 int mlx5_ib_dealloc_mw(struct ib_mw *mw);
@@ -1337,6 +1344,10 @@ void mlx5_ib_invalidate_range(struct ib_umem_odp *umem_odp, unsigned long start,
 void mlx5_odp_init_mr_cache_entry(struct mlx5_cache_ent *ent);
 int mlx5_odp_populate_xlt(void *xlt, size_t offset, size_t nentries,
 			  struct mlx5_ib_mr *mr, int flags);
+
+int mlx5_ib_advise_mr_prefetch(struct ib_pd *pd,
+			       enum ib_uverbs_advise_mr_advice advice,
+			       u32 flags, struct ib_sge *sg_list, u32 num_sge);
 #else /* CONFIG_INFINIBAND_ON_DEMAND_PAGING */
 static inline void mlx5_ib_internal_fill_odp_caps(struct mlx5_ib_dev *dev)
 {
@@ -1350,6 +1361,13 @@ static inline int mlx5_ib_odp_init(void) { return 0; }
 static inline void mlx5_ib_odp_cleanup(void)				    {}
 static inline void mlx5_odp_init_mr_cache_entry(struct mlx5_cache_ent *ent) {}
 
+static int mlx5_ib_advise_mr_prefetch(struct ib_pd *pd,
+				      enum ib_uverbs_advise_mr_advice advice,
+				      u32 flags, struct ib_sge *sg_list,
+				      u32 num_sge)
+{
+	return -EOPNOTSUPP;
+}
 #endif /* CONFIG_INFINIBAND_ON_DEMAND_PAGING */
 
 /* Needed for rep profile */

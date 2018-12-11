@@ -52,7 +52,7 @@ static int UVERBS_HANDLER(UVERBS_METHOD_ADVISE_MR)(
 	int ret;
 
 	/* FIXME: Extend the UAPI_DEF_OBJ_NEEDS_FN stuff.. */
-	if (!ib_dev->ops.advise_mr)
+	if (!ib_dev->advise_mr)
 		return -EOPNOTSUPP;
 
 	ret = uverbs_get_const(&advice, attrs, UVERBS_ATTR_ADVISE_MR_ADVICE);
@@ -71,7 +71,7 @@ static int UVERBS_HANDLER(UVERBS_METHOD_ADVISE_MR)(
 
 	sg_list = uverbs_attr_get_alloced_ptr(attrs,
 					      UVERBS_ATTR_ADVISE_MR_SGE_LIST);
-	return ib_dev->ops.advise_mr(pd, advice, flags, sg_list, num_sge,
+	return ib_dev->advise_mr(pd, advice, flags, sg_list, num_sge,
 				     attrs);
 }
 
