@@ -359,6 +359,25 @@ out_free:
 	return err;
 }
 
+static void free_pages_list(struct mlx5_core_dev *dev)
+{
+	struct fw_page *tmp;
+	struct fw_page *fp;
+
+	list_for_each_entry_safe(fp, tmp, &dev->priv.free_list, list) {
+		/* In case of shared page that is in use leave it in the list */
+		if (fp->free_count != MLX5_NUM_4K_IN_PAGE)
+			continue;
+
+		list_del(&fp->list);
+		rb_erase(&fp->rb_node, &dev->priv.page_root);
+		dma_unmap_page(&dev->pdev->dev, fp->addr & MLX5_U64_4K_PAGE_MASK,
+			       PAGE_SIZE, DMA_BIDIRECTIONAL);
+		__free_page(fp->page);
+		kfree(fp);
+	}
+}
+
 static int reclaim_pages_cmd(struct mlx5_core_dev *dev,
 			     u32 *in, int in_size, u32 *out, int out_size)
 {
@@ -446,6 +465,9 @@ static int reclaim_pages(struct mlx5_core_dev *dev, u32 func_id, int npages,
 		if (!free_4k(dev, MLX5_GET64(manage_pages_out, out, pas[i])))
 			claimed++;
 
+	if (dev->state == MLX5_DEVICE_STATE_INTERNAL_ERROR)
+		free_pages_list(dev);
+
 	if (nclaimed)
 		*nclaimed = claimed;
 
@@ -465,24 +487,11 @@ static void gc_work_handler(struct work_struct *work)
 	struct delayed_work *dwork = container_of(work, struct delayed_work, work);
 	struct mlx5_priv *priv = container_of(dwork, struct mlx5_priv, gc_dwork);
 	struct mlx5_core_dev *dev = container_of(priv, struct mlx5_core_dev, priv);
-	struct fw_page *tmp;
-	struct fw_page *fp;
 
 	if (!priv->gc_allowed)
 		return;
 
-	list_for_each_entry_safe(fp, tmp, &dev->priv.free_list, list) {
-		/* In case of shared page that is in use leave it in the list */
-		if (fp->free_count != MLX5_NUM_4K_IN_PAGE)
-			continue;
-
-		list_del(&fp->list);
-		rb_erase(&fp->rb_node, &priv->page_root);
-		dma_unmap_page(&dev->pdev->dev, fp->addr & MLX5_U64_4K_PAGE_MASK,
-			       PAGE_SIZE, DMA_BIDIRECTIONAL);
-		__free_page(fp->page);
-		kfree(fp);
-	}
+	free_pages_list(dev);
 }
 static void pages_work_handler(struct work_struct *work)
 {
