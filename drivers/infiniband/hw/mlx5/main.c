@@ -6550,18 +6550,6 @@ static void mlx5_ib_stage_dc_tracer_cleanup(struct mlx5_ib_dev *dev)
 		mlx5_ib_cleanup_dc_improvements(dev);
 }
 
-static int mlx5_ib_stage_rep_reg_init(struct mlx5_ib_dev *dev)
-{
-	mlx5_ib_register_vport_reps(dev);
-
-	return 0;
-}
-
-static void mlx5_ib_stage_rep_reg_cleanup(struct mlx5_ib_dev *dev)
-{
-	mlx5_ib_unregister_vport_reps(dev);
-}
-
 int mlx5_ib_stage_steering_sysfs_init(struct mlx5_ib_dev *dev)
 {
 	int err;
@@ -6626,7 +6614,6 @@ void __mlx5_ib_remove(struct mlx5_ib_dev *dev,
 
 	if (dev->devx_whitelist_uid)
 		mlx5_ib_devx_destroy(dev, dev->devx_whitelist_uid);
-	ib_dealloc_device((struct ib_device *)dev);
 }
 
 static ssize_t ooo_read(struct file *filp, char __user *buf,
@@ -6848,9 +6835,6 @@ static const struct mlx5_ib_profile nic_rep_profile = {
 	STAGE_CREATE(MLX5_IB_STAGE_TC_SYSFS,
 		     mlx5_ib_stage_tc_sysfs_init,
 		     mlx5_ib_stage_tc_sysfs_cleanup),
-	STAGE_CREATE(MLX5_IB_STAGE_REP_REG,
-		     mlx5_ib_stage_rep_reg_init,
-		     mlx5_ib_stage_rep_reg_cleanup),
 	STAGE_CREATE(MLX5_IB_STAGE_OOO_DEBUGFS,
 		     mlx5_ib_init_ooo_debugfs,
 		     mlx5_ib_cleanup_ooo_debugfs),
@@ -6927,8 +6911,9 @@ static void *mlx5_ib_add(struct mlx5_core_dev *mdev)
 	if (MLX5_ESWITCH_MANAGER(mdev) &&
 	    mlx5_ib_eswitch_mode(mdev->priv.eswitch) == SRIOV_OFFLOADS) {
 		dev->rep = mlx5_ib_vport_rep(mdev->priv.eswitch, 0);
-
-		return __mlx5_ib_add(dev, &nic_rep_profile);
+		dev->profile = &nic_rep_profile;
+		mlx5_ib_register_vport_reps(dev);
+		return dev;
 	}
 
 	return __mlx5_ib_add(dev, &pf_profile);
@@ -6950,7 +6935,12 @@ static void mlx5_ib_remove(struct mlx5_core_dev *mdev, void *context)
 	}
 
 	dev = context;
-	__mlx5_ib_remove(dev, dev->profile, MLX5_IB_STAGE_MAX);
+	if (dev->profile == &nic_rep_profile)
+		mlx5_ib_unregister_vport_reps(dev);
+	else
+		__mlx5_ib_remove(dev, dev->profile, MLX5_IB_STAGE_MAX);
+
+	ib_dealloc_device((struct ib_device *)dev);
 }
 
 static struct mlx5_interface mlx5_ib_interface = {
