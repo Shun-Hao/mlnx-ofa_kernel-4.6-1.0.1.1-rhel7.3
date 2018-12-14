@@ -91,8 +91,10 @@ enum {
 static struct mlx5_vport *mlx5_eswitch_get_vport(struct mlx5_eswitch *esw,
 						 u16 vport_num)
 {
-	WARN_ON(vport_num > esw->total_vports - 1);
-	return &esw->vports[vport_num];
+	u16 idx = mlx5_eswitch_vport_num_to_index(esw, vport_num);
+
+	WARN_ON(idx > esw->total_vports - 1);
+	return &esw->vports[idx];
 }
 
 static int arm_vport_context_events_cmd(struct mlx5_core_dev *dev, u16 vport,
@@ -2044,8 +2046,7 @@ int mlx5_eswitch_init(struct mlx5_core_dev *dev)
 	struct mlx5_eswitch *esw;
 	struct mlx5_vport *vport;
 	bool access_other_hca_roce;
-	int vport_num;
-	int err;
+	int err, i;
 
 	if (!MLX5_ESWITCH_MANAGER(dev))
 		return 0;
@@ -2089,13 +2090,13 @@ int mlx5_eswitch_init(struct mlx5_core_dev *dev)
 	access_other_hca_roce = MLX5_CAP_GEN(dev, vhca_group_manager) &&
 				MLX5_CAP_GEN(dev, access_other_hca_roce);
 
-	mlx5_esw_for_all_vports(esw, vport_num, vport) {
+	mlx5_esw_for_all_vports(esw, i, vport) {
+		vport->vport = mlx5_eswitch_index_to_vport_num(esw, i);
 		vport->info.roce = true;
-		if (access_other_hca_roce)
-			mlx5_get_other_hca_cap_roce(dev, vport_num,
+		if (access_other_hca_roce && vport->vport != MLX5_VPORT_UPLINK)
+			mlx5_get_other_hca_cap_roce(dev, vport->vport,
 						    &vport->info.roce);
 
-		vport->vport = vport_num;
 		vport->info.link_state = MLX5_VPORT_ADMIN_STATE_AUTO;
 		vport->info.vlan_proto = htons(ETH_P_8021Q);
 		vport->dev = dev;
