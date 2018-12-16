@@ -80,6 +80,10 @@ static struct ib_send_wr ipoib_cm_rx_drain_wr = {
 
 static int ipoib_cm_tx_handler(struct ib_cm_id *cm_id,
 			       const struct ib_cm_event *event);
+static void ipoib_cm_init_rx_wr_rss(struct net_device *dev);
+static int ipoib_cm_post_receive_srq_rss(struct net_device *dev,
+					 int index, int id);
+
 
 static void ipoib_cm_dma_unmap_rx(struct ipoib_dev_priv *priv, int frags,
 				  u64 mapping[IPOIB_CM_RX_SG])
@@ -460,7 +464,7 @@ static int ipoib_cm_req_handler(struct ib_cm_id *cm_id,
 	p->jiffies = jiffies;
 	INIT_LIST_HEAD(&p->list);
 
-	p->qp = ipoib_cm_create_rx_qp(dev, p);
+	p->qp = priv->fp.ipoib_cm_create_rx_qp(dev, p);
 	if (IS_ERR(p->qp)) {
 		ret = PTR_ERR(p->qp);
 		goto err_qp;
@@ -472,7 +476,7 @@ static int ipoib_cm_req_handler(struct ib_cm_id *cm_id,
 		goto err_modify;
 
 	if (!ipoib_cm_has_srq(dev)) {
-		ret = ipoib_cm_nonsrq_init_rx(dev, cm_id, p);
+		ret = priv->fp.ipoib_cm_nonsrq_init_rx(dev, cm_id, p);
 		if (ret)
 			goto err_modify;
 	}
@@ -986,7 +990,7 @@ void ipoib_cm_dev_stop(struct net_device *dev)
 		}
 		spin_unlock_irq(&priv->lock);
 		usleep_range(1000, 2000);
-		ipoib_drain_cq(dev);
+		priv->fp.ipoib_drain_cq(dev);
 		spin_lock_irq(&priv->lock);
 	}
 
@@ -1173,7 +1177,7 @@ static int ipoib_cm_tx_init(struct ipoib_cm_tx *p, u32 qpn,
 	}
 	memset(p->tx_ring, 0, priv->sendq_size * sizeof *p->tx_ring);
 
-	p->qp = ipoib_cm_create_tx_qp(p->dev, p);
+	p->qp = priv->fp.ipoib_cm_create_tx_qp(p->dev, p);
 	memalloc_noio_restore(noio_flag);
 	if (IS_ERR(p->qp)) {
 		ret = PTR_ERR(p->qp);
@@ -1465,7 +1469,7 @@ static void ipoib_cm_tx_reap(struct work_struct *work)
 		list_del_init(&p->list);
 		spin_unlock_irqrestore(&priv->lock, flags);
 		netif_tx_unlock_bh(dev);
-		ipoib_cm_tx_destroy(p);
+		priv->fp.ipoib_cm_tx_destroy(p);
 		netif_tx_lock_bh(dev);
 		spin_lock_irqsave(&priv->lock, flags);
 	}
@@ -1574,6 +1578,7 @@ static ssize_t set_mode(struct device *d, struct device_attribute *attr,
 			const char *buf, size_t count)
 {
 	struct net_device *dev = to_net_dev(d);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	int ret;
 
 	if (!rtnl_trylock()) {
@@ -1585,7 +1590,7 @@ static ssize_t set_mode(struct device *d, struct device_attribute *attr,
 		return -EPERM;
 	}
 
-	ret = ipoib_set_mode(dev, buf);
+	ret = priv->fp.ipoib_set_mode(dev, buf);
 
 	/* The assumption is that the function ipoib_set_mode returned
 	 * with the rtnl held by it, if not the value -EBUSY returned,
@@ -1638,6 +1643,7 @@ int ipoib_cm_dev_init(struct net_device *dev)
 {
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	int max_srq_sge, i;
+	int ret;
 
 	INIT_LIST_HEAD(&priv->cm.passive_ids);
 	INIT_LIST_HEAD(&priv->cm.reap_list);
@@ -1668,7 +1674,10 @@ int ipoib_cm_dev_init(struct net_device *dev)
 		priv->cm.num_frags  = IPOIB_CM_RX_SG;
 	}
 
-	ipoib_cm_init_rx_wr(dev, &priv->cm.rx_wr, priv->cm.rx_sge);
+	if (priv->max_tx_queues > 1)
+		ipoib_cm_init_rx_wr_rss(dev);
+	else
+		ipoib_cm_init_rx_wr(dev, &priv->cm.rx_wr, priv->cm.rx_sge);
 
 	if (ipoib_cm_has_srq(dev)) {
 		for (i = 0; i < priv->recvq_size; ++i) {
@@ -1681,10 +1690,13 @@ int ipoib_cm_dev_init(struct net_device *dev)
 				ipoib_cm_dev_cleanup(dev);
 				return -ENOMEM;
 			}
+			if (priv->max_tx_queues > 1)
+				ret = ipoib_cm_post_receive_srq_rss(dev, 0, i);
+			else
+				ret = ipoib_cm_post_receive_srq(dev, i);
 
-			if (ipoib_cm_post_receive_srq(dev, i)) {
-				ipoib_warn(priv, "ipoib_cm_post_receive_srq "
-					   "failed for buf %d\n", i);
+			if (ret) {
+				ipoib_warn(priv, "post_receive_srq failed for buf %d\n", i);
 				ipoib_cm_dev_cleanup(dev);
 				return -EIO;
 			}
@@ -1716,3 +1728,5 @@ void ipoib_cm_dev_cleanup(struct net_device *dev)
 	ipoib_cm_free_rx_ring(dev, priv->cm.srq_ring);
 	priv->cm.srq_ring = NULL;
 }
+
+#include "rss_tss/ipoib_cm_rss.c"

@@ -752,7 +752,7 @@ void ipoib_reap_ah(struct work_struct *work)
 		container_of(work, struct ipoib_dev_priv, ah_reap_task.work);
 	struct net_device *dev = priv->dev;
 
-	__ipoib_reap_ah(dev);
+	priv->fp.__ipoib_reap_ah(dev);
 
 	if (!test_bit(IPOIB_STOP_REAPER, &priv->flags))
 		queue_delayed_work(priv->wq, &priv->ah_reap_task,
@@ -1383,3 +1383,4 @@ void ipoib_ib_dev_cleanup(struct net_device *dev)
 	}
 }
 
+#include "rss_tss/ipoib_ib_rss.c"

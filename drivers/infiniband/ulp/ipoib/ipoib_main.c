@@ -52,6 +52,7 @@
 #include <linux/inetdevice.h>
 #include <rdma/ib_cache.h>
 #include <linux/inet.h>
+#include <linux/sched/signal.h>
 
 #define DRV_VERSION "1.0.0"
 
@@ -108,6 +109,7 @@ static struct net_device *ipoib_get_net_dev_by_params(
 static int ipoib_set_mac(struct net_device *dev, void *addr);
 static int ipoib_ioctl(struct net_device *dev, struct ifreq *ifr,
 		       int cmd);
+static int ipoib_get_hca_features(struct ipoib_dev_priv *priv, struct ib_device *hca);
 
 static struct ib_client ipoib_client = {
 	.name   = "ipoib",
@@ -1240,7 +1242,7 @@ send_using_neigh:
 	/* note we now hold a ref to neigh */
 	if (ipoib_cm_get(neigh)) {
 		if (ipoib_cm_up(neigh)) {
-			ipoib_cm_send(dev, skb, ipoib_cm_get(neigh));
+			priv->fp.ipoib_cm_send(dev, skb, ipoib_cm_get(neigh));
 			goto unref;
 		}
 	} else if (neigh->ah && neigh->ah->valid) {
@@ -1511,7 +1513,7 @@ struct ipoib_neigh *ipoib_neigh_alloc(u8 *daddr,
 		}
 	}
 
-	neigh = ipoib_neigh_ctor(daddr, dev);
+	neigh = priv->fp.ipoib_neigh_ctor(daddr, dev);
 	if (!neigh)
 		goto out_unlock;
 
@@ -1931,9 +1933,9 @@ static void ipoib_parent_unregister_pre(struct net_device *ndev)
 	flush_workqueue(ipoib_workqueue);
 }
 
-static void ipoib_set_dev_features(struct ipoib_dev_priv *priv)
+static void ipoib_set_dev_features(struct ipoib_dev_priv *priv, struct ib_device *hca)
 {
-	priv->hca_caps = priv->ca->attrs.device_cap_flags;
+	ipoib_get_hca_features(priv, hca);
 
 	if (priv->hca_caps & IB_DEVICE_UD_IP_CSUM) {
 		priv->dev->hw_features |= NETIF_F_IP_CSUM | NETIF_F_RXCSUM;
@@ -2034,7 +2036,7 @@ static int ipoib_ndo_init(struct net_device *ndev)
 	ndev->broadcast[9] = priv->pkey & 0xff;
 	set_bit(IPOIB_FLAG_DEV_ADDR_SET, &priv->flags);
 
-	ipoib_set_dev_features(priv);
+	ipoib_set_dev_features(priv, priv->ca);
 
 	rc = ipoib_dev_init(ndev);
 	if (rc) {
@@ -2209,6 +2211,7 @@ static void ipoib_build_priv(struct net_device *dev)
 	priv->dev = dev;
 	spin_lock_init(&priv->lock);
 	init_rwsem(&priv->vlan_rwsem);
+	init_rwsem(&priv->rings_rwsem);
 	mutex_init(&priv->mcast_mutex);
 
 	INIT_LIST_HEAD(&priv->path_list);
@@ -2234,9 +2237,14 @@ static const struct net_device_ops ipoib_netdev_default_pf = {
 };
 
 static struct net_device *ipoib_alloc_netdev(struct ib_device *hca, u8 port,
-					     const char *name)
+					     const char *name, struct ipoib_dev_priv *priv)
 {
 	struct net_device *dev = NULL;
+
+	if (ipoib_set_fp_rss(priv, hca)) {
+		pr_err("%s failed pre allocation RSS\n", __func__);
+		return NULL;
+        }
 
 	dev = rdma_alloc_netdev(hca, port, RDMA_NETDEV_IPOIB, name,
 				NET_NAME_UNKNOWN, ipoib_setup_common);
@@ -2251,15 +2259,10 @@ static struct net_device *ipoib_alloc_netdev(struct ib_device *hca, u8 port,
 }
 
 int ipoib_intf_init(struct ib_device *hca, u8 port, const char *name,
-		    struct net_device *dev)
+		    struct net_device *dev, struct ipoib_dev_priv *priv)
 {
 	struct rdma_netdev *rn = netdev_priv(dev);
-	struct ipoib_dev_priv *priv;
 	int rc;
-
-	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
-	if (!priv)
-		return -ENOMEM;
 
 	priv->ca = hca;
 	priv->port = port;
@@ -2270,21 +2273,29 @@ int ipoib_intf_init(struct ib_device *hca, u8 port, const char *name,
 		if (rc != -EOPNOTSUPP)
 			goto out;
 
-		dev->netdev_ops = &ipoib_netdev_default_pf;
-		rn->send = ipoib_send;
-		rn->attach_mcast = ipoib_mcast_attach;
+		if (priv->num_tx_queues > 1) {
+			netif_set_real_num_tx_queues(dev, priv->num_tx_queues);
+			netif_set_real_num_rx_queues(dev, priv->num_rx_queues);
+
+			rn->attach_mcast = ipoib_mcast_attach_rss;
+			rn->send = ipoib_send_rss;
+
+			/* Override ethtool_ops to ethtool_ops_rss */
+			ipoib_set_ethtool_ops_rss(dev);
+		} else {
+			rn->attach_mcast = ipoib_mcast_attach;
+			rn->send = ipoib_send;
+		}
+
+		dev->netdev_ops = ipoib_get_rn_ops(priv);
 		rn->detach_mcast = ipoib_mcast_detach;
 		rn->hca = hca;
 	}
 
 	priv->rn_ops = dev->netdev_ops;
-
-	if (hca->attrs.device_cap_flags & IB_DEVICE_VIRTUAL_FUNCTION)
-		dev->netdev_ops	= &ipoib_netdev_ops_vf;
-	else
-		dev->netdev_ops	= &ipoib_netdev_ops_pf;
-
+	dev->netdev_ops = ipoib_get_netdev_ops(priv);
 	rn->clnt_priv = priv;
+
 	/*
 	 * Only the child register_netdev flows can handle priv_destructor
 	 * being set, so we force it to NULL here and handle manually until it
@@ -2298,22 +2309,29 @@ int ipoib_intf_init(struct ib_device *hca, u8 port, const char *name,
 	return 0;
 
 out:
-	kfree(priv);
 	return rc;
 }
 
 struct net_device *ipoib_intf_alloc(struct ib_device *hca, u8 port,
 				    const char *name)
 {
+	struct ipoib_dev_priv *priv;
 	struct net_device *dev;
 	int rc;
 
-	dev = ipoib_alloc_netdev(hca, port, name);
-	if (IS_ERR(dev))
-		return dev;
+	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
+	if (!priv)
+		return ERR_PTR(-ENOMEM);
 
-	rc = ipoib_intf_init(hca, port, name, dev);
+	dev = ipoib_alloc_netdev(hca, port, name, priv);
+	if (IS_ERR(dev)) {
+		kfree(priv);
+		return dev;
+	}
+
+	rc = ipoib_intf_init(hca, port, name, dev, priv);
 	if (rc) {
+		kfree(priv);
 		free_netdev(dev);
 		return ERR_PTR(rc);
 	}
@@ -2642,6 +2660,11 @@ static struct net_device *ipoib_add_port(const char *format,
 	if (device_create_file(&priv->dev->dev, &dev_attr_set_mac))
 		goto sysfs_failed;
 
+	if (priv->max_tx_queues > 1) {
+		if (ipoib_set_rss_sysfs(priv))
+			goto sysfs_failed;
+	}
+
 	return ndev;
 
 sysfs_failed:
@@ -2814,6 +2837,8 @@ static void __exit ipoib_cleanup_module(void)
 	ipoib_unregister_debugfs();
 	destroy_workqueue(ipoib_workqueue);
 }
+
+#include "rss_tss/ipoib_main_rss.c"
 
 module_init(ipoib_init_module);
 module_exit(ipoib_cleanup_module);

@@ -37,14 +37,13 @@ static int ipoib_ib_post_receive_rss(struct net_device *dev,
 				     struct ipoib_recv_ring *recv_ring, int id)
 {
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
-	struct ib_recv_wr *bad_wr;
 	int ret;
 
 	recv_ring->rx_wr.wr_id   = id | IPOIB_OP_RECV;
 	recv_ring->rx_sge[0].addr = recv_ring->rx_ring[id].mapping[0];
 	recv_ring->rx_sge[1].addr = recv_ring->rx_ring[id].mapping[1];
 
-	ret = ib_post_recv(recv_ring->recv_qp, &recv_ring->rx_wr, &bad_wr);
+	ret = ib_post_recv(recv_ring->recv_qp, &recv_ring->rx_wr, NULL);
 	if (unlikely(ret)) {
 		ipoib_warn(priv, "receive failed for buf %d (%d)\n", id, ret);
 		ipoib_ud_dma_unmap_rx(priv, recv_ring->rx_ring[id].mapping);
@@ -410,7 +409,6 @@ static inline int post_send_rss(struct ipoib_send_ring *send_ring,
 				struct ipoib_tx_buf *tx_req,
 				void *head, int hlen)
 {
-	struct ib_send_wr *bad_wr;
 	struct sk_buff *skb = tx_req->skb;
 
 	if (tx_req->is_inline) {
@@ -433,7 +431,7 @@ static inline int post_send_rss(struct ipoib_send_ring *send_ring,
 	} else
 		send_ring->tx_wr.wr.opcode = IB_WR_SEND;
 
-	return ib_post_send(send_ring->send_qp, &send_ring->tx_wr.wr, &bad_wr);
+	return ib_post_send(send_ring->send_qp, &send_ring->tx_wr.wr, NULL);
 }
 
 int ipoib_send_rss(struct net_device *dev, struct sk_buff *skb,
@@ -558,46 +556,52 @@ int ipoib_send_rss(struct net_device *dev, struct sk_buff *skb,
 	return rc;
 }
 
-void ipoib_ib_tx_timer_func_rss(unsigned long ctx)
+void ipoib_ib_tx_completion_rss(struct ib_cq *cq, void *ctx_ptr)
 {
-	drain_tx_cq_rss((struct ipoib_send_ring *)ctx);
+	struct ipoib_send_ring *send_ring = (struct ipoib_send_ring *)ctx_ptr;
+
+	napi_schedule(&send_ring->napi);
 }
 
-static void ipoib_napi_enable(struct net_device *dev)
-{
-	struct ipoib_dev_priv *priv = ipoib_priv(dev);
-	struct ipoib_recv_ring *recv_ring;
-	int i;
-
-	recv_ring = priv->recv_ring;
-	for (i = 0; i < priv->num_rx_queues; i++) {
-		netif_napi_add(dev, &recv_ring->napi,
-			       ipoib_poll_rss, NAPI_POLL_WEIGHT);
-		napi_enable(&recv_ring->napi);
-		recv_ring++;
-	}
-}
-
-static void ipoib_napi_disable(struct net_device *dev)
+static void ipoib_napi_enable_rss(struct net_device *dev)
 {
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	int i;
 
-	for (i = 0; i < priv->num_rx_queues; i++) {
+	for (i = 0; i < priv->num_rx_queues; i++)
+		napi_enable(&priv->recv_ring[i].napi);
+
+	for (i = 0; i < priv->num_tx_queues; i++)
+		napi_enable(&priv->send_ring[i].napi);
+}
+
+static void ipoib_napi_disable_rss(struct net_device *dev)
+{
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
+	int i;
+
+	for (i = 0; i < priv->num_rx_queues; i++)
 		napi_disable(&priv->recv_ring[i].napi);
-		netif_napi_del(&priv->recv_ring[i].napi);
-	}
 
-	for (i = 0; i < priv->num_tx_queues; i++) {
+	for (i = 0; i < priv->num_tx_queues; i++)
 		napi_disable(&priv->send_ring[i].napi);
-		netif_napi_del(&priv->send_ring[i].napi);
-	}
 }
 
 int ipoib_ib_dev_open_default_rss(struct net_device *dev)
 {
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
-	int ret;
+	struct ipoib_recv_ring *recv_ring;
+	int ret, i;
+
+	/* Re-arm the RX CQs due to a race between completion event and arm
+	 * during default stop. This fix is temporary and should be removed
+	 * once the mlx4/5 bug is solved
+	 */
+	recv_ring = priv->recv_ring;
+	for (i = 0; i < priv->num_rx_queues; ++i) {
+		ib_req_notify_cq(recv_ring->recv_cq, IB_CQ_NEXT_COMP);
+		recv_ring++;
+	}
 
 	ret = ipoib_init_qp_rss(dev);
 	if (ret) {
@@ -608,23 +612,20 @@ int ipoib_ib_dev_open_default_rss(struct net_device *dev)
 	ret = ipoib_ib_post_receives_rss(dev);
 	if (ret) {
 		ipoib_warn(priv, "ipoib_ib_post_receives_rss returned %d\n", ret);
-		goto dev_stop;
+		goto out;
 	}
 
 	ret = ipoib_cm_dev_open(dev);
 	if (ret) {
 		ipoib_warn(priv, "ipoib_cm_dev_open returned %d\n", ret);
-		goto dev_stop;
+		goto out;
 	}
 
-	if (!test_and_set_bit(IPOIB_FLAG_INITIALIZED, &priv->flags))
-		ipoib_napi_enable(dev);
+	if (!test_bit(IPOIB_FLAG_INITIALIZED, &priv->flags))
+		ipoib_napi_enable_rss(dev);
 
 	return 0;
-dev_stop:
-	if (!test_and_set_bit(IPOIB_FLAG_INITIALIZED, &priv->flags))
-		ipoib_napi_enable(dev);
-	ipoib_ib_dev_stop(dev);
+out:
 	return -1;
 }
 
@@ -788,31 +789,6 @@ static void ipoib_ib_recv_ring_stop(struct ipoib_dev_priv *priv)
 	}
 }
 
-void set_tx_poll_timers(struct ipoib_dev_priv *priv)
-{
-	struct ipoib_send_ring *send_ring;
-	int i;
-	/* Init a timer per queue */
-	send_ring = priv->send_ring;
-	for (i = 0; i < priv->num_tx_queues; i++) {
-		setup_timer(&send_ring->poll_timer, ipoib_ib_tx_timer_func_rss,
-					(unsigned long) send_ring);
-		send_ring++;
-	}
-}
-
-void del_tx_poll_timers(struct ipoib_dev_priv *priv)
-{
-	struct ipoib_send_ring *send_ring;
-	int i;
-
-	send_ring = priv->send_ring;
-	for (i = 0; i < priv->num_tx_queues; i++) {
-		del_timer_sync(&send_ring->poll_timer);
-		send_ring++;
-	}
-}
-
 static void set_tx_rings_qp_state(struct ipoib_dev_priv *priv,
 				  enum ib_qp_state new_state)
 {
@@ -863,8 +839,8 @@ int ipoib_ib_dev_stop_default_rss(struct net_device *dev)
 	struct ipoib_recv_ring *recv_ring;
 	int i;
 
-	if (test_and_clear_bit(IPOIB_FLAG_INITIALIZED, &priv->flags))
-		ipoib_napi_disable(dev);
+	if (test_bit(IPOIB_FLAG_INITIALIZED, &priv->flags))
+		ipoib_napi_disable_rss(dev);
 
 	ipoib_cm_dev_stop(dev);
 
@@ -915,7 +891,6 @@ static void __ipoib_reap_ah_rss(struct net_device *dev)
 {
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	struct ipoib_ah *ah, *tah;
-	struct ipoib_send_ring *send_ring;
 	LIST_HEAD(remove_list);
 	unsigned long flags;
 
@@ -923,12 +898,9 @@ static void __ipoib_reap_ah_rss(struct net_device *dev)
 	spin_lock_irqsave(&priv->lock, flags);
 
 	list_for_each_entry_safe(ah, tah, &priv->dead_ahs, list) {
-		send_ring = priv->send_ring + ah->ring_index;
-		if ((int) send_ring->tx_tail - (int) ah->last_send >= 0) {
-			list_del(&ah->list);
-			rdma_destroy_ah(ah->ah);
-			kfree(ah);
-		}
+		list_del(&ah->list);
+		rdma_destroy_ah(ah->ah);
+		kfree(ah);
 	}
 	spin_unlock_irqrestore(&priv->lock, flags);
 	netif_tx_unlock_bh(dev);
@@ -936,7 +908,7 @@ static void __ipoib_reap_ah_rss(struct net_device *dev)
 
 void ipoib_ib_rss_init_fp(struct ipoib_dev_priv *priv)
 {
-	if (priv->hca_caps_exp & IB_EXP_DEVICE_UD_RSS) {
+	if (priv->max_tx_queues > 1) {
 		priv->fp.ipoib_drain_cq = ipoib_drain_cq_rss;
 		priv->fp.__ipoib_reap_ah = __ipoib_reap_ah_rss;
 	} else {

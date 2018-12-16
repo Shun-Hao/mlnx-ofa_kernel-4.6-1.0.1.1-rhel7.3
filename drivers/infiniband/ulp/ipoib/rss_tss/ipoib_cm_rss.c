@@ -37,7 +37,6 @@ static int ipoib_cm_post_receive_srq_rss(struct net_device *dev,
 	struct ipoib_recv_ring *recv_ring = priv->recv_ring + index;
 	struct ib_sge *sge;
 	struct ib_recv_wr *wr;
-	struct ib_recv_wr *bad_wr;
 	int i, ret;
 
 	sge = recv_ring->cm.rx_sge;
@@ -48,7 +47,7 @@ static int ipoib_cm_post_receive_srq_rss(struct net_device *dev,
 	for (i = 0; i < priv->cm.num_frags; ++i)
 		sge[i].addr = priv->cm.srq_ring[id].mapping[i];
 
-	ret = ib_post_srq_recv(priv->cm.srq, wr, &bad_wr);
+	ret = ib_post_srq_recv(priv->cm.srq, wr, NULL);
 	if (unlikely(ret)) {
 		ipoib_warn(priv, "post srq failed for buf %d (%d)\n", id, ret);
 		ipoib_cm_dma_unmap_rx(priv, priv->cm.num_frags - 1,
@@ -67,7 +66,6 @@ static int ipoib_cm_post_receive_nonsrq_rss(struct net_device *dev,
 	struct ipoib_recv_ring *recv_ring = priv->recv_ring + rx->index;
 	struct ib_sge *sge;
 	struct ib_recv_wr *wr;
-	struct ib_recv_wr *bad_wr;
 	int i, ret;
 
 	sge = recv_ring->cm.rx_sge;
@@ -78,7 +76,7 @@ static int ipoib_cm_post_receive_nonsrq_rss(struct net_device *dev,
 	for (i = 0; i < IPOIB_CM_RX_SG; ++i)
 		sge[i].addr = rx->rx_ring[id].mapping[i];
 
-	ret = ib_post_recv(rx->qp, wr, &bad_wr);
+	ret = ib_post_recv(rx->qp, wr, NULL);
 	if (unlikely(ret)) {
 		ipoib_warn(priv, "post recv failed for buf %d (%d)\n", id, ret);
 		ipoib_cm_dma_unmap_rx(priv, IPOIB_CM_RX_SG - 1,
@@ -350,13 +348,11 @@ static inline int post_send_rss(struct ipoib_dev_priv *priv,
 				struct ipoib_tx_buf *tx_req,
 				struct ipoib_send_ring *send_ring)
 {
-	struct ib_send_wr *bad_wr;
-
 	ipoib_build_sge_rss(send_ring, tx_req);
 
 	send_ring->tx_wr.wr.wr_id	= wr_id | IPOIB_OP_CM;
 
-	return ib_post_send(tx->qp, &send_ring->tx_wr.wr, &bad_wr);
+	return ib_post_send(tx->qp, &send_ring->tx_wr.wr, NULL);
 }
 
 void ipoib_cm_send_rss(struct net_device *dev, struct sk_buff *skb, struct ipoib_cm_tx *tx)
@@ -553,7 +549,7 @@ static struct ib_qp *ipoib_cm_create_tx_qp_rss(struct net_device *dev, struct ip
 
 	if (dev->features & NETIF_F_SG)
 		attr.cap.max_send_sge =
-			min_t(u32, priv->ca->attrs.max_sge, MAX_SKB_FRAGS + 1);
+			min_t(u32, priv->ca->attrs.max_send_sge, MAX_SKB_FRAGS + 1);
 
 	tx_qp = ib_create_qp(priv->pd, &attr);
 	tx->max_send_sge = attr.cap.max_send_sge;
@@ -668,7 +664,7 @@ timeout:
 
 void ipoib_cm_rss_init_fp(struct ipoib_dev_priv *priv)
 {
-	if (priv->hca_caps_exp & IB_EXP_DEVICE_UD_RSS) {
+	if (priv->max_tx_queues > 1) {
 		priv->fp.ipoib_cm_create_rx_qp = ipoib_cm_create_rx_qp_rss;
 		priv->fp.ipoib_cm_create_tx_qp = ipoib_cm_create_tx_qp_rss;
 		priv->fp.ipoib_cm_nonsrq_init_rx = ipoib_cm_nonsrq_init_rx_rss;

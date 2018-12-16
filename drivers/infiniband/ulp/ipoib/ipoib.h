@@ -254,6 +254,7 @@ struct ipoib_cm_rx {
 	enum ipoib_cm_state	state;
 	int			recv_count;
 	int			qpn;
+	int index; /* For RSS ring counters */
 };
 
 struct ipoib_cm_tx {
@@ -299,6 +300,8 @@ struct ipoib_cm_dev_priv {
 	int			nonsrq_conn_qp;
 	int			max_cm_mtu;
 	int			num_frags;
+	u32			rx_cq_ind; /* For RSS */
+	u32			tx_cq_ind; /* For RSS */
 };
 
 struct ipoib_ethtool_st {
@@ -327,6 +330,8 @@ struct ipoib_qp_state_validate {
 	struct work_struct work;
 	struct ipoib_dev_priv   *priv;
 };
+
+#include "rss_tss/ipoib_rss.h"
 
 struct ipoib_arp_repath {
 	struct work_struct	 work;
@@ -430,12 +435,27 @@ struct ipoib_dev_priv {
 	struct dentry *path_dentry;
 #endif
 	u64	hca_caps;
+	u64     hca_caps_exp;
 	struct ipoib_ethtool_st ethtool;
 	u32 sendq_size;
 	u32 recvq_size;
 	unsigned int max_send_sge;
 	bool sm_fullmember_sendonly_support;
 	const struct net_device_ops	*rn_ops;
+	struct ipoib_recv_ring *recv_ring;
+	struct ipoib_send_ring *send_ring;
+	unsigned int rss_qp_num; /* No RSS HW support 0 */
+	unsigned int tss_qp_num; /* No TSS (HW or SW) used 0 */
+	unsigned int max_rx_queues; /* No RSS HW support 1 */
+	unsigned int max_tx_queues; /* No TSS HW support tss_qp_num + 1 */
+	unsigned int num_rx_queues; /* Actual */
+	unsigned int num_tx_queues; /* Actual */
+	struct rw_semaphore rings_rwsem;
+	__be16 tss_qpn_mask_sz; /* Put in ipoib header reserved */
+	atomic_t tx_ring_ind;
+
+	/* Function pointers for RSS support */
+	struct ipoib_func_pointers fp;
 };
 
 struct ipoib_ah {
@@ -478,6 +498,7 @@ struct ipoib_neigh {
 	struct rcu_head     rcu;
 	atomic_t	    refcnt;
 	unsigned long       alive;
+	int index; /* For RSS ndo_select_queue and ring counters */
 };
 
 #define IPOIB_UD_MTU(ib_mtu)		(ib_mtu - IPOIB_ENCAP_LEN)
@@ -527,7 +548,7 @@ void ipoib_flush_paths(struct net_device *dev);
 struct net_device *ipoib_intf_alloc(struct ib_device *hca, u8 port,
 				    const char *format);
 int ipoib_intf_init(struct ib_device *hca, u8 port, const char *format,
-		    struct net_device *dev);
+		    struct net_device *dev, struct ipoib_dev_priv *priv);
 void ipoib_ib_tx_timer_func(struct timer_list *t);
 void ipoib_ib_dev_flush_light(struct work_struct *work);
 void ipoib_ib_dev_flush_normal(struct work_struct *work);

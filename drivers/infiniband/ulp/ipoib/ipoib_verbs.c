@@ -298,3 +298,5 @@ void ipoib_event(struct ib_event_handler *handler,
 		queue_work(ipoib_workqueue, &priv->flush_light);
 	}
 }
+
+#include "rss_tss/ipoib_verbs_rss.c"

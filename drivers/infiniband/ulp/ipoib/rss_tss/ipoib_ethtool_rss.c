@@ -31,7 +31,7 @@
  */
 
 static int ipoib_set_coalesce_rss(struct net_device *dev,
-			 	  struct ethtool_coalesce *coal)
+				  struct ethtool_coalesce *coal)
 {
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	int ret, i;
@@ -45,9 +45,9 @@ static int ipoib_set_coalesce_rss(struct net_device *dev,
 		return -EINVAL;
 
 	for (i = 0; i < priv->num_rx_queues; i++) {
-		ret = ib_modify_cq(priv->recv_ring[i].recv_cq,
-				   coal->rx_max_coalesced_frames,
-				   coal->rx_coalesce_usecs);
+		ret = rdma_set_cq_moderation(priv->recv_ring[i].recv_cq,
+					     coal->rx_max_coalesced_frames,
+					     coal->rx_coalesce_usecs);
 		if (ret && ret != -ENOSYS) {
 			ipoib_warn(priv, "failed modifying CQ (%d)\n", ret);
 			return ret;
@@ -147,30 +147,81 @@ static int ipoib_get_sset_count_rss(struct net_device __always_unused *dev,
 	return -EOPNOTSUPP;
 }
 
+static void ipoib_get_channels(struct net_device *dev,
+			       struct ethtool_channels *channel)
+{
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
+
+	channel->max_rx = priv->max_rx_queues;
+	channel->max_tx = priv->max_tx_queues;
+	channel->max_other = 0;
+	channel->max_combined = priv->max_rx_queues +
+				priv->max_tx_queues;
+	channel->rx_count = priv->num_rx_queues;
+	channel->tx_count = priv->num_tx_queues;
+	channel->other_count = 0;
+	channel->combined_count = priv->num_rx_queues +
+				  priv->num_tx_queues;
+}
+
+static int ipoib_set_channels(struct net_device *dev,
+			struct ethtool_channels *channel)
+{
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
+
+	if (channel->other_count)
+		return -EINVAL;
+
+	if (channel->combined_count !=
+	    priv->num_rx_queues + priv->num_tx_queues)
+		return -EINVAL;
+
+	if (channel->rx_count == 0 ||
+	    channel->rx_count > priv->max_rx_queues)
+		return -EINVAL;
+
+	if (!is_power_of_2(channel->rx_count))
+		return -EINVAL;
+
+	if (channel->tx_count == 0 ||
+	    channel->tx_count > priv->max_tx_queues)
+		return -EINVAL;
+
+	/* Nothing to do ? */
+	if (channel->rx_count == priv->num_rx_queues &&
+	    channel->tx_count == priv->num_tx_queues)
+		return 0;
+
+	/* 1 is always O.K. */
+	if (channel->tx_count > 1) {
+		/* with SW TSS tx_count = 1 + 2 ^ N
+		 * 2 is not allowed, make no sense.
+		 * if want to disable TSS use 1.
+		 */
+		if (!is_power_of_2(channel->tx_count - 1) ||
+		    channel->tx_count == 2)
+			return -EINVAL;
+	}
+
+	return ipoib_reinit_rss(dev, channel->rx_count, channel->tx_count);
+}
+
 static const struct ethtool_ops ipoib_ethtool_ops_rss = {
 	.get_drvinfo		= ipoib_get_drvinfo,
 	.get_coalesce		= ipoib_get_coalesce,
 	.set_coalesce		= ipoib_set_coalesce_rss,
-	.get_settings		= ipoib_get_settings,
+	//VALENTINE .get_settings		= ipoib_get_settings,
 	.get_link		= ethtool_op_get_link,
 	.get_strings		= ipoib_get_strings_rss,
 	.get_ethtool_stats	= ipoib_get_ethtool_stats_rss,
 	.get_sset_count		= ipoib_get_sset_count_rss,
+	.get_channels		= ipoib_get_channels,
+	.set_channels		= ipoib_set_channels,
 	.set_ringparam		= ipoib_set_ring_param,
 	.get_ringparam		= ipoib_get_ring_param,
 };
 
-static const struct ethtool_ops *ipoib_ethtool_ops_select;
-
-void ipoib_select_ethtool_ops(struct ipoib_dev_priv *priv)
+void ipoib_set_ethtool_ops_rss(struct net_device *dev)
 {
-	if (priv->hca_caps_exp & IB_EXP_DEVICE_UD_RSS)
-		ipoib_ethtool_ops_select = &ipoib_ethtool_ops_rss;
-	else
-		ipoib_ethtool_ops_select = &ipoib_ethtool_ops;
-}
-
-const struct ethtool_ops *ipoib_get_ethtool_ops(void)
-{
-	return ipoib_ethtool_ops_select;
+	dev->ethtool_ops = &ipoib_ethtool_ops_rss;
 }

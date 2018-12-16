@@ -68,15 +68,16 @@ static int ipoib_changelink(struct net_device *dev, struct nlattr *tb[],
 			    struct nlattr *data[],
 			    struct netlink_ext_ack *extack)
 {
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 	u16 mode, umcast;
 	int ret = 0;
 
 	if (data[IFLA_IPOIB_MODE]) {
 		mode  = nla_get_u16(data[IFLA_IPOIB_MODE]);
 		if (mode == IPOIB_MODE_DATAGRAM)
-			ret = ipoib_set_mode(dev, "datagram\n");
+			ret = priv->fp.ipoib_set_mode(dev, "datagram\n");
 		else if (mode == IPOIB_MODE_CONNECTED)
-			ret = ipoib_set_mode(dev, "connected\n");
+			ret = priv->fp.ipoib_set_mode(dev, "connected\n");
 		else
 			ret = -EINVAL;
 
@@ -125,7 +126,7 @@ static int ipoib_new_child_link(struct net *src_net, struct net_device *dev,
 	} else
 		child_pkey  = nla_get_u16(data[IFLA_IPOIB_PKEY]);
 
-	err = ipoib_intf_init(ppriv->ca, ppriv->port, dev->name, dev);
+	err = ipoib_intf_init(ppriv->ca, ppriv->port, dev->name, dev, ppriv);
 	if (err) {
 		ipoib_warn(ppriv, "failed to initialize pkey device\n");
 		return err;

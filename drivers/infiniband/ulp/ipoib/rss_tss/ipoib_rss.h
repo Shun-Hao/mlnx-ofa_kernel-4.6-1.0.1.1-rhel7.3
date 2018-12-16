@@ -166,6 +166,10 @@ int ipoib_send_rss(struct net_device *dev, struct sk_buff *skb,
 
 void ipoib_ib_completion_rss(struct ib_cq *cq, void *ctx_ptr);
 
+int ipoib_set_rss_sysfs(struct ipoib_dev_priv *priv);
+
+int ipoib_reinit_rss(struct net_device *dev, int num_rx, int num_tx);
+
 /* Function pointer for RSS/TSS an non-RSS/TSS functionality:
  * Since RSS/TSS support modifies many functions in IPoIB code
  * it was decided to split the functionality to separate files to make
@@ -175,19 +179,18 @@ void ipoib_cm_rss_init_fp(struct ipoib_dev_priv *priv);
 void ipoib_main_rss_init_fp(struct ipoib_dev_priv *priv);
 void ipoib_ib_rss_init_fp(struct ipoib_dev_priv *priv);
 
-void ipoib_select_netdev_ops(struct ipoib_dev_priv *priv);
-const struct net_device_ops *ipoib_get_netdev_ops(void);
+int ipoib_set_fp_rss(struct ipoib_dev_priv *priv, struct ib_device *hca);
 
-void ipoib_select_ethtool_ops(struct ipoib_dev_priv *priv);
-const struct ethtool_ops *ipoib_get_ethtool_ops(void);
+const struct net_device_ops *ipoib_get_netdev_ops(struct ipoib_dev_priv *priv);
+const struct net_device_ops *ipoib_get_rn_ops(struct ipoib_dev_priv *priv);
 
-struct net_device *ipoib_create_netdev_default_rss(struct ib_device *hca,
-						   const char *name,
-						   void (*setup)(struct net_device *),
-						   struct ipoib_dev_priv *temp_priv);
+void ipoib_set_ethtool_ops_rss(struct net_device *dev);
 
 int ipoib_ib_dev_open_default_rss(struct net_device *dev);
 int ipoib_ib_dev_stop_default_rss(struct net_device *dev);
+
+int ipoib_rx_poll_rss(struct napi_struct *napi, int budget);
+int ipoib_tx_poll_rss(struct napi_struct *napi, int budget);
 
 #ifdef CONFIG_INFINIBAND_IPOIB_CM
 

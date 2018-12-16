@@ -42,30 +42,33 @@ int ipoib_set_mode_rss(struct net_device *dev, const char *buf)
 	     !strcmp(buf, "connected\n")) ||
 	     (!test_bit(IPOIB_FLAG_ADMIN_CM, &priv->flags) &&
 	     !strcmp(buf, "datagram\n"))) {
-		ipoib_dbg(priv, "already in that mode, goes out.\n");
 		return 0;
 	}
 
 	/* flush paths if we switch modes so that connections are restarted */
-	if (IPOIB_CM_SUPPORTED(dev->dev_addr) && !strcmp(buf, "connected\n")) {
-		set_bit(IPOIB_FLAG_ADMIN_CM, &priv->flags);
-		ipoib_warn(priv, "enabling connected mode "
-			   "will cause multicast packet drops\n");
-		netdev_update_features(dev);
-		dev_set_mtu(dev, ipoib_cm_max_mtu(dev));
-		rtnl_unlock();
+	if (!strcmp(buf, "connected\n")) {
+		if (IPOIB_CM_SUPPORTED(dev->dev_addr)) {
+			set_bit(IPOIB_FLAG_ADMIN_CM, &priv->flags);
+			ipoib_warn(priv, "enabling connected mode "
+				   "will cause multicast packet drops\n");
+			netdev_update_features(dev);
+			dev_set_mtu(dev, ipoib_cm_max_mtu(dev));
+			rtnl_unlock();
 
-		send_ring = priv->send_ring;
-		for (i = 0; i < priv->num_tx_queues; i++) {
-			send_ring->tx_wr.wr.send_flags &= ~IB_SEND_IP_CSUM;
-			send_ring->tx_wr.wr.opcode = IB_WR_SEND;
-			send_ring++;
+			send_ring = priv->send_ring;
+			for (i = 0; i < priv->num_tx_queues; i++) {
+				send_ring->tx_wr.wr.send_flags &= ~IB_SEND_IP_CSUM;
+				send_ring->tx_wr.wr.opcode = IB_WR_SEND;
+				send_ring++;
+			}
+
+			ipoib_flush_paths(dev);
+			return (!rtnl_trylock()) ? -EBUSY : 0;
+		} else {
+			ipoib_warn(priv, "Setting Connected Mode failed, "
+				   "not supported by this device");
+			return -EINVAL;
 		}
-
-		ipoib_flush_paths(dev);
-		if (!rtnl_trylock())
-			return -EBUSY;
-		return 0;
 	}
 
 	if (!strcmp(buf, "datagram\n")) {
@@ -74,16 +77,14 @@ int ipoib_set_mode_rss(struct net_device *dev, const char *buf)
 		dev_set_mtu(dev, min(priv->mcast_mtu, dev->mtu));
 		rtnl_unlock();
 		ipoib_flush_paths(dev);
-		if (!rtnl_trylock())
-			return -EBUSY;
-		return 0;
+		return (!rtnl_trylock()) ? -EBUSY : 0;
 	}
 
 	return -EINVAL;
 }
 
 static u16 ipoib_select_queue_sw_rss(struct net_device *dev, struct sk_buff *skb,
-				     void *accel_priv,
+				     struct net_device *sb_dev,
 				     select_queue_fallback_t fallback)
 {
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
@@ -120,7 +121,7 @@ static u16 ipoib_select_queue_sw_rss(struct net_device *dev, struct sk_buff *skb
 	header->tss_qpn_mask_sz |= priv->tss_qpn_mask_sz;
 
 	/* don't use special ring in TX */
-	return __skb_tx_hash(dev, skb, priv->tss_qp_num);
+	return fallback(dev, skb, NULL) % priv->tss_qp_num;
 }
 
 static void ipoib_timeout_rss(struct net_device *dev)
@@ -150,6 +151,14 @@ static struct net_device_stats *ipoib_get_stats_rss(struct net_device *dev)
 	struct net_device_stats local_stats;
 	int i;
 
+	if (!down_read_trylock(&priv->rings_rwsem))
+		return stats;
+
+	if (!priv->recv_ring || !priv->send_ring) {
+		up_read(&priv->rings_rwsem);
+		return stats;
+	}
+
 	memset(&local_stats, 0, sizeof(struct net_device_stats));
 
 	for (i = 0; i < priv->num_rx_queues; i++) {
@@ -168,6 +177,8 @@ static struct net_device_stats *ipoib_get_stats_rss(struct net_device *dev)
 		local_stats.tx_dropped += tstats->tx_dropped;
 	}
 
+	up_read(&priv->rings_rwsem);
+
 	stats->rx_packets = local_stats.rx_packets;
 	stats->rx_bytes   = local_stats.rx_bytes;
 	stats->rx_errors  = local_stats.rx_errors;
@@ -179,6 +190,32 @@ static struct net_device_stats *ipoib_get_stats_rss(struct net_device *dev)
 	stats->tx_dropped = local_stats.tx_dropped;
 
 	return stats;
+}
+
+static void ipoib_napi_add_rss(struct net_device *dev)
+{
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
+	int i;
+
+	for (i = 0; i < priv->num_rx_queues; i++)
+		netif_napi_add(dev, &priv->recv_ring[i].napi,
+			       ipoib_rx_poll_rss, IPOIB_NUM_WC);
+
+	for (i = 0; i < priv->num_tx_queues; i++)
+		netif_napi_add(dev, &priv->send_ring[i].napi,
+			       ipoib_tx_poll_rss, MAX_SEND_CQE);
+}
+
+static void ipoib_napi_del_rss(struct net_device *dev)
+{
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
+	int i;
+
+	for (i = 0; i < priv->num_rx_queues; i++)
+		netif_napi_del(&priv->recv_ring[i].napi);
+
+	for (i = 0; i < priv->num_tx_queues; i++)
+		netif_napi_del(&priv->send_ring[i].napi);
 }
 
 static struct ipoib_neigh *ipoib_neigh_ctor_rss(u8 *daddr,
@@ -221,6 +258,8 @@ int ipoib_dev_init_default_rss(struct net_device *dev)
 	struct ipoib_recv_ring *recv_ring;
 	int i, rx_allocated, tx_allocated;
 	unsigned long alloc_size;
+
+	down_write(&priv->rings_rwsem);
 
 	/* Multi queue initialization */
 	priv->recv_ring = kzalloc(priv->num_rx_queues * sizeof(*recv_ring),
@@ -272,12 +311,16 @@ int ipoib_dev_init_default_rss(struct net_device *dev)
 		tx_allocated++;
 	}
 
+	ipoib_napi_add_rss(dev);
+
 	/* priv->tx_head, tx_tail & tx_outstanding are already 0 */
 
 	if (ipoib_transport_dev_init_rss(dev, priv->ca)) {
 		pr_warn("%s: ipoib_transport_dev_init_rss failed\n", priv->ca->name);
-		goto out_send_ring_cleanup;
+		goto out_napi_delete;
 	}
+
+	up_write(&priv->rings_rwsem);
 
 	/*
 	* advertise that we are willing to accept from TSS sender
@@ -292,6 +335,9 @@ int ipoib_dev_init_default_rss(struct net_device *dev)
 
 	return 0;
 
+out_napi_delete:
+	ipoib_napi_del_rss(dev);
+
 out_send_ring_cleanup:
 	for (i = 0; i < tx_allocated; i++)
 		vfree(priv->send_ring[i].tx_ring);
@@ -305,29 +351,14 @@ out_recv_ring_cleanup:
 out:
 	priv->send_ring = NULL;
 	priv->recv_ring = NULL;
+	up_write(&priv->rings_rwsem);
 	return -ENOMEM;
 }
 
-void ipoib_dev_cleanup_rss(struct net_device *dev)
+static void ipoib_dev_uninit_rss(struct net_device *dev)
 {
-	struct ipoib_dev_priv *priv = ipoib_priv(dev), *cpriv, *tcpriv;
-	LIST_HEAD(head);
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 
-	ASSERT_RTNL();
-
-	/* Delete any child interfaces first */
-	list_for_each_entry_safe(cpriv, tcpriv, &priv->child_intfs, list) {
-		/* Stop GC on child */
-		set_bit(IPOIB_STOP_NEIGH_GC, &cpriv->flags);
-		cancel_delayed_work(&cpriv->neigh_reap_task);
-		unregister_netdevice_queue(cpriv->dev, &head);
-	}
-	unregister_netdevice_many(&head);
-
-	/*
-	 * Must be before ipoib_ib_dev_cleanup or we delete an in use
-	 * work queue
-	 */
 	if (dev->reg_state != NETREG_UNINITIALIZED)
 		ipoib_neigh_hash_uninit(dev);
 
@@ -341,8 +372,48 @@ void ipoib_dev_cleanup_rss(struct net_device *dev)
 	}
 }
 
-static int ipoib_get_hca_features(struct ipoib_dev_priv *priv,
-				  struct ib_device *hca)
+static void ipoib_ndo_uninit_rss(struct net_device *dev)
+{
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
+
+	ASSERT_RTNL();
+
+	/*
+	 * ipoib_remove_one guarantees the children are removed before the
+	 * parent, and that is the only place where a parent can be removed.
+	 */
+	WARN_ON(!list_empty(&priv->child_intfs));
+
+	ipoib_dev_uninit_rss(dev);
+
+	if (priv->parent) {
+		struct ipoib_dev_priv *ppriv = ipoib_priv(priv->parent);
+
+		down_write(&ppriv->vlan_rwsem);
+		list_del(&priv->list);
+		up_write(&ppriv->vlan_rwsem);
+
+		dev_put(priv->parent);
+	}
+}
+
+int ipoib_set_fp_rss(struct ipoib_dev_priv *priv, struct ib_device *hca)
+{
+	int ret;
+
+	ret = ipoib_get_hca_features(priv, hca);
+	if (ret)
+		return ret;
+
+	/* Initialize function pointers for RSS and non-RSS devices */
+	ipoib_main_rss_init_fp(priv);
+	ipoib_cm_rss_init_fp(priv);
+	ipoib_ib_rss_init_fp(priv);
+
+	return 0;
+}
+
+static int ipoib_get_hca_features(struct ipoib_dev_priv *priv, struct ib_device *hca)
 {
 	int num_cores, result;
 	struct ib_exp_device_attr exp_device_attr;
@@ -363,6 +434,8 @@ static int ipoib_get_hca_features(struct ipoib_dev_priv *priv,
 		/* No additional QP, only one QP for RX & TX */
 		priv->rss_qp_num = 0;
 		priv->tss_qp_num = 0;
+		priv->max_rx_queues = 1;
+		priv->max_tx_queues = 1;
 		priv->num_rx_queues = 1;
 		priv->num_tx_queues = 1;
 		return 0;
@@ -375,16 +448,18 @@ static int ipoib_get_hca_features(struct ipoib_dev_priv *priv,
 		max_rss_tbl_sz = min(num_cores, max_rss_tbl_sz);
 		max_rss_tbl_sz = rounddown_pow_of_two(max_rss_tbl_sz);
 		priv->rss_qp_num    = max_rss_tbl_sz;
-		priv->num_rx_queues = max_rss_tbl_sz;
+		priv->max_rx_queues = max_rss_tbl_sz;
 	} else {
 		/* No additional QP, only the parent QP for RX */
 		priv->rss_qp_num = 0;
-		priv->num_rx_queues = 1;
+		priv->max_rx_queues = 1;
 	}
+	priv->num_rx_queues = priv->max_rx_queues;
 
 	priv->tss_qp_num = min(IPOIB_MAX_TX_QUEUES, num_cores);
-	/* If TSS is not support by HW use the parent QP for ARP */
-	priv->num_tx_queues = priv->tss_qp_num + 1;
+	/* TSS is not support by HW use the parent QP for ARP */
+	priv->max_tx_queues = priv->tss_qp_num + 1;
+	priv->num_tx_queues = priv->max_tx_queues;
 
 	return 0;
 }
@@ -396,7 +471,11 @@ void ipoib_dev_uninit_default_rss(struct net_device *dev)
 
 	ipoib_transport_dev_cleanup_rss(dev);
 
+	ipoib_napi_del_rss(dev);
+
 	ipoib_cm_dev_cleanup(dev);
+
+	down_write(&priv->rings_rwsem);
 
 	for (i = 0; i < priv->num_tx_queues; i++)
 		vfree(priv->send_ring[i].tx_ring);
@@ -408,6 +487,207 @@ void ipoib_dev_uninit_default_rss(struct net_device *dev)
 
 	priv->recv_ring = NULL;
 	priv->send_ring = NULL;
+
+	up_write(&priv->rings_rwsem);
+}
+
+int ipoib_reinit_rss(struct net_device *dev, int num_rx, int num_tx)
+{
+	struct ipoib_dev_priv *priv = ipoib_priv(dev);
+	int flags;
+	int ret;
+
+	flags = dev->flags;
+	ipoib_stop(dev);
+	if (!test_bit(IPOIB_FLAG_SUBINTERFACE, &priv->flags))
+		ib_unregister_event_handler(&priv->event_handler);
+
+	ipoib_dev_uninit_rss(dev);
+
+	priv->num_rx_queues = num_rx;
+	priv->num_tx_queues = num_tx;
+	if (num_rx == 1)
+		priv->rss_qp_num = 0;
+	else
+		priv->rss_qp_num = num_rx;
+
+	priv->tss_qp_num = num_tx - 1;
+	netif_set_real_num_tx_queues(dev, num_tx);
+	netif_set_real_num_rx_queues(dev, num_rx);
+	/*
+	 * prevent ipoib_ib_dev_init call ipoib_ib_dev_open
+	 * let ipoib_open do it
+	 */
+	dev->flags &= ~IFF_UP;
+
+	ret = ipoib_dev_init(dev);
+	if (ret) {
+		pr_warn("%s: failed to reinitialize port %d (ret = %d)\n",
+			priv->ca->name, priv->port, ret);
+		return ret;
+	}
+	if (!test_bit(IPOIB_FLAG_SUBINTERFACE, &priv->flags)) {
+		ib_register_event_handler(&priv->event_handler);
+	}
+	dev->flags = flags;
+	/* if the device was up bring it up again */
+	if (flags & IFF_UP) {
+		ret = ipoib_open(dev);
+		if (ret)
+			pr_warn("%s: failed to reopen port %d (ret = %d)\n",
+				priv->ca->name, priv->port, ret);
+	}
+	return ret;
+}
+
+static ssize_t get_rx_chan(struct device *dev,
+			   struct device_attribute *attr, char *buf)
+{
+	struct ipoib_dev_priv *priv = ipoib_priv(to_net_dev(dev));
+
+	return sprintf(buf, "%d\n", priv->num_rx_queues);
+}
+
+static ssize_t set_rx_chan(struct device *dev,
+			   struct device_attribute *attr,
+			   const char *buf, size_t count)
+{
+	struct net_device *ndev = to_net_dev(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(ndev);
+	int val, ret;
+
+	ret = sscanf(buf, "%d", &val);
+	if (ret != 1)
+		return -EINVAL;
+	if (val == 0 || val > priv->max_rx_queues) {
+		ipoib_warn(priv,
+			   "Trying to set invalid rx_channels value (%d), max_rx_queues (%d)\n",
+			   val, priv->max_rx_queues);
+		return -EINVAL;
+	}
+	/* Nothing to do ? */
+	if (val == priv->num_rx_queues)
+		return count;
+	if (!is_power_of_2(val)) {
+		ipoib_warn(priv,
+			   "Trying to set invalid rx_channels value (%d), has to be power of 2\n",
+			   val);
+		return -EINVAL;
+	}
+
+	if (!rtnl_trylock())
+		return restart_syscall();
+
+	ret = ipoib_reinit_rss(ndev, val, priv->num_tx_queues);
+
+	rtnl_unlock();
+
+	if (ret)
+		return ret;
+
+	return count;
+}
+
+static DEVICE_ATTR(rx_channels, S_IWUSR | S_IRUGO, get_rx_chan, set_rx_chan);
+
+static ssize_t get_rx_max_channel(struct device *dev,
+				  struct device_attribute *attr, char *buf)
+{
+	struct ipoib_dev_priv *priv = ipoib_priv(to_net_dev(dev));
+
+	return sprintf(buf, "%d\n", priv->max_rx_queues);
+}
+
+static DEVICE_ATTR(rx_max_channels, S_IRUGO, get_rx_max_channel, NULL);
+
+static ssize_t get_tx_chan(struct device *dev,
+			   struct device_attribute *attr, char *buf)
+{
+	struct ipoib_dev_priv *priv = ipoib_priv(to_net_dev(dev));
+
+	return sprintf(buf, "%d\n", priv->num_tx_queues);
+}
+
+static ssize_t set_tx_chan(struct device *dev,
+			   struct device_attribute *attr,
+			   const char *buf, size_t count)
+{
+	struct net_device *ndev = to_net_dev(dev);
+	struct ipoib_dev_priv *priv = ipoib_priv(ndev);
+	int val, ret;
+
+	ret = sscanf(buf, "%d", &val);
+	if (ret != 1)
+		return -EINVAL;
+	if (val == 0 || val > priv->max_tx_queues) {
+		ipoib_warn(priv,
+			   "Trying to set invalid tx_channels value (%d), max_tx_queues (%d)\n",
+			   val, priv->max_tx_queues);
+		return -EINVAL;
+	}
+	/* Nothing to do ? */
+	if (val == priv->num_tx_queues)
+		return count;
+
+	/* 1 is always O.K. */
+	if (val > 1) {
+		/*
+		 * with SW TSS tx_count = 1 + 2 ^ N.
+		 * 2 is not allowed, makes no sense,
+		 * if want to disable TSS use 1.
+		 */
+		if (!is_power_of_2(val - 1) || val == 2) {
+			ipoib_warn(priv,
+				   "Trying to set invalid tx_channels value (%d), has to be (x^2 + 1)\n",
+				   val);
+			return -EINVAL;
+		}
+	}
+
+	if (!rtnl_trylock())
+		return restart_syscall();
+
+	ret = ipoib_reinit_rss(ndev, priv->num_rx_queues, val);
+
+	rtnl_unlock();
+
+	if (ret)
+		return ret;
+
+	return count;
+}
+
+static DEVICE_ATTR(tx_channels, S_IWUSR | S_IRUGO, get_tx_chan, set_tx_chan);
+
+static ssize_t get_tx_max_channel(struct device *dev,
+				  struct device_attribute *attr, char *buf)
+{
+	struct ipoib_dev_priv *priv = ipoib_priv(to_net_dev(dev));
+
+	return sprintf(buf, "%d\n", priv->max_tx_queues);
+}
+
+static DEVICE_ATTR(tx_max_channels, S_IRUGO, get_tx_max_channel, NULL);
+
+int ipoib_set_rss_sysfs(struct ipoib_dev_priv *priv)
+{
+	int ret;
+
+	ret = device_create_file(&priv->dev->dev, &dev_attr_tx_max_channels);
+	if (ret)
+		goto sysfs_failed;
+	ret = device_create_file(&priv->dev->dev, &dev_attr_rx_max_channels);
+	if (ret)
+		goto sysfs_failed;
+	ret = device_create_file(&priv->dev->dev, &dev_attr_tx_channels);
+	if (ret)
+		goto sysfs_failed;
+	ret = device_create_file(&priv->dev->dev, &dev_attr_rx_channels);
+	if (ret)
+		goto sysfs_failed;
+
+sysfs_failed:
+	return ret;
 }
 
 static const struct net_device_ops ipoib_netdev_default_pf_rss = {
@@ -418,7 +698,8 @@ static const struct net_device_ops ipoib_netdev_default_pf_rss = {
 };
 
 static const struct net_device_ops ipoib_netdev_ops_pf_sw_tss = {
-	.ndo_uninit		 = ipoib_uninit,
+	.ndo_init		 = ipoib_ndo_init,
+	.ndo_uninit		 = ipoib_ndo_uninit_rss,
 	.ndo_open		 = ipoib_open,
 	.ndo_stop		 = ipoib_stop,
 	.ndo_change_mtu		 = ipoib_change_mtu,
@@ -437,7 +718,8 @@ static const struct net_device_ops ipoib_netdev_ops_pf_sw_tss = {
 };
 
 static const struct net_device_ops ipoib_netdev_ops_vf_sw_tss = {
-	.ndo_uninit		 = ipoib_uninit,
+	.ndo_init		 = ipoib_ndo_init,
+	.ndo_uninit		 = ipoib_ndo_uninit_rss,
 	.ndo_open		 = ipoib_open,
 	.ndo_stop		 = ipoib_stop,
 	.ndo_change_mtu		 = ipoib_change_mtu,
@@ -450,64 +732,29 @@ static const struct net_device_ops ipoib_netdev_ops_vf_sw_tss = {
 	.ndo_get_iflink		 = ipoib_get_iflink,
 };
 
-struct net_device *ipoib_create_netdev_default_rss(struct ib_device *hca,
-						   const char *name,
-						   void (*setup)(struct net_device *),
-						   struct ipoib_dev_priv *temp_priv)
-{
-	struct net_device *dev;
-	struct rdma_netdev *rn;
-
-	dev = alloc_netdev_mqs((int)sizeof(struct rdma_netdev), name,
-			       NET_NAME_UNKNOWN, setup,
-			       temp_priv->num_tx_queues,
-			       temp_priv->num_rx_queues);
-
-	if (!dev)
-		return NULL;
-
-	netif_set_real_num_tx_queues(dev, temp_priv->num_tx_queues);
-	netif_set_real_num_rx_queues(dev, temp_priv->num_rx_queues);
-
-	rn = netdev_priv(dev);
-
-	rn->send = ipoib_send_rss;
-	rn->attach_mcast = ipoib_mcast_attach_rss;
-	rn->detach_mcast = ipoib_mcast_detach;
-	rn->free_rdma_netdev = free_netdev;
-	rn->hca = hca;
-
-	dev->netdev_ops = &ipoib_netdev_default_pf_rss;
-
-	return dev;
-}
-
-static const struct net_device_ops *ipoib_netdev_ops_select;
-
-void ipoib_select_netdev_ops(struct ipoib_dev_priv *priv)
+const struct net_device_ops *ipoib_get_netdev_ops(struct ipoib_dev_priv *priv)
 {
 	if (priv->hca_caps & IB_DEVICE_VIRTUAL_FUNCTION)
-		ipoib_netdev_ops_select = priv->num_tx_queues > 1 ?
+		return priv->max_tx_queues > 1 ?
 			&ipoib_netdev_ops_vf_sw_tss : &ipoib_netdev_ops_vf;
 	else
-		ipoib_netdev_ops_select = priv->num_tx_queues > 1 ?
+		return priv->max_tx_queues > 1 ?
 			&ipoib_netdev_ops_pf_sw_tss : &ipoib_netdev_ops_pf;
 }
 
-const struct net_device_ops *ipoib_get_netdev_ops(void)
+const struct net_device_ops *ipoib_get_rn_ops(struct ipoib_dev_priv *priv)
 {
-	return ipoib_netdev_ops_select;
+	return priv->max_tx_queues > 1 ?
+		&ipoib_netdev_default_pf_rss : &ipoib_netdev_default_pf;
 }
 
 void ipoib_main_rss_init_fp(struct ipoib_dev_priv *priv)
 {
-	if (priv->hca_caps_exp & IB_EXP_DEVICE_UD_RSS) {
+	if (priv->max_tx_queues > 1) {
 		priv->fp.ipoib_set_mode = ipoib_set_mode_rss;
 		priv->fp.ipoib_neigh_ctor = ipoib_neigh_ctor_rss;
-		priv->fp.ipoib_dev_cleanup = ipoib_dev_cleanup_rss;
 	} else {
 		priv->fp.ipoib_set_mode = ipoib_set_mode;
 		priv->fp.ipoib_neigh_ctor = ipoib_neigh_ctor;
-		priv->fp.ipoib_dev_cleanup = ipoib_dev_cleanup;
 	}
 }
