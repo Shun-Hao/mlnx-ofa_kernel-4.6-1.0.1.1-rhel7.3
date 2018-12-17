@@ -107,6 +107,7 @@ struct mlx5_vport_info {
 	bool                    spoofchk;
 	bool                    trusted;
 	bool                    roce;
+	u8                      vepa;
 	/* the admin approved vlan list */
 	DECLARE_BITMAP(vlan_trunk_8021q_bitmap, VLAN_N_VID);
 };
@@ -122,6 +123,9 @@ struct mlx5_vport {
 	DECLARE_BITMAP(acl_vlan_8021q_bitmap, VLAN_N_VID);
 	struct mlx5_flow_handle *promisc_rule;
 	struct mlx5_flow_handle *allmulti_rule;
+	/* VEPA rule on the FDB table */
+	struct mlx5_flow_handle *vepa_rule;
+
 	struct work_struct      vport_change_handler;
 
 	struct vport_ingress    ingress;
@@ -153,6 +157,7 @@ struct mlx5_eswitch_fdb {
 			struct mlx5_flow_group *addr_grp;
 			struct mlx5_flow_group *allmulti_grp;
 			struct mlx5_flow_group *promisc_grp;
+			struct mlx5_flow_table *vepa_fdb;
 		} legacy;
 
 		struct offloads_fdb {
@@ -270,21 +275,20 @@ int mlx5_eswitch_set_vport_trust(struct mlx5_eswitch *esw,
 				 int vport_num, bool setting);
 int mlx5_eswitch_set_vport_rate(struct mlx5_eswitch *esw, int vport,
 				u32 max_rate, u32 min_rate);
+int mlx5_eswitch_set_vport_vepa(struct mlx5_eswitch *esw,
+				int vport_num, u8 setting);
 int mlx5_eswitch_get_vport_config(struct mlx5_eswitch *esw,
 				  int vport, struct ifla_vf_info *ivi);
 int mlx5_eswitch_get_vport_stats(struct mlx5_eswitch *esw,
 				 int vport,
 				 struct ifla_vf_stats *vf_stats);
-#ifndef HAVE_STRUCT_IFLA_VF_STATS_TX_BROADCAST
 struct ifla_vf_stats_backport {
 	__u64 tx_broadcast;
 	__u64 tx_multicast;
 };
-
 int mlx5_eswitch_get_vport_stats_backport(struct mlx5_eswitch *esw,
 					  int vport,
 					  struct ifla_vf_stats_backport *vf_stats_backport);
-#endif
 void mlx5_eswitch_del_send_to_vport_rule(struct mlx5_flow_handle *rule);
 int mlx5_eswitch_query_vport_drop_stats(struct mlx5_core_dev *dev,
 					int vport_idx,

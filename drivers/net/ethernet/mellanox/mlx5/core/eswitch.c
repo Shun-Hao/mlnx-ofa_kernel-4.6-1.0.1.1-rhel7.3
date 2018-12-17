@@ -40,6 +40,8 @@
 #include "fs_core.h"
 #include "ecpf.h"
 
+#define UPLINK_VPORT 0xFFFF
+
 enum {
 	MLX5_ACTION_NONE = 0,
 	MLX5_ACTION_ADD  = 1,
@@ -69,6 +71,8 @@ enum {
 	VLAN_CHANGE    = BIT(2),
 	PROMISC_CHANGE = BIT(3),
 };
+
+static void esw_destroy_legacy_fdb_table(struct mlx5_eswitch *esw);
 
 /* Vport context events */
 #define SRIOV_VPORT_EVENTS (UC_ADDR_CHANGE | \
@@ -283,7 +287,12 @@ esw_fdb_set_vport_promisc_rule(struct mlx5_eswitch *esw, u16 vport)
 	return __esw_fdb_set_vport_rule(esw, vport, true, mac_c, mac_v);
 }
 
-static int esw_create_legacy_fdb_table(struct mlx5_eswitch *esw)
+enum {
+	LEVEL_0 = 0,
+	LEVEL_1,
+};
+
+static int esw_create_legacy_fdb_table(struct mlx5_eswitch *esw, int nvports)
 {
 	int inlen = MLX5_ST_SZ_BYTES(create_flow_group_in);
 	struct mlx5_flow_table_attr ft_attr = {};
@@ -291,9 +300,9 @@ static int esw_create_legacy_fdb_table(struct mlx5_eswitch *esw)
 	struct mlx5_flow_namespace *root_ns;
 	struct mlx5_flow_table *fdb;
 	struct mlx5_flow_group *g;
+	u32 *flow_group_in = NULL;
 	void *match_criteria;
 	int table_size;
-	u32 *flow_group_in;
 	u8 *dmac;
 	int err = 0;
 
@@ -310,9 +319,21 @@ static int esw_create_legacy_fdb_table(struct mlx5_eswitch *esw)
 	if (!flow_group_in)
 		return -ENOMEM;
 
-	table_size = BIT(MLX5_CAP_ESW_FLOWTABLE_FDB(dev, log_max_ft_size));
+	/* Legacy VEPA FDB */
+	table_size = roundup_pow_of_two(nvports);
+	fdb = mlx5_create_auto_grouped_flow_table(root_ns, LEVEL_0, table_size,
+						  1, LEVEL_0, 0);
+	if (IS_ERR(fdb)) {
+		err = PTR_ERR(fdb);
+		esw_warn(dev, "Failed to create VEPA FDB err %d\n", err);
+		goto out;
+	}
+	esw->fdb_table.legacy.vepa_fdb = fdb;
 
+	/* Legacy FDB */
+	table_size = BIT(MLX5_CAP_ESW_FLOWTABLE_FDB(dev, log_max_ft_size));
 	ft_attr.max_fte = table_size;
+	ft_attr.prio  = LEVEL_1;
 	fdb = mlx5_create_flow_table(root_ns, &ft_attr);
 	if (IS_ERR(fdb)) {
 		err = PTR_ERR(fdb);
@@ -322,6 +343,7 @@ static int esw_create_legacy_fdb_table(struct mlx5_eswitch *esw)
 	esw->fdb_table.legacy.fdb = fdb;
 
 	/* Addresses group : Full match unicast/multicast addresses */
+	memset(flow_group_in, 0, inlen);
 	MLX5_SET(create_flow_group_in, flow_group_in, match_criteria_enable,
 		 MLX5_MATCH_OUTER_HEADERS);
 	match_criteria = MLX5_ADDR_OF(create_flow_group_in, flow_group_in, match_criteria);
@@ -371,20 +393,8 @@ static int esw_create_legacy_fdb_table(struct mlx5_eswitch *esw)
 	esw->fdb_table.legacy.promisc_grp = g;
 
 out:
-	if (err) {
-		if (!IS_ERR_OR_NULL(esw->fdb_table.legacy.allmulti_grp)) {
-			mlx5_destroy_flow_group(esw->fdb_table.legacy.allmulti_grp);
-			esw->fdb_table.legacy.allmulti_grp = NULL;
-		}
-		if (!IS_ERR_OR_NULL(esw->fdb_table.legacy.addr_grp)) {
-			mlx5_destroy_flow_group(esw->fdb_table.legacy.addr_grp);
-			esw->fdb_table.legacy.addr_grp = NULL;
-		}
-		if (!IS_ERR_OR_NULL(esw->fdb_table.legacy.fdb)) {
-			mlx5_destroy_flow_table(esw->fdb_table.legacy.fdb);
-			esw->fdb_table.legacy.fdb = NULL;
-		}
-	}
+	if (err)
+		esw_destroy_legacy_fdb_table(esw);
 
 	kvfree(flow_group_in);
 	return err;
@@ -392,18 +402,26 @@ out:
 
 static void esw_destroy_legacy_fdb_table(struct mlx5_eswitch *esw)
 {
-	if (!esw->fdb_table.legacy.fdb)
-		return;
-
 	esw_debug(esw->dev, "Destroy FDB Table\n");
-	mlx5_destroy_flow_group(esw->fdb_table.legacy.promisc_grp);
-	mlx5_destroy_flow_group(esw->fdb_table.legacy.allmulti_grp);
-	mlx5_destroy_flow_group(esw->fdb_table.legacy.addr_grp);
-	mlx5_destroy_flow_table(esw->fdb_table.legacy.fdb);
-	esw->fdb_table.legacy.fdb = NULL;
-	esw->fdb_table.legacy.addr_grp = NULL;
-	esw->fdb_table.legacy.allmulti_grp = NULL;
-	esw->fdb_table.legacy.promisc_grp = NULL;
+	if (esw->fdb_table.legacy.fdb) {
+		if (esw->fdb_table.legacy.promisc_grp)
+			mlx5_destroy_flow_group(esw->fdb_table.legacy.promisc_grp);
+		if (esw->fdb_table.legacy.allmulti_grp)
+			mlx5_destroy_flow_group(esw->fdb_table.legacy.allmulti_grp);
+		if (esw->fdb_table.legacy.addr_grp)
+			mlx5_destroy_flow_group(esw->fdb_table.legacy.addr_grp);
+		mlx5_destroy_flow_table(esw->fdb_table.legacy.fdb);
+
+		esw->fdb_table.legacy.fdb = NULL;
+		esw->fdb_table.legacy.addr_grp = NULL;
+		esw->fdb_table.legacy.allmulti_grp = NULL;
+		esw->fdb_table.legacy.promisc_grp = NULL;
+	}
+
+	if (esw->fdb_table.legacy.vepa_fdb) {
+		mlx5_destroy_flow_table(esw->fdb_table.legacy.vepa_fdb);
+		esw->fdb_table.legacy.vepa_fdb = NULL;
+	}
 }
 
 /* E-Switch vport UC/MC lists management */
@@ -1971,7 +1989,7 @@ int mlx5_eswitch_enable_sriov(struct mlx5_eswitch *esw, int nvfs, int mode)
 	mlx5_lag_update(esw->dev);
 
 	if (mode == SRIOV_LEGACY) {
-		err = esw_create_legacy_fdb_table(esw);
+		err = esw_create_legacy_fdb_table(esw, nvfs + 1);
 	} else {
 		mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_ETH);
 		mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_IB);
@@ -2498,6 +2516,74 @@ int mlx5_eswitch_set_vport_spoofchk(struct mlx5_eswitch *esw,
 		err = esw_vport_ingress_config(esw, evport);
 	if (err)
 		evport->info.spoofchk = pschk;
+	mutex_unlock(&esw->state_lock);
+
+	return err;
+}
+
+int __mlx5_eswitch_set_vport_vepa_locked(struct mlx5_eswitch *esw,
+					 int vport, u8 setting)
+{
+	struct mlx5_vport *evport = &esw->vports[vport];
+	struct mlx5_flow_destination dest = {};
+	struct mlx5_flow_act flow_act = {0};
+	struct mlx5_flow_handle *flow_rule;
+	struct mlx5_flow_spec *spec;
+	int err = 0;
+	void *misc;
+
+	if (!setting) {
+		mlx5_del_flow_rules(evport->vepa_rule);
+		evport->vepa_rule = NULL;
+		return 0;
+	}
+
+	/* VEPA on. Add VEPA rule */
+	spec = kvzalloc(sizeof(*spec), GFP_KERNEL);
+	if (!spec)
+		return -ENOMEM;
+
+	misc = MLX5_ADDR_OF(fte_match_param, spec->match_value, misc_parameters);
+	MLX5_SET(fte_match_set_misc, misc, source_port, vport);
+
+	misc = MLX5_ADDR_OF(fte_match_param, spec->match_criteria, misc_parameters);
+	MLX5_SET_TO_ONES(fte_match_set_misc, misc, source_port);
+
+	spec->match_criteria_enable = MLX5_MATCH_MISC_PARAMETERS;
+	dest.type = MLX5_FLOW_DESTINATION_TYPE_VPORT;
+	dest.vport.num = UPLINK_VPORT;
+	flow_act.action = MLX5_FLOW_CONTEXT_ACTION_FWD_DEST;
+
+	flow_rule = mlx5_add_flow_rules(esw->fdb_table.legacy.vepa_fdb, spec,
+					&flow_act, &dest, 1);
+	if (IS_ERR(flow_rule))
+		err = PTR_ERR(flow_rule);
+	else
+		evport->vepa_rule = flow_rule;
+
+	kvfree(spec);
+	return err;
+}
+
+int mlx5_eswitch_set_vport_vepa(struct mlx5_eswitch *esw,
+				int vport, u8 setting)
+{
+	struct mlx5_vport *evport;
+	int err = 0;
+
+	if (!ESW_ALLOWED(esw))
+		return -EPERM;
+	if (!LEGAL_VPORT(esw, vport))
+		return -EINVAL;
+
+	mutex_lock(&esw->state_lock);
+	evport = &esw->vports[vport];
+	if (evport->info.vepa != setting &&
+	    evport->enabled && esw->mode == SRIOV_LEGACY) {
+		err = __mlx5_eswitch_set_vport_vepa_locked(esw, vport, setting);
+		if (!err)
+			evport->info.vepa = setting;
+	}
 	mutex_unlock(&esw->state_lock);
 
 	return err;
