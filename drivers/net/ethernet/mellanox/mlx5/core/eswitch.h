@@ -110,6 +110,7 @@ struct mlx5_vport_info {
 	u8                      vepa;
 	/* the admin approved vlan list */
 	DECLARE_BITMAP(vlan_trunk_8021q_bitmap, VLAN_N_VID);
+	u32			group;
 };
 
 struct mlx5_vport {
@@ -137,6 +138,7 @@ struct mlx5_vport {
 		bool            enabled;
 		u32             esw_tsar_ix;
 		u32             bw_share;
+		struct mlx5_vgroup *group;
 	} qos;
 
 	bool                    enabled;
@@ -223,6 +225,16 @@ struct mlx5_esw_handler {
 	struct netlink_ext_ack	*extack;
 };
 
+struct mlx5_vgroup {
+	struct mlx5_core_dev *dev;
+	u32		     group_id;
+	u32		     num_vports;
+	u32		     tsar_ix;
+	u32		     max_rate;
+	struct		     kobject kobj;
+	struct		     list_head list;
+};
+
 struct mlx5_eswitch {
 	struct mlx5_core_dev    *dev;
 	struct mlx5_eswitch_fdb fdb_table;
@@ -239,7 +251,9 @@ struct mlx5_eswitch {
 
 	struct {
 		bool            enabled;
-		u32             root_tsar_id;
+		u32             root_tsar_ix;
+		struct mlx5_vgroup *group0;
+		struct list_head groups;
 	} qos;
 
 	struct mlx5_esw_offload offloads;
@@ -282,6 +296,10 @@ int mlx5_eswitch_get_vport_config(struct mlx5_eswitch *esw,
 int mlx5_eswitch_get_vport_stats(struct mlx5_eswitch *esw,
 				 int vport,
 				 struct ifla_vf_stats *vf_stats);
+int mlx5_eswitch_vport_update_group(struct mlx5_eswitch *esw, int vport_num,
+				    u32 group_id);
+int mlx5_eswitch_set_vgroup_rate(struct mlx5_eswitch *esw, int group_id,
+				 u32 max_rate);
 struct ifla_vf_stats_backport {
 	__u64 tx_broadcast;
 	__u64 tx_multicast;
