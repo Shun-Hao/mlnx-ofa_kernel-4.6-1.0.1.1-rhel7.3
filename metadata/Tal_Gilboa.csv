@@ -4,3 +4,4 @@ Change-Id=I6a33e4b928e1a3eadddc3aea38718b822fbb02fd; subject=net/mlx5: Remove wa
 Change-Id=I282a935060af62a7370b0447ea479686861acadf; subject=net/mlx5e: Hold measurements for net_dim in a dedicated struct; feature=mlx5_adaptive_moderation; upstream_status=in_progress; general=;
 Change-Id=I91aa07d634e2260022d0f7babe29a1aaabea474a; subject=net/mlx5e: Remove RX ACKs count from net_dim measurements; feature=mlx5_adaptive_moderation; upstream_status=in_progress; general=;
 Change-Id=Iac97ed5e8ab06e96721be1b59ac3f98872615cf4; subject=net/dim: Update DIM start sample after each DIM iteration; feature=rebase; upstream_status=accepted; general=;
+Change-Id=I57053ee7efb38eeaeb1bf1e8099244b268c0b27f; subject=net/mlx5e: Cancel DIM work on close SQ; feature=mlx5_adaptive_moderation; upstream_status=in_progress; general=;

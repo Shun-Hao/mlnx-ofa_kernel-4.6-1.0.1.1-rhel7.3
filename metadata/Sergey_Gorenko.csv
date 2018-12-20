@@ -9,3 +9,5 @@ Change-Id=I27b8d6790e809884ece0f23765b1e30ae43ac50a; subject=mlx5: Expose the si
 Change-Id=I02e5c30745f78942c68b32dbeb4a3dddec9d3183; subject=IB/isert: Add sig_pipeline flag for isert_conn; feature=signature_pipeline; upstream_status=NA; general=;
 Change-Id=I503ba12eabdbb3dcf58ea5979e4b4f49f5bbf542; subject=IB/isert: Split the isert_init_send_wr function; feature=signature_pipeline; upstream_status=NA; general=;
 Change-Id=Ib96820d320a5d11bb4562cf6fb511ec51945c321; subject=IB/isert: Use the signature pipeline feature; feature=signature_pipeline; upstream_status=NA; general=;
+Change-Id=Ib98d8ab5abd3b232484990c4da49af9e5a70bf1e; subject=RDMA: Fix compatibility with Lustre; feature=lustre_support; upstream_status=NA; general=;
+Change-Id=Ia74a3461fc098843d13369d3f94693f085c70811; subject=IB/cm: Make the cm_calc_udp_sport function static; feature=udp_sport; upstream_status=in_progress; general=;
