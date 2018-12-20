@@ -28,18 +28,12 @@ index xxxxxxx..xxxxxxx 100644
  static void mlx5e_ethtool_get_speed_arr(struct mlx5_core_dev *mdev,
  					struct ptys2ethtool_config **arr,
  					u32 *size)
-@@ -205,6 +208,7 @@ static void mlx5e_ethtool_get_speed_arr(struct mlx5_core_dev *mdev,
+@@ -205,6 +208,508 @@ static void mlx5e_ethtool_get_speed_arr(struct mlx5_core_dev *mdev,
  	*size = ext ? ARRAY_SIZE(ptys2ext_ethtool_table) :
  		      ARRAY_SIZE(ptys2legacy_ethtool_table);
  }
 +#endif
- 
- static const char mlx5e_priv_flags[][ETH_GSTRING_LEN] = {
- 	"rx_cqe_moder",
-@@ -218,6 +222,507 @@ static const char mlx5e_priv_flags[][ETH_GSTRING_LEN] = {
- 	"tx_xdp_hw_checksum",
- };
- 
++
 +struct deprecated_ptys2ethtool_config {
 +	u32 supported;
 +	u32 advertised;
@@ -540,10 +534,9 @@ index xxxxxxx..xxxxxxx 100644
 +	return 0;
 +}
 +#endif
-+
- int mlx5e_ethtool_get_sset_count(struct mlx5e_priv *priv, int sset)
- {
- 	int i, num_stats = 0;
+ 
+ const char mlx5e_priv_flags[][ETH_GSTRING_LEN] = {
+ 	"rx_cqe_moder",
 @@ -227,8 +732,10 @@ int mlx5e_ethtool_get_sset_count(struct mlx5e_priv *priv, int sset)
  		for (i = 0; i < mlx5e_num_stats_grps; i++)
  			num_stats += mlx5e_stats_grps[i].get_num_stats(priv);
@@ -1007,10 +1000,10 @@ index xxxxxxx..xxxxxxx 100644
  }
  
 +#ifdef HAVE_GET_SET_PRIV_FLAGS
- static int mlx5e_set_priv_flags(struct net_device *netdev, u32 pflags)
+ int mlx5e_set_priv_flags(struct net_device *netdev, u32 pflags)
  {
  	struct mlx5e_priv *priv = netdev_priv(netdev);
-@@ -1963,6 +2600,14 @@ static int mlx5e_set_priv_flags(struct net_device *netdev, u32 pflags)
+@@ -1963,6 +2600,14 @@ int mlx5e_set_priv_flags(struct net_device *netdev, u32 pflags)
  	if (err)
  		goto out;
  
@@ -1037,7 +1030,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	return err;
  }
-@@ -2016,6 +2665,86 @@ static u32 mlx5e_get_priv_flags(struct net_device *netdev)
+@@ -2016,6 +2665,86 @@ u32 mlx5e_get_priv_flags(struct net_device *netdev)
  
  	return priv->channels.params.pflags;
  }

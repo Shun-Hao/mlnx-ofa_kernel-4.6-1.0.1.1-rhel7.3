@@ -17,3 +17,5 @@ Change-Id=Icc0f2c7900840b5bf3b9fb614b5bb8bb3d25d7c4; subject=net/mlx5: When fetc
 Change-Id=I70cd0ad4ad66e2582b86f92a42b2552f36a6e113; subject=net/mlx5e: Use CQE padding for Ethernet CQs; feature=cqe_padding; upstream_status=accepted; general=upstream commit ID: 939de57d3034, tag: v5.0-rc1;
 Change-Id=Iaffafa25ef3de39374a73e5a75611f8c189d89b3; subject=net/mlx5: Use eswitch manager vport for roce steering; feature=mlx5_core_bugs; upstream_status=in_progress; general=;
 Change-Id=Ie40ccdac1123b07821a8d915425290975bd1f16d; subject=net/mlx5e: Start stats work for reps; feature=mlx5_core_bugs; upstream_status=ignore; general=;
+Change-Id=I65da6c0b79814f3618a8da8907a0e572fb3fd693; subject=net/mlx5: Removed duplicate read of caps; feature=memic; upstream_status=NA; general=;
+Change-Id=I549fc8212e9ae95ce5285e1193a28972dc5ee1d3; subject=net/mlx5e: Enable per queue stats for reps; feature=mlx5e_rep_stats; upstream_status=in_progress; general=;

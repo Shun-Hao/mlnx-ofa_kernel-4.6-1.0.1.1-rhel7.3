@@ -44,6 +44,7 @@
 #include "en_tc.h"
 #include "fs_core.h"
 #include "ecpf.h"
+#include "en_stats.h"
 
 #define MLX5E_REP_PARAMS_LOG_SQ_SIZE \
 	max(0x6, MLX5E_PARAMS_MINIMUM_LOG_SQ_SIZE)
@@ -59,151 +60,64 @@ static void mlx5e_rep_get_drvinfo(struct net_device *dev,
 	strlcpy(drvinfo->version, UTS_RELEASE, sizeof(drvinfo->version));
 }
 
-static const struct counter_desc sw_rep_stats_desc[] = {
-	{ MLX5E_DECLARE_STAT(struct mlx5e_sw_stats, rx_packets) },
-	{ MLX5E_DECLARE_STAT(struct mlx5e_sw_stats, rx_bytes) },
-	{ MLX5E_DECLARE_STAT(struct mlx5e_sw_stats, tx_packets) },
-	{ MLX5E_DECLARE_STAT(struct mlx5e_sw_stats, tx_bytes) },
-};
-
-struct vport_stats {
-	u64 vport_rx_packets;
-	u64 vport_tx_packets;
-	u64 vport_rx_bytes;
-	u64 vport_tx_bytes;
-};
-
-static const struct counter_desc vport_rep_stats_desc[] = {
-	{ MLX5E_DECLARE_STAT(struct vport_stats, vport_rx_packets) },
-	{ MLX5E_DECLARE_STAT(struct vport_stats, vport_rx_bytes) },
-	{ MLX5E_DECLARE_STAT(struct vport_stats, vport_tx_packets) },
-	{ MLX5E_DECLARE_STAT(struct vport_stats, vport_tx_bytes) },
-};
-
-#define NUM_VPORT_REP_SW_COUNTERS ARRAY_SIZE(sw_rep_stats_desc)
-#define NUM_VPORT_REP_HW_COUNTERS ARRAY_SIZE(vport_rep_stats_desc)
-
 static void mlx5e_rep_get_strings(struct net_device *dev,
 				  u32 stringset, uint8_t *data)
 {
-	int i, j;
+	struct mlx5e_priv *priv = netdev_priv(dev);
+	int idx = 0;
+	int i;
 
 	switch (stringset) {
+	case ETH_SS_PRIV_FLAGS:
+		for (i = 0; i < mlx5e_priv_flags_num(); i++)
+			strcpy(data + i * ETH_GSTRING_LEN, mlx5e_priv_flags[i]);
+		break;
 	case ETH_SS_STATS:
-		for (i = 0; i < NUM_VPORT_REP_SW_COUNTERS; i++)
-			strcpy(data + (i * ETH_GSTRING_LEN),
-			       sw_rep_stats_desc[i].format);
-		for (j = 0; j < NUM_VPORT_REP_HW_COUNTERS; j++, i++)
-			strcpy(data + (i * ETH_GSTRING_LEN),
-			       vport_rep_stats_desc[j].format);
+		for (i = 0; i < mlx5e_rep_num_stats_grps; i++)
+			idx = mlx5e_rep_stats_grps[i].fill_strings(priv, data, idx);
 		break;
 	}
 }
 
-static void mlx5e_vf_rep_update_hw_counters(struct mlx5e_priv *priv)
+static void mlx5e_rep_update_stats(struct mlx5e_priv *priv)
 {
-	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
-	struct mlx5e_rep_priv *rpriv = priv->ppriv;
-	struct mlx5_eswitch_rep *rep = rpriv->rep;
-	struct rtnl_link_stats64 *vport_stats;
-	struct ifla_vf_stats vf_stats;
-	int err;
+	int i;
 
-	err = mlx5_eswitch_get_vport_stats(esw, rep->vport, &vf_stats);
-	if (err) {
-		pr_warn("vport %d error %d reading stats\n", rep->vport, err);
-		return;
-	}
-
-	vport_stats = &priv->stats.vf_vport;
-	/* flip tx/rx as we are reporting the counters for the switch vport */
-	vport_stats->rx_packets = vf_stats.tx_packets;
-	vport_stats->rx_bytes   = vf_stats.tx_bytes;
-	vport_stats->tx_packets = vf_stats.rx_packets;
-	vport_stats->tx_bytes   = vf_stats.rx_bytes;
-}
-
-static void mlx5e_uplink_rep_update_hw_counters(struct mlx5e_priv *priv)
-{
-	struct mlx5e_pport_stats *pstats = &priv->stats.pport;
-	struct rtnl_link_stats64 *vport_stats;
-
-	mlx5e_grp_802_3_update_stats(priv);
-
-	vport_stats = &priv->stats.vf_vport;
-
-	vport_stats->rx_packets = PPORT_802_3_GET(pstats, a_frames_received_ok);
-	vport_stats->rx_bytes   = PPORT_802_3_GET(pstats, a_octets_received_ok);
-	vport_stats->tx_packets = PPORT_802_3_GET(pstats, a_frames_transmitted_ok);
-	vport_stats->tx_bytes   = PPORT_802_3_GET(pstats, a_octets_transmitted_ok);
-}
-
-static void mlx5e_rep_update_hw_counters(struct mlx5e_priv *priv)
-{
-	struct mlx5e_rep_priv *rpriv = priv->ppriv;
-	struct mlx5_eswitch_rep *rep = rpriv->rep;
-
-	if (rep->vport == MLX5_VPORT_UPLINK)
-		mlx5e_uplink_rep_update_hw_counters(priv);
-	else
-		mlx5e_vf_rep_update_hw_counters(priv);
-}
-
-static void mlx5e_rep_update_sw_counters(struct mlx5e_priv *priv)
-{
-	struct mlx5e_sw_stats *s = &priv->stats.sw;
-	struct mlx5e_rq_stats *rq_stats;
-	struct mlx5e_sq_stats *sq_stats;
-	int i, j;
-
-	memset(s, 0, sizeof(*s));
-	for (i = 0; i < priv->channels.num; i++) {
-		struct mlx5e_channel *c = priv->channels.c[i];
-
-		rq_stats = c->rq.stats;
-
-		s->rx_packets	+= rq_stats->packets;
-		s->rx_bytes	+= rq_stats->bytes;
-
-		for (j = 0; j < priv->channels.params.num_tc; j++) {
-			sq_stats = c->sq[j].stats;
-
-			s->tx_packets		+= sq_stats->packets;
-			s->tx_bytes		+= sq_stats->bytes;
-			s->tx_queue_dropped	+= sq_stats->dropped;
-		}
-	}
+	for (i = mlx5e_rep_num_stats_grps - 1; i >= 0; i--)
+		if (mlx5e_rep_stats_grps[i].update_stats)
+			mlx5e_rep_stats_grps[i].update_stats(priv);
 }
 
 static void mlx5e_rep_get_ethtool_stats(struct net_device *dev,
 					struct ethtool_stats *stats, u64 *data)
 {
 	struct mlx5e_priv *priv = netdev_priv(dev);
-	int i, j;
+	int i, idx = 0;
 
 	if (!data)
 		return;
 
 	mutex_lock(&priv->state_lock);
-	if (test_bit(MLX5E_STATE_OPENED, &priv->state))
-		mlx5e_rep_update_sw_counters(priv);
-	mlx5e_rep_update_hw_counters(priv);
+	mlx5e_update_stats(priv);
 	mutex_unlock(&priv->state_lock);
 
-	for (i = 0; i < NUM_VPORT_REP_SW_COUNTERS; i++)
-		data[i] = MLX5E_READ_CTR64_CPU(&priv->stats.sw,
-					       sw_rep_stats_desc, i);
-
-	for (j = 0; j < NUM_VPORT_REP_HW_COUNTERS; j++, i++)
-		data[i] = MLX5E_READ_CTR64_CPU(&priv->stats.vf_vport,
-					       vport_rep_stats_desc, j);
+	for (i = 0; i < mlx5e_rep_num_stats_grps; i++)
+		idx = mlx5e_rep_stats_grps[i].fill_stats(priv, data, idx);
 }
 
 static int mlx5e_rep_get_sset_count(struct net_device *dev, int sset)
 {
+	struct mlx5e_priv *priv = netdev_priv(dev);
+	int num_stats = 0;
+	int i;
+
 	switch (sset) {
 	case ETH_SS_STATS:
-		return NUM_VPORT_REP_SW_COUNTERS + NUM_VPORT_REP_HW_COUNTERS;
+		for (i = 0; i < mlx5e_rep_num_stats_grps; i++)
+			num_stats += mlx5e_rep_stats_grps[i].get_num_stats(priv);
+		return num_stats;
+	case ETH_SS_PRIV_FLAGS:
+		return mlx5e_priv_flags_num();
 	default:
 		return -EOPNOTSUPP;
 	}
@@ -361,6 +275,8 @@ static const struct ethtool_ops mlx5e_vf_rep_ethtool_ops = {
 	.set_coalesce      = mlx5e_rep_set_coalesce,
 	.get_rxfh_key_size   = mlx5e_rep_get_rxfh_key_size,
 	.get_rxfh_indir_size = mlx5e_rep_get_rxfh_indir_size,
+	.get_priv_flags    = mlx5e_get_priv_flags,
+	.set_priv_flags    = mlx5e_set_priv_flags,
 };
 
 static const struct ethtool_ops mlx5e_uplink_rep_ethtool_ops = {
@@ -381,6 +297,8 @@ static const struct ethtool_ops mlx5e_uplink_rep_ethtool_ops = {
 	.get_rxfh_indir_size = mlx5e_rep_get_rxfh_indir_size,
 	.get_pauseparam    = mlx5e_uplink_rep_get_pauseparam,
 	.set_pauseparam    = mlx5e_uplink_rep_set_pauseparam,
+	.get_priv_flags    = mlx5e_get_priv_flags,
+	.set_priv_flags    = mlx5e_set_priv_flags,
 };
 
 static int mlx5e_attr_get(struct net_device *dev, struct switchdev_attr *attr)
@@ -1170,8 +1088,6 @@ mlx5e_get_sw_stats64(const struct net_device *dev,
 	struct mlx5e_priv *priv = netdev_priv(dev);
 	struct mlx5e_sw_stats *sstats = &priv->stats.sw;
 
-	mlx5e_rep_update_sw_counters(priv);
-
 	stats->rx_packets = sstats->rx_packets;
 	stats->rx_bytes   = sstats->rx_bytes;
 	stats->tx_packets = sstats->tx_packets;
@@ -1303,6 +1219,8 @@ static void mlx5e_build_rep_params(struct net_device *netdev)
 	params->num_tc                = 1;
 	params->tunneled_stateless_offload = false;
 	mlx5_query_min_inline(mdev, &params->tx_min_inline_mode);
+
+	MLX5E_SET_PFLAG(params, MLX5E_PFLAG_PER_CH_STATS, true);
 
 	/* RSS */
 	mlx5e_build_rss_params(params);
@@ -1603,7 +1521,7 @@ static const struct mlx5e_profile mlx5e_vf_rep_profile = {
 	.cleanup_tx		= mlx5e_cleanup_rep_tx,
 	.enable		        = mlx5e_vf_rep_enable,
 	.disable	        = mlx5e_vf_rep_disable,
-	.update_stats           = mlx5e_vf_rep_update_hw_counters,
+	.update_stats           = mlx5e_rep_update_stats,
 	.rx_handlers.handle_rx_cqe       = mlx5e_handle_rx_cqe_rep,
 	.rx_handlers.handle_rx_cqe_mpwqe = mlx5e_handle_rx_cqe_mpwrq,
 	.max_tc			= 1,
@@ -1618,7 +1536,7 @@ static const struct mlx5e_profile mlx5e_uplink_rep_profile = {
 	.cleanup_tx		= mlx5e_cleanup_rep_tx,
 	.enable		        = mlx5e_uplink_rep_enable,
 	.disable	        = mlx5e_uplink_rep_disable,
-	.update_stats           = mlx5e_uplink_rep_update_hw_counters,
+	.update_stats           = mlx5e_rep_update_stats,
 	.update_carrier	        = mlx5e_update_carrier,
 	.rx_handlers.handle_rx_cqe       = mlx5e_handle_rx_cqe_rep,
 	.rx_handlers.handle_rx_cqe_mpwqe = mlx5e_handle_rx_cqe_mpwrq,

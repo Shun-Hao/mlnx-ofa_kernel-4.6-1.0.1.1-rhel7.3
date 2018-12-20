@@ -29,8 +29,10 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include <linux/mlx5/eswitch.h>
 
 #include "en.h"
+#include "en_rep.h"
 #include "en_accel/ipsec.h"
 #include "en_accel/tls.h"
 
@@ -347,6 +349,97 @@ static void mlx5e_grp_vnic_env_update_stats(struct mlx5e_priv *priv)
 	MLX5_SET(query_vnic_env_in, in, op_mod, 0);
 	MLX5_SET(query_vnic_env_in, in, other_vport, 0);
 	mlx5_cmd_exec(mdev, in, sizeof(in), out, outlen);
+}
+
+struct vport_rep_stats {
+	u64 vport_rx_packets;
+	u64 vport_tx_packets;
+	u64 vport_rx_bytes;
+	u64 vport_tx_bytes;
+};
+
+static const struct counter_desc vport_rep_stats_desc[] = {
+	{ MLX5E_DECLARE_STAT(struct vport_rep_stats, vport_rx_packets) },
+	{ MLX5E_DECLARE_STAT(struct vport_rep_stats, vport_rx_bytes) },
+	{ MLX5E_DECLARE_STAT(struct vport_rep_stats, vport_tx_packets) },
+	{ MLX5E_DECLARE_STAT(struct vport_rep_stats, vport_tx_bytes) },
+};
+
+#define NUM_VPORT_REP_HW_COUNTERS ARRAY_SIZE(vport_rep_stats_desc)
+
+static int mlx5e_grp_rep_vport_get_num_stats(struct mlx5e_priv *priv)
+{
+	return NUM_VPORT_REP_HW_COUNTERS;
+}
+
+static int mlx5e_grp_rep_vport_fill_strings(struct mlx5e_priv *priv, u8 *data,
+					    int idx)
+{
+	int i;
+
+	for (i = 0; i < NUM_VPORT_REP_HW_COUNTERS; i++)
+		strcpy(data + (idx++) * ETH_GSTRING_LEN, vport_rep_stats_desc[i].format);
+	return idx;
+}
+
+static int mlx5e_grp_rep_vport_fill_stats(struct mlx5e_priv *priv, u64 *data,
+					  int idx)
+{
+	int i;
+
+	for (i = 0; i < NUM_VPORT_REP_HW_COUNTERS; i++)
+		data[idx++] = MLX5E_READ_CTR64_BE(priv->stats.vport.query_vport_out,
+						  vport_rep_stats_desc, i);
+	return idx;
+}
+
+static void mlx5e_vf_rep_update_hw_counters(struct mlx5e_priv *priv)
+{
+	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
+	struct mlx5e_rep_priv *rpriv = priv->ppriv;
+	struct mlx5_eswitch_rep *rep = rpriv->rep;
+	struct rtnl_link_stats64 *vport_stats;
+	struct ifla_vf_stats vf_stats;
+	int err;
+
+	err = mlx5_eswitch_get_vport_stats(esw, rep->vport, &vf_stats);
+	if (err) {
+		pr_warn("vport %d error %d reading stats\n", rep->vport, err);
+		return;
+	}
+
+	vport_stats = &priv->stats.vf_vport;
+	/* flip tx/rx as we are reporting the counters for the switch vport */
+	vport_stats->rx_packets = vf_stats.tx_packets;
+	vport_stats->rx_bytes   = vf_stats.tx_bytes;
+	vport_stats->tx_packets = vf_stats.rx_packets;
+	vport_stats->tx_bytes   = vf_stats.rx_bytes;
+}
+
+static void mlx5e_uplink_rep_update_hw_counters(struct mlx5e_priv *priv)
+{
+	struct mlx5e_pport_stats *pstats = &priv->stats.pport;
+	struct rtnl_link_stats64 *vport_stats;
+
+	mlx5e_grp_802_3_update_stats(priv);
+
+	vport_stats = &priv->stats.vf_vport;
+
+	vport_stats->rx_packets = PPORT_802_3_GET(pstats, a_frames_received_ok);
+	vport_stats->rx_bytes   = PPORT_802_3_GET(pstats, a_octets_received_ok);
+	vport_stats->tx_packets = PPORT_802_3_GET(pstats, a_frames_transmitted_ok);
+	vport_stats->tx_bytes   = PPORT_802_3_GET(pstats, a_octets_transmitted_ok);
+}
+
+static void mlx5e_grp_rep_vport_update_stats(struct mlx5e_priv *priv)
+{
+	struct mlx5e_rep_priv *rpriv = priv->ppriv;
+	struct mlx5_eswitch_rep *rep = rpriv->rep;
+
+	if (rep->vport == MLX5_VPORT_UPLINK)
+		mlx5e_uplink_rep_update_hw_counters(priv);
+	else
+		mlx5e_vf_rep_update_hw_counters(priv);
 }
 
 #define VPORT_COUNTER_OFF(c) MLX5_BYTE_OFF(query_vport_counter_out, c)
@@ -1475,3 +1568,27 @@ const struct mlx5e_stats_grp mlx5e_stats_grps[] = {
 };
 
 const int mlx5e_num_stats_grps = ARRAY_SIZE(mlx5e_stats_grps);
+
+const struct mlx5e_stats_grp mlx5e_rep_stats_grps[] = {
+	{
+		.get_num_stats = mlx5e_grp_sw_get_num_stats,
+		.fill_strings = mlx5e_grp_sw_fill_strings,
+		.fill_stats = mlx5e_grp_sw_fill_stats,
+		.update_stats_mask = MLX5E_NDO_UPDATE_STATS,
+		.update_stats = mlx5e_grp_sw_update_stats,
+	},
+	{
+		.get_num_stats = mlx5e_grp_rep_vport_get_num_stats,
+		.fill_strings = mlx5e_grp_rep_vport_fill_strings,
+		.fill_stats = mlx5e_grp_rep_vport_fill_stats,
+		.update_stats_mask = MLX5E_NDO_UPDATE_STATS,
+		.update_stats = mlx5e_grp_rep_vport_update_stats,
+	},
+	{
+		.get_num_stats = mlx5e_grp_channels_get_num_stats,
+		.fill_strings = mlx5e_grp_channels_fill_strings,
+		.fill_stats = mlx5e_grp_channels_fill_stats,
+	},
+};
+
+const int mlx5e_rep_num_stats_grps = ARRAY_SIZE(mlx5e_rep_stats_grps);

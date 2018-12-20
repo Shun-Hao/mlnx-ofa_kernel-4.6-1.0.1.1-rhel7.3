@@ -239,6 +239,8 @@ struct mlx5e_umr_wqe {
 
 extern const char mlx5e_self_tests[][ETH_GSTRING_LEN];
 
+extern const char mlx5e_priv_flags[][ETH_GSTRING_LEN];
+
 enum mlx5e_priv_flag {
 	MLX5E_PFLAG_RX_CQE_BASED_MODER = (1 << 0),
 	MLX5E_PFLAG_TX_CQE_BASED_MODER = (1 << 1),
@@ -891,6 +893,7 @@ struct mlx5e_profile {
 	int	max_tc;
 };
 
+int mlx5e_priv_flags_num(void);
 void mlx5e_build_ptys2ethtool_map(void);
 
 u16 mlx5e_select_queue(struct net_device *dev, struct sk_buff *skb,
@@ -1165,6 +1168,8 @@ void mlx5e_ethtool_get_pauseparam(struct mlx5e_priv *priv,
 				  struct ethtool_pauseparam *pauseparam);
 int mlx5e_ethtool_set_pauseparam(struct mlx5e_priv *priv,
 				 struct ethtool_pauseparam *pauseparam);
+u32 mlx5e_get_priv_flags(struct net_device *netdev);
+int mlx5e_set_priv_flags(struct net_device *netdev, u32 pflags);
 
 /* mlx5e generic netdev management API */
 int mlx5e_netdev_init(struct net_device *netdev,

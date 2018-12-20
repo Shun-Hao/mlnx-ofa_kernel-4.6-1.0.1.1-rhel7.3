@@ -206,7 +206,7 @@ static void mlx5e_ethtool_get_speed_arr(struct mlx5_core_dev *mdev,
 		      ARRAY_SIZE(ptys2legacy_ethtool_table);
 }
 
-static const char mlx5e_priv_flags[][ETH_GSTRING_LEN] = {
+const char mlx5e_priv_flags[][ETH_GSTRING_LEN] = {
 	"rx_cqe_moder",
 	"tx_cqe_moder",
 	"rx_cqe_compress",
@@ -217,6 +217,11 @@ static const char mlx5e_priv_flags[][ETH_GSTRING_LEN] = {
 	"per_channel_stats",
 	"tx_xdp_hw_checksum",
 };
+
+int mlx5e_priv_flags_num(void)
+{
+	return ARRAY_SIZE(mlx5e_priv_flags);
+}
 
 int mlx5e_ethtool_get_sset_count(struct mlx5e_priv *priv, int sset)
 {
@@ -1945,7 +1950,7 @@ static int mlx5e_handle_pflag(struct net_device *netdev,
 	return 0;
 }
 
-static int mlx5e_set_priv_flags(struct net_device *netdev, u32 pflags)
+int mlx5e_set_priv_flags(struct net_device *netdev, u32 pflags)
 {
 	struct mlx5e_priv *priv = netdev_priv(netdev);
 	int err;
@@ -2010,7 +2015,7 @@ out:
 	return err;
 }
 
-static u32 mlx5e_get_priv_flags(struct net_device *netdev)
+u32 mlx5e_get_priv_flags(struct net_device *netdev)
 {
 	struct mlx5e_priv *priv = netdev_priv(netdev);
 
