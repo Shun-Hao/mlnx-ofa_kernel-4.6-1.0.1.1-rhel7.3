@@ -26,3 +26,4 @@ Change-Id=Ib6a02b673242f23073df09728625df05af342f27; subject=nvmet-rdma: fix res
 Change-Id=I6eefc0e71477e10c7ff378f2de4ea01bb31ed3a1; subject=nvmet-rdma: support max(16KB, PAGE_SIZE) inline data (offload); feature=nvmf_offload; upstream_status=in_progress; general=;
 Change-Id=I14c07182f3a2d26cc6681c0007a35794f27fa768; subject=nvmet: Fix offload rebase; feature=rebase; upstream_status=NA; general=;
 Change-Id=Id6b5e1892d26011e7b7fb0083883aeeb64e6b4e8; subject=Revert: "nvmet: add port pointer to nvmet_ctrl structure"; feature=rebase; upstream_status=ignore; general=;
+Change-Id=I70aac15c4912a72d990fa326366bd551cfbca1f8; subject=nvme: Fix double request completion at teardown flow; feature=nvmf_bugs; upstream_status=NA; general=;

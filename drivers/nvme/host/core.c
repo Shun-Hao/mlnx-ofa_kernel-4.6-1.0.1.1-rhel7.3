@@ -270,6 +270,10 @@ EXPORT_SYMBOL_GPL(nvme_complete_rq);
 
 void nvme_cancel_request(struct request *req, void *data, bool reserved)
 {
+	/* WA for kernels that doesn't check this at bt_tags_iter() */
+	if (!blk_mq_request_started(req))
+		return;
+
 	dev_dbg_ratelimited(((struct nvme_ctrl *) data)->device,
 				"Cancelling I/O %d", req->tag);
 
