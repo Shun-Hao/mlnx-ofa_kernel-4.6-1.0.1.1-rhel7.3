@@ -120,6 +120,8 @@ static bool mlx4_en_is_ring_empty(const struct mlx4_en_rx_ring *ring)
 
 static inline void mlx4_en_update_rx_prod_db(struct mlx4_en_rx_ring *ring)
 {
+	/* ensure rx_desc updating reaches HW before prod db updating */
+	wmb();
 	*ring->wqres.db.db = cpu_to_be32(ring->prod & 0xffff);
 }
 
