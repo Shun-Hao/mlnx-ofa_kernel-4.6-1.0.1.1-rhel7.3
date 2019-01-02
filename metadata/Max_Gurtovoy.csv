@@ -93,3 +93,4 @@ Change-Id=I255aaa71cff08db57a46635ad730427f7a04a456; subject=nvmet: add new conf
 Change-Id=I3fa875a1dbcd9dc1ed4aed761be028b49232e0e5; subject=net/mlx5: Add nvmf related commands to mlx5_internal_err_ret_value; feature=nvmf_offload; upstream_status=in_progress; general=;
 Change-Id=I5558637510410f050393818805741ee563981f75; subject=net/mlx5: Add query_nvmf_namespace_context cmd to mlx5_command_str; feature=nvmf_offload; upstream_status=in_progress; general=;
 Change-Id=I07b1347a1b6ebc1c9f9bcf5fe39fa3855ff0301e; subject=nvmet-rdma: Add error flow for post_recv failures on XRQ; feature=nvmf_offload; upstream_status=in_progress; general=;
+Change-Id=I6195f979ec06f1a421991520df875d5aad2ac803; subject=nvmet-rdma: fix offload ctrl creation condition; feature=nvmf_offload; upstream_status=in_progress; general=;

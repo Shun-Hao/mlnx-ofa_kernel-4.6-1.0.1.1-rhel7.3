@@ -695,9 +695,12 @@ void nvmet_ns_disable(struct nvmet_ns *ns)
 	percpu_ref_exit(&ns->ref);
 
 	mutex_lock(&subsys->lock);
-	if (ns->pdev)
-		list_for_each_entry(ctrl, &subsys->ctrls, subsys_entry)
-			ctrl->ops->disable_offload_ns(ctrl);
+	if (ns->pdev) {
+		list_for_each_entry(ctrl, &subsys->ctrls, subsys_entry) {
+			if (ctrl->offload_ctrl)
+				ctrl->ops->disable_offload_ns(ctrl);
+		}
+	}
 
 	subsys->nr_namespaces--;
 	nvmet_ns_changed(subsys, ns->nsid);

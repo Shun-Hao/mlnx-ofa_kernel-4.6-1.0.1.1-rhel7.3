@@ -621,6 +621,8 @@ static void nvmet_rdma_destroy_offload_ctrl(struct nvmet_ctrl *ctrl)
 	struct nvmet_rdma_offload_ctrl *offload_ctrl = ctrl->offload_ctrl;
 	struct nvmet_rdma_xrq *xrq = offload_ctrl->xrq;
 
+	ctrl->offload_ctrl = NULL;
+
 	mutex_lock(&xrq->offload_ctrl_mutex);
 	list_del_init(&offload_ctrl->entry);
 	kfree(offload_ctrl);
