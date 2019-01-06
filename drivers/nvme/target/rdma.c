@@ -23,6 +23,7 @@
 #include <linux/module.h>
 #include <linux/nvme.h>
 #include <linux/slab.h>
+#include <linux/sizes.h>
 #include <linux/string.h>
 #include <linux/wait.h>
 #include <linux/inet.h>
@@ -965,7 +966,8 @@ static void nvmet_rdma_free_dev(struct kref *ref)
 static struct nvmet_rdma_device *
 nvmet_rdma_find_get_device(struct rdma_cm_id *cm_id)
 {
-	struct nvmet_port *port = cm_id->context;
+	struct nvmet_rdma_port *port = cm_id->context;
+	struct nvmet_port *nport = port->nport;
 	struct nvmet_rdma_device *ndev;
 	int inline_page_count;
 	int inline_sge_count;
@@ -982,17 +984,17 @@ nvmet_rdma_find_get_device(struct rdma_cm_id *cm_id)
 	if (!ndev)
 		goto out_err;
 
-	inline_page_count = num_pages(port->inline_data_size);
+	inline_page_count = num_pages(nport->inline_data_size);
 	inline_sge_count = max(cm_id->device->attrs.max_sge_rd,
 				cm_id->device->attrs.max_recv_sge) - 1;
 	if (inline_page_count > inline_sge_count) {
 		pr_warn("inline_data_size %d cannot be supported by device %s. Reducing to %lu.\n",
-			port->inline_data_size, cm_id->device->name,
+			nport->inline_data_size, cm_id->device->name,
 			inline_sge_count * PAGE_SIZE);
-		port->inline_data_size = inline_sge_count * PAGE_SIZE;
+		nport->inline_data_size = inline_sge_count * PAGE_SIZE;
 		inline_page_count = inline_sge_count;
 	}
-	ndev->inline_data_size = port->inline_data_size;
+	ndev->inline_data_size = nport->inline_data_size;
 	ndev->inline_page_count = inline_page_count;
 	ndev->device = cm_id->device;
 	kref_init(&ndev->ref);
@@ -1565,7 +1567,6 @@ static int nvmet_rdma_enable_port(struct nvmet_rdma_port *port)
 	struct rdma_cm_id *cm_id;
 	int ret;
 
-
 	cm_id = rdma_create_id(&init_net, nvmet_rdma_cm_handler, port,
 			RDMA_PS_TCP, IB_QPT_RC);
 	if (IS_ERR(cm_id)) {
@@ -1642,6 +1643,15 @@ static int nvmet_rdma_add_port(struct nvmet_port *nport)
 			nport->disc_addr.adrfam);
 		ret = -EINVAL;
 		goto out_free_port;
+	}
+
+	if (nport->inline_data_size < 0) {
+		nport->inline_data_size = NVMET_RDMA_DEFAULT_INLINE_DATA_SIZE;
+	} else if (nport->inline_data_size > NVMET_RDMA_MAX_INLINE_DATA_SIZE) {
+		pr_warn("inline_data_size %u is too large, reducing to %u\n",
+			nport->inline_data_size,
+			NVMET_RDMA_MAX_INLINE_DATA_SIZE);
+		nport->inline_data_size = NVMET_RDMA_MAX_INLINE_DATA_SIZE;
 	}
 
 	ret = inet_pton_with_scope(&init_net, af, nport->disc_addr.traddr,
