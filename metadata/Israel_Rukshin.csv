@@ -23,3 +23,5 @@ Change-Id=I2fea442d4d59ac860774582d78a8bef924b4db91; subject=nvme: Add support f
 Change-Id=I5f1072b1973b1da559d002536ba8720dd19cd7f1; subject=nvme-rdma: Refactor admin queue creation; feature=nvmf_bugs; upstream_status=in_progress; general=;
 Change-Id=I09d314d04e1a360c2736830528b9a74416a79033; subject=nvme: Introduce nvme_is_aen_req function; feature=nvmf_bugs; upstream_status=in_progress; general=;
 Change-Id=Ib6a02b673242f23073df09728625df05af342f27; subject=nvmet-rdma: fix response use after free; feature=rebase; upstream_status=accepted; general=upstream commit ID: d7dcdf9d4e15, tag: v4.20-rc7;
+Change-Id=I6eefc0e71477e10c7ff378f2de4ea01bb31ed3a1; subject=nvmet-rdma: support max(16KB, PAGE_SIZE) inline data (offload); feature=nvmf_offload; upstream_status=in_progress; general=;
+Change-Id=I14c07182f3a2d26cc6681c0007a35794f27fa768; subject=nvmet: Fix offload rebase; feature=rebase; upstream_status=NA; general=;
