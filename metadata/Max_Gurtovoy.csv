@@ -24,7 +24,7 @@ Change-Id=I793735da5fce5aa09224d457da4742bfbf3dc74d; subject=nvmet: add p2p offl
 Change-Id=I241225d9d20c1453b32507763a91c796e8b59996; subject=nvmet: add offloadble polarity to ns and subsys; feature=nvmf_offload; upstream_status=in_progress; general=;
 Change-Id=I44ac9a29cec5cdc7144bc833f629ce255df17d2c; subject=nvmet: add offload polarity to nvmet port; feature=nvmf_offload; upstream_status=in_progress; general=;
 Change-Id=I83ef9ad21638a6b3c75da3ffc6efdb105b8dbc3e; subject=nvmet: set mdts for offload port; feature=nvmf_offload; upstream_status=in_progress; general=;
-Change-Id=I9836204c0ba5c3d7b2ef075a3611aaef7c0843fe; subject=nvmet: add port pointer to nvmet_ctrl structure; feature=nvmf_offload; upstream_status=in_progress; general=;
+Change-Id=I9836204c0ba5c3d7b2ef075a3611aaef7c0843fe; subject=nvmet: add port pointer to nvmet_ctrl structure; feature=nvmf_offload; upstream_status=ignore; general=;
 Change-Id=I85e4e54e4371c3845533f4e1387f5b1c17296c91; subject=nvmet-rdma: get queue from qp context; feature=nvmf_offload; upstream_status=in_progress; general=;
 Change-Id=I82343587804c5ca38fb8613b7fc43380e6f4ad51; subject=nvmet-rdma: assign queue port during queue allocation; feature=nvmf_offload; upstream_status=in_progress; general=;
 Change-Id=I15833b4c92ad660e4057625b01d2006a7b8c1034; subject=nvmet-rdma: use srq pointer in rdma_cmd; feature=nvmf_offload; upstream_status=in_progress; general=;

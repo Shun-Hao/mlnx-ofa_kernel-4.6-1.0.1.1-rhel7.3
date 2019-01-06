@@ -1352,7 +1352,6 @@ u16 nvmet_alloc_ctrl(const char *subsysnqn, const char *hostnqn,
 		/* keep-alive timeout in seconds */
 		ctrl->kato = DIV_ROUND_UP(kato, 1000);
 	}
-	ctrl->port = req->port;
 
 	if (ctrl->port->offload)
 		ctrl->sqe_inline_size = ctrl->ops->peer_to_peer_sqe_inline_size(ctrl);
