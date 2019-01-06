@@ -4,6 +4,8 @@
 #include "../../compat/config.h"
 
 #include_next <linux/mm.h>
+#include <linux/page_ref.h>
+
 #include <linux/overflow.h>
 
 #ifndef HAVE_KVZALLOC
