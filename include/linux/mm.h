@@ -81,4 +81,11 @@ static inline void *kvcalloc(size_t n, size_t size, gfp_t flags)
 }
 #endif
 
+#ifndef HAVE_IS_PCI_P2PDMA_PAGE
+static inline bool is_pci_p2pdma_page(const struct page *page)
+{
+        return false;
+}
+#endif
+
 #endif /* _COMPAT_LINUX_MM_H */
