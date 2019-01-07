@@ -934,7 +934,7 @@ static int create_cq_user(struct mlx5_ib_dev *dev, struct ib_udata *udata,
 
 		err = pnv_pci_get_as_notify_info(current, &lpid, &pid, &tid);
 		if (err) {
-			clear_thread_tidr(current);
+			current->thread.tidr = 0;
 			goto err_cqb;
 		}
 
