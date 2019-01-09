@@ -14,3 +14,4 @@ Change-Id=I9bfeed5bebef39039eb42ee49ab26267a5936349; subject=net/mlx5e: Open new
 Change-Id=I63f4097b79e2c74afe80b6118ab1b877644fbfa6; subject=net/mlx4_en: Add ethtool counter for RX inline scatter; feature=mlx4_en_inline_scatter; upstream_status=in_progress; general=;
 Change-Id=Iff9f5bbe995847e38d5cdc95d77c6cb21c28aedc; subject=net/mlx4_en: Remove high order pre-allocations in RX datapath; feature=mlx4_en_bugs; upstream_status=NA; general=;
 Change-Id=Id099887dcb17b0cfa3e51f2654cc2851a2b4f171; subject=net/mlx5e: Do not call open_channels outside switch_priv_channels; feature=iommu_soft_lockup_WA; upstream_status=NA; general=;
+Change-Id=I14b890a7a2caadf3b0a2af80872d03a01129d337; subject=net/mlx5e: RX, Fix wrong early return in receive queue poll; feature=rebase; upstream_status=accepted; general=;

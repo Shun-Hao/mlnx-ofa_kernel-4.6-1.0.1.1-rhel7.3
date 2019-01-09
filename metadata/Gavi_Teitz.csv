@@ -1,0 +1,2 @@
+sep=;
+Change-Id=I3b82222e160098931c3c23b51eaa1363c1d04928; subject=net/mlx5e: Fix default amount of channels for VF representors; feature=rebase; upstream_status=accepted; general=;
