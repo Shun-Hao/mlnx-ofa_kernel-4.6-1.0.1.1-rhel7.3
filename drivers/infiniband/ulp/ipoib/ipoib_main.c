@@ -2247,7 +2247,8 @@ static struct net_device *ipoib_alloc_netdev(struct ib_device *hca, u8 port,
         }
 
 	dev = rdma_alloc_netdev(hca, port, RDMA_NETDEV_IPOIB, name,
-				NET_NAME_UNKNOWN, ipoib_setup_common);
+				NET_NAME_UNKNOWN, ipoib_setup_common,
+				!ipoib_enhanced_enabled);
 	if (!IS_ERR(dev) || PTR_ERR(dev) != -EOPNOTSUPP)
 		return dev;
 
@@ -2268,7 +2269,8 @@ int ipoib_intf_init(struct ib_device *hca, u8 port, const char *name,
 	priv->port = port;
 
 	rc = rdma_init_netdev(hca, port, RDMA_NETDEV_IPOIB, name,
-			      NET_NAME_UNKNOWN, ipoib_setup_common, dev);
+			      NET_NAME_UNKNOWN, ipoib_setup_common, dev,
+			      !ipoib_enhanced_enabled);
 	if (rc) {
 		if (rc != -EOPNOTSUPP)
 			goto out;

@@ -2717,13 +2717,14 @@ EXPORT_SYMBOL(ib_drain_qp);
 struct net_device *rdma_alloc_netdev(struct ib_device *device, u8 port_num,
 				     enum rdma_netdev_t type, const char *name,
 				     unsigned char name_assign_type,
-				     void (*setup)(struct net_device *))
+				     void (*setup)(struct net_device *),
+				     int force_fail)
 {
 	struct rdma_netdev_alloc_params params;
 	struct net_device *netdev;
 	int rc;
 
-	if (!device->rdma_netdev_get_params)
+	if (!device->rdma_netdev_get_params || force_fail)
 		return ERR_PTR(-EOPNOTSUPP);
 
 	rc = device->rdma_netdev_get_params(device, port_num, type, &params);
@@ -2743,12 +2744,13 @@ int rdma_init_netdev(struct ib_device *device, u8 port_num,
 		     enum rdma_netdev_t type, const char *name,
 		     unsigned char name_assign_type,
 		     void (*setup)(struct net_device *),
-		     struct net_device *netdev)
+		     struct net_device *netdev,
+		     int force_fail)
 {
 	struct rdma_netdev_alloc_params params;
 	int rc;
 
-	if (!device->rdma_netdev_get_params)
+	if (!device->rdma_netdev_get_params || force_fail)
 		return -EOPNOTSUPP;
 
 	rc = device->rdma_netdev_get_params(device, port_num, type, &params);
