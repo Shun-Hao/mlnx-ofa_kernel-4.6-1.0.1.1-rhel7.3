@@ -5211,6 +5211,25 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if ip_fib.h fib_nh_notifier_info exists])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <net/ip_fib.h>
+	],[
+                struct fib_nh_notifier_info fnh_info;
+                struct fib_notifier_info info;
+
+                /* also checking family attr in fib_notifier_info */
+                info->family = AF_INET;
+
+                return 0;
+        ],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_FIB_NH_NOTIFIER_INFO, 1,
+			[fib_nh_notifier_info is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if ip_fib.h fib_res_put exists])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/bug.h>
