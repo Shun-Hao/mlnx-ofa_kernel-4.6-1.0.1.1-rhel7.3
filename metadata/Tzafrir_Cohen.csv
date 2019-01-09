@@ -8,3 +8,5 @@ Change-Id=Ib0373dc66659f91b79497808e63f8e50d198f53e; subject=ib_core: fixup: ume
 Change-Id=If1aed85779c06d760f95073d948dcec41c088dc1; subject=ib_mlx5: mr.c: umem->owning_mm; feature=mlx5_ib_bugs; upstream_status=NA; general=;
 Change-Id=Iba13a6eb7ced118294d9b774ec9ab52027471a1f; subject=compat: two missing autoconf tests; feature=backports; upstream_status=ignore; general=;
 Change-Id=I4bb3cd856987290fa2bff5d3fa59f2367d968654; subject=metadata: Update MD; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I4f5cbf1d47b16d131557ebd786bf6ab90aec8c25; subject=net/mlx5: fixup: ifdef CONFIG_MLX5_ESWITCH in en.h; feature=mlx5_vf_lag; upstream_status=accepted; general=;
+Change-Id=I721882967ed9c755995081734504d94be655a0e3; subject=net/mlx5: fixup: ifdef CONFIG_MLX5_ESWITCH in sriov.c; feature=mlx5_vf_lag; upstream_status=accepted; general=;
