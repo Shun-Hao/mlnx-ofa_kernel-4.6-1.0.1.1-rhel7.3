@@ -103,9 +103,6 @@ static int ipoib_new_child_link(struct net *src_net, struct net_device *dev,
 	u16 child_pkey;
 	int err;
 
-	/* TODO This change should be removed after adding netlink support */
-	return -EOPNOTSUPP;
-
 	if (!tb[IFLA_LINK])
 		return -EINVAL;
 
