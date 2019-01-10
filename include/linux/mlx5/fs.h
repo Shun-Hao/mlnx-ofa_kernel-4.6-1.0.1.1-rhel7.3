@@ -77,6 +77,7 @@ enum mlx5_flow_namespace_type {
 };
 
 enum {
+	FDB_BYPASS_PATH,
 	FDB_FAST_PATH,
 	FDB_SLOW_PATH,
 };
