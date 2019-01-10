@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/eq.c
 
 Change-Id: I6f47e4f82e0b9acc9b1ec0ed2269ad0c0d942306
 ---
- drivers/net/ethernet/mellanox/mlx5/core/eq.c | 31 ++++++++++++++++++++++++++--
- 1 file changed, 29 insertions(+), 2 deletions(-)
+ drivers/net/ethernet/mellanox/mlx5/core/eq.c | 29 +++++++++++++++++++++++++++-
+ 1 file changed, 28 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/eq.c b/drivers/net/ethernet/mellanox/mlx5/core/eq.c
 index xxxxxxx..xxxxxxx 100644
@@ -55,32 +55,31 @@ index xxxxxxx..xxxxxxx 100644
  
  		case MLX5_EVENT_TYPE_FPGA_ERROR:
  		case MLX5_EVENT_TYPE_FPGA_QP_ERROR:
-@@ -879,7 +889,11 @@ int mlx5_create_map_eq(struct mlx5_core_dev *dev, struct mlx5_eq *eq, u8 vecidx,
- 	mlx5_add_pci_to_irq_name(dev, name, priv->irq_info[vecidx].name);
+@@ -909,7 +919,11 @@ int mlx5_create_map_eq(struct mlx5_core_dev *dev, struct mlx5_eq *eq, u8 idx,
+ 		goto err_in;
  
  	eq->eqn = MLX5_GET(create_eq_out, out, eq_number);
--	eq->irqn = pci_irq_vector(dev->pdev, vecidx);
 +#ifdef HAVE_PCI_IRQ_API
-+       eq->irqn = pci_irq_vector(dev->pdev, vecidx);
+ 	eq->irqn = pci_irq_vector(dev->pdev, vecidx);
 +#else
 +	eq->irqn = priv->msix_arr[vecidx].vector;
 +#endif
  	eq->dev = dev;
  	eq->doorbell = priv->uar->map + MLX5_EQ_DOORBEL_OFFSET;
- 	err = request_irq(eq->irqn, handler, 0,
-@@ -914,7 +928,11 @@ int mlx5_create_map_eq(struct mlx5_core_dev *dev, struct mlx5_eq *eq, u8 vecidx,
- 	return 0;
  
- err_irq:
-+#ifdef HAVE_PCI_IRQ_API
- 	free_irq(eq->irqn, eq);
-+#else
-+	free_irq(priv->msix_arr[vecidx].vector, eq);
-+#endif
+@@ -959,7 +973,11 @@ err_irq:
+ 		clear_bit(idx, priv->irq_info[vecidx].active_eqs);
+ 	if (!is_shared ||
+ 	    bitmap_empty(priv->irq_info[vecidx].active_eqs, MLX5_EQ_MAX_ASYNC_EQS))
++		#ifdef HAVE_PCI_IRQ_API
+ 		free_irq(eq->irqn, eq);
++		#else
++		free_irq(priv->msix_arr[vecidx].vector, eq);
++		#endif
  
  err_eq:
  	mlx5_cmd_destroy_eq(dev, eq->eqn);
-@@ -987,6 +1005,13 @@ int mlx5_eq_del_cq(struct mlx5_eq *eq, struct mlx5_core_cq *cq)
+@@ -1041,6 +1059,13 @@ int mlx5_eq_del_cq(struct mlx5_eq *eq, struct mlx5_core_cq *cq)
  	return 0;
  }
  
@@ -94,10 +93,10 @@ index xxxxxxx..xxxxxxx 100644
  int mlx5_eq_init(struct mlx5_core_dev *dev)
  {
  	int err;
-@@ -1166,7 +1191,9 @@ void mlx5_core_eq_free_irqs(struct mlx5_core_dev *dev)
- 	if (MLX5_CAP_GEN(dev, pg))
- 		free_irq(table->pfault_eq.irqn, &table->pfault_eq);
+@@ -1231,7 +1256,9 @@ void mlx5_core_eq_free_irqs(struct mlx5_core_dev *dev)
+ 		free_irq(table->ctrl_eqs[MLX5_EQ_VEC_PFAULT].irqn, &table->ctrl_eqs[MLX5_EQ_VEC_PFAULT]);
  #endif
+ 
 +#ifdef HAVE_PCI_IRQ_API
  	pci_free_irq_vectors(dev->pdev);
 +#endif

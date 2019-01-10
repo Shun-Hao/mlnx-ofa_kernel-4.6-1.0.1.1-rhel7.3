@@ -313,3 +313,4 @@ name=signature_handover; type=feature; upstream_status=NA;
 name=sig_crc32; type=feature; upstream_status=NA;
 name=mlx5_pcie_power; type=feature; upstream_status=in_progress;
 name=mlx5e_rxfcs_exclusive; type=feature; upstream_status=NA;
+name=shared_msix; type=feature; upstream_status=in_progress;

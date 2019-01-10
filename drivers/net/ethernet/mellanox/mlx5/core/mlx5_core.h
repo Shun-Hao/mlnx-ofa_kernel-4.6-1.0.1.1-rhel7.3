@@ -232,9 +232,10 @@ u64 mlx5_read_internal_timer(struct mlx5_core_dev *dev);
 
 int mlx5_eq_init(struct mlx5_core_dev *dev);
 void mlx5_eq_cleanup(struct mlx5_core_dev *dev);
-int mlx5_create_map_eq(struct mlx5_core_dev *dev, struct mlx5_eq *eq, u8 vecidx,
+int mlx5_create_map_eq(struct mlx5_core_dev *dev, struct mlx5_eq *eq, u8 idx,
 		       int nent, u64 mask, const char *name,
-		       enum mlx5_eq_type type);
+		       enum mlx5_eq_type type,
+		       bool is_shared);
 int mlx5_destroy_unmap_eq(struct mlx5_core_dev *dev, struct mlx5_eq *eq);
 int mlx5_eq_add_cq(struct mlx5_eq *eq, struct mlx5_core_cq *cq);
 int mlx5_eq_del_cq(struct mlx5_eq *eq, struct mlx5_core_cq *cq);
