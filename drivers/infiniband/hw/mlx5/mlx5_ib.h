@@ -212,6 +212,7 @@ struct mlx5_ib_flow_db {
 	struct mlx5_ib_flow_prio	egress_prios[MLX5_IB_NUM_FLOW_FT];
 	struct mlx5_ib_flow_prio	sniffer[MLX5_IB_NUM_SNIFFER_FTS];
 	struct mlx5_ib_flow_prio	egress[MLX5_IB_NUM_EGRESS_FTS];
+	struct mlx5_ib_flow_prio	fdb;
 	struct mlx5_flow_table		*lag_demux_ft;
 	struct mlx5_steering_data steering_data[MLX5_MAX_PORTS];
 	/* Protect flow steering bypass flow tables
