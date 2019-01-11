@@ -6550,7 +6550,7 @@ int mlx5_ib_stage_post_ib_reg_umr_init(struct mlx5_ib_dev *dev)
 	return create_umr_res(dev);
 }
 
-int mlx5_ib_stage_pre_odp_async_prefetch_init(struct mlx5_ib_dev *dev)
+int mlx5_ib_stage_post_odp_async_prefetch_init(struct mlx5_ib_dev *dev)
 {
 	return mlx5_ib_odp_async_prefetch_init(dev);
 }
@@ -6800,15 +6800,15 @@ static const struct mlx5_ib_profile pf_profile = {
 	STAGE_CREATE(MLX5_IB_STAGE_SPECS,
 		     mlx5_ib_stage_populate_specs,
 		     NULL),
+	STAGE_CREATE(MLX5_IB_STAGE_POST_ODP_ASYNC_PREFETCH,
+		     mlx5_ib_stage_post_odp_async_prefetch_init,
+		     mlx5_ib_stage_post_odp_async_prefetch_cleanup),
 	STAGE_CREATE(MLX5_IB_STAGE_IB_REG,
 		     mlx5_ib_stage_ib_reg_init,
 		     mlx5_ib_stage_ib_reg_cleanup),
 	STAGE_CREATE(MLX5_IB_STAGE_POST_IB_REG_UMR,
 		     mlx5_ib_stage_post_ib_reg_umr_init,
 		     NULL),
-	STAGE_CREATE(MLX5_IB_STAGE_POST_ODP_ASYNC_PREFETCH,
-		     mlx5_ib_stage_pre_odp_async_prefetch_init,
-		     mlx5_ib_stage_post_odp_async_prefetch_cleanup),
 	STAGE_CREATE(MLX5_IB_STAGE_DELAY_DROP,
 		     mlx5_ib_stage_delay_drop_init,
 		     mlx5_ib_stage_delay_drop_cleanup),
@@ -6857,9 +6857,6 @@ const struct mlx5_ib_profile uplink_rep_profile = {
 	STAGE_CREATE(MLX5_IB_STAGE_BFREG,
 		     mlx5_ib_stage_bfrag_init,
 		     mlx5_ib_stage_bfrag_cleanup),
-	STAGE_CREATE(MLX5_IB_STAGE_PRE_ODP_ASYNC_PREFETCH,
-		     mlx5_ib_stage_pre_odp_async_prefetch_init,
-		     mlx5_ib_stage_post_odp_async_prefetch_cleanup),
 	STAGE_CREATE(MLX5_IB_STAGE_PRE_IB_REG_UMR,
 		     NULL,
 		     mlx5_ib_stage_pre_ib_reg_umr_cleanup),
