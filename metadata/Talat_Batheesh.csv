@@ -12,3 +12,6 @@ Change-Id=I9b5ac6e412b2802009fed3e6aa0c58df8001fb45; subject=net/mlx5e: Add supp
 Change-Id=I9ab4bd60fcd5f246c15e851ce2a0d63537be4d53; subject=net/mlx5: Fix number of max channels in mlx5e_grp_channels_fill_[strings,stats]; feature=mlx5e_counter_groups; upstream_status=NA; general=;
 Change-Id=I8a1458d013a7698c7c564f8f909c63afde6d08a7; subject=IB/ipoib: remark get_settings from ethtool_ops; feature=ipoib_ethtool_speed_support; upstream_status=NA; general=;
 Change-Id=I6a861a1b75468f9e2559b85c67793046123b23fe; subject=metadata: general metadata update for 4.20 rebase; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I4d01e9752b09873eac23f3394c30e8ccd156a461; subject=ofed_scripts: Fix compilation warning; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=Ie1373006f399fd5fd39fa1934da277f3a1ccf7a7; subject=metadata: Update MD; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=Ie0d5a6b69af9ff812b103641af0ce67cc8f4b985; subject=metadata: Update MD; feature=ofed_scripts; upstream_status=ignore; general=;

@@ -1505,12 +1505,12 @@ fi
 if [ "X${CONFIG_MLX5_EN_ARFS}" == "Xy" ]; then
         DEFINE_MLX5_EN_ARFS="#undef CONFIG_MLX5_EN_ARFS\n#define CONFIG_MLX5_EN_ARFS 1"
 else
-        DEFINE_MLX5_EN_ARFS="#undef CONFIG_MLX5_EN_ARFS="
+        DEFINE_MLX5_EN_ARFS="#undef CONFIG_MLX5_EN_ARFS"
 fi
 if [ "X${CONFIG_MLX5_EN_RXNFC}" == "Xy" ]; then
         DEFINE_MLX5_EN_RXNFC="#undef CONFIG_MLX5_EN_RXNFC\n#define CONFIG_MLX5_EN_RXNFC 1"
 else
-        DEFINE_MLX5_EN_RXNFC="#undef CONFIG_MLX5_EN_RXNFC="
+        DEFINE_MLX5_EN_RXNFC="#undef CONFIG_MLX5_EN_RXNFC"
 fi
 if [ "X${CONFIG_MLX5_EN_TLS}" == "Xy" ]; then
         DEFINE_MLX5_EN_TLS="#undef CONFIG_MLX5_EN_TLS\n#define CONFIG_MLX5_EN_TLS 1"
