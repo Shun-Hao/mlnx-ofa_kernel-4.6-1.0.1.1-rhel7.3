@@ -1211,8 +1211,8 @@ start()
         else
             # enable FW tracing
             if [ "X${ENABLE_FW_TRACER}" == "Xyes" ]; then
-                if [ -f /sys/kernel/debug/tracing/events/mlx5/fw_tracer/enable ]; then
-                    echo 1 > /sys/kernel/debug/tracing/events/mlx5/fw_tracer/enable 2>/dev/null
+                if [ -f /sys/kernel/debug/tracing/events/mlx5/mlx5_fw/enable ]; then
+                    echo 1 > /sys/kernel/debug/tracing/events/mlx5/mlx5_fw/enable 2>/dev/null
                 fi
             fi
             if [ -x $XE ]; then
