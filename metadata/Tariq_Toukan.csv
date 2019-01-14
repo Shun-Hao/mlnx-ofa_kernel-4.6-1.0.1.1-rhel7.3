@@ -5,7 +5,7 @@ Change-Id=I06e535bdb4b1407398db62df66fbe69080e9fa27; subject=net/mlx4_core: Remo
 Change-Id=I45404842b8b3f06cf3cae43e3657f61e94dec1dd; subject=net/mlx4_core: Set device to extended counters mode; feature=mlx4_vf_counters; upstream_status=NA; general=;
 Change-Id=I34658da0cc55d95c01b0dadcb00dac22c8d5ad66; subject=net/mlx4_en: Add infrastructure to get/set VF attributes; feature=mlx4_vf_counters; upstream_status=NA; general=;
 Change-Id=I5e2f0533b992e79d98e75bcfbbe2961e1ef9f046; subject=net/mlx4_en: Add sysfs support to display VFs performance counters via hypervisor; feature=mlx4_vf_counters; upstream_status=NA; general=;
-Change-Id=I075db4b1e2b6a428a1843d677cbb923b6cf23082; subject=net/mlx4_core: Fix uninitialized variable compilation warning; feature=mlx4_core_misc; upstream_status=in_progress; general=;
+Change-Id=I075db4b1e2b6a428a1843d677cbb923b6cf23082; subject=net/mlx4_core: Fix uninitialized variable compilation warning; feature=mlx4_core_misc; upstream_status=accepted; general=upstream commit ID: 3ea7e7ea53c9, tag: v4.20-rc4;
 Change-Id=I90dc3750236092ce17764712852aaac3f4e54c89; subject=net/mlx5e: Dynamically extend/reduce the RX internal page cache; feature=mlx5_en_page_cache; upstream_status=NA; general=;
 Change-Id=I10aa1df47c568631b31714e61b234e2b8834d0fa; subject=net/mlx5e: Fix TIRs modify flows; feature=mlx5e_fixes_4.10; upstream_status=in_progress; general=;
 Change-Id=Ic380f3c42c425f5d93c2f02d6ec0a65d5ffa0029; subject=net/mlx5e: Keep pages in RX cache DMA-unmapped; feature=mlx5e_fixes_4.10; upstream_status=NA; general=;
@@ -14,4 +14,4 @@ Change-Id=I9bfeed5bebef39039eb42ee49ab26267a5936349; subject=net/mlx5e: Open new
 Change-Id=I63f4097b79e2c74afe80b6118ab1b877644fbfa6; subject=net/mlx4_en: Add ethtool counter for RX inline scatter; feature=mlx4_en_inline_scatter; upstream_status=in_progress; general=;
 Change-Id=Iff9f5bbe995847e38d5cdc95d77c6cb21c28aedc; subject=net/mlx4_en: Remove high order pre-allocations in RX datapath; feature=mlx4_en_bugs; upstream_status=NA; general=;
 Change-Id=Id099887dcb17b0cfa3e51f2654cc2851a2b4f171; subject=net/mlx5e: Do not call open_channels outside switch_priv_channels; feature=iommu_soft_lockup_WA; upstream_status=NA; general=;
-Change-Id=I14b890a7a2caadf3b0a2af80872d03a01129d337; subject=net/mlx5e: RX, Fix wrong early return in receive queue poll; feature=rebase; upstream_status=accepted; general=;
+Change-Id=I14b890a7a2caadf3b0a2af80872d03a01129d337; subject=net/mlx5e: RX, Fix wrong early return in receive queue poll; feature=rebase; upstream_status=accepted; general=upstream commit ID: bfc698254ba9, tag: v4.20;

@@ -1,12 +1,12 @@
 sep=;
-Change-Id=I31c10ec0adea1fe84a9bc87f00f5602d5317b83e; subject=IB/mlx5: Avoid load failure due to unknown link width; feature=hdr_100; upstream_status=in_progress; general=;
+Change-Id=I31c10ec0adea1fe84a9bc87f00f5602d5317b83e; subject=IB/mlx5: Avoid load failure due to unknown link width; feature=hdr_100; upstream_status=accepted; general=upstream commit ID: db7a691a1551, tag: v4.20-rc7;
 Change-Id=I70e8ccde4da56ea64d5dcefd39b32c0de983b38a; subject=IB/core: Add CapabilityMask2 to Port Attributes; feature=hdr_100; upstream_status=in_progress; general=;
-Change-Id=I31ebeed2510dfe34de41c89cf741f211c70c460e; subject=IB/core: Add 2X port width; feature=hdr_100; upstream_status=in_progress; general=;
-Change-Id=I1c2d0e73c4e07ca23b9a77f129a8eec91ef402f8; subject=IB/core: Add new IB rates; feature=hdr_100; upstream_status=in_progress; general=;
+Change-Id=I31ebeed2510dfe34de41c89cf741f211c70c460e; subject=IB/core: Add 2X port width; feature=hdr_100; upstream_status=accepted; general=upstream commit ID: dbabf68574f9, tag: v5.0-rc1;
+Change-Id=I1c2d0e73c4e07ca23b9a77f129a8eec91ef402f8; subject=IB/core: Add new IB rates; feature=hdr_100; upstream_status=accepted; general=upstream commit ID: a5a5d1993696, tag: v5.0-rc1;
 Change-Id=Ib256f1d3b5b784d8af7a8f353e8cc625801c9b7b; subject=IB/mlx5: Align ib_rate_to_mlx5 with new IB rates; feature=hdr_100; upstream_status=in_progress; general=;
-Change-Id=Iba06283d5a8d20ab9b650b6e0455aec89e5a7480; subject=IB/mlx5: Report CapabilityMask2 in ib_query_port; feature=hdr_100; upstream_status=in_progress; general=;
-Change-Id=I46983f61b73291ed41c2d2291bae4dbc6602bf83; subject=IB/mlx5: Add HDR speed support to query port; feature=hdr_100; upstream_status=in_progress; general=;
-Change-Id=I8456efda147c33991fb605f5cb6be92509dd40ff; subject=IB/mlx5: Add 2X width support to query_port; feature=hdr_100; upstream_status=in_progress; general=;
+Change-Id=Iba06283d5a8d20ab9b650b6e0455aec89e5a7480; subject=IB/mlx5: Report CapabilityMask2 in ib_query_port; feature=hdr_100; upstream_status=accepted; general=upstream commit ID: 4106a758f791, tag: v5.0-rc1;
+Change-Id=I46983f61b73291ed41c2d2291bae4dbc6602bf83; subject=IB/mlx5: Add HDR speed support to query port; feature=hdr_100; upstream_status=accepted; general=upstream commit ID: b874155a5fa4, tag: v5.0-rc1;
+Change-Id=I8456efda147c33991fb605f5cb6be92509dd40ff; subject=IB/mlx5: Add 2X width support to query_port; feature=hdr_100; upstream_status=accepted; general=upstream commit ID: d764970bcea3, tag: v5.0-rc1;
 Change-Id=I868ad28db028f4665e44f1ec3c7e8132b064a9d6; subject=mlx5/core: Add pci AtomicOps request; feature=exp_pci_atomics; upstream_status=NA; general=;
 Change-Id=Ib062ab14edb634dc6306c9e4e8e4c3107fa181c9; subject=IB/mlx5: Report PCI atomic caps; feature=exp_pci_atomics; upstream_status=NA; general=;
 Change-Id=Ia0bc3f4c70b379f7cb67d162e011bfc2afc9610a; subject=IB/uverbs: Add experimental PCI atomic capabilities; feature=exp_pci_atomics; upstream_status=NA; general=;

@@ -1,2 +1,2 @@
 sep=;
-Change-Id=Ib6580b4be72a31020f5fe6c72bfbd62b90db1dc0; subject=net/mlx4: Fix UBSAN warning of signed integer overflow; feature=rebase; upstream_status=accepted; general=;
+Change-Id=Ib6580b4be72a31020f5fe6c72bfbd62b90db1dc0; subject=net/mlx4: Fix UBSAN warning of signed integer overflow; feature=rebase; upstream_status=accepted; general=upstream commit ID: a463146e67c8, tag: v4.20-rc4;

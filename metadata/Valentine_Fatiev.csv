@@ -1,2 +1,2 @@
 sep=;
-Change-Id=I136d4ddd02c4ba56aa0e0874df1599b3ad16453e; subject=net/mlx5e: Fix selftest for small MTUs; feature=mlx5_en_bugs; upstream_status=sent; general=;
+Change-Id=I136d4ddd02c4ba56aa0e0874df1599b3ad16453e; subject=net/mlx5e: Fix selftest for small MTUs; feature=mlx5_en_bugs; upstream_status=accepted; general=upstream commit ID: 228c4cd04dfd, tag: v4.20-rc4;

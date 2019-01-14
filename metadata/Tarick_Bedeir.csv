@@ -1,2 +1,2 @@
 sep=;
-Change-Id=I660bc1912cb15b1a38dbd308ee8243435f449e69; subject=net/mlx4_core: Correctly set PFC param if global pause is turned off.; feature=rebase; upstream_status=accepted; general=;
+Change-Id=I660bc1912cb15b1a38dbd308ee8243435f449e69; subject=net/mlx4_core: Correctly set PFC param if global pause is turned off.; feature=rebase; upstream_status=accepted; general=upstream commit ID: bd5122cd1e06, tag: v4.20-rc6;

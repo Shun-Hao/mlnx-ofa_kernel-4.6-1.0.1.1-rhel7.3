@@ -27,4 +27,4 @@ Change-Id=I34f3e8f043df2ef4aa80709419f923c540440d0a; subject=Revert "net/mlx5: B
 Change-Id=I92b83af2b46f5be519ba34860149be14a216b7fe; subject=net/mlx5: Add mutual exclusion mechanism for health sw reset; feature=mlx5_sw_reset; upstream_status=in_progress; general=;
 Change-Id=I411751e6c6b925a0a6e486106d14609d9ad542e1; subject=net/mlx5: Reset FW before tearing down driver; feature=mlx5_sw_reset; upstream_status=in_progress; general=;
 Change-Id=I2e22293e9046b680d60e14def0f149aef88f0ec7; subject=mlx5/ipoib: Indicate TSS support for enhanced devices; feature=ipoib_rss_tss; upstream_status=NA; general=;
-Change-Id=Ib6c936685454df1f06555d6d619fcca5d1e9f617; subject=IB/mlx5: Enable TX on a DEVX flow table; feature=mlx5_ib_bugs; upstream_status=in_progress; general=;
+Change-Id=Ib6c936685454df1f06555d6d619fcca5d1e9f617; subject=IB/mlx5: Enable TX on a DEVX flow table; feature=mlx5_ib_bugs; upstream_status=accepted; general=upstream commit ID: 419822c8b83f, tag: v5.0-rc1;

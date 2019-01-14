@@ -1,5 +1,5 @@
 sep=;
 Change-Id=If9c5583e38b3d8df9b05f28f1e245e59ccc5ba4a; subject=net/mlx5: Refactor handling of port module events; feature=mlx5_pme_updates; upstream_status=in_progress; general=;
 Change-Id=I19645bbfd2f098d9ba82e5e30b974dacdb935ce3; subject=net/mlx5: Add support for PCIe slot exceeded error in PME; feature=mlx5_pme_updates; upstream_status=in_progress; general=;
-Change-Id=If3d1699d8713efa302556c884bd549686562abc4; subject=net/mlx5: Add support for plugged-disabled cable status in PME; feature=mlx5_pme_updates; upstream_status=in_progress; general=;
-Change-Id=Ibe113a9a278843ffe7aee2ff0a612cec3a032adb; subject=net/mlx5e: Remove unused UDP GSO remaining counter; feature=rebase; upstream_status=accepted; general=;
+Change-Id=If3d1699d8713efa302556c884bd549686562abc4; subject=net/mlx5: Add support for plugged-disabled cable status in PME; feature=mlx5_pme_updates; upstream_status=accepted; general=upstream commit ID: 8d6b57e64459, tag: v5.0-rc1;
+Change-Id=Ibe113a9a278843ffe7aee2ff0a612cec3a032adb; subject=net/mlx5e: Remove unused UDP GSO remaining counter; feature=rebase; upstream_status=accepted; general=upstream commit ID: d13b224f4315, tag: v4.20;

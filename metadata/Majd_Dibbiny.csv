@@ -38,5 +38,5 @@ Change-Id=I124466aab1bc1f455ac2a3819b4cdf4ab9f3616c; subject=fixup! IB/mlx5: Add
 Change-Id=Iebe034cb5171381fbd5cd8974ba4367e8fc03d7d; subject=Revert "{net, IB}/mlx5: DC RoCE LAG support"; feature=mlx5_dc_roce_lag; upstream_status=NA; general=;
 Change-Id=I7239e83b9c5eef504e82da3070821d0616b8b38c; subject=IB/mlx5: Assign affinity for DCT and DCI in RoCE LAG mode; feature=mlx5_dc_roce_lag; upstream_status=in_progress; general=;
 Change-Id=I7cce69cb1e753d301fce8dabe2e9c054a4fd70dc; subject=IB/mlx5: Create DCT in LAG only when supported; feature=mlx5_dc_roce_lag; upstream_status=in_progress; general=;
-Change-Id=I61807fa5e81631e986cd9dec00bbdafe49d49cf2; subject=RDMA/mlx5: Fix fence type for IB_WR_LOCAL_INV WR; feature=rebase; upstream_status=accepted; general=;
+Change-Id=I61807fa5e81631e986cd9dec00bbdafe49d49cf2; subject=RDMA/mlx5: Fix fence type for IB_WR_LOCAL_INV WR; feature=rebase; upstream_status=accepted; general=upstream commit ID: 074fca3a18e7, tag: v4.20-rc7;
 Change-Id=I012fdf1d0f44f89a943346722f37333bee1a83d3; subject=IB/uverbs: Fix experimental create QP flow; feature=tag_matching; upstream_status=NA; general=;

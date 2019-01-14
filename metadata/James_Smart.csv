@@ -1,3 +1,3 @@
 sep=;
-Change-Id=Ie59535b04dcc0071e87c1765a385649ad6b266b7; subject=nvme-fc: resolve io failures during connect; feature=rebase; upstream_status=accepted; general=;
-Change-Id=Ic07cac6bf53b341f028d7deeb5b20d6077c80e84; subject=nvme: validate controller state before rescheduling keep alive; feature=rebase; upstream_status=accepted; general=;
+Change-Id=Ie59535b04dcc0071e87c1765a385649ad6b266b7; subject=nvme-fc: resolve io failures during connect; feature=rebase; upstream_status=accepted; general=upstream commit ID: 4cff280a5fcc, tag: v4.20-rc5;
+Change-Id=Ic07cac6bf53b341f028d7deeb5b20d6077c80e84; subject=nvme: validate controller state before rescheduling keep alive; feature=rebase; upstream_status=accepted; general=upstream commit ID: 86880d646122, tag: v4.20-rc7;

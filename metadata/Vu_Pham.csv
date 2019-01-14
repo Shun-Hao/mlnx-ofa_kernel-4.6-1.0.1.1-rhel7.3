@@ -1,2 +1,2 @@
 sep=;
-Change-Id=I346b4296ed092e405904c80f0ecb8fa0d8d78f91; subject=net/mlx5: E-Switch, Fix fdb cap bits swap; feature=rebase; upstream_status=accepted; general=;
+Change-Id=I346b4296ed092e405904c80f0ecb8fa0d8d78f91; subject=net/mlx5: E-Switch, Fix fdb cap bits swap; feature=rebase; upstream_status=accepted; general=upstream commit ID: 663f146f2ecf, tag: v4.20;

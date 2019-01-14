@@ -64,6 +64,6 @@ Change-Id=I3b50ad19c9bfb3a0d6f2141823ac75f8b6553a88; subject=IB/mlx5: Invalidati
 Change-Id=I918f77238c183fbdeab91d45e98b6becd5e65e0f; subject=IB/mlx4: Add missing code to enable IB flow rules; feature=mlx4_flow_spec_gap; upstream_status=NA; general=;
 Change-Id=I4e14ab2aa46b1c4ff5a8305bdf9b59ddca4e568c; subject=IB/mlx5: Add support for underlay QP managing; feature=ud_flow_steering; upstream_status=NA; general=;
 Change-Id=Ibf1f34b22cbe96656527250cc12381e57d35b0bc; subject=IB/mlx5: Report RX checksum capabilities for IPoIB; feature=ud_flow_steering; upstream_status=NA; general=;
-Change-Id=I7488d04c283ab764b76debf6b0dc755724169cda; subject=net/mlx5: Fix XRC SRQ umem valid bits; feature=devx; upstream_status=in_progress; general=;
+Change-Id=I7488d04c283ab764b76debf6b0dc755724169cda; subject=net/mlx5: Fix XRC SRQ umem valid bits; feature=devx; upstream_status=accepted; general=upstream commit ID: 99b77fef3c6c, tag: v4.20-rc7;
 Change-Id=Icb94f333341502cb712af2cb8c6b3091a0ff8a93; subject=IB/mlx5: Fix packet pacing EXP flow; feature=mlx5_exp_packet_pacing; upstream_status=NA; general=;
-Change-Id=I7c3521394acd30d4a05e5e389ca2ffe5fdba5646; subject=IB/mlx5: Block DEVX umem from the non applicable cases; feature=rebase; upstream_status=accepted; general=;
+Change-Id=I7c3521394acd30d4a05e5e389ca2ffe5fdba5646; subject=IB/mlx5: Block DEVX umem from the non applicable cases; feature=rebase; upstream_status=accepted; general=upstream commit ID: 47f07f03b5ee, tag: v4.20-rc7;

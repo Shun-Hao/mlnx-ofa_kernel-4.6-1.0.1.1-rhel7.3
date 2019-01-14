@@ -1,7 +1,7 @@
 sep=;
-Change-Id=If835bfafd467d4417be5e9cbc9609ab3ad4c3461; subject=net/mlx5e: In case of LAG, one switch parent id is used for all representors; feature=mlx5_vf_lag; upstream_status=sent; general=;
-Change-Id=I4959419f8520bd3fcd550f044f0a86d41e7cd88a; subject=net/mlx5e: Offload TC e-switch rules with egress LAG device; feature=mlx5_vf_lag; upstream_status=sent; general=;
+Change-Id=If835bfafd467d4417be5e9cbc9609ab3ad4c3461; subject=net/mlx5e: In case of LAG, one switch parent id is used for all representors; feature=mlx5_vf_lag; upstream_status=accepted; general=upstream commit ID: 491c37e49b48, tag: v5.0-rc1;
+Change-Id=I4959419f8520bd3fcd550f044f0a86d41e7cd88a; subject=net/mlx5e: Offload TC e-switch rules with egress LAG device; feature=mlx5_vf_lag; upstream_status=accepted; general=upstream commit ID: 7ba58ba7ba5e, tag: v5.0-rc1;
 Change-Id=I13809ffaa1b04a6bcf534631a9c519e4d5cb97ce; subject=net/mlx5e: Duplicate offloaded TC eswitch rules under uplink LAG; feature=mlx5_vf_lag; upstream_status=sent; general=;
-Change-Id=I03bf20ff60f777ab0c28dd7a3045864afe19e7e1; subject=net/mlx5: Adjustments for the activate LAG logic to run under sriov; feature=mlx5_vf_lag; upstream_status=sent; general=;
-Change-Id=I5fd3953c1633ab0519b000acf266c1f2d7e8f39b; subject=net/mlx5: Allow/disallow LAG according to pre-req only; feature=mlx5_vf_lag; upstream_status=sent; general=;
-Change-Id=I85983d2ad093546897fed1aacaad86ce1ae4fcc7; subject=net/mlx5: Allow co-enablement of uplink LAG and SRIOV; feature=mlx5_vf_lag; upstream_status=sent; general=;
+Change-Id=I03bf20ff60f777ab0c28dd7a3045864afe19e7e1; subject=net/mlx5: Adjustments for the activate LAG logic to run under sriov; feature=mlx5_vf_lag; upstream_status=accepted; general=upstream commit ID: 3b5ff59fd851, tag: v5.0-rc1;
+Change-Id=I5fd3953c1633ab0519b000acf266c1f2d7e8f39b; subject=net/mlx5: Allow/disallow LAG according to pre-req only; feature=mlx5_vf_lag; upstream_status=accepted; general=upstream commit ID: eff849b2c669, tag: v5.0-rc1;
+Change-Id=I85983d2ad093546897fed1aacaad86ce1ae4fcc7; subject=net/mlx5: Allow co-enablement of uplink LAG and SRIOV; feature=mlx5_vf_lag; upstream_status=accepted; general=upstream commit ID: 8aaca1976e27, tag: v5.0-rc1;

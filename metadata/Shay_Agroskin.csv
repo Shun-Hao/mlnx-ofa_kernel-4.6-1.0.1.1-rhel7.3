@@ -1,5 +1,5 @@
 sep=;
-Change-Id=I830c99d32af639833ddb9792c918b0338472480f; subject=net/mlx5e: Fix a bug in turning off FEC policy in unsupported speeds; feature=rebase; upstream_status=accepted; general=;
-Change-Id=I6ff6336bc44c3d5ecc493b5ae01787e2097aad0f; subject=net/mlx5e: Fix wrong field name in FEC related functions; feature=rebase; upstream_status=accepted; general=;
-Change-Id=Iba1360a875c6013214885810ef0e779191c71b42; subject=net/mlx5e: Removed unnecessary warnings in FEC caps query; feature=rebase; upstream_status=accepted; general=;
-Change-Id=I9215a09319ad542e2bebfd1e53a3e0fc9651d64f; subject=net/mlx5e: Fix failing ethtool query on FEC query error; feature=rebase; upstream_status=accepted; general=;
+Change-Id=I830c99d32af639833ddb9792c918b0338472480f; subject=net/mlx5e: Fix a bug in turning off FEC policy in unsupported speeds; feature=rebase; upstream_status=accepted; general=upstream commit ID: 9cdeaab3b7e7, tag: v4.20-rc4;
+Change-Id=I6ff6336bc44c3d5ecc493b5ae01787e2097aad0f; subject=net/mlx5e: Fix wrong field name in FEC related functions; feature=rebase; upstream_status=accepted; general=upstream commit ID: febd72f27c02, tag: v4.20-rc4;
+Change-Id=Iba1360a875c6013214885810ef0e779191c71b42; subject=net/mlx5e: Removed unnecessary warnings in FEC caps query; feature=rebase; upstream_status=accepted; general=upstream commit ID: 64e283348458, tag: v4.20-rc4;
+Change-Id=I9215a09319ad542e2bebfd1e53a3e0fc9651d64f; subject=net/mlx5e: Fix failing ethtool query on FEC query error; feature=rebase; upstream_status=accepted; general=upstream commit ID: 9184e51b5b3e, tag: v4.20-rc4;

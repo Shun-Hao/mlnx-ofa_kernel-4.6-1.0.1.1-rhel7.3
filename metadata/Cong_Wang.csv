@@ -1,2 +1,2 @@
 sep=;
-Change-Id=Ic085a246987ef36aaadfd86b5d78ecc774665527; subject=mlx5: fix get_ip_proto(); feature=rebase; upstream_status=accepted; general=;
+Change-Id=Ic085a246987ef36aaadfd86b5d78ecc774665527; subject=mlx5: fix get_ip_proto(); feature=rebase; upstream_status=accepted; general=upstream commit ID: ef6fcd455278, tag: v4.20-rc6;

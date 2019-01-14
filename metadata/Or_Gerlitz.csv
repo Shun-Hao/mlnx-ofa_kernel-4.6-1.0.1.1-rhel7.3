@@ -1,8 +1,8 @@
 sep=;
-Change-Id=Icb679f191b7768901b756d6c6c1f79488c6818f9; subject=net/mlx5e: Don't match on vlan non-existence if ethertype is wildcarded; feature=rebase; upstream_status=accepted; general=;
-Change-Id=Iee9c111e12c3d03e101337c933bf6e89949c1b48; subject=net/mlx5e: Claim TC hw offloads support only under a proper build config; feature=rebase; upstream_status=accepted; general=;
-Change-Id=I733cf4d42441d8094f18c2f43c65c8a638da6b01; subject=net/mlx5e: Always use the match level enum when parsing TC rule match; feature=rebase; upstream_status=accepted; general=;
-Change-Id=I7cbfee0d9589711a091be775cac74a15904fa18c; subject=net/mlx5e: Err if asked to mirror a goto chain tc eswitch rule; feature=rebase; upstream_status=accepted; general=;
-Change-Id=I61a07a734604784f20fbfb6fa62feb0b405407f2; subject=net/mlx5e: Avoid overriding the user provided priority for offloaded tc rules; feature=rebase; upstream_status=accepted; general=;
-Change-Id=Ib46c3bca1fd002c0480b923a17707936d9bfd08a; subject=net/mlx5e: Properly initialize flow attributes for slow path eswitch rule deletion; feature=rebase; upstream_status=accepted; general=;
-Change-Id=Ic22e9b3d007f1aecdfafa0d4bfd31255ece765f3; subject=net/mlx5e: Avoid encap flows deletion attempt the 1st time a neigh is resolved; feature=rebase; upstream_status=accepted; general=;
+Change-Id=Icb679f191b7768901b756d6c6c1f79488c6818f9; subject=net/mlx5e: Don't match on vlan non-existence if ethertype is wildcarded; feature=rebase; upstream_status=accepted; general=upstream commit ID: d3a80bb5a3ea, tag: v4.20-rc4;
+Change-Id=Iee9c111e12c3d03e101337c933bf6e89949c1b48; subject=net/mlx5e: Claim TC hw offloads support only under a proper build config; feature=rebase; upstream_status=accepted; general=upstream commit ID: 077ecd785d90, tag: v4.20-rc4;
+Change-Id=I733cf4d42441d8094f18c2f43c65c8a638da6b01; subject=net/mlx5e: Always use the match level enum when parsing TC rule match; feature=rebase; upstream_status=accepted; general=upstream commit ID: 83621b7df6a6, tag: v4.20-rc4;
+Change-Id=I7cbfee0d9589711a091be775cac74a15904fa18c; subject=net/mlx5e: Err if asked to mirror a goto chain tc eswitch rule; feature=rebase; upstream_status=accepted; general=upstream commit ID: e88afe759a49, tag: v4.20;
+Change-Id=I61a07a734604784f20fbfb6fa62feb0b405407f2; subject=net/mlx5e: Avoid overriding the user provided priority for offloaded tc rules; feature=rebase; upstream_status=accepted; general=upstream commit ID: d14f6f2a8432, tag: v4.20;
+Change-Id=Ib46c3bca1fd002c0480b923a17707936d9bfd08a; subject=net/mlx5e: Properly initialize flow attributes for slow path eswitch rule deletion; feature=rebase; upstream_status=accepted; general=upstream commit ID: 154e62abe9cd, tag: v4.20;
+Change-Id=Ic22e9b3d007f1aecdfafa0d4bfd31255ece765f3; subject=net/mlx5e: Avoid encap flows deletion attempt the 1st time a neigh is resolved; feature=rebase; upstream_status=accepted; general=upstream commit ID: 61c806dafe81, tag: v4.20;

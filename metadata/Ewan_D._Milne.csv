@@ -1,2 +1,2 @@
 sep=;
-Change-Id=I325dd74a7a2571220135431a7b4285b11761079e; subject=nvme-fc: initialize nvme_req(rq)->ctrl after calling __nvme_fc_init_request(); feature=rebase; upstream_status=accepted; general=;
+Change-Id=I325dd74a7a2571220135431a7b4285b11761079e; subject=nvme-fc: initialize nvme_req(rq)->ctrl after calling __nvme_fc_init_request(); feature=rebase; upstream_status=accepted; general=upstream commit ID: dfa74422d604, tag: v4.20-rc5;

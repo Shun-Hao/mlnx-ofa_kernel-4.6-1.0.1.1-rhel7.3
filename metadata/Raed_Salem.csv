@@ -1,2 +1,2 @@
 sep=;
-Change-Id=I414b70e12be330738bd73abb54be7532abc5face; subject=net/mlx5: IPSec, Fix the SA context hash key; feature=rebase; upstream_status=accepted; general=;
+Change-Id=I414b70e12be330738bd73abb54be7532abc5face; subject=net/mlx5: IPSec, Fix the SA context hash key; feature=rebase; upstream_status=accepted; general=upstream commit ID: f2b18732ee98, tag: v4.20-rc4;

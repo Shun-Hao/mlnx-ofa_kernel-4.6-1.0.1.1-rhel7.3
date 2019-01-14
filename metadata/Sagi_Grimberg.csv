@@ -1,4 +1,4 @@
 sep=;
 Change-Id=If62667b74549278416475db318501ea1d8ca2d6f; subject=nvmet-rdma: automatic listening port re-activation; feature=rebase; upstream_status=in_progress; general=;
-Change-Id=I5925e4b4f588f9ab371e40c1fe3804c1044db4c6; subject=iser: set sector for ambiguous mr status errors; feature=rebase; upstream_status=accepted; general=;
-Change-Id=Iebb0a503a0730b91032f4dc4a138403843cca67a; subject=nvme: flush namespace scanning work just before removing namespaces; feature=rebase; upstream_status=accepted; general=;
+Change-Id=I5925e4b4f588f9ab371e40c1fe3804c1044db4c6; subject=iser: set sector for ambiguous mr status errors; feature=rebase; upstream_status=accepted; general=upstream commit ID: 24c3456c8d5e, tag: v4.20-rc7;
+Change-Id=Iebb0a503a0730b91032f4dc4a138403843cca67a; subject=nvme: flush namespace scanning work just before removing namespaces; feature=rebase; upstream_status=accepted; general=upstream commit ID: f6c8e432cb04, tag: v4.20-rc5;
