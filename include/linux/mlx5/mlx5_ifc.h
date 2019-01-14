@@ -159,6 +159,7 @@ enum {
 	MLX5_CMD_OP_DETACH_NVMF_NAMESPACE         = 0x724,
 	MLX5_CMD_OP_SET_XRQ_DC_PARAMS_ENTRY	  = 0x726,
 	MLX5_CMD_OP_QUERY_NVMF_NAMESPACE_CONTEXT  = 0x728,
+	MLX5_CMD_OP_QUERY_HOST_PARAMS             = 0x740,
 	MLX5_CMD_OP_QUERY_VPORT_STATE             = 0x750,
 	MLX5_CMD_OP_MODIFY_VPORT_STATE            = 0x751,
 	MLX5_CMD_OP_QUERY_ESW_VPORT_CONTEXT       = 0x752,
@@ -10183,6 +10184,46 @@ struct mlx5_ifc_set_tunnel_operation_in_bits {
 struct mlx5_ifc_create_sw_icm_in_bits {
 	struct mlx5_ifc_general_obj_in_cmd_hdr_bits   hdr;
 	struct mlx5_ifc_sw_icm_bits		      sw_icm;
+};
+
+struct mlx5_ifc_host_params_context_bits {
+	u8         host_number[0x8];
+	u8         reserved_at_8[0x8];
+	u8         host_num_of_vfs[0x10];
+
+	u8         reserved_at_20[0x10];
+	u8         host_pci_bus[0x10];
+
+	u8         reserved_at_40[0x10];
+	u8         host_pci_device[0x10];
+
+	u8         reserved_at_60[0x10];
+	u8         host_pci_function[0x10];
+
+	u8         reserved_at_80[0x180];
+};
+
+struct mlx5_ifc_query_host_params_in_bits {
+	u8         opcode[0x10];
+	u8         reserved_at_10[0x10];
+
+	u8         reserved_at_20[0x10];
+	u8         op_mod[0x10];
+
+	u8         reserved_at_40[0x40];
+};
+
+struct mlx5_ifc_query_host_params_out_bits {
+	u8         status[0x8];
+	u8         reserved_at_8[0x18];
+
+	u8         syndrome[0x20];
+
+	u8         reserved_at_40[0x40];
+
+	struct mlx5_ifc_host_params_context_bits host_params_context;
+
+	u8         reserved_at_280[0x180];
 };
 
 #endif /* MLX5_IFC_H */

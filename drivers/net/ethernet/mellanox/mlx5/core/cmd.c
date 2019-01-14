@@ -325,6 +325,7 @@ static int mlx5_internal_err_ret_value(struct mlx5_core_dev *dev, u16 op,
 	case MLX5_CMD_OP_QUERY_DIAGNOSTIC_PARAMS:
 	case MLX5_CMD_OP_SET_DIAGNOSTIC_PARAMS:
 	case MLX5_CMD_OP_QUERY_DIAGNOSTIC_COUNTERS:
+	case MLX5_CMD_OP_QUERY_HOST_PARAMS:
 		return MLX5_CMD_STAT_OK;
 
 	case MLX5_CMD_OP_QUERY_HCA_CAP:
@@ -652,6 +653,7 @@ const char *mlx5_command_str(int command)
 	MLX5_COMMAND_STR_CASE(SET_DIAGNOSTIC_PARAMS);
 	MLX5_COMMAND_STR_CASE(QUERY_DIAGNOSTIC_COUNTERS);
 	MLX5_COMMAND_STR_CASE(SYNC_STEERING);
+	MLX5_COMMAND_STR_CASE(QUERY_HOST_PARAMS);
 	default: return "unknown command opcode";
 	}
 }
