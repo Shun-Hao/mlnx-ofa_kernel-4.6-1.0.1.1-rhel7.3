@@ -15,3 +15,4 @@ Change-Id=I6a861a1b75468f9e2559b85c67793046123b23fe; subject=metadata: general m
 Change-Id=I4d01e9752b09873eac23f3394c30e8ccd156a461; subject=ofed_scripts: Fix compilation warning; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=Ie1373006f399fd5fd39fa1934da277f3a1ccf7a7; subject=metadata: Update MD; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=Ie0d5a6b69af9ff812b103641af0ce67cc8f4b985; subject=metadata: Update MD; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I92554fbf061fb6a4969d0e14829df740df206b39; subject=BACKPORTS: Add ib_core backports; feature=backports; upstream_status=ignore; general=;

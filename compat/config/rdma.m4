@@ -132,6 +132,26 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if  percpu has per_cpu__ prefix])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+	#include <linux/percpu-defs.h>
+	#include <linux/percpu.h>
+	],[
+
+	struct radix_tree_preload {
+	unsigned nr;
+	struct radix_tree_node *nodes;
+	};
+	static DEFINE_PER_CPU(struct radix_tree_preload, radix_tree_preloads) = { 0, };
+	this_cpu_ptr(&per_cpu__radix_tree_preloads);
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_PERCPU_CPU__PREFIX, 1,
+		[rtble has direct dst])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if rtble has direct dst])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 	#include <net/route.h>
@@ -5077,6 +5097,11 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 			[udp4_hwcsum is exported by the kernel])],
 	[])
 
+	LB_CHECK_SYMBOL_EXPORT([__ip_dev_find],
+		[net/ipv4/devinet.c],
+		[AC_DEFINE(HAVE___IP_DEV_FIND, 1,
+			[HAVE___IP_DEV_FIND is exported by the kernel])],
+	[])
 	LB_CHECK_SYMBOL_EXPORT([inet_confirm_addr],
 		[net/ipv4/devinet.c],
 		[AC_DEFINE(HAVE_INET_CONFIRM_ADDR_EXPORTED, 1,
@@ -5542,6 +5567,24 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 			[fib_lookup is exported by the kernel])],
 	[])
 
+	AC_MSG_CHECKING([if idr.h has idr_for_each_entry])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/idr.h>
+	],[
+                struct ib_uverbs_file ufile
+                struct ib_uobject *entry;
+                int id;
+                idr_for_each_entry(ufile->idr, entry, id);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_IDR_FOR_EACH_ENTRY, 1,
+			  [idr_for_each_entry is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if idr.h has idr_alloc_cyclic])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/idr.h>
@@ -5615,6 +5658,51 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_IDA_SIMPLE_GET, 1,
 			  [ida_simple_get is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if idr.h has idr_lock])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/idr.h>
+	],[
+		idr_lock(NULL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_IDR_LOCK, 1,
+			  [idr_lock is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if nospec.h has array_index_nospec])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/nospec.h>
+	],[
+		array_index_nospec(0, 0);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_ARRAY_INDEX_NOSPEC, 1,
+			  [array_index_nospec is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+	AC_MSG_CHECKING([if idr.h has ida_alloc_max])
+
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/idr.h>
+	],[
+		ida_alloc_max(NULL, 0, 0);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_IDA_ALLOC, 1,
+			  [ida_alloc_max is defined])
 	],[
 		AC_MSG_RESULT(no)
 	])
@@ -6203,6 +6291,66 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_KVZALLOC, 1,
 			[kvzalloc is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if mm.h has mmget])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/sched/mm.h>
+	],[
+		mmget(NULL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_MMGET, 1,
+			[mmget is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if sched/mm.h has mmget_not_zero])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/sched/mm.h>
+	],[
+		mmget_not_zero(NULL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_SCHED_MMGET_NOT_ZERO, 1,
+			[mmget_not_zero is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if mm.h has mmget_not_zero])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+                #include <linux/sched.h>
+	],[
+		mmget_not_zero(NULL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_MMGET_NOT_ZERO, 1,
+			[mmget_not_zero is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if mm.h has mmgrab])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/sched/mm.h>
+	],[
+		mmgrab(NULL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_MMGRAB, 1,
+			[mmgrab is defined])
 	],[
 		AC_MSG_RESULT(no)
 	])
@@ -7382,6 +7530,19 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if linux/pci-p2pdma.h exists])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/pci-p2pdma.h>
+	],[
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_PCI_P2PDMA_H, 1,
+			  [linux/pci-p2pdma.h exists])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if linux/sched/signal.h exists])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/sched/signal.h>
@@ -7391,6 +7552,19 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_SCHED_SIGNAL_H, 1,
 			  [linux/sched/signal.h exists])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if linux/sched.h exists])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/sched.h>
+	],[
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_SCHED_H, 1,
+			  [linux/sched.h exists])
 	],[
 		AC_MSG_RESULT(no)
 	])
@@ -8971,6 +9145,67 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+
+	AC_MSG_CHECKING([if radix-tree.h has radix_tree_next_chunk])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+	#include <linux/radix-tree.h>
+	],[
+		radix_tree_next_chunk(NULL, NULL, 0);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_RADIX_TREE_NEXT_CHUNK, 1,
+		[radix_tree_next_chunk is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if radix-tree.h hasradix_tree_is_internal_node])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+	#include <linux/radix-tree.h>
+	],[
+		radix_tree_is_internal_node(NULL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_RADIX_TREE_IS_INTERNAL, 1,
+		[radix_tree_is_internal_node is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if radix-tree.h has radix_tree_iter_delete])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+	#include <linux/radix-tree.h>
+	],[
+		radix_tree_iter_delete(NULL, NULL, NULL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_RADIX_TREE_ITER_DELETE, 1,
+		[radix_tree_iter_delete is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if radix-tree.h has radix_tree_iter_lookup])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+	#include <linux/radix-tree.h>
+	],[
+		radix_tree_iter_lookup(NULL, NULL, 0);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_RADIX_TREE_ITER_LOOKUP, 1,
+		[radix_tree_iter_lookup is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if blkdev.h has blk_queue_write_cache])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/blkdev.h>
@@ -9179,6 +9414,35 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_ISCSI_GET_EP_PARAM, 1,
 			  [get_ep_param is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if mmu_notifier.h has mmu_notifier_call_srcu])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/mmu_notifier.h>
+	],[
+		mmu_notifier_call_srcu(NULL, NULL);
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_MMU_NOTIFIER_CALL_SRCU, 1,
+			  [mmu_notifier_call_srcu defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+
+	AC_MSG_CHECKING([if mmu_notifier.h has mmu_notifier_unregister_no_release])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/mmu_notifier.h>
+	],[
+		mmu_notifier_unregister_no_release(NULL, NULL);
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_MMU_NOTIFIER_UNREGISTER_NO_RELEASE, 1,
+			  [mmu_notifier_unregister_no_release defined])
 	],[
 		AC_MSG_RESULT(no)
 	])
