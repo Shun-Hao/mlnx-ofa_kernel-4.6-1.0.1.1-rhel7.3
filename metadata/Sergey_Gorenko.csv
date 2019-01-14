@@ -12,3 +12,4 @@ Change-Id=Ib96820d320a5d11bb4562cf6fb511ec51945c321; subject=IB/isert: Use the s
 Change-Id=Ib98d8ab5abd3b232484990c4da49af9e5a70bf1e; subject=RDMA: Fix compatibility with Lustre; feature=lustre_support; upstream_status=NA; general=;
 Change-Id=Ia74a3461fc098843d13369d3f94693f085c70811; subject=IB/cm: Make the cm_calc_udp_sport function static; feature=udp_sport; upstream_status=in_progress; general=;
 Change-Id=I0b1e5d87720211002662ebb0da3f1c83eeb77c90; subject=BACKPORTS: Add srp backports; feature=backports; upstream_status=ignore; general=;
+Change-Id=Idf56391dd1c4f21ddf1d0924fbc82435df2f6a1d; subject=BACKPORTS: Add iser backports; feature=backports; upstream_status=ignore; general=;
