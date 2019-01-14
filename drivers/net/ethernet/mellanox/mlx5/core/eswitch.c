@@ -2088,7 +2088,7 @@ int mlx5_eswitch_init(struct mlx5_core_dev *dev)
 	bool access_other_hca_roce;
 	int err, i;
 
-	if (!MLX5_ESWITCH_MANAGER(dev))
+	if (!MLX5_VPORT_MANAGER(dev))
 		return 0;
 
 	esw_info(dev,
@@ -2211,7 +2211,7 @@ int mlx5_eswitch_vport_get_other_hca_cap_roce(struct mlx5_eswitch *esw,
 
 void mlx5_eswitch_cleanup(struct mlx5_eswitch *esw)
 {
-	if (!esw || !MLX5_ESWITCH_MANAGER(esw->dev))
+	if (!esw || !MLX5_VPORT_MANAGER(esw->dev))
 		return;
 
 	esw_info(esw->dev, "cleanup\n");
