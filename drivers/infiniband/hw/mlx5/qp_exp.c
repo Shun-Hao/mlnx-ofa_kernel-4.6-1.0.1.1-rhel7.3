@@ -160,8 +160,6 @@ void mlx5_ib_exp_set_rqc(void *rqc, struct mlx5_ib_rwq *rwq)
 
 	if (rwq->flags & MLX5_EXP_WQ_FLAG_RX_END_PADDING)
 		MLX5_SET(wq, wq, end_padding_mode, MLX5_WQ_END_PAD_MODE_ALIGN);
-	else
-		MLX5_SET(wq, wq, end_padding_mode, MLX5_WQ_END_PAD_MODE_NONE);
 
 	if (rwq->flags & MLX5_EXP_WQ_FLAG_SCATTER_FCS)
 		MLX5_SET(rqc, rqc, scatter_fcs, 1);
