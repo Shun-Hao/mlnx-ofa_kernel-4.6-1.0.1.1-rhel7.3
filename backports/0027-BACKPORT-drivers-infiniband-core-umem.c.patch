@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/umem.c
 
-Change-Id: I38d6d4d8c2488ca8da3e5bcb2ebf20f5286beb04
+Change-Id: I21e5866ce3102df0e005fccb882bf55844072c36
 ---
  drivers/infiniband/core/umem.c | 57 ++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 57 insertions(+)

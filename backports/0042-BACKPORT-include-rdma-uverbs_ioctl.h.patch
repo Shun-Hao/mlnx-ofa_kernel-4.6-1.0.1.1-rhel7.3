@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: include/rdma/uverbs_ioctl.h
 
-Change-Id: Ib940820bffec06f056cf0616e27c9b19a1cede96
+Change-Id: I06fad3ad1596e9a48d102ccbf88fe911284b9acd
 ---
  include/rdma/uverbs_ioctl.h | 8 ++++++++
  1 file changed, 8 insertions(+)

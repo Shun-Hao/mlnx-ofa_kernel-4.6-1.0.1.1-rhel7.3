@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/netlink.c
 
-Change-Id: I83c21f574606e677455262a7bb59830ea9aa61ae
+Change-Id: Icb56e4b83696ad166a987c404c5a84b8292e1bb1
 ---
  drivers/infiniband/core/netlink.c | 46 +++++++++++++++++++++++++++++++++++++++
  1 file changed, 46 insertions(+)

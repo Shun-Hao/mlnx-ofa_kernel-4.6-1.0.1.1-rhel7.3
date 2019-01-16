@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/cq.c
 
-Change-Id: I834e6b7d500b1e5a0cdbbd7eb9c7475550bf386c
+Change-Id: Iea9dff2ec2d4e3bbb08c6c201a8aa863794d5525
 ---
  drivers/infiniband/core/cq.c | 44 ++++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 44 insertions(+)

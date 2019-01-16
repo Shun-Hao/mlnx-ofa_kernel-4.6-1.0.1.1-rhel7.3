@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/rdma_core.c
 
-Change-Id: I2eabbcb851e39b1e40f18fe4543a06f9bab4e0a0
+Change-Id: Ic7704644eb9c79041a3dfe47e2eb141031f070c9
 ---
  drivers/infiniband/core/rdma_core.c | 35 ++++++++++++++++++++++++++++++++---
  1 file changed, 32 insertions(+), 3 deletions(-)

@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: include/rdma/ib_verbs.h
 
-Change-Id: I854bcb4b01bf5bc69f7a3d9ae082475f671bdc36
+Change-Id: I78c5a4a979796ddb97c0a3262fd811907bce01ae
 ---
  include/rdma/ib_verbs.h | 183 +++++++++++++++++++++++++++++++++++++++++++++++-
  1 file changed, 182 insertions(+), 1 deletion(-)

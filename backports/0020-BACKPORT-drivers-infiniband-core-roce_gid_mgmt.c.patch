@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/roce_gid_mgmt.c
 
-Change-Id: Icf13fc9e2cc22560c7b3b60d8e13613756783d20
+Change-Id: I7103651c4260d3ae678b94686f5c7299e8cea573
 ---
  drivers/infiniband/core/roce_gid_mgmt.c | 125 +++++++++++++++++++++++++++++---
  1 file changed, 116 insertions(+), 9 deletions(-)

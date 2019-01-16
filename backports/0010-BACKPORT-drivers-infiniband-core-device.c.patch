@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/device.c
 
-Change-Id: Ia83a918aeae16044172b9eadd8920f961e9dd0dd
+Change-Id: Icb8161aa9884a27fcbb038a7d7d5b19fec12aa29
 ---
  drivers/infiniband/core/device.c | 128 +++++++++++++++++++++++++++++++++++++--
  1 file changed, 124 insertions(+), 4 deletions(-)

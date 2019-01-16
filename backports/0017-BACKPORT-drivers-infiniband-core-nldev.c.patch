@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/nldev.c
 
-Change-Id: I7359c3a6b1e08440468ae757ffde6f0670dd97ca
+Change-Id: I6637e9970a9ef7277586bbf2512021f81aeb4e8c
 ---
  drivers/infiniband/core/nldev.c | 82 +++++++++++++++++++++++++++++++++++++++++
  1 file changed, 82 insertions(+)

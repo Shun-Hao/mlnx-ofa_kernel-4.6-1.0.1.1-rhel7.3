@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/rw.c
 
-Change-Id: Ie825eade774969a238879b0aad5cbbfb489462e8
+Change-Id: Ie4ac79c18012c643dfc83a35ba2ce816b6350995
 ---
  drivers/infiniband/core/rw.c | 9 +++++++--
  1 file changed, 7 insertions(+), 2 deletions(-)

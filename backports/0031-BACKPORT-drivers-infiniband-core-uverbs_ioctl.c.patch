@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/uverbs_ioctl.c
 
-Change-Id: I8e752b236d6fb3d2859ba202d537edcb58a26d31
+Change-Id: I5d11e0767ba3c33a7bb95fef10d819cc61f5dbb7
 ---
  drivers/infiniband/core/uverbs_ioctl.c | 7 ++++++-
  1 file changed, 6 insertions(+), 1 deletion(-)

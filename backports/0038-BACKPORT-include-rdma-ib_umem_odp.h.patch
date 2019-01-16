@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: include/rdma/ib_umem_odp.h
 
-Change-Id: I78dd8e7313db3fc2066928aad1861c12950e6e17
+Change-Id: I8c221e22a60a9a134498815bf8f8187b155a1433
 ---
  include/rdma/ib_umem_odp.h | 27 ++++++++++++++++++++++++++-
  1 file changed, 26 insertions(+), 1 deletion(-)

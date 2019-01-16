@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/sa_query.c
 
-Change-Id: Ifacdb8121c2a1581534654bbedcc2a4fc166efff
+Change-Id: I5feb67cc247e535a6b8e9baf9f537d391f4c7097
 ---
  drivers/infiniband/core/sa_query.c | 53 ++++++++++++++++++++++++++++++++++++--
  1 file changed, 51 insertions(+), 2 deletions(-)

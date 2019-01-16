@@ -11,6 +11,7 @@
 #define dev_fmt(fmt) fmt
 #endif
 
+#ifndef dev_dbg_ratelimited
 #if defined(CONFIG_DYNAMIC_DEBUG)
 /* descriptor check is first to prevent flooding with "callbacks suppressed" */
 #define dev_dbg_ratelimited(dev, fmt, ...)                              \
@@ -40,8 +41,7 @@
 		dev_printk(KERN_DEBUG, dev, dev_fmt(fmt), ##__VA_ARGS__); \
 	} while (0)
 #endif
-
-
+#endif
 #ifndef DEVICE_ATTR_RO
 #define DEVICE_ATTR_RO(_name) \
 	struct device_attribute dev_attr_##_name = __ATTR_RO(_name)

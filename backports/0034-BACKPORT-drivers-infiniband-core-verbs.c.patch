@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/verbs.c
 
-Change-Id: I301c46c06a9e8aa13b827b4dcd9cfbdad81996ed
+Change-Id: Idbd37595ce0a58d4a17ab38c9140ef96d2a9b68e
 ---
  drivers/infiniband/core/verbs.c | 14 ++++++++++++++
  1 file changed, 14 insertions(+)

@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/iwpm_util.c
 
-Change-Id: I53e6e959718ee6c32b4bcfef22d9868a84fc0b74
+Change-Id: I96e1d64cc3c98d685b37cc9a02c5d0103181995e
 ---
  drivers/infiniband/core/iwpm_util.c | 22 ++++++++++++++++------
  1 file changed, 16 insertions(+), 6 deletions(-)

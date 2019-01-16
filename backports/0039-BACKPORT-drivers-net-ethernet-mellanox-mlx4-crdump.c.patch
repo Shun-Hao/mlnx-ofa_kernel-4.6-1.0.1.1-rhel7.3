@@ -1,0 +1,60 @@
+From: Talat Batheesh <talatb@mellanox.com>
+Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx4/crdump.c
+
+Change-Id: Ib3bbc4e1369d2b599a6cb14c917afa8e634e992b
+---
+ drivers/net/ethernet/mellanox/mlx4/crdump.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/ethernet/mellanox/mlx4/crdump.c b/drivers/net/ethernet/mellanox/mlx4/crdump.c
+index xxxxxxx..xxxxxxx 100644
+--- a/drivers/net/ethernet/mellanox/mlx4/crdump.c
++++ b/drivers/net/ethernet/mellanox/mlx4/crdump.c
+@@ -31,7 +31,7 @@
+  */
+ 
+ #include "mlx4.h"
+-
++#ifdef HAVE_DEVLINK_PARAM_GENERIC_ID_REGION_SNAPSHOT
+ #define BAD_ACCESS			0xBADACCE5
+ #define HEALTH_BUFFER_SIZE		0x40
+ #define CR_ENABLE_BIT			swab32(BIT(6))
+@@ -78,18 +78,21 @@ static void mlx4_crdump_collect_crspace(struct mlx4_dev *dev,
+ 					u8 __iomem *cr_space,
+ 					u32 id)
+ {
++#ifdef HAVE_DEVLINK_PARAM_GENERIC_ID_REGION_SNAPSHOT
+ 	struct mlx4_fw_crdump *crdump = &dev->persist->crdump;
++#endif
+ 	struct pci_dev *pdev = dev->persist->pdev;
+ 	unsigned long cr_res_size;
+ 	u8 *crspace_data;
+ 	int offset;
+ 	int err;
+ 
++#ifdef HAVE_DEVLINK_PARAM_GENERIC_ID_REGION_SNAPSHOT
+ 	if (!crdump->region_crspace) {
+ 		mlx4_err(dev, "crdump: cr-space region is NULL\n");
+ 		return;
+ 	}
+-
++#endif
+ 	/* Try to collect CR space */
+ 	cr_res_size = pci_resource_len(pdev, 0);
+ 	crspace_data = kvmalloc(cr_res_size, GFP_KERNEL);
+@@ -203,8 +206,9 @@ int mlx4_crdump_init(struct mlx4_dev *dev)
+ 	struct mlx4_fw_crdump *crdump = &dev->persist->crdump;
+ 	struct pci_dev *pdev = dev->persist->pdev;
+ 
++#ifdef HAVE_DEVLINK_PARAM_GENERIC_ID_REGION_SNAPSHOT
+ 	crdump->snapshot_enable = false;
+-
++#endif
+ 	/* Create cr-space region */
+ 	crdump->region_crspace =
+ 		devlink_region_create(devlink,
+@@ -237,3 +241,4 @@ void mlx4_crdump_end(struct mlx4_dev *dev)
+ 	devlink_region_destroy(crdump->region_fw_health);
+ 	devlink_region_destroy(crdump->region_crspace);
+ }
++#endif

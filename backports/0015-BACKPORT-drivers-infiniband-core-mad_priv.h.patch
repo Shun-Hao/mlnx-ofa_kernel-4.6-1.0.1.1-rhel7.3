@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/mad_priv.h
 
-Change-Id: I828e30ebb02e122e575a657175da3cfca7a5e1e8
+Change-Id: Ia00c21cb88fce7cd90b82458c3c9a8316f07ee40
 ---
  drivers/infiniband/core/mad_priv.h | 10 ++++++++++
  1 file changed, 10 insertions(+)

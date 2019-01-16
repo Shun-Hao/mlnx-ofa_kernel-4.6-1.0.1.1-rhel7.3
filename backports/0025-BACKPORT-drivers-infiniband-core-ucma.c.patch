@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/ucma.c
 
-Change-Id: I7d66aea510071b40d7b76341d383b2e75829ef29
+Change-Id: I1528624a128bc6027f95bb50307224c7f1893489
 ---
  drivers/infiniband/core/ucma.c | 89 ++++++++++++++++++++++++++++++++++++++++--
  1 file changed, 86 insertions(+), 3 deletions(-)

@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/cma_configfs.c
 
-Change-Id: I0a11e02edefdd39c558476613eedb5a63a5b8746
+Change-Id: Ib536e15f2aa4d7fa6ffdb8495d63c7f32cec702f
 ---
  drivers/infiniband/core/cma_configfs.c | 138 ++++++++++++++++++++++++++++++++-
  1 file changed, 136 insertions(+), 2 deletions(-)

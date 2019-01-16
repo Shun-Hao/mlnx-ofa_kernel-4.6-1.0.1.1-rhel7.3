@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/user_mad.c
 
-Change-Id: I4699bbd81be6f74de9d5b965be22bac885d4f4ce
+Change-Id: I07f8dd824593c5a54172e60cecaa2f94f19b73fb
 ---
  drivers/infiniband/core/user_mad.c | 39 +++++++++++++++++++++++++++++++++++---
  1 file changed, 36 insertions(+), 3 deletions(-)

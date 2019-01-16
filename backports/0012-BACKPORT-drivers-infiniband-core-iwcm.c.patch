@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/iwcm.c
 
-Change-Id: I55fbb3fb011d586aac56e16267facdc8da9faad9
+Change-Id: I91a0c4b669bec0a1b0b3be20bea007f9c61ea44d
 ---
  drivers/infiniband/core/iwcm.c | 24 ++++++++++++++++++++++++
  1 file changed, 24 insertions(+)

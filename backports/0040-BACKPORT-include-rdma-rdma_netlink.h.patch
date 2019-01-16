@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: include/rdma/rdma_netlink.h
 
-Change-Id: I8391fa4ac14e1ab35099575515acb703f39d5d0d
+Change-Id: I6b6c690eac61fa292cc09dde37e60ded142660fa
 ---
  include/rdma/rdma_netlink.h | 4 ++++
  1 file changed, 4 insertions(+)

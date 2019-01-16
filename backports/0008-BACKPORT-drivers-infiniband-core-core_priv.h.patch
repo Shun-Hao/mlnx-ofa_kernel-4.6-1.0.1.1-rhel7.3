@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/core_priv.h
 
-Change-Id: I7839d16995d4a032d5c7d614947ebdf6087a6081
+Change-Id: Ic8f8b5408b25eb1393e043909fb4b49e466d2b8a
 ---
  drivers/infiniband/core/core_priv.h | 42 +++++++++++++++++++++++++++++++++++++
  1 file changed, 42 insertions(+)

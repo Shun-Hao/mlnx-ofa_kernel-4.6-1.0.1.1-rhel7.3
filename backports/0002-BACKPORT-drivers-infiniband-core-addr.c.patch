@@ -1,7 +1,7 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/core/addr.c
 
-Change-Id: I6467cfa8e2e281b3587ce3ee851f6bd09669e9b0
+Change-Id: I0e8cece7f736c6000f15b18a73daad0ffc5af6b5
 ---
  drivers/infiniband/core/addr.c | 150 +++++++++++++++++++++++++++++++++++++++--
  1 file changed, 146 insertions(+), 4 deletions(-)
