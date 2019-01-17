@@ -7911,6 +7911,28 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if ib_umem_notifier_invalidate_range_start has parameter blockable])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/mmu_notifier.h>
+		static int notifier(struct mmu_notifier *mn,
+				    struct mm_struct *mm,
+				    unsigned long start,
+				    unsigned long end,
+				    bool blockable) {
+			return 0;
+		}
+	],[
+		static const struct mmu_notifier_ops notifiers = {
+			.invalidate_range_start = notifier
+		};
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_UMEM_NOTIFIER_PARAM_BLOCKABLE, 1,
+			  [ib_umem_notifier_invalidate_range_start has parameter blockable])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if netdevice.h has struct netdev_notifier_info])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/netdevice.h>
