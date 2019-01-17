@@ -32,3 +32,4 @@ Change-Id=Idcb7f1f4c255a5b70a0a154f368ed0813c68cb43; subject=BACKPORT MLX5_CORE_
 Change-Id=Iabb49ff09a2bf03b600b17a68d5ed54439ba4e92; subject=BACKPORTS: VXLAN lib; feature=backports; upstream_status=ignore; general=;
 Change-Id=If2a9fc72269b307e45769ea90c44f68b437d0223; subject=BACKPORTS: rdma.m4 fix; feature=backports; upstream_status=ignore; general=;
 Change-Id=I54466a61d5f168b12af165390db2eaceb360048b; subject=BACKPORTS: Fix 3.10.0-862.el7.x86_64 from RHEL7.5 compilation issue(missed HAVE_NDO_XDP check); feature=backports; upstream_status=ignore; general=;
+Change-Id=Id2233cad0fe0f3d33b7ed9558c5c3c7ff7903b54; subject=net/mlx5: Fix compilation warning; feature=ibm_as_notify; upstream_status=NA; general=;

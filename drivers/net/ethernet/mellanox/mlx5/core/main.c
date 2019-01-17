@@ -2015,9 +2015,9 @@ static void mlx5_as_notify_init(struct mlx5_core_dev *dev)
 
 #ifdef HAVE_PNV_PCI_AS_NOTIFY
 	err = pnv_pci_enable_tunnel(pdev, &asn_match_value);
-#endif
 	if (err)
 		return;
+#endif
 	err = set_tunneled_operation(dev, 0xFFFF, asn_match_value, &log_response_bar_size, &response_bar_address);
 	if (err)
 		return;
