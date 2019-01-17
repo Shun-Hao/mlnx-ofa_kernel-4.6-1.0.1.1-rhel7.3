@@ -19,3 +19,4 @@ Change-Id=I66197c74aa6f78139082eda06a40e89a824a3251; subject=BACKPORTS: Add ib_c
 Change-Id=Ib4eeeba180d7bcd5471710a5022f43a0ff5451a5; subject=IB/mlx5: Replace non-supported function clear_thread_tidr; feature=mlx5_ib_bugs; upstream_status=NA; general=;
 Change-Id=I5d7b00c372b9a6222845453ec1ccc4d2a6a30c9f; subject=Fix HAVE_UMEM_NOTIFIER_PARAM_BLOCKABLE issue; feature=backports; upstream_status=ignore; general=;
 Change-Id=I3a509514ce8e884f5605215485ca11e6d857dd71; subject=BACKPORTS MLX4-CORE; feature=backport; upstream_status=ignore; general=;
+Change-Id=I22c8b47f6e4d0aad0b521352fcc97d60c1e8e1ee; subject=BACKPORTS MLN4_IB; feature=backports; upstream_status=ignore; general=;
