@@ -33,3 +33,4 @@ Change-Id=Iabb49ff09a2bf03b600b17a68d5ed54439ba4e92; subject=BACKPORTS: VXLAN li
 Change-Id=If2a9fc72269b307e45769ea90c44f68b437d0223; subject=BACKPORTS: rdma.m4 fix; feature=backports; upstream_status=ignore; general=;
 Change-Id=I54466a61d5f168b12af165390db2eaceb360048b; subject=BACKPORTS: Fix 3.10.0-862.el7.x86_64 from RHEL7.5 compilation issue(missed HAVE_NDO_XDP check); feature=backports; upstream_status=ignore; general=;
 Change-Id=Id2233cad0fe0f3d33b7ed9558c5c3c7ff7903b54; subject=net/mlx5: Fix compilation warning; feature=ibm_as_notify; upstream_status=NA; general=;
+Change-Id=Ic3a73152e4b972b0bc1a17f4e30810c76efd7d26; subject=mlx5/IB: set default value for gid_type; feature=ib_core_bugs; upstream_status=NA; general=;
