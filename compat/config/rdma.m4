@@ -930,6 +930,21 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if linux/hash.h hash_32_generic])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/hash.h>
+	],[
+		int x = hash_32_generic(0, 0);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_HASH_32_GENERIC, 1,
+			[hash_32_generic is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if pci.h pci_sriov_get_totalvfs])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/pci.h>
@@ -1205,6 +1220,21 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_SKB_FLOW_DISSECT_FLOW_KEYS_HAS_3_PARAMS, 1,
 			  [skb_flow_dissect_flow_keys has 3 parameters])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if ip.h ip_local_out has 3 parameters])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <net/ip.h>
+	],[
+		ip_local_out(NULL, NULL, NULL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_IP_LOCAL_OUT_3_PARAMS, 1,
+			  [ip_local_out has 3 parameters])
 	],[
 		AC_MSG_RESULT(no)
 	])
