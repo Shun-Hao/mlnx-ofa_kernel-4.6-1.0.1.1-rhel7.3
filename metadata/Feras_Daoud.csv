@@ -30,3 +30,4 @@ Change-Id=Id0d0e13ffb3d012d794536018af6717fe8ecf5e4; subject=IB/ipoib: Adapt bas
 Change-Id=I245f276d6c6e6f569ee3b31330836173971dba2a; subject=fixup! IB/ipoib: Add ipoib_enhanced module parameter; feature=ipoib_bugs; upstream_status=NA; general=;
 Change-Id=Idcc639c2262b4122a43a096fb704e6eab23904a1; subject=Revert "IB/ipoib: Block PKEY creation using ip link"; feature=ipoib_bugs; upstream_status=NA; general=;
 Change-Id=Iebe42f3b46d5ba36b6732ebffd4d3fe5a3b01daa; subject=openibd: Change default tracepoint path of the FW tracer; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=If9e06340b9a3a92508038f24b3334b3052cc1a3b; subject=net/mlx5: Change fw tracer ownership message verbosity; feature=mlx5_tracer; upstream_status=NA; general=;
