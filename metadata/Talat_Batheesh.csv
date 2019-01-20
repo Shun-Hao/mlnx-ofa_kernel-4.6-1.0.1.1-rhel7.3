@@ -21,3 +21,4 @@ Change-Id=I5d7b00c372b9a6222845453ec1ccc4d2a6a30c9f; subject=Fix HAVE_UMEM_NOTIF
 Change-Id=I3a509514ce8e884f5605215485ca11e6d857dd71; subject=BACKPORTS MLX4-CORE; feature=backports; upstream_status=ignore; general=;
 Change-Id=I22c8b47f6e4d0aad0b521352fcc97d60c1e8e1ee; subject=BACKPORTS MLN4_IB; feature=backports; upstream_status=ignore; general=;
 Change-Id=I63b1759922baf91037f5d179fade27309ac71ce4; subject=backports: add RXE backports; feature=backports; upstream_status=ignore; general=;
+Change-Id=Ia56e1975d940c21134c6ed9ba1d191bb13f1205c; subject=Backports mlxfw; feature=backports; upstream_status=ignore; general=;
