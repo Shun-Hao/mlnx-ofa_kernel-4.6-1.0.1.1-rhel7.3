@@ -1395,9 +1395,9 @@ struct ib_mr *mlx5_ib_reg_user_mr(struct ib_pd *pd,
 
 		/* it is safe to do this because current is running */
 #ifdef CONFIG_CXL_LIB
-		//umem->mm = current->mm;
+		//umem->owning_mm = current->mm;
 		umem->owning_mm = current->mm;
-		mmgrab(umem->mm);
+		mmgrab(umem->owning_mm);
 #endif
 	} else if (use_umr(dev, order)) {
 		mr = alloc_mr_from_cache(pd, umem, virt_addr, length, ncont,
@@ -1734,11 +1734,11 @@ static void dereg_mr(struct mlx5_ib_dev *dev, struct mlx5_ib_mr *mr)
 #ifdef CONFIG_CXL_LIB
 	if (mlx5_ib_capi_enabled(dev) &&
 	    (mr->access_flags | IB_ACCESS_ON_DEMAND) &&
-	    umem && umem->mm) {
-		if (virt_addr_valid(umem->mm))
-			mmdrop(umem->mm);
+	    umem && umem->owning_mm) {
+		if (virt_addr_valid(umem->owning_mm))
+			mmdrop(umem->owning_mm);
 		else
-			mlx5_ib_warn(dev, "invalid mm =%p\n", umem->mm);
+			mlx5_ib_warn(dev, "invalid mm =%p\n", umem->owning_mm);
 	}
 #endif
 
