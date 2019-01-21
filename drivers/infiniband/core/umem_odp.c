@@ -219,8 +219,12 @@ static void ib_umem_notifier_invalidate_range(struct mmu_notifier *mn,
 					      unsigned long start,
 					      unsigned long end)
 {
-	struct ib_ucontext *context = container_of(mn, struct ib_ucontext, mn);
+	struct ib_ucontext_per_mm *per_mm = container_of(mn, struct ib_ucontext_per_mm, mn);
+	struct ib_ucontext *context;
 
+	if (!per_mm->context)
+		return;
+	context = per_mm->context;
 	if (!context->invalidate_range)
 		return;
 
