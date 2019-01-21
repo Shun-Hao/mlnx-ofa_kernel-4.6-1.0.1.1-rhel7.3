@@ -1,0 +1,34 @@
+From: Talat Batheesh <talatb@mellanox.com>
+Subject: [PATCH] BACKPORT: drivers/infiniband/ulp/ipoib/ipoib_vlan.c
+
+Change-Id: Iaa3778210a8919cf697c2c3881a1e470409b79f8
+---
+ drivers/infiniband/ulp/ipoib/ipoib_vlan.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/infiniband/ulp/ipoib/ipoib_vlan.c b/drivers/infiniband/ulp/ipoib/ipoib_vlan.c
+index xxxxxxx..xxxxxxx 100644
+--- a/drivers/infiniband/ulp/ipoib/ipoib_vlan.c
++++ b/drivers/infiniband/ulp/ipoib/ipoib_vlan.c
+@@ -97,8 +97,9 @@ int __ipoib_vlan_add(struct ipoib_dev_priv *ppriv, struct ipoib_dev_priv *priv,
+ 	 * We do not need to touch priv if register_netdevice fails, so just
+ 	 * always use this flow.
+ 	 */
++#ifdef HAVE_NET_DEVICE_NEEDS_FREE_NETDEV
+ 	ndev->priv_destructor = ipoib_intf_free;
+-
++#endif
+ 	/*
+ 	 * Racing with unregister of the parent must be prevented by the
+ 	 * caller.
+@@ -156,8 +157,10 @@ sysfs_failed:
+ 	return -ENOMEM;
+ 
+ out_early:
++#ifdef HAVE_NET_DEVICE_NEEDS_FREE_NETDEV
+ 	if (ndev->priv_destructor)
+ 		ndev->priv_destructor(ndev);
++#endif
+ 	return result;
+ }
+ 

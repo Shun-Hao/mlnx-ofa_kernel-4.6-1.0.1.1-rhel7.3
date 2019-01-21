@@ -1,0 +1,72 @@
+From: Talat Batheesh <talatb@mellanox.com>
+Subject: [PATCH] BACKPORT: drivers/infiniband/ulp/ipoib/ipoib_netlink.c
+
+Change-Id: I211f730ab690ef4e0381accadde8ceb0ab4bcbae
+---
+ drivers/infiniband/ulp/ipoib/ipoib_netlink.c | 25 +++++++++++++++++++++++--
+ 1 file changed, 23 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/infiniband/ulp/ipoib/ipoib_netlink.c b/drivers/infiniband/ulp/ipoib/ipoib_netlink.c
+index xxxxxxx..xxxxxxx 100644
+--- a/drivers/infiniband/ulp/ipoib/ipoib_netlink.c
++++ b/drivers/infiniband/ulp/ipoib/ipoib_netlink.c
+@@ -64,9 +64,14 @@ nla_put_failure:
+ 	return -EMSGSIZE;
+ }
+ 
++#if defined(HAVE_RTNL_LINK_OPS_NEWLINK_5_PARAMS)
+ static int ipoib_changelink(struct net_device *dev, struct nlattr *tb[],
+ 			    struct nlattr *data[],
+ 			    struct netlink_ext_ack *extack)
++#else
++static int ipoib_changelink(struct net_device *dev, struct nlattr *tb[],
++			    struct nlattr *data[])
++#endif
+ {
+ 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
+ 	u16 mode, umcast;
+@@ -94,9 +99,17 @@ out_err:
+ 	return ret;
+ }
+ 
++#if defined(HAVE_RTNL_LINK_OPS_NEWLINK_5_PARAMS)
+ static int ipoib_new_child_link(struct net *src_net, struct net_device *dev,
+ 				struct nlattr *tb[], struct nlattr *data[],
+ 				struct netlink_ext_ack *extack)
++#elif defined(HAVE_RTNL_LINK_OPS_NEWLINK_4_PARAMS)
++static int ipoib_new_child_link(struct net *src_net, struct net_device *dev,
++				struct nlattr *tb[], struct nlattr *data[])
++#else
++static int ipoib_new_child_link(struct net_device *dev,
++				struct nlattr *tb[], struct nlattr *data[])
++#endif
+ {
+ 	struct net_device *pdev;
+ 	struct ipoib_dev_priv *ppriv;
+@@ -105,8 +118,12 @@ static int ipoib_new_child_link(struct net *src_net, struct net_device *dev,
+ 
+ 	if (!tb[IFLA_LINK])
+ 		return -EINVAL;
+-
++#ifdef HAVE_RTNL_LINK_OPS_NEWLINK_4_PARAMS
+ 	pdev = __dev_get_by_index(src_net, nla_get_u32(tb[IFLA_LINK]));
++#else
++	pdev = __dev_get_by_index(dev_net(dev), nla_get_u32(tb[IFLA_LINK]));
++#endif
++
+ 	if (!pdev || pdev->type != ARPHRD_INFINIBAND)
+ 		return -ENODEV;
+ 
+@@ -135,7 +152,11 @@ static int ipoib_new_child_link(struct net *src_net, struct net_device *dev,
+ 		return err;
+ 
+ 	if (data) {
+-		err = ipoib_changelink(dev, tb, data, extack);
++#if defined(HAVE_RTNL_LINK_OPS_NEWLINK_5_PARAMS)
++       	err = ipoib_changelink(dev, tb, data, extack);
++#else
++		err = ipoib_changelink(dev, tb, data);
++#endif
+ 		if (err) {
+ 			unregister_netdevice(dev);
+ 			return err;
