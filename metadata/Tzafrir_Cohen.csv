@@ -4,3 +4,7 @@ Change-Id=I63e07d20d466ffcc90711c94c7796e8eadb75a7a; subject=Revert "mlx5/core: 
 Change-Id=Id72862b020423bbb900925f720112307f6ce263f; subject=Revert "net/mlx5e: Adding flow mapping to queues"; feature=rate_limit_en; upstream_status=NA; general=;
 Change-Id=Ib1460aa561e245fe8298b701e76dee4d5508bc3a; subject=Revert "net/mlx5e: Support addition of special TX queues"; feature=rate_limit_en; upstream_status=NA; general=;
 Change-Id=Id7c28914228e222cb7e5471e0c5867016451dc50; subject=net/mlx4: device LAG on slaves: don't start work; feature=mlx4_core_bugs; upstream_status=in_progress; general=;
+Change-Id=Ib0373dc66659f91b79497808e63f8e50d198f53e; subject=ib_core: fixup: umem_odp.c: ib_ucontext_per_mm; feature=mlx5_capi_v2; upstream_status=NA; general=;
+Change-Id=If1aed85779c06d760f95073d948dcec41c088dc1; subject=ib_mlx5: mr.c: umem->owning_mm; feature=mlx5_ib_bugs; upstream_status=NA; general=;
+Change-Id=Iba13a6eb7ced118294d9b774ec9ab52027471a1f; subject=compat: two missing autoconf tests; feature=backports; upstream_status=ignore; general=;
+Change-Id=I4bb3cd856987290fa2bff5d3fa59f2367d968654; subject=metadata: Update MD; feature=ofed_scripts; upstream_status=ignore; general=;
