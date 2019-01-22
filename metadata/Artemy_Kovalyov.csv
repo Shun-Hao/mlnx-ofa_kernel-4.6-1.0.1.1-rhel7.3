@@ -36,3 +36,4 @@ Change-Id=I3041a13b03c4372b050cb43a8f5e712c97df5626; subject=IB/mlx5: Add mlx5_i
 Change-Id=I1bdc87fb98d1d8a9148df168a440d0a975c36c19; subject=IB/mlx5: Skip non-ODP MR when handling a page fault; feature=rebase; upstream_status=accepted; general=upstream commit ID: 4d5422a309de, tag: v4.20-rc7;
 Change-Id=Ia4bfaee2b723ed0b424a1863179ad675fff529f1; subject=BACKPORTS: Add pcie_dev_attr_group sysfs vars; feature=backports; upstream_status=NA; general=;
 Change-Id=I6680f37c09dffe75f904ea47d37dc4f913846324; subject=BACKPORTS: Fix pcie_dev_attr_group sysfs vars; feature=backports; upstream_status=NA; general=;
+Change-Id=I38437bb159c34acc670c6812a02b396c0ef35774; subject=RDMA/umem: Add missing initialization of owning_mm; feature=ib_core_bugs; upstream_status=accepted; general=;
