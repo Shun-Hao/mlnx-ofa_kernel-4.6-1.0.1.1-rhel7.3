@@ -776,12 +776,6 @@ struct mlx5_ib_multiport {
 	spinlock_t mpi_lock;
 };
 
-struct mlx5_ib_port {
-	struct mlx5_ib_counters cnts;
-	struct mlx5_ib_multiport mp;
-	struct mlx5_ib_dbg_cc_params	*dbg_cc_params;
-};
-
 struct mlx5_roce {
 	/* Protect mlx5_ib_get_netdev from invoking dev_hold() with a NULL
 	 * netdev pointer
@@ -793,6 +787,13 @@ struct mlx5_roce {
 	enum ib_port_state last_port_state;
 	struct mlx5_ib_dev	*dev;
 	u8			native_port_num;
+};
+
+struct mlx5_ib_port {
+	struct mlx5_ib_counters cnts;
+	struct mlx5_ib_multiport mp;
+	struct mlx5_ib_dbg_cc_params *dbg_cc_params;
+	struct mlx5_roce roce;
 };
 
 struct mlx5_ib_dbg_param {
@@ -1015,7 +1016,6 @@ struct mlx5_ib_dev {
 	struct ib_device		ib_dev;
 	const struct uverbs_object_tree_def *driver_trees[7];
 	struct mlx5_core_dev		*mdev;
-	struct mlx5_roce		roce[MLX5_MAX_PORTS];
 	int				num_ports;
 	/* serialize update of capability mask
 	 */

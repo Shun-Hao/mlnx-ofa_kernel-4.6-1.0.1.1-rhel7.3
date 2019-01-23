@@ -3685,7 +3685,7 @@ static unsigned int get_tx_affinity(struct mlx5_ib_dev *dev,
 	} else {
 		tx_port_affinity =
 			(unsigned int)atomic_add_return(
-				1, &dev->roce[port_num].tx_port_affinity) %
+				1, &dev->port[port_num].roce.tx_port_affinity) %
 				MLX5_MAX_PORTS +
 			1;
 		mlx5_ib_dbg(dev, "Set tx affinity 0x%x to qpn 0x%x\n",
