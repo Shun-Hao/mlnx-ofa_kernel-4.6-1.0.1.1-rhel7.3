@@ -402,6 +402,9 @@ out:
 
 static void esw_destroy_legacy_fdb_table(struct mlx5_eswitch *esw)
 {
+	struct mlx5_vport *evport;
+	int i;
+
 	esw_debug(esw->dev, "Destroy FDB Table\n");
 	if (esw->fdb_table.legacy.fdb) {
 		if (esw->fdb_table.legacy.promisc_grp)
@@ -419,6 +422,13 @@ static void esw_destroy_legacy_fdb_table(struct mlx5_eswitch *esw)
 	}
 
 	if (esw->fdb_table.legacy.vepa_fdb) {
+		for (i = 0; i < esw->total_vports; i++) {
+			evport = &esw->vports[i];
+			if (!evport->vepa_rule)
+				continue;
+			mlx5_del_flow_rules(evport->vepa_rule);
+			evport->vepa_rule = NULL;
+		}
 		mlx5_destroy_flow_table(esw->fdb_table.legacy.vepa_fdb);
 		esw->fdb_table.legacy.vepa_fdb = NULL;
 	}
@@ -2533,7 +2543,8 @@ int __mlx5_eswitch_set_vport_vepa_locked(struct mlx5_eswitch *esw,
 	void *misc;
 
 	if (!setting) {
-		mlx5_del_flow_rules(evport->vepa_rule);
+		if (evport->vepa_rule)
+			mlx5_del_flow_rules(evport->vepa_rule);
 		evport->vepa_rule = NULL;
 		return 0;
 	}
