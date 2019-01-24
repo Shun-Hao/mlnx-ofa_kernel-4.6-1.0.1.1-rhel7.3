@@ -25,3 +25,4 @@ Change-Id=Ia56e1975d940c21134c6ed9ba1d191bb13f1205c; subject=Backports: mlxfw; f
 Change-Id=Iffa15550f5dd4c98fe4086761a2599d3ef8f5d4e; subject=Backports:eth-ipoib; feature=backports; upstream_status=ignore; general=;
 Change-Id=I8f48ec55bf7d1fb858b2e0b60527484521b77066; subject=BACKPORTS:IB_IPOIB; feature=backports; upstream_status=ignore; general=;
 Change-Id=I3b78c1160aafdc499aeefde51c41a7b6656eb4b1; subject=BACKPORTS:MLX5_CORE; feature=backports; upstream_status=ignore; general=;
+Change-Id=Ie6a0b78b035e96c5be26e9ce85c14be0524752a6; subject=BACKPORTS: mlx5_ib; feature=backports; upstream_status=ignore; general=;
