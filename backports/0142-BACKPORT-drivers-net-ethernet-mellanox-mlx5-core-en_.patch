@@ -588,7 +588,7 @@ index xxxxxxx..xxxxxxx 100644
  		    !MLX5_CAP_ESW_FLOWTABLE_FDB
  			(priv->mdev,
 -			 ft_field_support.outer_ipv4_ttl)) {
-+			 ft_field_support.outer_ipv4_ttl)) fdef HAVE_TC_CLS_OFFLOAD_EXTACK
++			 ft_field_support.outer_ipv4_ttl)) 
 +			 {
  			NL_SET_ERR_MSG_MOD(extack,
  					   "Matching on TTL is not supported");

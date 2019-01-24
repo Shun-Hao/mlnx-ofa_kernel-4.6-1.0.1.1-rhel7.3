@@ -863,7 +863,7 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		#include <net/pkt_cls.h>
 	],[
 		struct tc_cls_common_offload x;
-		x->extack = NULL;
+		x.extack = NULL;
 
 		return 0;
 	],[
@@ -879,7 +879,7 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		#include <net/pkt_cls.h>
 	],[
 		struct tc_block_offload x;
-		x->extack = NULL;
+		x.extack = NULL;
 
 		return 0;
 	],[
