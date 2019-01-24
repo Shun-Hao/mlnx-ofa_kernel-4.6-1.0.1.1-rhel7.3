@@ -148,6 +148,7 @@ struct mlx5_modify_raw_qp_param {
 	struct mlx5_rate_limit rl;
 
 	u8 rq_q_ctr_id;
+	u16 port;
 };
 
 struct mlx5_ib_sqd {
@@ -1373,11 +1374,11 @@ static void destroy_raw_packet_qp_tis(struct mlx5_ib_dev *dev,
 	mlx5_cmd_destroy_tis(dev->mdev, sq->tisn, to_mpd(pd)->uid);
 }
 
-static void destroy_flow_rule_vport_sq(struct mlx5_ib_dev *dev,
-				       struct mlx5_ib_sq *sq)
+static void destroy_flow_rule_vport_sq(struct mlx5_ib_sq *sq)
 {
 	if (sq->flow_rule)
 		mlx5_del_flow_rules(sq->flow_rule);
+	sq->flow_rule = NULL;
 }
 
 static int create_raw_packet_qp_sq(struct mlx5_ib_dev *dev,
@@ -1444,14 +1445,7 @@ static int create_raw_packet_qp_sq(struct mlx5_ib_dev *dev,
 	if (err)
 		goto err_umem;
 
-	err = create_flow_rule_vport_sq(dev, sq);
-	if (err)
-		goto err_flow;
-
 	return 0;
-
-err_flow:
-	mlx5_core_destroy_sq_tracked(dev->mdev, &sq->base.mqp);
 
 err_umem:
 	ib_umem_release(sq->ubuffer.umem);
@@ -1463,7 +1457,7 @@ err_umem:
 static void destroy_raw_packet_qp_sq(struct mlx5_ib_dev *dev,
 				     struct mlx5_ib_sq *sq)
 {
-	destroy_flow_rule_vport_sq(dev, sq);
+	destroy_flow_rule_vport_sq(sq);
 	mlx5_core_destroy_sq_tracked(dev->mdev, &sq->base.mqp);
 	ib_umem_release(sq->ubuffer.umem);
 }
@@ -3649,6 +3643,8 @@ static int modify_raw_packet_qp(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 	}
 
 	if (modify_sq) {
+		struct mlx5_flow_handle *flow_rule;
+
 		if (tx_affinity) {
 			err = modify_raw_packet_tx_affinity(dev->mdev, sq,
 							    tx_affinity,
@@ -3657,8 +3653,25 @@ static int modify_raw_packet_qp(struct mlx5_ib_dev *dev, struct mlx5_ib_qp *qp,
 				return err;
 		}
 
-		return modify_raw_packet_qp_sq(dev->mdev, sq, sq_state,
-					       raw_qp_param, qp->ibqp.pd);
+		flow_rule = create_flow_rule_vport_sq(dev, sq,
+						      raw_qp_param->port);
+		if (IS_ERR(flow_rule))
+			return err;
+
+		err = modify_raw_packet_qp_sq(dev->mdev, sq, sq_state,
+					      raw_qp_param, qp->ibqp.pd);
+		if (err) {
+			if (flow_rule)
+				mlx5_del_flow_rules(flow_rule);
+			return err;
+		}
+
+		if (flow_rule) {
+			destroy_flow_rule_vport_sq(sq);
+			sq->flow_rule = flow_rule;
+		}
+
+		return err;
 	}
 
 	return 0;
@@ -3983,6 +3996,9 @@ static int __mlx5_ib_modify_qp(struct ib_qp *ibqp,
 			raw_qp_param.rq_q_ctr_id = mibport->cnts.set_id;
 			raw_qp_param.set_mask |= MLX5_RAW_QP_MOD_SET_RQ_Q_CTR_ID;
 		}
+
+		if (attr_mask & IB_QP_PORT)
+			raw_qp_param.port = attr->port_num;
 
 		if (attr_mask & IB_QP_RATE_LIMIT) {
 			u32 max_burst_sz = is_exp ?
