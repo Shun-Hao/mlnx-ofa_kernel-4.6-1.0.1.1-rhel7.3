@@ -143,7 +143,13 @@ static inline int mlx5e_skb_l2_header_offset(struct sk_buff *skb)
 {
 #define MLX5E_MIN_INLINE (ETH_HLEN + VLAN_HLEN)
 
-	return max(skb_network_offset(skb), MLX5E_MIN_INLINE);
+	struct ethhdr *eth = (struct ethhdr *)(skb->data);
+	int l2_hlen = 0;
+
+	if (unlikely(!__vlan_get_protocol(skb, eth->h_proto, &l2_hlen)))
+		return max_t(int, skb_network_offset(skb), MLX5E_MIN_INLINE);
+
+	return l2_hlen ? : ETH_HLEN;
 }
 
 static inline int mlx5e_skb_l3_header_offset(struct sk_buff *skb)
