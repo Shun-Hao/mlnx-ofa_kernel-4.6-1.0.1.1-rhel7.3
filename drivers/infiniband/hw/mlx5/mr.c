@@ -619,7 +619,7 @@ int mlx5_mr_cache_init(struct mlx5_ib_dev *dev)
 			   MLX5_IB_UMR_OCTOWORD;
 		ent->access_mode = MLX5_MKC_ACCESS_MODE_MTT;
 		if ((dev->mdev->profile->mask & MLX5_PROF_MASK_MR_CACHE) &&
-		    !dev->rep &&
+		    !dev->is_rep &&
 		    mlx5_core_is_pf(dev->mdev))
 			ent->limit = dev->mdev->profile->mr_cache[i].limit;
 		else
@@ -2495,7 +2495,7 @@ static int mlx5_mr_sysfs_init(struct mlx5_ib_dev *dev)
 	int i;
 	int err;
 
-	if (dev->rep)
+	if (dev->is_rep)
 		return 0;
 
 	err = kobject_init_and_add(&dev->mr_cache, &cache_type,
@@ -2534,7 +2534,7 @@ static void mlx5_mr_sysfs_cleanup(struct mlx5_ib_dev *dev)
 	struct cache_order *co;
 	int i;
 
-	if (dev->rep)
+	if (dev->is_rep)
 		return;
 
 	for (i = MAX_MR_CACHE_ENTRIES - 1; i >= 0; i--) {

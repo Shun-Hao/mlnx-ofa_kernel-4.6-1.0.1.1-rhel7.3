@@ -159,7 +159,7 @@ int mlx5_ib_exp_odp_init_one(struct mlx5_ib_dev *ibdev)
 {
 	struct dentry *dbgfs_entry;
 
-	if (ibdev->rep)
+	if (ibdev->is_rep)
 		return 0;
 
 	ibdev->odp_stats.odp_debugfs = debugfs_create_dir("odp_stats",

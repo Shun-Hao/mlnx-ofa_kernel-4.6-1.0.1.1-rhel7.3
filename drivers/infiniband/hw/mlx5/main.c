@@ -173,12 +173,12 @@ static int mlx5_netdev_event(struct notifier_block *this,
 	case NETDEV_REGISTER:
 	case NETDEV_UNREGISTER:
 		write_lock(&roce->netdev_lock);
-		if (ibdev->rep) {
+		if (ibdev->is_rep) {
 			struct mlx5_eswitch *esw = ibdev->mdev->priv.eswitch;
+			struct mlx5_eswitch_rep	*rep = ibdev->port[0].rep;
 			struct net_device *rep_ndev;
 
-			rep_ndev = mlx5_ib_get_rep_netdev(esw,
-							  ibdev->rep->vport);
+			rep_ndev = mlx5_ib_get_rep_netdev(esw, rep->vport);
 			if (rep_ndev == ndev)
 				roce->netdev = (event == NETDEV_UNREGISTER) ?
 					NULL : ndev;
@@ -491,7 +491,7 @@ static int mlx5_query_port_roce(struct ib_device *device, u8 port_num,
 	props->port_cap_flags |= IB_PORT_CM_SUP;
 	props->ip_gids = true;
 
-	props->gid_tbl_len      = (!dev->rep) ? MLX5_CAP_ROCE(dev->mdev,
+	props->gid_tbl_len      = (!dev->is_rep) ? MLX5_CAP_ROCE(dev->mdev,
 							      roce_address_table_size) : 0;
 	props->max_mtu          = IB_MTU_4096;
 	props->max_msg_sz       = 1 << MLX5_CAP_GEN(dev->mdev, log_max_msg);
@@ -3384,10 +3384,10 @@ static struct mlx5_ib_flow_prio *get_flow_table(struct mlx5_ib_dev *dev,
 			prio = &dev->flow_db->prios[priority];
 			num_entries = 
 				1 << dev->flow_db->steering_data->ingress_log_ft_size[priority];
-			if (!dev->rep &&
+			if (!dev->is_rep &&
 			    MLX5_CAP_FLOWTABLE_NIC_RX(dev->mdev, decap))
 				flags |= MLX5_FLOW_TABLE_TUNNEL_EN_DECAP;
-			if (!dev->rep &&
+			if (!dev->is_rep &&
 			    MLX5_CAP_FLOWTABLE_NIC_RX(dev->mdev,
 					reformat_l3_tunnel_to_l2))
 				flags |= MLX5_FLOW_TABLE_TUNNEL_EN_REFORMAT;
@@ -3398,7 +3398,7 @@ static struct mlx5_ib_flow_prio *get_flow_table(struct mlx5_ib_dev *dev,
 			num_entries = MLX5_FS_MAX_ENTRIES;
 			fn_type = MLX5_FLOW_NAMESPACE_EGRESS;
 			prio = &dev->flow_db->egress_prios[priority];
-			if (!dev->rep &&
+			if (!dev->is_rep &&
 			    MLX5_CAP_FLOWTABLE_NIC_TX(dev->mdev, reformat))
 				flags |= MLX5_FLOW_TABLE_TUNNEL_EN_REFORMAT;
 		}
@@ -3603,7 +3603,7 @@ static struct mlx5_ib_flow_handler *_create_flow_rule(struct mlx5_ib_dev *dev,
 	if (!is_valid_attr(dev->mdev, flow_attr))
 		return ERR_PTR(-EINVAL);
 
-	if (dev->rep && is_egress)
+	if (dev->is_rep && is_egress)
 		return ERR_PTR(-EINVAL);
 
 	spec = kvzalloc(sizeof(*spec), GFP_KERNEL);
@@ -3634,13 +3634,17 @@ static struct mlx5_ib_flow_handler *_create_flow_rule(struct mlx5_ib_dev *dev,
 	if (!flow_is_multicast_only(flow_attr))
 		set_underlay_qp(dev, spec, underlay_qpn);
 
-	if (dev->rep) {
+	if (dev->is_rep) {
 		void *misc;
 
+		if (!dev->port[flow_attr->port - 1].rep) {
+			err = -EINVAL;
+			goto free;
+		}
 		misc = MLX5_ADDR_OF(fte_match_param, spec->match_value,
 				    misc_parameters);
 		MLX5_SET(fte_match_set_misc, misc, source_port,
-			 dev->rep->vport);
+			 dev->port[flow_attr->port - 1].rep->vport);
 		misc = MLX5_ADDR_OF(fte_match_param, spec->match_criteria,
 				    misc_parameters);
 		MLX5_SET_TO_ONES(fte_match_set_misc, misc, source_port);
@@ -5072,7 +5076,7 @@ static u32 get_core_cap_flags(struct ib_device *ibdev,
 
 	if (raw_support)
 		ret |= RDMA_CORE_PORT_RAW_PACKET;
-	if (dev->rep)
+	if (dev->is_rep)
 		return ret;
 
 	if (!(l3_type_cap & MLX5_ROCE_L3_TYPE_IPV4_CAP))
@@ -5113,7 +5117,7 @@ static int mlx5_port_immutable(struct ib_device *ibdev, u8 port_num,
 	immutable->pkey_tbl_len = attr.pkey_tbl_len;
 	immutable->gid_tbl_len = attr.gid_tbl_len;
 	immutable->core_cap_flags = get_core_cap_flags(ibdev, &rep);
-	if (!dev->rep &&
+	if (!dev->is_rep &&
 	    ((ll == IB_LINK_LAYER_INFINIBAND) || MLX5_CAP_GEN(dev->mdev, roce)))
 		immutable->max_mad_size = IB_MGMT_MAD_SIZE;
 
@@ -5218,7 +5222,7 @@ static int mlx5_enable_eth(struct mlx5_ib_dev *dev)
 {
 	int err;
 
-	if (MLX5_CAP_GEN(dev->mdev, roce) && !dev->rep) {
+	if (MLX5_CAP_GEN(dev->mdev, roce) && !dev->is_rep) {
 		err = mlx5_nic_vport_enable_roce(dev->mdev);
 		if (err)
 			return err;
@@ -5231,7 +5235,7 @@ static int mlx5_enable_eth(struct mlx5_ib_dev *dev)
 	return 0;
 
 err_disable_roce:
-	if (MLX5_CAP_GEN(dev->mdev, roce) && !dev->rep)
+	if (MLX5_CAP_GEN(dev->mdev, roce) && !dev->is_rep)
 		mlx5_nic_vport_disable_roce(dev->mdev);
 
 	return err;
@@ -5240,7 +5244,7 @@ err_disable_roce:
 static void mlx5_disable_eth(struct mlx5_ib_dev *dev)
 {
 	mlx5_eth_lag_cleanup(dev);
-	if (MLX5_CAP_GEN(dev->mdev, roce) && !dev->rep)
+	if (MLX5_CAP_GEN(dev->mdev, roce) && !dev->is_rep)
 		mlx5_nic_vport_disable_roce(dev->mdev);
 }
 
@@ -5642,7 +5646,7 @@ static int delay_drop_debugfs_init(struct mlx5_ib_dev *dev)
 {
 	struct mlx5_ib_dbg_delay_drop *dbg;
 
-	if (!mlx5_debugfs_root || dev->rep)
+	if (!mlx5_debugfs_root || dev->is_rep)
 		return 0;
 
 	dbg = kzalloc(sizeof(*dbg), GFP_KERNEL);
@@ -6768,7 +6772,7 @@ static void mlx5_ib_cleanup_ooo_debugfs(struct mlx5_ib_dev *dev)
 
 static int mlx5_ib_init_ooo_debugfs(struct mlx5_ib_dev *dev)
 {
-	if (!mlx5_debugfs_root || dev->rep)
+	if (!mlx5_debugfs_root || dev->is_rep)
 		return 0;
 
 	if (!MLX5_CAP_GEN(dev->mdev, multipath_rc_qp) &&
