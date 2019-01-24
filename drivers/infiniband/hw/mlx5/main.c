@@ -505,9 +505,14 @@ static int mlx5_query_port_roce(struct ib_device *device, u8 port_num,
 
 	/* Possible bad flows are checked before filling out props so in case
 	 * of an error it will still be zeroed out.
+	 * Use native port in case of reps
 	 */
-	err = mlx5_query_port_ptys(mdev, out, sizeof(out), MLX5_PTYS_EN,
-				   mdev_port_num);
+	if (dev->is_rep)
+		err = mlx5_query_port_ptys(mdev, out, sizeof(out), MLX5_PTYS_EN,
+					   1);
+	else
+		err = mlx5_query_port_ptys(mdev, out, sizeof(out), MLX5_PTYS_EN,
+					   mdev_port_num);
 	if (err)
 		goto out;
 	ext = MLX5_CAP_PCAM_FEATURE(dev->mdev, ptys_extended_ethernet);
@@ -1395,7 +1400,9 @@ static int mlx5_ib_rep_query_port(struct ib_device *ibdev, u8 port,
 {
 	int ret;
 
-	/* Only link layer == ethernet is valid for representors */
+	/* Only link layer == ethernet is valid for representors
+	 * and we always use port 1
+	 */
 	ret = mlx5_query_port_roce(ibdev, port, props);
 	if (ret || !props)
 		return ret;
@@ -4760,7 +4767,7 @@ static void get_ext_port_caps(struct mlx5_ib_dev *dev)
 		mlx5_query_ext_port_caps(dev, port);
 }
 
-static int get_port_caps(struct mlx5_ib_dev *dev, u8 port)
+static int __get_port_caps(struct mlx5_ib_dev *dev, u8 port)
 {
 	struct ib_exp_device_attr *dprops = NULL;
 	struct ib_port_attr *pprops = NULL;
@@ -4807,6 +4814,16 @@ out:
 	kfree(dprops);
 
 	return err;
+}
+
+static int get_port_caps(struct mlx5_ib_dev *dev, u8 port)
+{
+	/* For representors use port 1, is this is the only native
+	 * port
+	 */
+	if (dev->is_rep)
+		return __get_port_caps(dev, 1);
+	return __get_port_caps(dev, port);
 }
 
 static void destroy_umrc_res(struct mlx5_ib_dev *dev)
@@ -6469,6 +6486,7 @@ static int mlx5_ib_stage_common_roce_init(struct mlx5_ib_dev *dev)
 		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_RWQ_IND_TBL) |
 		(1ull << IB_USER_VERBS_EXP_CMD_DESTROY_RWQ_IND_TBL);
 
+	/* Register only for native ports */
 	return mlx5_add_netdev_notifier(dev, port_num);
 }
 

@@ -1087,6 +1087,7 @@ struct mlx5_ib_dev {
 	u64 pf_cxl_hist[MAX_HIST];
 	u64 inv_hist[MAX_HIST];
 	struct mlx5_async_ctx   async_ctx;
+	int			free_port;
 };
 
 static inline struct mlx5_ib_cq *to_mibcq(struct mlx5_core_cq *mcq)
