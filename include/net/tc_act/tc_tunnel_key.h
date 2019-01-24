@@ -98,6 +98,8 @@ static const struct nla_policy tunnel_key_pol[TCA_TUNNEL_KEY_MAX + 1] = {
 	[TCA_TUNNEL_KEY_ENC_IPV6_DST] = { .len = sizeof(struct in6_addr) },
 	[TCA_TUNNEL_KEY_ENC_KEY_ID]   = { .type = NLA_U32 },
 	[TCA_TUNNEL_KEY_ENC_DST_PORT] = { .type = NLA_U16 },
+	[TCA_TUNNEL_KEY_ENC_TOS]      = { .type = NLA_U8 },
+	[TCA_TUNNEL_KEY_ENC_TTL]      = { .type = NLA_U8 },
 };
 
 struct netlink_tunnel_key {
@@ -108,6 +110,8 @@ struct netlink_tunnel_key {
 	struct in6_addr ipv6_dst;
 	u32 id;
 	u16 dstport;
+	u8 tos;
+	u8 ttl;
 };
 
 static struct netlink_tunnel_key to_tunnel_key_comp(const struct tc_action *a)
@@ -149,6 +153,10 @@ static struct netlink_tunnel_key to_tunnel_key_comp(const struct tc_action *a)
 		t.id = nla_get_u32(tb[TCA_TUNNEL_KEY_ENC_KEY_ID]);
 	if (tb[TCA_TUNNEL_KEY_ENC_DST_PORT])
 		t.dstport = nla_get_u16(tb[TCA_TUNNEL_KEY_ENC_DST_PORT]);
+	if (tb[TCA_TUNNEL_KEY_ENC_TOS])
+		t.tos = nla_get_u8(tb[TCA_TUNNEL_KEY_ENC_TOS]);
+	if (tb[TCA_TUNNEL_KEY_ENC_TTL])
+		t.ttl = nla_get_u8(tb[TCA_TUNNEL_KEY_ENC_TTL]);
 
 freeskb:
 	kfree_skb(skb);
@@ -191,6 +199,8 @@ static inline void tcf_tunnel_info_compat(const struct tc_action *a,
 
 	key->tp_dst = nt.dstport;
 	key->tun_id = key32_to_tunnel_id(nt.id);
+	key->tos = nt.tos;
+	key->ttl = nt.ttl;
 }
 
 #endif	/* CONFIG_COMPAT_KERNEL_4_9 */

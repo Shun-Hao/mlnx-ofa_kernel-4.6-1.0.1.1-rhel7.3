@@ -1,0 +1,47 @@
+From: Talat Batheesh <talatb@mellanox.com>
+Subject: [PATCH] BACKPORT:
+ drivers/net/ethernet/mellanox/mlx5/core/eswitch_devlink_compat.c
+
+Change-Id: Ibccaa36de60cae30088b90266147508311a06df7
+---
+ .../mellanox/mlx5/core/eswitch_devlink_compat.c         | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/mellanox/mlx5/core/eswitch_devlink_compat.c b/drivers/net/ethernet/mellanox/mlx5/core/eswitch_devlink_compat.c
+index xxxxxxx..xxxxxxx 100644
+--- a/drivers/net/ethernet/mellanox/mlx5/core/eswitch_devlink_compat.c
++++ b/drivers/net/ethernet/mellanox/mlx5/core/eswitch_devlink_compat.c
+@@ -29,8 +29,13 @@ static char *encap_to_str[] = {
+ };
+ 
+ struct devlink_compat_op {
++#ifdef HAVE_DEVLINK_ESWITCH_MODE_SET_EXTACK
+ 	int (*write_u8)(struct devlink *devlink, u8 set, struct netlink_ext_ack *extack);
+ 	int (*write_u16)(struct devlink *devlink, u16 set, struct netlink_ext_ack *extack);
++#else
++	int (*write_u8)(struct devlink *devlink, u8 set);
++	int (*write_u16)(struct devlink *devlink, u16 set);
++#endif
+ 	int (*read_u8)(struct devlink *devlink, u8 *read);
+ 	int (*read_u16)(struct devlink *devlink, u16 *read);
+ 	char **map;
+@@ -147,9 +152,17 @@ static ssize_t esw_compat_write(struct kobject *kobj,
+ 	}
+ 
+ 	if (op->write_u16)
+-		ret = op->write_u16(devlink, set, &ack);
++		ret = op->write_u16(devlink, set
++#ifdef HAVE_DEVLINK_ESWITCH_MODE_SET_EXTACK
++				    , &ack
++#endif
++				    );
+ 	else
+-		ret = op->write_u8(devlink, set, &ack);
++		ret = op->write_u8(devlink, set
++#ifdef HAVE_DEVLINK_ESWITCH_MODE_SET_EXTACK
++				   , &ack
++#endif
++				   );
+ 
+ 	if (ack._msg)
+ 		mlx5_core_warn(dev, "%s\n", ack._msg);

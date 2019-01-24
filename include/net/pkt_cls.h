@@ -6,6 +6,7 @@
 #ifdef CONFIG_COMPAT_CLS_FLOWER_MOD
 #include <uapi/linux/uapi/pkt_cls.h>
 
+#ifndef CONFIG_COMPAT_KERNEL_4_9
 enum tc_fl_command {
 	TC_CLSFLOWER_REPLACE,
 	TC_CLSFLOWER_DESTROY,
@@ -50,6 +51,7 @@ static inline bool tc_flags_valid(u32 flags)
 
 	return true;
 }
+#endif /* CONFIG_COMPAT_KERNEL_4_9 */
 
 static inline bool tc_in_hw(u32 flags)
 {

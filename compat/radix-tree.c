@@ -25,6 +25,62 @@ struct radix_tree_preload {
 static DEFINE_PER_CPU(struct radix_tree_preload, radix_tree_preloads) = { 0, };
 
 
+#ifndef HAVE_IDR_PRELOAD_EXPORTED
+#ifndef IDR_PRELOAD_SIZE
+#define IDR_INDEX_BITS          (8 /* CHAR_BIT */ * sizeof(int) - 1)
+#define IDR_MAX_PATH            (DIV_ROUND_UP(IDR_INDEX_BITS, \
+						RADIX_TREE_MAP_SHIFT))
+#define IDR_PRELOAD_SIZE        (IDR_MAX_PATH * 2 - 1)
+#endif
+static __must_check int __radix_tree_preload(gfp_t gfp_mask, unsigned nr)
+{
+	struct radix_tree_preload *rtp;
+	struct radix_tree_node *node;
+	int ret = -ENOMEM;
+
+	/*
+	 * Nodes preloaded by one cgroup can be be used by another cgroup, so
+	 * they should never be accounted to any particular memory cgroup.
+	 */
+	gfp_mask &= ~__GFP_ACCOUNT;
+
+	preempt_disable();
+#ifndef HAVE_PERCPU_CPU__PREFIX
+	rtp = this_cpu_ptr(&radix_tree_preloads);
+#else
+	rtp = this_cpu_ptr(&per_cpu__radix_tree_preloads);
+#endif
+	while (rtp->nr < nr) {
+		preempt_enable();
+		node = kmem_cache_alloc(radix_tree_node_cachep, gfp_mask);
+		if (node == NULL)
+			goto out;
+		preempt_disable();
+#ifndef HAVE_PERCPU_CPU__PREFIX
+		rtp = this_cpu_ptr(&radix_tree_preloads);
+#else
+		rtp = this_cpu_ptr(&per_cpu__radix_tree_preloads);
+#endif
+		if (rtp->nr < nr) {
+			node->parent = rtp->nodes;
+			rtp->nodes = node;
+			rtp->nr++;
+		} else {
+			kmem_cache_free(radix_tree_node_cachep, node);
+		}
+	}
+	ret = 0;
+out:
+	return ret;
+}
+
+void idr_preload(gfp_t gfp_mask)
+{
+	if (__radix_tree_preload(gfp_mask, IDR_PRELOAD_SIZE))
+		preempt_disable();
+}
+EXPORT_SYMBOL(idr_preload);
+#endif
 static void set_iter_tags(struct radix_tree_iter *iter,
 				struct radix_tree_node *node, unsigned offset,
 				unsigned tag)
@@ -49,6 +105,7 @@ static void set_iter_tags(struct radix_tree_iter *iter,
 		iter->next_index = __radix_tree_iter_add(iter, BITS_PER_LONG);
 	}
 }
+
 static __always_inline unsigned long
 radix_tree_find_next_bit(struct radix_tree_node *node, unsigned int tag,
 			 unsigned long offset)

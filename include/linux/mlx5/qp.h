@@ -242,7 +242,9 @@ enum {
 };
 
 enum {
+#ifdef HAVE_NETIF_F_HW_VLAN_STAG_RX
 	MLX5_ETH_WQE_SVLAN              = 1 << 0,
+#endif
 	MLX5_ETH_WQE_INSERT_VLAN        = 1 << 15,
 };
 

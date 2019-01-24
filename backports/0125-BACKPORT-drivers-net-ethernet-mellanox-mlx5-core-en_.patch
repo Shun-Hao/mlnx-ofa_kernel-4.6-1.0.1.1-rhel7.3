@@ -1,0 +1,28 @@
+From: Alaa Hleihel <alaa@mellanox.com>
+Subject: [PATCH] BACKPORT:
+ drivers/net/ethernet/mellanox/mlx5/core/en_accel/tls_rxtx.c
+
+Change-Id: I5bab3807fa745c412a1d5684c8ebbe9cc28574cf
+---
+ drivers/net/ethernet/mellanox/mlx5/core/en_accel/tls_rxtx.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en_accel/tls_rxtx.c b/drivers/net/ethernet/mellanox/mlx5/core/en_accel/tls_rxtx.c
+index xxxxxxx..xxxxxxx 100644
+--- a/drivers/net/ethernet/mellanox/mlx5/core/en_accel/tls_rxtx.c
++++ b/drivers/net/ethernet/mellanox/mlx5/core/en_accel/tls_rxtx.c
+@@ -31,6 +31,8 @@
+  *
+  */
+ 
++#ifdef HAVE_UAPI_LINUX_TLS_H
++
+ #include "en_accel/tls.h"
+ #include "en_accel/tls_rxtx.h"
+ #include "accel/accel.h"
+@@ -381,3 +383,5 @@ void mlx5e_tls_handle_rx_skb(struct net_device *netdev, struct sk_buff *skb,
+ 	remove_metadata_hdr(skb);
+ 	*cqe_bcnt -= MLX5E_METADATA_ETHER_LEN;
+ }
++
++#endif

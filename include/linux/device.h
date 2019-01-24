@@ -42,6 +42,7 @@
 	} while (0)
 #endif
 #endif
+
 #ifndef DEVICE_ATTR_RO
 #define DEVICE_ATTR_RO(_name) \
 	struct device_attribute dev_attr_##_name = __ATTR_RO(_name)

@@ -42,6 +42,56 @@
 #define MPLS_LABEL_MASK		(MPLS_LS_LABEL_MASK >> MPLS_LS_LABEL_SHIFT)
 #endif
 
+#ifndef HAVE_TCF_QUEUE_WORK
+static struct workqueue_struct *tc_filter_wq;
+
+static bool tcf_queue_work(struct work_struct *work)
+{
+	return queue_work(tc_filter_wq, work);
+}
+#endif
+
+#ifndef HAVE_TCF_EXTS_GET_DEV
+static int tcf_exts_get_dev(struct net_device *dev, struct tcf_exts *exts,
+			    struct net_device **hw_dev)
+{
+#ifdef CONFIG_NET_CLS_ACT
+	const struct tc_action *a;
+
+	if (tc_no_actions(exts))
+		return -EINVAL;
+
+	tc_for_each_action(a, exts) {
+		if (is_tcf_mirred_egress_redirect(a)) {
+			int ifindex = tcf_mirred_ifindex(a);
+
+			*hw_dev = __dev_get_by_index(dev_net(dev), ifindex);
+			break;
+		}
+	}
+
+	if (*hw_dev)
+		return 0;
+#endif
+	return -EOPNOTSUPP;
+}
+
+static inline bool tc_can_offload(const struct net_device *dev,
+				  const struct tcf_proto *tp)
+{
+	if (!(dev->features & NETIF_F_HW_TC)) {
+		return false;
+	}
+
+	return true;
+}
+#endif
+
+#ifndef HAVE_TCF_EXTS_INIT
+static struct tcf_ext_map flower_ext_map = {
+    .action = TCA_FLOWER_ACT,
+};
+
 #define tcf_exts_init(exts, action, police) (0)
 
 #define tcf_exts_validate(net, tp, tb, est, eptr, ovr) \
@@ -92,6 +142,7 @@ struct fl_flow_key {
 	struct flow_dissector_key_mpls mpls;
 	struct flow_dissector_key_tcp tcp;
 	struct flow_dissector_key_ip ip;
+	struct flow_dissector_key_ip enc_ip;
 } __aligned(BITS_PER_LONG / 8); /* Ensure that we can do comparisons as longs. */
 
 struct fl_flow_mask_range {
@@ -136,6 +187,55 @@ struct cls_fl_filter {
 
 	u32 mlx5e_flags;
 };
+
+static void fl_hw_destroy_filter(struct tcf_proto *tp, struct cls_fl_filter *f);
+static int fl_hw_replace_filter(struct tcf_proto *tp,
+				struct flow_dissector *dissector,
+				struct fl_flow_key *mask,
+				struct cls_fl_filter *f);
+static void fl_hw_update_stats(struct tcf_proto *tp, struct cls_fl_filter *f);
+
+#ifndef HAVE_TCF_EXTS_GET_DEV
+static int tcf_exts_get_dev(struct net_device *dev, struct tcf_exts *exts,
+			    struct net_device **hw_dev)
+{
+#ifdef CONFIG_NET_CLS_ACT
+	const struct tc_action *a;
+	LIST_HEAD(actions);
+
+	if (tc_no_actions(exts))
+		return -EINVAL;
+
+#ifdef HAVE_TCF_EXTS_TO_LIST
+	tcf_exts_to_list(exts, &actions);
+	list_for_each_entry(a, &actions, list) {
+#else
+	tc_for_each_action(a, exts) {
+#endif
+		if (is_tcf_mirred_egress_redirect(a)) {
+			int ifindex = tcf_mirred_ifindex(a);
+
+			*hw_dev = __dev_get_by_index(dev_net(dev), ifindex);
+			break;
+		}
+	}
+
+	if (*hw_dev)
+		return 0;
+#endif
+	return -EOPNOTSUPP;
+}
+
+static inline bool tc_can_offload(const struct net_device *dev,
+                                  const struct tcf_proto *tp)
+{
+	if (!(dev->features & NETIF_F_HW_TC)) {
+		return false;
+	}
+
+	return true;
+}
+#endif
 
 static unsigned short int fl_mask_range(const struct fl_flow_mask *mask)
 {
@@ -272,93 +372,6 @@ static void fl_destroy_filter(struct rcu_head *head)
 	tcf_queue_work(&f->work);
 }
 
-static void fl_hw_destroy_filter(struct tcf_proto *tp, struct cls_fl_filter *f)
-{
-	struct tc_cls_flower_offload offload = {0};
-	struct net_device *dev = f->hw_dev;
-	struct mlx5e_priv *priv;
-
-	if (!tc_in_hw(f->flags)) {
-		return;
-	}
-
-	offload.command = TC_CLSFLOWER_DESTROY;
-	offload.prio = tp->prio;
-	offload.cookie = (unsigned long)f;
-
-	priv = netdev_priv(dev);
-	mlx5e_delete_flower(priv, &offload, f->mlx5e_flags);
-}
-
-static int fl_hw_replace_filter(struct tcf_proto *tp,
-				struct flow_dissector *dissector,
-				struct fl_flow_key *mask,
-				struct cls_fl_filter *f)
-{
-	struct net_device *dev = tp->q->dev_queue->dev;
-	struct tc_cls_flower_offload offload = {0};
-	struct mlx5e_priv *priv;
-	struct mlx5_eswitch *esw;
-	int err;
-
-	if (!tc_can_offload(dev, tp)) {
-		if (tcf_exts_get_dev(dev, &f->exts, &f->hw_dev) ||
-		    (f->hw_dev && !tc_can_offload(f->hw_dev, tp))) {
-			f->hw_dev = dev;
-			return tc_skip_sw(f->flags) ? -EINVAL : 0;
-		}
-
-		priv = netdev_priv(f->hw_dev);
-		esw = priv->mdev->priv.eswitch;
-		f->hw_dev = mlx5_eswitch_uplink_get_proto_dev(esw, REP_ETH);
-		if (!f->hw_dev) {
-			f->hw_dev = dev;
-			return tc_skip_sw(f->flags) ? -EINVAL : 0;
-		}
-
-		f->mlx5e_flags = MLX5E_TC_EGRESS;
-	} else {
-		f->hw_dev = dev;
-		f->mlx5e_flags = MLX5E_TC_INGRESS;
-	}
-
-	offload.command = TC_CLSFLOWER_REPLACE;
-	offload.prio = tp->prio;
-	offload.cookie = (unsigned long)f;
-	offload.dissector = dissector;
-	offload.mask = mask;
-	offload.key = &f->mkey;
-	offload.exts = &f->exts;
-
-	priv = netdev_priv(f->hw_dev);
-	err = mlx5e_configure_flower(priv, &offload, f->mlx5e_flags);
-	if (!err)
-		f->flags |= TCA_CLS_FLAGS_IN_HW;
-	if (tc_skip_sw(f->flags))
-		return err;
-
-	return 0;
-}
-
-static void fl_hw_update_stats(struct tcf_proto *tp, struct cls_fl_filter *f)
-{
-	struct tc_cls_flower_offload offload = {0};
-	struct net_device *dev = f->hw_dev;
-	struct mlx5e_priv *priv;
-
-	if (!tc_in_hw(f->flags)) {
-		return;
-	}
-
-	offload.command = TC_CLSFLOWER_STATS;
-	offload.prio = tp->prio;
-	offload.cookie = (unsigned long)f;
-	offload.exts = &f->exts;
-
-	priv = netdev_priv(dev);
-	mlx5e_stats_flower(priv, &offload, f->mlx5e_flags);
-}
-
 static void __fl_delete(struct tcf_proto *tp, struct cls_fl_filter *f)
 {
 	struct cls_fl_head *head = rtnl_dereference(tp->root);
@@ -491,6 +504,10 @@ static const struct nla_policy fl_policy[TCA_FLOWER_MAX + 1] = {
 	[TCA_FLOWER_KEY_IP_TOS_MASK]	= { .type = NLA_U8 },
 	[TCA_FLOWER_KEY_IP_TTL]		= { .type = NLA_U8 },
 	[TCA_FLOWER_KEY_IP_TTL_MASK]	= { .type = NLA_U8 },
+	[TCA_FLOWER_KEY_ENC_IP_TOS]	= { .type = NLA_U8 },
+	[TCA_FLOWER_KEY_ENC_IP_TOS_MASK] = { .type = NLA_U8 },
+	[TCA_FLOWER_KEY_ENC_IP_TTL]	 = { .type = NLA_U8 },
+	[TCA_FLOWER_KEY_ENC_IP_TTL_MASK] = { .type = NLA_U8 },
 };
 
 static void fl_set_key_val(struct nlattr **tb,
@@ -592,17 +609,17 @@ static int fl_set_key_flags(struct nlattr **tb,
 	return 0;
 }
 
-static void fl_set_key_ip(struct nlattr **tb,
+static void fl_set_key_ip(struct nlattr **tb, bool encap,
 			  struct flow_dissector_key_ip *key,
 			  struct flow_dissector_key_ip *mask)
 {
-		fl_set_key_val(tb, &key->tos, TCA_FLOWER_KEY_IP_TOS,
-			       &mask->tos, TCA_FLOWER_KEY_IP_TOS_MASK,
-			       sizeof(key->tos));
+	int tos_key = encap ? TCA_FLOWER_KEY_ENC_IP_TOS : TCA_FLOWER_KEY_IP_TOS;
+	int ttl_key = encap ? TCA_FLOWER_KEY_ENC_IP_TTL : TCA_FLOWER_KEY_IP_TTL;
+	int tos_mask = encap ? TCA_FLOWER_KEY_ENC_IP_TOS_MASK : TCA_FLOWER_KEY_IP_TOS_MASK;
+	int ttl_mask = encap ? TCA_FLOWER_KEY_ENC_IP_TTL_MASK : TCA_FLOWER_KEY_IP_TTL_MASK;
 
-		fl_set_key_val(tb, &key->ttl, TCA_FLOWER_KEY_IP_TTL,
-			       &mask->ttl, TCA_FLOWER_KEY_IP_TTL_MASK,
-			       sizeof(key->ttl));
+	fl_set_key_val(tb, &key->tos, tos_key, &mask->tos, tos_mask, sizeof(key->tos));
+	fl_set_key_val(tb, &key->ttl, ttl_key, &mask->ttl, ttl_mask, sizeof(key->ttl));
 }
 
 static int fl_set_key(struct net *net, struct nlattr **tb,
@@ -647,7 +664,7 @@ static int fl_set_key(struct net *net, struct nlattr **tb,
 		fl_set_key_val(tb, &key->basic.ip_proto, TCA_FLOWER_KEY_IP_PROTO,
 			       &mask->basic.ip_proto, TCA_FLOWER_UNSPEC,
 			       sizeof(key->basic.ip_proto));
-		fl_set_key_ip(tb, &key->ip, &mask->ip);
+		fl_set_key_ip(tb, false, &key->ip, &mask->ip);
 	}
 
 	if (tb[TCA_FLOWER_KEY_IPV4_SRC] || tb[TCA_FLOWER_KEY_IPV4_DST]) {
@@ -782,6 +799,8 @@ static int fl_set_key(struct net *net, struct nlattr **tb,
 		       &mask->enc_tp.dst, TCA_FLOWER_KEY_ENC_UDP_DST_PORT_MASK,
 		       sizeof(key->enc_tp.dst));
 
+	fl_set_key_ip(tb, true, &key->enc_ip, &mask->enc_ip);
+
 	if (tb[TCA_FLOWER_KEY_FLAGS])
 		ret = fl_set_key_flags(tb, &key->control.flags, &mask->control.flags);
 
@@ -868,6 +887,8 @@ static void fl_init_dissector(struct cls_fl_head *head,
 			   enc_control);
 	FL_KEY_SET_IF_MASKED(&mask->key, keys, cnt,
 			     FLOW_DISSECTOR_KEY_ENC_PORTS, enc_tp);
+	FL_KEY_SET_IF_MASKED(&mask->key, keys, cnt,
+			     FLOW_DISSECTOR_KEY_ENC_IP, enc_ip);
 
 	skb_flow_dissector_init(&head->dissector, keys, cnt);
 }
@@ -1138,14 +1159,17 @@ static int fl_dump_key_mpls(struct sk_buff *skb,
 	return 0;
 }
 
-static int fl_dump_key_ip(struct sk_buff *skb,
+static int fl_dump_key_ip(struct sk_buff *skb, bool encap,
 			  struct flow_dissector_key_ip *key,
 			  struct flow_dissector_key_ip *mask)
 {
-	if (fl_dump_key_val(skb, &key->tos, TCA_FLOWER_KEY_IP_TOS, &mask->tos,
-			    TCA_FLOWER_KEY_IP_TOS_MASK, sizeof(key->tos)) ||
-	    fl_dump_key_val(skb, &key->ttl, TCA_FLOWER_KEY_IP_TTL, &mask->ttl,
-			    TCA_FLOWER_KEY_IP_TTL_MASK, sizeof(key->ttl)))
+	int tos_key = encap ? TCA_FLOWER_KEY_ENC_IP_TOS : TCA_FLOWER_KEY_IP_TOS;
+	int ttl_key = encap ? TCA_FLOWER_KEY_ENC_IP_TTL : TCA_FLOWER_KEY_IP_TTL;
+	int tos_mask = encap ? TCA_FLOWER_KEY_ENC_IP_TOS_MASK : TCA_FLOWER_KEY_IP_TOS_MASK;
+	int ttl_mask = encap ? TCA_FLOWER_KEY_ENC_IP_TTL_MASK : TCA_FLOWER_KEY_IP_TTL_MASK;
+
+	if (fl_dump_key_val(skb, &key->tos, tos_key, &mask->tos, tos_mask, sizeof(key->tos)) ||
+	    fl_dump_key_val(skb, &key->ttl, ttl_key, &mask->ttl, ttl_mask, sizeof(key->ttl)))
 		return -1;
 
 	return 0;
@@ -1269,7 +1293,7 @@ static int fl_dump(struct tcf_proto *tp, unsigned long fh,
 	    (fl_dump_key_val(skb, &key->basic.ip_proto, TCA_FLOWER_KEY_IP_PROTO,
 			    &mask->basic.ip_proto, TCA_FLOWER_UNSPEC,
 			    sizeof(key->basic.ip_proto)) ||
-	    fl_dump_key_ip(skb, &key->ip, &mask->ip)))
+	    fl_dump_key_ip(skb, false, &key->ip, &mask->ip)))
 		goto nla_put_failure;
 
 	if (key->control.addr_type == FLOW_DISSECTOR_KEY_IPV4_ADDRS &&
@@ -1394,7 +1418,8 @@ static int fl_dump(struct tcf_proto *tp, unsigned long fh,
 			    TCA_FLOWER_KEY_ENC_UDP_DST_PORT,
 			    &mask->enc_tp.dst,
 			    TCA_FLOWER_KEY_ENC_UDP_DST_PORT_MASK,
-			    sizeof(key->enc_tp.dst)))
+			    sizeof(key->enc_tp.dst)) ||
+	    fl_dump_key_ip(skb, true, &key->enc_ip, &mask->enc_ip))
 		goto nla_put_failure;
 
 	if (fl_dump_key_flags(skb, key->control.flags, mask->control.flags))
@@ -1446,16 +1471,120 @@ static struct tcf_proto_ops cls_fl_ops __read_mostly = {
 
 static int __init cls_fl_init(void)
 {
+#ifndef HAVE_TCF_QUEUE_WORK
+	tc_filter_wq = alloc_ordered_workqueue("flower_tc_filter_workqueue", 0);
+	if (!tc_filter_wq)
+		return -ENOMEM;
+#endif
+
 	return register_tcf_proto_ops(&cls_fl_ops);
 }
 
 static void __exit cls_fl_exit(void)
 {
+#ifndef HAVE_TCF_QUEUE_WORK
+	flush_workqueue(tc_filter_wq);
+	destroy_workqueue(tc_filter_wq);
+#endif
+
 	unregister_tcf_proto_ops(&cls_fl_ops);
 }
 
 module_init(cls_fl_init);
 module_exit(cls_fl_exit);
+
+static void fl_hw_destroy_filter(struct tcf_proto *tp, struct cls_fl_filter *f)
+{
+	struct tc_cls_flower_offload offload = {0};
+	struct net_device *dev = f->hw_dev;
+	struct mlx5e_priv *priv;
+
+	if (!tc_in_hw(f->flags)) {
+		return;
+	}
+
+	offload.command = TC_CLSFLOWER_DESTROY;
+#ifndef CONFIG_COMPAT_KERNEL_4_9
+	offload.prio = tp->prio;
+#endif
+	offload.cookie = (unsigned long)f;
+
+	priv = netdev_priv(dev);
+	mlx5e_delete_flower(priv, &offload, f->mlx5e_flags);
+}
+
+static int fl_hw_replace_filter(struct tcf_proto *tp,
+				struct flow_dissector *dissector,
+				struct fl_flow_key *mask,
+				struct cls_fl_filter *f)
+{
+	struct net_device *dev = tp->q->dev_queue->dev;
+	struct tc_cls_flower_offload offload = {0};
+	struct mlx5e_priv *priv;
+	struct mlx5_eswitch *esw;
+	int err;
+
+	if (!tc_can_offload(dev, tp)) {
+		if (tcf_exts_get_dev(dev, &f->exts, &f->hw_dev) ||
+		    (f->hw_dev && !tc_can_offload(f->hw_dev, tp))) {
+			f->hw_dev = dev;
+			return tc_skip_sw(f->flags) ? -EINVAL : 0;
+		}
+
+		priv = netdev_priv(f->hw_dev);
+		esw = priv->mdev->priv.eswitch;
+		f->hw_dev = mlx5_eswitch_uplink_get_proto_dev(esw, REP_ETH);
+		if (!f->hw_dev) {
+			f->hw_dev = dev;
+			return tc_skip_sw(f->flags) ? -EINVAL : 0;
+		}
+
+		f->mlx5e_flags = MLX5E_TC_EGRESS;
+	} else {
+		f->hw_dev = dev;
+		f->mlx5e_flags = MLX5E_TC_INGRESS;
+	}
+
+	offload.command = TC_CLSFLOWER_REPLACE;
+#ifndef CONFIG_COMPAT_KERNEL_4_9
+	offload.prio = tp->prio;
+#endif
+	offload.cookie = (unsigned long)f;
+	offload.dissector = dissector;
+	offload.mask = mask;
+	offload.key = &f->mkey;
+	offload.exts = &f->exts;
+
+	priv = netdev_priv(f->hw_dev);
+	err = mlx5e_configure_flower(priv, &offload, f->mlx5e_flags);
+	if (!err)
+		f->flags |= TCA_CLS_FLAGS_IN_HW;
+	if (tc_skip_sw(f->flags))
+		return err;
+
+	return 0;
+}
+
+static void fl_hw_update_stats(struct tcf_proto *tp, struct cls_fl_filter *f)
+{
+	struct tc_cls_flower_offload offload = {0};
+	struct net_device *dev = f->hw_dev;
+	struct mlx5e_priv *priv;
+
+	if (!tc_in_hw(f->flags)) {
+		return;
+	}
+
+	offload.command = TC_CLSFLOWER_STATS;
+#ifndef CONFIG_COMPAT_KERNEL_4_9
+	offload.prio = tp->prio;
+#endif
+	offload.cookie = (unsigned long)f;
+	offload.exts = &f->exts;
+
+	priv = netdev_priv(dev);
+	mlx5e_stats_flower(priv, &offload, f->mlx5e_flags);
+}
 
 MODULE_AUTHOR("Jiri Pirko <jiri@resnulli.us>");
 MODULE_DESCRIPTION("Flower classifier");

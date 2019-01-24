@@ -1,0 +1,25 @@
+From: Talat Batheesh <talatb@mellanox.com>
+Subject: [PATCH] BACKPORT: drivers/infiniband/hw/mlx5/odp.c
+
+Change-Id: I8fd4fd63f65dfe78966a79369be71b6dd5bc53e9
+---
+ drivers/infiniband/hw/mlx5/odp.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/infiniband/hw/mlx5/odp.c b/drivers/infiniband/hw/mlx5/odp.c
+index xxxxxxx..xxxxxxx 100644
+--- a/drivers/infiniband/hw/mlx5/odp.c
++++ b/drivers/infiniband/hw/mlx5/odp.c
+@@ -586,7 +586,11 @@ void mlx5_ib_free_implicit_mr(struct mlx5_ib_mr *imr)
+ 
+ 	down_read(&per_mm->umem_rwsem);
+ 	rbt_ib_umem_for_each_in_range(&per_mm->umem_tree, 0, ULLONG_MAX,
+-				      mr_leaf_free, true, imr);
++				      mr_leaf_free,
++#ifdef HAVE_UMEM_NOTIFIER_PARAM_BLOCKABLE
++				      true,
++#endif
++				      imr);
+ 	up_read(&per_mm->umem_rwsem);
+ 
+ 	wait_event(imr->q_leaf_free, !atomic_read(&imr->num_leaf_free));

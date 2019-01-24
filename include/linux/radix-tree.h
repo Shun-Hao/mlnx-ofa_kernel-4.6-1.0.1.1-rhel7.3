@@ -5,6 +5,11 @@
 
 #include_next <linux/radix-tree.h>
 
+
+#ifndef HAVE_IDR_PRELOAD_EXPORTED
+#define idr_preload LINUX_BACKPORT(idr_preload)
+extern void idr_preload(gfp_t gfp_mask);
+#endif
 #ifndef HAVE_RADIX_TREE_NEXT_CHUNK
 #define radix_tree_root         xarray
 #define radix_tree_node         xa_node
@@ -82,6 +87,8 @@ struct xa_node {
 		unsigned long	marks[XA_MAX_MARKS][XA_MARK_LONGS];
 	};
 };
+
+
 #ifndef HAVE_RADIX_TREE_NEXT_CHUNK
 #define radix_tree_next_chunk LINUX_BACKPORT(radix_tree_next_chunk)
 extern void __rcu **radix_tree_next_chunk(const struct radix_tree_root *root, struct radix_tree_iter *iter, unsigned flags);
@@ -96,6 +103,7 @@ extern int radix_tree_insert(struct radix_tree_root *root, unsigned long index, 
 
 #define radix_tree_delete LINUX_BACKPORT(radix_tree_delete)
 extern void *radix_tree_delete(struct radix_tree_root *root, unsigned long index);
+
 #endif
 
 enum xa_lock_type {

@@ -10,6 +10,7 @@
 #define HAVE_FLOW_DISSECTOR_KEY_VLAN 1
 #define HAVE_FLOW_DISSECTOR_KEY_IP 1
 #define HAVE_FLOW_DISSECTOR_KEY_TCP 1
+#define HAVE_FLOW_DISSECTOR_KEY_ENC_IP 1
 
 #include <linux/types.h>
 #include <linux/in6.h>
@@ -54,6 +55,7 @@
 #define FLOW_DISSECTOR_KEY_MPLS LINUX_BACKPORT(FLOW_DISSECTOR_KEY_MPLS)
 #define FLOW_DISSECTOR_KEY_TCP LINUX_BACKPORT(FLOW_DISSECTOR_KEY_TCP)
 #define FLOW_DISSECTOR_KEY_IP LINUX_BACKPORT(FLOW_DISSECTOR_KEY_IP)
+#define FLOW_DISSECTOR_KEY_ENC_IP LINUX_BACKPORT(FLOW_DISSECTOR_KEY_ENC_IP)
 #define FLOW_DISSECTOR_KEY_MAX LINUX_BACKPORT(FLOW_DISSECTOR_KEY_MAX)
 
 #define flow_dissector_key_control LINUX_BACKPORT(flow_dissector_key_control)
@@ -306,6 +308,7 @@ enum flow_dissector_key_id {
 	FLOW_DISSECTOR_KEY_MPLS, /* struct flow_dissector_key_mpls */
 	FLOW_DISSECTOR_KEY_TCP, /* struct flow_dissector_key_tcp */
 	FLOW_DISSECTOR_KEY_IP, /* struct flow_dissector_key_ip */
+	FLOW_DISSECTOR_KEY_ENC_IP, /* struct flow_dissector_key_ip */
 
 	FLOW_DISSECTOR_KEY_MAX,
 };

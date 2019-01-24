@@ -1,0 +1,22 @@
+From: Alaa Hleihel <alaa@mellanox.com>
+Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/mlx5_core.h
+
+Change-Id: I8020a9a9c2d67f3b75cf9b0ce4c15fc741352d9e
+---
+ drivers/net/ethernet/mellanox/mlx5/core/mlx5_core.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/net/ethernet/mellanox/mlx5/core/mlx5_core.h b/drivers/net/ethernet/mellanox/mlx5/core/mlx5_core.h
+index xxxxxxx..xxxxxxx 100644
+--- a/drivers/net/ethernet/mellanox/mlx5/core/mlx5_core.h
++++ b/drivers/net/ethernet/mellanox/mlx5/core/mlx5_core.h
+@@ -238,6 +238,9 @@ int mlx5_core_eq_query(struct mlx5_core_dev *dev, struct mlx5_eq *eq,
+ 		       u32 *out, int outlen);
+ int mlx5_start_eqs(struct mlx5_core_dev *dev);
+ void mlx5_stop_eqs(struct mlx5_core_dev *dev);
++#ifndef HAVE_PCI_IRQ_API
++u32 mlx5_get_msix_vec(struct mlx5_core_dev *dev, int vecidx);
++#endif
+ /* This function should only be called after mlx5_cmd_force_teardown_hca */
+ void mlx5_core_eq_free_irqs(struct mlx5_core_dev *dev);
+ struct mlx5_eq *mlx5_eqn2eq(struct mlx5_core_dev *dev, int eqn);

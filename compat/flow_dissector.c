@@ -177,7 +177,6 @@ skb_flow_dissect_set_enc_addr_type(enum flow_dissector_key_id type,
 					 target_container);
 	ctrl->addr_type = type;
 }
-
 static void
 __skb_flow_dissect_tunnel_info(const struct sk_buff *skb,
 			       struct flow_dissector *flow_dissector,
@@ -196,7 +195,9 @@ __skb_flow_dissect_tunnel_info(const struct sk_buff *skb,
 	    !dissector_uses_key(flow_dissector,
 				FLOW_DISSECTOR_KEY_ENC_CONTROL) &&
 	    !dissector_uses_key(flow_dissector,
-				FLOW_DISSECTOR_KEY_ENC_PORTS))
+				FLOW_DISSECTOR_KEY_ENC_PORTS) && 
+	    !dissector_uses_key(flow_dissector,
+				FLOW_DISSECTOR_KEY_ENC_IP))
 		return;
 
 	info = skb_tunnel_info(skb);
@@ -256,6 +257,17 @@ __skb_flow_dissect_tunnel_info(const struct sk_buff *skb,
 		tp->src = key->tp_src;
 		tp->dst = key->tp_dst;
 	}
+
+	if (dissector_uses_key(flow_dissector, FLOW_DISSECTOR_KEY_ENC_IP)) {
+		struct flow_dissector_key_ip *ip;
+
+		ip = skb_flow_dissector_target(flow_dissector,
+				FLOW_DISSECTOR_KEY_ENC_IP,
+				target_container);
+		ip->tos = key->tos;
+		ip->ttl = key->ttl;
+	}
+
 }
 #endif
 
