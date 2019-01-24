@@ -292,3 +292,4 @@ name=mlx5e_rx_am; type=feature; upstream_status=accepted;
 name=mlx4_tso; type=feature; upstream_status=accepted;
 name=mlx5_clock; type=feature; upstream_status=accepted;
 name=mlx5_gre; type=feature; upstream_status=accepted;
+name=rdma_cm_set_ack_to; type=feature; upstream_status=accepted;

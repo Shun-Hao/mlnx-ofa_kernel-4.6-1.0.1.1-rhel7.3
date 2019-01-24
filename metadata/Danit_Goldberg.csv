@@ -5,3 +5,4 @@ Change-Id=I441f2bd51abc6fd1b3688c0d1fd861af20ce01cc; subject=IB/mlx5: Add experi
 Change-Id=Ia7d1eecb60f8b3d30ca20225e15691588313ca2a; subject=IB/core: Add Packet Based Credit mode experimental device capability; feature=exp_packet_based_credit; upstream_status=NA; general=;
 Change-Id=Id40b7bf19bb17d2ad481a88bec23260f98c00a06; subject=IB/mlx5: Report Packet Based Credit mode device capability; feature=exp_packet_based_credit; upstream_status=NA; general=;
 Change-Id=I11ea24cc3921be4076c8508aa2970b0d8611b4e9; subject=net/mlx5: Add a debugfs entry for DCTs; feature=mlx5_core_bugs; upstream_status=NA; general=;
+Change-Id=I2b0fa1d2b56f3f22d255937698fccd01c5135663; subject=IB/cma: Define option to set ack timeout and pack tos_set; feature=rdma_cm_set_ack_to; upstream_status=accepted; general=;
