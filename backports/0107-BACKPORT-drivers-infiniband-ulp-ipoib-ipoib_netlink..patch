@@ -1,10 +1,10 @@
-From: Talat Batheesh <talatb@mellanox.com>
+From: Feras Daoud <ferasda@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/ulp/ipoib/ipoib_netlink.c
 
-Change-Id: I211f730ab690ef4e0381accadde8ceb0ab4bcbae
+Change-Id: I66f9820384c5d0b16fb767cb5d7f12ef7e96a441
 ---
- drivers/infiniband/ulp/ipoib/ipoib_netlink.c | 25 +++++++++++++++++++++++--
- 1 file changed, 23 insertions(+), 2 deletions(-)
+ drivers/infiniband/ulp/ipoib/ipoib_netlink.c | 23 ++++++++++++++++++++++-
+ 1 file changed, 22 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/infiniband/ulp/ipoib/ipoib_netlink.c b/drivers/infiniband/ulp/ipoib/ipoib_netlink.c
 index xxxxxxx..xxxxxxx 100644
@@ -43,7 +43,7 @@ index xxxxxxx..xxxxxxx 100644
  {
  	struct net_device *pdev;
  	struct ipoib_dev_priv *ppriv;
-@@ -105,8 +118,12 @@ static int ipoib_new_child_link(struct net *src_net, struct net_device *dev,
+@@ -106,8 +119,12 @@ static int ipoib_new_child_link(struct net *src_net, struct net_device *dev,
  
  	if (!tb[IFLA_LINK])
  		return -EINVAL;
@@ -57,13 +57,12 @@ index xxxxxxx..xxxxxxx 100644
  	if (!pdev || pdev->type != ARPHRD_INFINIBAND)
  		return -ENODEV;
  
-@@ -135,7 +152,11 @@ static int ipoib_new_child_link(struct net *src_net, struct net_device *dev,
- 		return err;
+@@ -146,7 +163,11 @@ static int ipoib_new_child_link(struct net *src_net, struct net_device *dev,
+ 		goto out;
  
  	if (data) {
--		err = ipoib_changelink(dev, tb, data, extack);
 +#if defined(HAVE_RTNL_LINK_OPS_NEWLINK_5_PARAMS)
-+       	err = ipoib_changelink(dev, tb, data, extack);
+ 		err = ipoib_changelink(dev, tb, data, extack);
 +#else
 +		err = ipoib_changelink(dev, tb, data);
 +#endif
