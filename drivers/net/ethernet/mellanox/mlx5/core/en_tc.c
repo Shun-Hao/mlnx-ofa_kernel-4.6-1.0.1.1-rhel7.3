@@ -1805,7 +1805,7 @@ static int parse_cls_flower(struct mlx5e_priv *priv,
 
 	if (!err && (flow->flags & MLX5E_TC_FLOW_ESWITCH)) {
 		rep = rpriv->rep;
-		if (rep->vport != FDB_UPLINK_VPORT &&
+		if (rep->vport != MLX5_VPORT_UPLINK &&
 		    (esw->offloads.inline_mode != MLX5_INLINE_MODE_NONE &&
 		    esw->offloads.inline_mode < match_level)) {
 			NL_SET_ERR_MSG_MOD(extack,
@@ -3217,7 +3217,7 @@ mlx5e_add_fdb_flow(struct mlx5e_priv *priv,
 		 * original flow and packets redirected from uplink use the
 		 * peer mdev.
 		 */
-		if (in_rep->vport == FDB_UPLINK_VPORT)
+		if (in_rep->vport == MLX5_VPORT_UPLINK)
 			in_mdev = peer_priv->mdev;
 
 		err = __mlx5e_add_fdb_flow(peer_priv, f, flow_flags,
