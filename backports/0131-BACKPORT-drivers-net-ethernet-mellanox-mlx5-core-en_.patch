@@ -4,8 +4,8 @@ Subject: [PATCH] BACKPORT:
 
 Change-Id: I6236e7d635ee18b94c0a1b2d9dbc6b27722aedec
 ---
- .../net/ethernet/mellanox/mlx5/core/en_ethtool.c   | 748 ++++++++++++++++++++-
- 1 file changed, 747 insertions(+), 1 deletion(-)
+ .../net/ethernet/mellanox/mlx5/core/en_ethtool.c   | 754 ++++++++++++++++++++-
+ 1 file changed, 751 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en_ethtool.c b/drivers/net/ethernet/mellanox/mlx5/core/en_ethtool.c
 index xxxxxxx..xxxxxxx 100644
@@ -806,10 +806,21 @@ index xxxxxxx..xxxxxxx 100644
  static __u32 mlx5e_get_wol_supported(struct mlx5_core_dev *mdev)
  {
  	__u32 ret = 0;
-@@ -1403,6 +1940,7 @@ static int mlx5e_set_fecparam(struct net_device *netdev,
+@@ -1350,7 +1887,7 @@ static int mlx5e_set_wol(struct net_device *netdev, struct ethtool_wolinfo *wol)
+ 
+ 	return mlx5_set_port_wol(mdev, mlx5_wol_mode);
+ }
+-
++#ifdef HAVE_GET_SET_FECPARAM
+ static int mlx5e_get_fecparam(struct net_device *netdev,
+ 			      struct ethtool_fecparam *fecparam)
+ {
+@@ -1402,7 +1939,8 @@ static int mlx5e_set_fecparam(struct net_device *netdev,
+ 
  	return 0;
  }
- 
+-
++#endif
 +#ifdef HAVE_GET_SET_MSGLEVEL
  static u32 mlx5e_get_msglevel(struct net_device *dev)
  {
@@ -1004,7 +1015,7 @@ index xxxxxxx..xxxxxxx 100644
  
  int mlx5e_ethtool_flash_device(struct mlx5e_priv *priv,
  			       struct ethtool_flash *flash)
-@@ -1876,40 +2545,117 @@ const struct ethtool_ops mlx5e_ethtool_ops = {
+@@ -1876,40 +2545,119 @@ const struct ethtool_ops mlx5e_ethtool_ops = {
  	.get_ethtool_stats = mlx5e_get_ethtool_stats,
  	.get_ringparam     = mlx5e_get_ringparam,
  	.set_ringparam     = mlx5e_set_ringparam,
@@ -1092,9 +1103,11 @@ index xxxxxxx..xxxxxxx 100644
  	.get_dump_data     = mlx5e_get_dump_data,
  	.set_dump          = mlx5e_set_dump,
 +#endif
++#ifdef HAVE_GET_SET_FECPARAM
  	.get_fecparam      = mlx5e_get_fecparam,
  	.set_fecparam      = mlx5e_set_fecparam,
- };
++#endif
++};
 +
 +#ifdef HAVE_ETHTOOL_OPS_EXT
 +const struct ethtool_ops_ext mlx5e_ethtool_ops_ext = {
@@ -1120,5 +1133,5 @@ index xxxxxxx..xxxxxxx 100644
 +#if !defined(HAVE_SET_PHYS_ID) && defined(HAVE_SET_PHYS_ID_EXT)
 +	.set_phys_id       = mlx5e_set_phys_id,
 +#endif
-+};
+ };
 +#endif /* HAVE_ETHTOOL_OPS_EXT */

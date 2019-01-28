@@ -8,7 +8,30 @@
 #define ETH_MODULE_SFF_8079		0x1
 #define ETH_MODULE_SFF_8079_LEN		256
 #endif
+#ifndef ETHTOOL_FEC_NONE
+enum ethtool_fec_config_bits {
+	ETHTOOL_FEC_NONE_BIT,
+	ETHTOOL_FEC_AUTO_BIT,
+	ETHTOOL_FEC_OFF_BIT,
+	ETHTOOL_FEC_RS_BIT,
+	ETHTOOL_FEC_BASER_BIT,
+};
 
+struct ethtool_fecparam {
+	__u32   cmd;
+	/* bitmask of FEC modes */
+	__u32   active_fec;
+	__u32   fec;
+	__u32   reserved;
+};
+
+#define ETHTOOL_FEC_NONE                (1 << ETHTOOL_FEC_NONE_BIT)
+#define ETHTOOL_FEC_AUTO                (1 << ETHTOOL_FEC_AUTO_BIT)
+#define ETHTOOL_FEC_OFF                 (1 << ETHTOOL_FEC_OFF_BIT)
+#define ETHTOOL_FEC_RS                  (1 << ETHTOOL_FEC_RS_BIT)
+#define ETHTOOL_FEC_BASER               (1 << ETHTOOL_FEC_BASER_BIT)
+
+#endif
 #ifndef ETH_MODULE_SFF_8472
 #define ETH_MODULE_SFF_8472		0x2
 #define ETH_MODULE_SFF_8472_LEN		512
@@ -61,7 +84,7 @@
 #define ETHTOOL_LINK_MODE_100000baseCR4_Full_BIT 38
 #define ETHTOOL_LINK_MODE_100000baseLR4_ER4_Full_BIT 39
 #define ETHTOOL_LINK_MODE_50000baseSR2_Full_BIT 40
-
+#define ETHTOOL_LINK_MODE_FEC_NONE_BIT   49
 #define SUPPORTED_100000baseCR4_Full 0
 #define ADVERTISED_100000baseCR4_Full 0
 #define SUPPORTED_100000baseSR4_Full 0

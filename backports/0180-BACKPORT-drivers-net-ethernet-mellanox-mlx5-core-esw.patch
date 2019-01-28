@@ -4,8 +4,8 @@ Subject: [PATCH] BACKPORT:
 
 Change-Id: Ibccaa36de60cae30088b90266147508311a06df7
 ---
- .../mellanox/mlx5/core/eswitch_devlink_compat.c         | 17 +++++++++++++++--
- 1 file changed, 15 insertions(+), 2 deletions(-)
+ .../mellanox/mlx5/core/eswitch_devlink_compat.c    | 22 +++++++++++++++++++---
+ 1 file changed, 19 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/eswitch_devlink_compat.c b/drivers/net/ethernet/mellanox/mlx5/core/eswitch_devlink_compat.c
 index xxxxxxx..xxxxxxx 100644
@@ -25,7 +25,17 @@ index xxxxxxx..xxxxxxx 100644
  	int (*read_u8)(struct devlink *devlink, u8 *read);
  	int (*read_u16)(struct devlink *devlink, u16 *read);
  	char **map;
-@@ -147,9 +152,17 @@ static ssize_t esw_compat_write(struct kobject *kobj,
+@@ -117,7 +122,9 @@ static ssize_t esw_compat_write(struct kobject *kobj,
+ 						       devlink_kobj);
+ 	struct mlx5_core_dev *dev = cdevlink->mdev;
+ 	struct devlink *devlink = priv_to_devlink(dev);
++#ifdef HAVE_NETLINK_EXT_ACK
+ 	struct netlink_ext_ack ack = { ._msg = NULL };
++#endif
+ 	const char *entname = attr->attr.name;
+ 	struct devlink_compat_op *op = 0;
+ 	u16 set = 0;
+@@ -147,13 +154,22 @@ static ssize_t esw_compat_write(struct kobject *kobj,
  	}
  
  	if (op->write_u16)
@@ -43,5 +53,11 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
 +				   );
  
++#ifdef HAVE_NETLINK_EXT_ACK
  	if (ack._msg)
  		mlx5_core_warn(dev, "%s\n", ack._msg);
+-
++#endif
+ 	if (ret < 0)
+ 		return ret;
+ 

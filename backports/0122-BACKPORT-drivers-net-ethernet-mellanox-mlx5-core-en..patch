@@ -168,7 +168,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5e_dim       dim_obj; /* Adaptive Moderation */
  
  	/* XDP */
-+#ifdef HAVE_XDP_REDIRECT
++#ifdef HAVE_XDP_BUFF_DATA_HARD_START
  	struct bpf_prog       *xdp_prog;
 +#endif
 +#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
@@ -335,7 +335,7 @@ index xxxxxxx..xxxxxxx 100644
  struct mlx5e_redirect_rqt_param {
  	bool is_rss;
  	union {
-@@ -1015,7 +1137,11 @@ void mlx5e_notify_hw(struct mlx5_wq_cyc *wq, u16 pc,
+@@ -1018,7 +1140,11 @@ void mlx5e_notify_hw(struct mlx5_wq_cyc *wq, u16 pc,
  {
  	ctrl->fm_ce_se = MLX5_WQE_CTRL_CQ_UPDATE;
  	/* ensure wqe is visible to device before updating doorbell record */
@@ -347,7 +347,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	*wq->db = cpu_to_be32(pc);
  
-@@ -1036,13 +1162,23 @@ static inline void mlx5e_cq_arm(struct mlx5e_cq *cq)
+@@ -1039,13 +1165,23 @@ static inline void mlx5e_cq_arm(struct mlx5e_cq *cq)
  }
  
  extern const struct ethtool_ops mlx5e_ethtool_ops;
@@ -371,7 +371,7 @@ index xxxxxxx..xxxxxxx 100644
  
  int mlx5e_create_tir(struct mlx5_core_dev *mdev,
  		     struct mlx5e_tir *tir, u32 *in, int inlen);
-@@ -1052,6 +1188,9 @@ int mlx5e_create_mdev_resources(struct mlx5_core_dev *mdev);
+@@ -1055,6 +1191,9 @@ int mlx5e_create_mdev_resources(struct mlx5_core_dev *mdev);
  void mlx5e_destroy_mdev_resources(struct mlx5_core_dev *mdev);
  int mlx5e_refresh_tirs(struct mlx5e_priv *priv, bool enable_uc_lb);
  int mlx5e_modify_tirs_lro(struct mlx5e_priv *priv);
@@ -381,7 +381,7 @@ index xxxxxxx..xxxxxxx 100644
  
  /* common netdev helpers */
  void mlx5e_create_q_counters(struct mlx5e_priv *priv);
-@@ -1104,21 +1243,32 @@ void mlx5e_ethtool_get_ringparam(struct mlx5e_priv *priv,
+@@ -1107,21 +1246,32 @@ void mlx5e_ethtool_get_ringparam(struct mlx5e_priv *priv,
  				 struct ethtool_ringparam *param);
  int mlx5e_ethtool_set_ringparam(struct mlx5e_priv *priv,
  				struct ethtool_ringparam *param);
@@ -414,7 +414,7 @@ index xxxxxxx..xxxxxxx 100644
  /* mlx5e generic netdev management API */
  int mlx5e_netdev_init(struct net_device *netdev,
  		      struct mlx5e_priv *priv,
-@@ -1140,9 +1290,11 @@ void mlx5e_build_rq_params(struct mlx5_core_dev *mdev,
+@@ -1143,9 +1293,11 @@ void mlx5e_build_rq_params(struct mlx5_core_dev *mdev,
  void mlx5e_build_rss_params(struct mlx5e_params *params);
  u8 mlx5e_params_calculate_tx_min_inline(struct mlx5_core_dev *mdev);
  
@@ -426,7 +426,7 @@ index xxxxxxx..xxxxxxx 100644
  int mlx5e_set_dump(struct net_device *dev, struct ethtool_dump *dump);
  
  static inline bool mlx5e_dropless_rq_supported(struct mlx5_core_dev *mdev)
-@@ -1153,8 +1305,14 @@ static inline bool mlx5e_dropless_rq_supported(struct mlx5_core_dev *mdev)
+@@ -1156,8 +1308,14 @@ static inline bool mlx5e_dropless_rq_supported(struct mlx5_core_dev *mdev)
  
  void mlx5e_rx_dim_work(struct work_struct *work);
  void mlx5e_tx_dim_work(struct work_struct *work);

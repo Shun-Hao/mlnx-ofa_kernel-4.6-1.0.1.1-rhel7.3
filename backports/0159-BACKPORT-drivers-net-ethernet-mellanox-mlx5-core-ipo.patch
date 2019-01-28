@@ -4,8 +4,8 @@ Subject: [PATCH] BACKPORT:
 
 Change-Id: If2d9779a7f9846e6bdcbcf95bdfbdaf7e5b8f8b5
 ---
- .../net/ethernet/mellanox/mlx5/core/ipoib/ipoib.c  | 80 ++++++++++++++++++++++
- 1 file changed, 80 insertions(+)
+ .../net/ethernet/mellanox/mlx5/core/ipoib/ipoib.c  | 83 +++++++++++++++++++++-
+ 1 file changed, 82 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/ipoib/ipoib.c b/drivers/net/ethernet/mellanox/mlx5/core/ipoib/ipoib.c
 index xxxxxxx..xxxxxxx 100644
@@ -168,3 +168,15 @@ index xxxxxxx..xxxxxxx 100644
  	default:
  		return -EOPNOTSUPP;
  	}
+@@ -750,9 +830,10 @@ static int mlx5_rdma_setup_rn(struct ib_device *ibdev, u8 port_num,
+ 	rn->detach_mcast = mlx5i_detach_mcast;
+ 	rn->set_id = mlx5i_set_pkey_index;
+ 
++#ifdef HAVE_NET_DEVICE_NEEDS_FREE_NETDEV
+ 	netdev->priv_destructor = mlx5_rdma_netdev_free;
+ 	netdev->needs_free_netdev = 1;
+-
++#endif
+ 	return 0;
+ 
+ destroy_ht:
