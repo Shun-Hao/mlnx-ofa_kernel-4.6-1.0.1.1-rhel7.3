@@ -134,7 +134,7 @@ static int ipoib_new_child_link(struct net *src_net, struct net_device *dev,
 		goto out;
 	}
 
-	err = ipoib_intf_init(ppriv->ca, ppriv->port, dev->name, dev, ppriv);
+	err = ipoib_intf_init(ppriv->ca, ppriv->port, dev->name, dev, priv);
 	if (err) {
 		ipoib_warn(ppriv, "failed to initialize pkey device\n");
 		goto out;
