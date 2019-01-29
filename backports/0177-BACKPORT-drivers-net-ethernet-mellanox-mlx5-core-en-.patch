@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en/fs.h
 
 Change-Id: I81c07abd550c9c718c5fd0f7a6b3396fd83afdb5
 ---
- drivers/net/ethernet/mellanox/mlx5/core/en/fs.h | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ drivers/net/ethernet/mellanox/mlx5/core/en/fs.h | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en/fs.h b/drivers/net/ethernet/mellanox/mlx5/core/en/fs.h
 index xxxxxxx..xxxxxxx 100644
@@ -45,7 +45,20 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5_flow_handle	*untagged_rule;
  	struct mlx5_flow_handle	*any_cvlan_rule;
  	struct mlx5_flow_handle	*any_svlan_rule;
-@@ -171,7 +179,9 @@ struct mlx5e_flow_steering {
+@@ -118,8 +126,12 @@ void mlx5e_ethtool_init_steering(struct mlx5e_priv *priv);
+ void mlx5e_ethtool_cleanup_steering(struct mlx5e_priv *priv);
+ int mlx5e_set_rxnfc(struct net_device *dev, struct ethtool_rxnfc *cmd);
+ int mlx5e_get_rxnfc(struct net_device *dev,
++#ifdef HAVE_ETHTOOL_OPS_GET_RXNFC_U32_RULE_LOCS
+ 		    struct ethtool_rxnfc *info, u32 *rule_locs);
+ #else
++			   struct ethtool_rxnfc *info, void *rule_locs);
++#endif
++#else
+ static inline void mlx5e_ethtool_init_steering(struct mlx5e_priv *priv)    { }
+ static inline void mlx5e_ethtool_cleanup_steering(struct mlx5e_priv *priv) { }
+ #endif /* CONFIG_MLX5_EN_RXNFC */
+@@ -171,7 +183,9 @@ struct mlx5e_flow_steering {
  #ifdef CONFIG_MLX5_EN_RXNFC
  	struct mlx5e_ethtool_steering   ethtool;
  #endif

@@ -98,7 +98,10 @@
 #define __skb_get_poff LINUX_BACKPORT(__skb_get_poff)
 #define __skb_flow_get_ports LINUX_BACKPORT(__skb_flow_get_ports)
 #define __skb_flow_dissect LINUX_BACKPORT(__skb_flow_dissect)
+
+#ifndef CONFIG_COMPAT_KERNEL_4_9
 #define __skb_get_hash_symmetric LINUX_BACKPORT(__skb_get_hash_symmetric)
+#endif
 #define __skb_get_hash LINUX_BACKPORT(__skb_get_hash)
 #define __get_hash_from_flowi6 LINUX_BACKPORT(__get_hash_from_flowi6)
 #define __get_hash_from_flowi4 LINUX_BACKPORT(__get_hash_from_flowi4)
@@ -376,7 +379,6 @@ static inline bool dissector_uses_key(const struct flow_dissector *flow_dissecto
 {
 	return flow_dissector->used_keys & (1 << key_id);
 }
-
 static inline void *skb_flow_dissector_target(struct flow_dissector *flow_dissector,
 					      enum flow_dissector_key_id key_id,
 					      void *target_container)
@@ -384,6 +386,7 @@ static inline void *skb_flow_dissector_target(struct flow_dissector *flow_dissec
 	return ((char *)target_container) + flow_dissector->offset[key_id];
 }
 
+#ifndef HAVE_SKB_FLOW_DISSECT
 bool skb_flow_dissect_flow_keys(const struct sk_buff *skb,
 				struct flow_keys *flow,
 				unsigned int flags);
@@ -407,6 +410,7 @@ void skb_flow_dissector_init(struct flow_dissector *flow_dissector,
 			     const struct flow_dissector_key *key,
 			     unsigned int key_count);
 
+#endif
 int init_default_flow_dissectors(void);
 
 #endif

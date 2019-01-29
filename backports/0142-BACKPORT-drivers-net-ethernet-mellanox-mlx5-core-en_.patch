@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en_tc.c
 
 Change-Id: I409d0c273d880163a0df891152c9dd8cf93e1c8e
 ---
- drivers/net/ethernet/mellanox/mlx5/core/en_tc.c | 729 ++++++++++++++++++++++--
- 1 file changed, 667 insertions(+), 62 deletions(-)
+ drivers/net/ethernet/mellanox/mlx5/core/en_tc.c | 747 +++++++++++++++++++++---
+ 1 file changed, 676 insertions(+), 71 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en_tc.c b/drivers/net/ethernet/mellanox/mlx5/core/en_tc.c
 index xxxxxxx..xxxxxxx 100644
@@ -490,7 +490,7 @@ index xxxxxxx..xxxxxxx 100644
  	return err;
  }
  
-@@ -1025,18 +1199,23 @@ static void mlx5e_tc_del_fdb_flow(struct mlx5e_priv *priv,
+@@ -1025,18 +1199,31 @@ static void mlx5e_tc_del_fdb_flow(struct mlx5e_priv *priv,
  
  	mlx5_eswitch_del_vlan_action(esw, attr);
  
@@ -510,10 +510,33 @@ index xxxxxxx..xxxxxxx 100644
  		mlx5_fc_destroy(esw->dev, attr->counter);
  }
  
++static struct mlx5_fc *mlx5e_tc_get_counter(struct mlx5e_tc_flow *flow)
++{
++	if (flow->flags & MLX5E_TC_FLOW_ESWITCH)
++		return flow->esw_attr->counter;
++	else
++		return flow->nic_attr->counter;
++}
++
 +#ifdef HAVE_TCF_TUNNEL_INFO
  void mlx5e_tc_encap_flows_add(struct mlx5e_priv *priv,
  			      struct mlx5e_encap_entry *e)
  {
+@@ -1112,14 +1299,6 @@ void mlx5e_tc_encap_flows_del(struct mlx5e_priv *priv,
+ 	mlx5_packet_reformat_dealloc(priv->mdev, e->encap_id);
+ }
+ 
+-static struct mlx5_fc *mlx5e_tc_get_counter(struct mlx5e_tc_flow *flow)
+-{
+-	if (flow->flags & MLX5E_TC_FLOW_ESWITCH)
+-		return flow->esw_attr->counter;
+-	else
+-		return flow->nic_attr->counter;
+-}
+-
+ void mlx5e_tc_update_neigh_used_value(struct mlx5e_neigh_hash_entry *nhe)
+ {
+ 	struct mlx5e_neigh *m_neigh = &nhe->m_neigh;
 @@ -1133,9 +1312,12 @@ void mlx5e_tc_update_neigh_used_value(struct mlx5e_neigh_hash_entry *nhe)
  
  	if (m_neigh->family == AF_INET)
@@ -1501,7 +1524,7 @@ index xxxxxxx..xxxxxxx 100644
  				parse_attr->tun_info = *info;
  				attr->parse_attr = parse_attr;
  				action |= MLX5_FLOW_CONTEXT_ACTION_PACKET_REFORMAT |
-@@ -2976,17 +3437,36 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
+@@ -2976,17 +3437,22 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
  					  MLX5_FLOW_CONTEXT_ACTION_COUNT;
  				/* attr->out_rep is resolved when we handle encap */
  			} else {
@@ -1513,6 +1536,20 @@ index xxxxxxx..xxxxxxx 100644
  				       priv->netdev->name, out_dev->name);
  				return -EINVAL;
  			}
+ 			continue;
+ 		}
+-
+ 		if (is_tcf_tunnel_set(a)) {
++#if !defined(CONFIG_COMPAT_TCF_TUNNEL_KEY_MOD) || defined (CONFIG_COMPAT_KERNEL_4_9)
+ 			info = tcf_tunnel_info(a);
++#else
++			tcf_tunnel_info_compat(a, info);
++#endif
+ 			if (info)
+ 				encap = true;
+ 			else
+@@ -2994,7 +3460,23 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
+ 			attr->mirror_count = attr->out_count;
  			continue;
  		}
 +#else /* HAVE_TCF_TUNNEL_INFO */
@@ -1529,30 +1566,18 @@ index xxxxxxx..xxxxxxx 100644
 +		}
 +#endif /* HAVE_TCF_TUNNEL_INFO */
  
- 		if (is_tcf_tunnel_set(a)) {
-+#if !defined(CONFIG_COMPAT_TCF_TUNNEL_KEY_MOD) || defined (CONFIG_COMPAT_KERNEL_4_9)
- 			info = tcf_tunnel_info(a);
-+#else
-+			tcf_tunnel_info_compat(a, info);
-+#endif
- 			if (info)
- 				encap = true;
- 			else
-@@ -2995,6 +3475,7 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
- 			continue;
- 		}
- 
++
++#ifdef HAVE_TCF_TUNNEL_INFO
 +#ifdef HAVE_IS_TCF_VLAN
  		if (is_tcf_vlan(a)) {
  			err = parse_tc_vlan_action(priv, a, attr, &action);
  
-@@ -3004,22 +3485,34 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
+@@ -3004,22 +3486,33 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
  			attr->mirror_count = attr->out_count;
  			continue;
  		}
 +#endif
  
-+#ifdef HAVE_TCF_TUNNEL_INFO
  		if (is_tcf_tunnel_release(a)) {
  			action |= MLX5_FLOW_CONTEXT_ACTION_DECAP;
  			continue;
@@ -1797,7 +1822,7 @@ index xxxxxxx..xxxxxxx 100644
  	u64 bytes;
  	u64 packets;
  	u64 lastuse;
-@@ -3403,10 +3960,40 @@ int mlx5e_stats_flower(struct mlx5e_priv *priv,
+@@ -3403,10 +3960,39 @@ int mlx5e_stats_flower(struct mlx5e_priv *priv,
  	}
  
  
@@ -1834,12 +1859,14 @@ index xxxxxxx..xxxxxxx 100644
 +EXPORT_SYMBOL(mlx5e_stats_flower);
 +#endif
 +#endif
-+#endif /* HAVE_TC_FLOWER_OFFLOAD */
  
  static void mlx5e_tc_hairpin_update_dead_peer(struct mlx5e_priv *priv,
  					      struct mlx5e_priv *peer_priv)
-@@ -3456,10 +4043,13 @@ static int mlx5e_tc_netdev_event(struct notifier_block *this,
+@@ -3454,12 +4040,16 @@ static int mlx5e_tc_netdev_event(struct notifier_block *this,
+ 	return NOTIFY_DONE;
+ }
  
++#endif /* HAVE_TC_FLOWER_OFFLOAD */
  int mlx5e_tc_nic_init(struct mlx5e_priv *priv)
  {
 +#ifdef HAVE_TC_FLOWER_OFFLOAD

@@ -3,17 +3,28 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h
 
 Change-Id: Ia9bc140c27362c6a74c02e83542116d9f0edff70
 ---
- drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h b/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h
 +++ b/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h
-@@ -42,13 +42,13 @@
+@@ -40,15 +40,24 @@
+ #define MLX5E_XDP_TX_DS_COUNT \
+ 	((sizeof(struct mlx5e_tx_wqe) / MLX5_SEND_WQE_DS) + 1 /* SG DS */)
  
++#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_BUFF_DATA_HARD_START
  bool mlx5e_xdp_handle(struct mlx5e_rq *rq, struct mlx5e_dma_info *di,
  		      void *va, u16 *rx_headroom, u32 *len);
++#else
++static inline bool mlx5e_xdp_handle(struct mlx5e_rq *rq,
++				    const struct bpf_prog *prog,
++				    struct mlx5e_dma_info *di,
++				    void *data, u16 len);
++#endif
++#endif
 +#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
  bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq);
  void mlx5e_free_xdpsq_descs(struct mlx5e_xdpsq *sq);
@@ -25,7 +36,7 @@ index xxxxxxx..xxxxxxx 100644
  static inline void mlx5e_xmit_xdp_doorbell(struct mlx5e_xdpsq *sq)
  {
  	struct mlx5_wq_cyc *wq = &sq->wq;
-@@ -61,3 +61,4 @@ static inline void mlx5e_xmit_xdp_doorbell(struct mlx5e_xdpsq *sq)
+@@ -61,3 +70,4 @@ static inline void mlx5e_xmit_xdp_doorbell(struct mlx5e_xdpsq *sq)
  }
  
  #endif

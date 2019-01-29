@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c
 
 Change-Id: I2b2d6b9f70609955b215ccd167e9a5cd09a1db53
 ---
- drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c | 52 +++++++++++++++++++++---
- 1 file changed, 46 insertions(+), 6 deletions(-)
+ drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c | 51 ++++++++++++++++++++----
+ 1 file changed, 44 insertions(+), 7 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c b/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c
 index xxxxxxx..xxxxxxx 100644
@@ -18,13 +18,14 @@ index xxxxxxx..xxxxxxx 100644
  static inline bool
  mlx5e_xmit_xdp_buff(struct mlx5e_xdpsq *sq, struct mlx5e_dma_info *di,
  		    struct xdp_buff *xdp)
-@@ -49,52 +50,94 @@ mlx5e_xmit_xdp_buff(struct mlx5e_xdpsq *sq, struct mlx5e_dma_info *di,
+@@ -49,36 +50,70 @@ mlx5e_xmit_xdp_buff(struct mlx5e_xdpsq *sq, struct mlx5e_dma_info *di,
  
  	return mlx5e_xmit_xdp_frame(sq, &xdpi);
  }
 -
 +#endif
  /* returns true if packet was consumed by xdp */
++#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
 +#ifdef HAVE_XDP_BUFF_DATA_HARD_START
  bool mlx5e_xdp_handle(struct mlx5e_rq *rq, struct mlx5e_dma_info *di,
  		      void *va, u16 *rx_headroom, u32 *len)
@@ -38,7 +39,9 @@ index xxxxxxx..xxxxxxx 100644
 +#ifdef HAVE_XDP_BUFF_DATA_HARD_START
  	struct bpf_prog *prog = READ_ONCE(rq->xdp_prog);
 +#endif
++#ifdef HAVE_XDP_BUFF
  	struct xdp_buff xdp;
++#endif
  	u32 act;
 +#ifdef HAVE_XDP_REDIRECT
  	int err;
@@ -71,7 +74,6 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  		return false;
  	case XDP_TX:
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
 +#if defined(HAVE_TRACE_XDP_EXCEPTION) && !defined(MLX_DISABLE_TRACEPOINTS)
  		if (unlikely(!mlx5e_xmit_xdp_buff(&rq->xdpsq, di, &xdp)))
  			goto xdp_abort;
@@ -83,19 +85,13 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
 +#endif
  		__set_bit(MLX5E_RQ_FLAG_XDP_XMIT, rq->flags); /* non-atomic */
-+#endif
  		return true;
 +#ifdef HAVE_XDP_REDIRECT
  	case XDP_REDIRECT:
  		/* When XDP enabled then page-refcnt==1 here */
  		err = xdp_do_redirect(rq->netdev, &xdp, prog);
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
- 		if (unlikely(err))
- 			goto xdp_abort;
- 		__set_bit(MLX5E_RQ_FLAG_XDP_XMIT, rq->flags);
- 		rq->xdpsq.redirect_flush = true;
+@@ -89,19 +124,25 @@ bool mlx5e_xdp_handle(struct mlx5e_rq *rq, struct mlx5e_dma_info *di,
  		mlx5e_page_dma_unmap(rq, di);
-+#endif
  		rq->stats->xdp_redirect++;
  		return true;
 +#endif
@@ -104,9 +100,7 @@ index xxxxxxx..xxxxxxx 100644
  		/* fall through */
  	case XDP_ABORTED:
 +#ifdef HAVE_XDP_REDIRECT
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
  xdp_abort:
-+#endif
 +#ifndef MLX_DISABLE_TRACEPOINTS
  		trace_xdp_exception(rq->netdev, prog, act);
 +#endif
@@ -114,15 +108,16 @@ index xxxxxxx..xxxxxxx 100644
  		/* fall through */
  	case XDP_DROP:
  		rq->stats->xdp_drop++;
-@@ -102,6 +145,7 @@ xdp_abort:
+ 		return true;
  	}
  }
- 
+-
++#endif
 +#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
  bool mlx5e_xmit_xdp_frame(struct mlx5e_xdpsq *sq, struct mlx5e_xdp_info *xdpi)
  {
  	struct mlx5_wq_cyc       *wq   = &sq->wq;
-@@ -116,7 +160,6 @@ bool mlx5e_xmit_xdp_frame(struct mlx5e_xdpsq *sq, struct mlx5e_xdp_info *xdpi)
+@@ -116,7 +157,6 @@ bool mlx5e_xmit_xdp_frame(struct mlx5e_xdpsq *sq, struct mlx5e_xdp_info *xdpi)
  	struct xdp_frame *xdpf = xdpi->xdpf;
  	dma_addr_t dma_addr  = xdpi->dma_addr;
  	unsigned int dma_len = xdpf->len;
@@ -130,7 +125,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5e_xdpsq_stats *stats = sq->stats;
  
  	prefetchw(wqe);
-@@ -125,7 +168,6 @@ bool mlx5e_xmit_xdp_frame(struct mlx5e_xdpsq *sq, struct mlx5e_xdp_info *xdpi)
+@@ -125,7 +165,6 @@ bool mlx5e_xmit_xdp_frame(struct mlx5e_xdpsq *sq, struct mlx5e_xdp_info *xdpi)
  		stats->err++;
  		return false;
  	}
@@ -138,7 +133,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (unlikely(!mlx5e_wqc_has_room_for(wq, sq->cc, sq->pc, 1))) {
  		if (sq->doorbell) {
  			/* SQ is full, ring doorbell */
-@@ -167,7 +209,6 @@ bool mlx5e_xmit_xdp_frame(struct mlx5e_xdpsq *sq, struct mlx5e_xdp_info *xdpi)
+@@ -167,7 +206,6 @@ bool mlx5e_xmit_xdp_frame(struct mlx5e_xdpsq *sq, struct mlx5e_xdp_info *xdpi)
  	stats->xmit++;
  	return true;
  }
@@ -146,7 +141,7 @@ index xxxxxxx..xxxxxxx 100644
  bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
  {
  	struct mlx5e_xdpsq *sq;
-@@ -206,7 +247,6 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
+@@ -206,7 +244,6 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
  		do {
  			u16 ci = mlx5_wq_cyc_ctr2ix(&sq->wq, sqcc);
  			struct mlx5e_xdp_info *xdpi = &sq->db.xdpi[ci];
@@ -154,7 +149,7 @@ index xxxxxxx..xxxxxxx 100644
  			last_wqe = (sqcc == wqe_counter);
  			sqcc++;
  
-@@ -239,7 +279,6 @@ void mlx5e_free_xdpsq_descs(struct mlx5e_xdpsq *sq)
+@@ -239,7 +276,6 @@ void mlx5e_free_xdpsq_descs(struct mlx5e_xdpsq *sq)
  
  	is_redirect = test_bit(MLX5E_SQ_STATE_REDIRECT, &sq->state);
  	rq = is_redirect ? NULL : container_of(sq, struct mlx5e_rq, xdpsq);
@@ -162,7 +157,7 @@ index xxxxxxx..xxxxxxx 100644
  	while (sq->cc != sq->pc) {
  		u16 ci = mlx5_wq_cyc_ctr2ix(&sq->wq, sq->cc);
  		struct mlx5e_xdp_info *xdpi = &sq->db.xdpi[ci];
-@@ -309,3 +348,4 @@ int mlx5e_xdp_xmit(struct net_device *dev, int n, struct xdp_frame **frames,
+@@ -309,3 +345,4 @@ int mlx5e_xdp_xmit(struct net_device *dev, int n, struct xdp_frame **frames,
  
  	return n - drops;
  }

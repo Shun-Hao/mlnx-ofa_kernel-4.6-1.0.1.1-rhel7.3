@@ -4,8 +4,8 @@ Subject: [PATCH] BACKPORT:
 
 Change-Id: I10eaa2067dcdcc8ef3e026d5de5188e849b6a441
 ---
- .../ethernet/mellanox/mlx5/core/ipoib/ipoib_vlan.c | 27 +++++++++++++++++++++-
- 1 file changed, 26 insertions(+), 1 deletion(-)
+ .../ethernet/mellanox/mlx5/core/ipoib/ipoib_vlan.c | 29 +++++++++++++++++++++-
+ 1 file changed, 28 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/ipoib/ipoib_vlan.c b/drivers/net/ethernet/mellanox/mlx5/core/ipoib/ipoib_vlan.c
 index xxxxxxx..xxxxxxx 100644
@@ -22,9 +22,13 @@ index xxxxxxx..xxxxxxx 100644
  		if (node->underlay_qpn == qpn)
  			return node;
  	}
-@@ -148,9 +149,16 @@ static const struct net_device_ops mlx5i_pkey_netdev_ops = {
+@@ -146,11 +147,20 @@ static const struct net_device_ops mlx5i_pkey_netdev_ops = {
+ 	.ndo_open                = mlx5i_pkey_open,
+ 	.ndo_stop                = mlx5i_pkey_close,
  	.ndo_init                = mlx5i_pkey_dev_init,
++#if defined(HAVE_NDO_GET_STATS64) || defined(HAVE_NDO_GET_STATS64_RET_VOID)
  	.ndo_get_stats64         = mlx5i_get_stats,
++#endif
  	.ndo_uninit              = mlx5i_pkey_dev_cleanup,
 +#ifndef HAVE_NDO_CHANGE_MTU_RH74
  	.ndo_change_mtu          = mlx5i_pkey_change_mtu,
@@ -39,7 +43,7 @@ index xxxxxxx..xxxxxxx 100644
  };
  
  /* Child NDOs */
-@@ -164,7 +172,11 @@ static int mlx5i_pkey_dev_init(struct net_device *dev)
+@@ -164,7 +174,11 @@ static int mlx5i_pkey_dev_init(struct net_device *dev)
  	ipriv = priv->ppriv;
  
  	/* Get QPN to netdevice hash table from parent */
@@ -51,7 +55,7 @@ index xxxxxxx..xxxxxxx 100644
  	parent_dev = dev_get_by_index(dev_net(dev), parent_ifindex);
  	if (!parent_dev) {
  		mlx5_core_warn(priv->mdev, "failed to get parent device\n");
-@@ -288,11 +300,24 @@ static int mlx5i_pkey_init(struct mlx5_core_dev *mdev,
+@@ -288,11 +302,24 @@ static int mlx5i_pkey_init(struct mlx5_core_dev *mdev,
  	if (err)
  		return err;
  

@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/infiniband/core/nldev.c
 
 Change-Id: I6637e9970a9ef7277586bbf2512021f81aeb4e8c
 ---
- drivers/infiniband/core/nldev.c | 82 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 82 insertions(+)
+ drivers/infiniband/core/nldev.c | 90 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 90 insertions(+)
 
 diff --git a/drivers/infiniband/core/nldev.c b/drivers/infiniband/core/nldev.c
 index xxxxxxx..xxxxxxx 100644
@@ -97,7 +97,32 @@ index xxxxxxx..xxxxxxx 100644
  
  err_free:
  	nlmsg_free(msg);
-@@ -687,7 +715,11 @@ static int _nldev_get_dumpit(struct ib_device *device,
+@@ -646,16 +674,24 @@ err:
+ 	return err;
+ }
+ 
++#ifdef HAVE_NETLINK_EXT_ACK
+ static int nldev_set_doit(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 			  struct netlink_ext_ack *extack)
++#else
++static int nldev_set_doit(struct sk_buff *skb, struct nlmsghdr *nlh)
++#endif
+ {
+ 	struct nlattr *tb[RDMA_NLDEV_ATTR_MAX];
+ 	struct ib_device *device;
+ 	u32 index;
+ 	int err;
+ 
++#ifdef HAVE_NETLINK_EXT_ACK
+ 	err = nlmsg_parse(nlh, 0, tb, RDMA_NLDEV_ATTR_MAX - 1, nldev_policy,
+ 			  extack);
++#else
++	err = nlmsg_parse(nlh, 0, tb, RDMA_NLDEV_ATTR_MAX - 1, nldev_policy, NULL);
++#endif
+ 	if (err || !tb[RDMA_NLDEV_ATTR_DEV_INDEX])
+ 		return -EINVAL;
+ 
+@@ -687,7 +723,11 @@ static int _nldev_get_dumpit(struct ib_device *device,
  	if (idx < start)
  		return 0;
  
@@ -109,7 +134,7 @@ index xxxxxxx..xxxxxxx 100644
  			RDMA_NL_GET_TYPE(RDMA_NL_NLDEV, RDMA_NLDEV_CMD_GET),
  			0, NLM_F_MULTI);
  
-@@ -713,8 +745,12 @@ static int nldev_get_dumpit(struct sk_buff *skb, struct netlink_callback *cb)
+@@ -713,8 +753,12 @@ static int nldev_get_dumpit(struct sk_buff *skb, struct netlink_callback *cb)
  	return ib_enum_all_devs(_nldev_get_dumpit, skb, cb);
  }
  
@@ -122,7 +147,7 @@ index xxxxxxx..xxxxxxx 100644
  {
  	struct nlattr *tb[RDMA_NLDEV_ATTR_MAX];
  	struct ib_device *device;
-@@ -724,7 +760,11 @@ static int nldev_port_get_doit(struct sk_buff *skb, struct nlmsghdr *nlh,
+@@ -724,7 +768,11 @@ static int nldev_port_get_doit(struct sk_buff *skb, struct nlmsghdr *nlh,
  	int err;
  
  	err = nlmsg_parse(nlh, 0, tb, RDMA_NLDEV_ATTR_MAX - 1,
@@ -134,7 +159,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (err ||
  	    !tb[RDMA_NLDEV_ATTR_DEV_INDEX] ||
  	    !tb[RDMA_NLDEV_ATTR_PORT_INDEX])
-@@ -747,7 +787,11 @@ static int nldev_port_get_doit(struct sk_buff *skb, struct nlmsghdr *nlh,
+@@ -747,7 +795,11 @@ static int nldev_port_get_doit(struct sk_buff *skb, struct nlmsghdr *nlh,
  		goto err;
  	}
  
@@ -146,7 +171,7 @@ index xxxxxxx..xxxxxxx 100644
  			RDMA_NL_GET_TYPE(RDMA_NL_NLDEV, RDMA_NLDEV_CMD_GET),
  			0, 0);
  
-@@ -758,7 +802,11 @@ static int nldev_port_get_doit(struct sk_buff *skb, struct nlmsghdr *nlh,
+@@ -758,7 +810,11 @@ static int nldev_port_get_doit(struct sk_buff *skb, struct nlmsghdr *nlh,
  	nlmsg_end(msg, nlh);
  	put_device(&device->dev);
  
@@ -158,7 +183,7 @@ index xxxxxxx..xxxxxxx 100644
  
  err_free:
  	nlmsg_free(msg);
-@@ -805,7 +853,11 @@ static int nldev_port_get_dumpit(struct sk_buff *skb,
+@@ -805,7 +861,11 @@ static int nldev_port_get_dumpit(struct sk_buff *skb,
  			continue;
  		}
  
@@ -170,7 +195,7 @@ index xxxxxxx..xxxxxxx 100644
  				cb->nlh->nlmsg_seq,
  				RDMA_NL_GET_TYPE(RDMA_NL_NLDEV,
  						 RDMA_NLDEV_CMD_PORT_GET),
-@@ -825,8 +877,12 @@ out:
+@@ -825,8 +885,12 @@ out:
  	return skb->len;
  }
  
@@ -183,7 +208,7 @@ index xxxxxxx..xxxxxxx 100644
  {
  	struct nlattr *tb[RDMA_NLDEV_ATTR_MAX];
  	struct ib_device *device;
-@@ -835,7 +891,12 @@ static int nldev_res_get_doit(struct sk_buff *skb, struct nlmsghdr *nlh,
+@@ -835,7 +899,12 @@ static int nldev_res_get_doit(struct sk_buff *skb, struct nlmsghdr *nlh,
  	int ret;
  
  	ret = nlmsg_parse(nlh, 0, tb, RDMA_NLDEV_ATTR_MAX - 1,
@@ -196,7 +221,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (ret || !tb[RDMA_NLDEV_ATTR_DEV_INDEX])
  		return -EINVAL;
  
-@@ -850,7 +911,11 @@ static int nldev_res_get_doit(struct sk_buff *skb, struct nlmsghdr *nlh,
+@@ -850,7 +919,11 @@ static int nldev_res_get_doit(struct sk_buff *skb, struct nlmsghdr *nlh,
  		goto err;
  	}
  
@@ -208,7 +233,7 @@ index xxxxxxx..xxxxxxx 100644
  			RDMA_NL_GET_TYPE(RDMA_NL_NLDEV, RDMA_NLDEV_CMD_RES_GET),
  			0, 0);
  
-@@ -860,7 +925,11 @@ static int nldev_res_get_doit(struct sk_buff *skb, struct nlmsghdr *nlh,
+@@ -860,7 +933,11 @@ static int nldev_res_get_doit(struct sk_buff *skb, struct nlmsghdr *nlh,
  
  	nlmsg_end(msg, nlh);
  	put_device(&device->dev);
@@ -220,7 +245,7 @@ index xxxxxxx..xxxxxxx 100644
  
  err_free:
  	nlmsg_free(msg);
-@@ -880,7 +949,11 @@ static int _nldev_res_get_dumpit(struct ib_device *device,
+@@ -880,7 +957,11 @@ static int _nldev_res_get_dumpit(struct ib_device *device,
  	if (idx < start)
  		return 0;
  
@@ -232,7 +257,7 @@ index xxxxxxx..xxxxxxx 100644
  			RDMA_NL_GET_TYPE(RDMA_NL_NLDEV, RDMA_NLDEV_CMD_RES_GET),
  			0, NLM_F_MULTI);
  
-@@ -953,6 +1026,7 @@ static int res_get_common_dumpit(struct sk_buff *skb,
+@@ -953,6 +1034,7 @@ static int res_get_common_dumpit(struct sk_buff *skb,
  	struct nlmsghdr *nlh;
  	u32 index, port = 0;
  	bool filled = false;
@@ -240,7 +265,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	err = nlmsg_parse(cb->nlh, 0, tb, RDMA_NLDEV_ATTR_MAX - 1,
  			  nldev_policy, NULL);
-@@ -983,7 +1057,11 @@ static int res_get_common_dumpit(struct sk_buff *skb,
+@@ -983,7 +1065,11 @@ static int res_get_common_dumpit(struct sk_buff *skb,
  		}
  	}
  
@@ -252,7 +277,7 @@ index xxxxxxx..xxxxxxx 100644
  			RDMA_NL_GET_TYPE(RDMA_NL_NLDEV, fe->nldev_cmd),
  			0, NLM_F_MULTI);
  
-@@ -999,7 +1077,11 @@ static int res_get_common_dumpit(struct sk_buff *skb,
+@@ -999,7 +1085,11 @@ static int res_get_common_dumpit(struct sk_buff *skb,
  	}
  
  	down_read(&device->res.rwsem);

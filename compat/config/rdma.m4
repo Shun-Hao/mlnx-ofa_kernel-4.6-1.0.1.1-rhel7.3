@@ -474,6 +474,21 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if IP6_ECN_set_ce has 2 parameters])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <net/inet_ecn.h>
+	],[
+		IP6_ECN_set_ce(NULL, NULL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_IP6_SET_CE_2_PARAMS, 1,
+			  [IP6_ECN_set_ce has 2 parameters])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if napi_gro_flush has 2 parameters])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/netdevice.h>
@@ -500,6 +515,38 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(NETDEV_MASTER_UPPER_DEV_LINK_4_PARAMS, 1,
 			  [netdev_master_upper_dev_link gets 4 parameters])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if uapi ethtool.h has IPV6_USER_FLOW])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/ethtool.h>
+	],[
+                int x = IPV6_USER_FLOW;
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_IPV6_USER_FLOW, 1,
+			  [uapi ethtool has IPV6_USER_FLOW])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if struct ethtool_ops has get/set_channels])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/ethtool.h>
+	],[
+		const struct ethtool_ops en_ethtool_ops = {
+			.get_channels      = NULL,
+			.set_channels      = NULL,
+		};
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_ETHTOOL_OPS_GET_SET_CHANNELS, 1,
+			  [get/set_channels is defined])
 	],[
 		AC_MSG_RESULT(no)
 	])
@@ -1259,6 +1306,21 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_IPV6_CHK_ADDR_TAKES_CONST, 1,
 			  [ipv6_chk_addr accepts a const second parameter])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if skbuff.h skb_flow_dissect])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/skbuff.h>
+	],[
+		skb_flow_dissect(NULL, NULL, NULL, 0);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_SKB_FLOW_DISSECT, 1,
+			  [skb_flow_dissect is defined])
 	],[
 		AC_MSG_RESULT(no)
 	])
@@ -2568,6 +2630,21 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_TC_GACT_H, 1,
 			  [tc_gact.h exists])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if tc_gact.h has is_tcf_gact_goto_chain])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <net/tc_act/tc_gact.h>
+	],[
+		is_tcf_gact_goto_chain(NULL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_IS_TCF_GACT_GOTO_CHAIN, 1,
+			  [is_tcf_gact_goto_chain is defined])
 	],[
 		AC_MSG_RESULT(no)
 	])
@@ -4668,6 +4745,24 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if ethtool.h has get/set_fecparam])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/ethtool.h>
+	],[
+		struct ethtool_ops x = {
+			.get_fecparam = NULL,
+			.set_fecparam = NULL,
+		};
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_GET_SET_FECPARAM, 1,
+			[get/set_fecparam is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if ethtool.h has set_dump])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/ethtool.h>
@@ -5543,6 +5638,21 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_NETIF_F_RXHASH, 1,
 			  [NETIF_F_RXHASH is defined in netdevice.h])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if  netdev_features.h has NETIF_F_GSO_UDP_L4])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/netdev_features.h>
+	],[
+		int x = NETIF_F_GSO_UDP_L4;
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_NETIF_F_GSO_UDP_L4, 1,
+			  [HAVE_NETIF_F_GSO_UDP_L4 is defined in netdev_features.h])
 	],[
 		AC_MSG_RESULT(no)
 	])
@@ -8065,6 +8175,23 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_XDP_REDIRECT, 1,
 			  [XDP_REDIRECT is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if struct tc_cls_flower_offload has common])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <net/pkt_cls.h>
+	],[
+		struct tc_cls_flower_offload x = {
+			.common = NULL,
+		};
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_TC_CLS_FLOWER_OFFLOAD_COMMON, 1,
+			  [struct tc_cls_flower_offload has common])
 	],[
 		AC_MSG_RESULT(no)
 	])

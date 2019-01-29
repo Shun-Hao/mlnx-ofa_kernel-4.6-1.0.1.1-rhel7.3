@@ -28,3 +28,4 @@ Change-Id=I3b78c1160aafdc499aeefde51c41a7b6656eb4b1; subject=BACKPORTS:MLX5_CORE
 Change-Id=Ie6a0b78b035e96c5be26e9ce85c14be0524752a6; subject=BACKPORTS: mlx5_ib; feature=backports; upstream_status=ignore; general=;
 Change-Id=I845c2e7569db62cd450a6e08748551ab4fe70958; subject=BACKPORTS fix compilation MLX5_CORE till 4.14; feature=backports; upstream_status=ignore; general=;
 Change-Id=Ie9bd4b9bae0868bb6f129b67fb7f5a1a76b8751b; subject=MLX5_CORE EN BACKPORTS Till 4.10; feature=backports; upstream_status=ignore; general=;
+Change-Id=Idcb7f1f4c255a5b70a0a154f368ed0813c68cb43; subject=BACKPORT MLX5_CORE_EN till 2.6.32; feature=backports; upstream_status=ignore; general=;
