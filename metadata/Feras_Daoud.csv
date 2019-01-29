@@ -34,3 +34,4 @@ Change-Id=If9e06340b9a3a92508038f24b3334b3052cc1a3b; subject=net/mlx5: Change fw
 Change-Id=Ied4ad7ab654132ada5cca4abde7adb585b88e4d1; subject=fixup! IB/ipoib: Adapt base code to use RSS/TSS; feature=ipoib_rss_tss; upstream_status=NA; general=;
 Change-Id=I06df093132d9f3f230792c8625d33af5fa260742; subject=BACKPORT: Fix IPoIB netlink backport issue; feature=backports; upstream_status=ignore; general=;
 Change-Id=I8daa844f9db9ae0224104fafbe5205b68989eea7; subject=fixup! IB/ipoib: Adapt base code to use RSS/TSS; feature=ipoib_rss_tss; upstream_status=NA; general=;
+Change-Id=I13ff9dc497fb9a05b1ff56222697f2d841c7e885; subject=BACKPORTS: handle upstream ALLOC_WC command in get_unmapped_area; feature=backports; upstream_status=ignore; general=;
