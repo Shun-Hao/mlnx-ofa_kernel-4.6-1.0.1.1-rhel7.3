@@ -358,6 +358,9 @@ static int tcf_pedit(struct sk_buff *skb, const struct tc_action *a,
 {
 	struct tcf_pedit *p = to_pedit(a);
 	int i;
+#ifndef CONFIG_COMPAT_KERNEL_4_9
+	int munged = 0;
+#endif
 
 	if (skb_unclone(skb, GFP_ATOMIC))
 		return p->tcf_action;
@@ -440,8 +443,15 @@ static int tcf_pedit(struct sk_buff *skb, const struct tc_action *a,
 			*ptr = ((*ptr & tkey->mask) ^ val);
 			if (ptr == &_data)
 				skb_store_bits(skb, hoffset + offset, ptr, 4);
+#ifndef CONFIG_COMPAT_KERNEL_4_9
+			munged++;
+#endif
 		}
 
+#ifndef CONFIG_COMPAT_KERNEL_4_9
+		if (munged)
+			skb->tc_verd = SET_TC_MUNGED(skb->tc_verd);
+#endif
 		goto done;
 	} else
 		WARN(1, "pedit BUG: index %d\n", p->tcf_index);
