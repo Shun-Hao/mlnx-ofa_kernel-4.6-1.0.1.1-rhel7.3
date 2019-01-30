@@ -688,6 +688,10 @@ static irqreturn_t mlx5_eq_int(int irq, void *eq_ptr)
 			mlx5_fw_tracer_event(dev, eqe);
 			break;
 
+		case MLX5_EVENT_TYPE_HOST_PARAMS_CHANGE:
+			esw_host_params_event(dev->priv.eswitch);
+			break;
+
 		default:
 			mlx5_core_warn(dev, "Unhandled event 0x%x on EQ 0x%x\n",
 				       eqe->type, eq->eqn);

@@ -38,6 +38,7 @@
 #include "mlx5_core.h"
 #include "eswitch.h"
 #include "fs_core.h"
+#include "ecpf.h"
 
 enum {
 	MLX5_ACTION_NONE = 0,
@@ -1934,6 +1935,7 @@ static void esw_disable_vport(struct mlx5_eswitch *esw,
 
 int mlx5_eswitch_enable_sriov(struct mlx5_eswitch *esw, int nvfs, int mode)
 {
+	int vf_nvports = 0, total_nvports = 0;
 	struct mlx5_vport *vport;
 	int err;
 	int i, enabled_events;
@@ -1952,6 +1954,18 @@ int mlx5_eswitch_enable_sriov(struct mlx5_eswitch *esw, int nvfs, int mode)
 
 	esw_info(esw->dev, "E-Switch enable SRIOV: nvfs(%d) mode (%d)\n", nvfs, mode);
 
+	if (mode == SRIOV_OFFLOADS) {
+		if (mlx5_core_is_ecpf_esw_manager(esw->dev)) {
+			err = mlx5_query_host_params_num_vfs(esw->dev, &vf_nvports);
+			if (err)
+				return err;
+			total_nvports = esw->total_vports;
+		} else {
+			vf_nvports = nvfs;
+			total_nvports = nvfs + MLX5_SPECIAL_VPORTS(esw->dev);
+		}
+	}
+
 	esw->mode = mode;
 
 	mlx5_lag_update(esw->dev);
@@ -1961,8 +1975,7 @@ int mlx5_eswitch_enable_sriov(struct mlx5_eswitch *esw, int nvfs, int mode)
 	} else {
 		mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_ETH);
 		mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_IB);
-		err = esw_offloads_init(esw, nvfs,
-					nvfs + MLX5_SPECIAL_VPORTS(esw->dev));
+		err = esw_offloads_init(esw, vf_nvports, total_nvports);
 	}
 
 	if (err)

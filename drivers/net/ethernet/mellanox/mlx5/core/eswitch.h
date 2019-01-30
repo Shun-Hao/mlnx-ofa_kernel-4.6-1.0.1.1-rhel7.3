@@ -206,6 +206,15 @@ struct esw_mc_addr { /* SRIOV only */
 	u32                    refcnt;
 };
 
+struct mlx5_host_work {
+	struct work_struct	work;
+	struct mlx5_eswitch	*esw;
+};
+
+struct mlx5_host_info {
+	u16			num_vfs;
+};
+
 struct mlx5_eswitch {
 	struct mlx5_core_dev    *dev;
 	struct mlx5_eswitch_fdb fdb_table;
@@ -229,6 +238,7 @@ struct mlx5_eswitch {
 	int                     mode;
 	int                     nvports;
 	u16                     manager_vport;
+	struct mlx5_host_info	host_info;
 };
 
 void esw_offloads_cleanup(struct mlx5_eswitch *esw);
@@ -236,6 +246,7 @@ int esw_offloads_init(struct mlx5_eswitch *esw, int vf_nvports,
 		      int total_nvports);
 void esw_offloads_cleanup_reps(struct mlx5_eswitch *esw);
 int esw_offloads_init_reps(struct mlx5_eswitch *esw);
+void esw_host_params_event(struct mlx5_eswitch *esw);
 
 /* E-Switch API */
 int mlx5_eswitch_init(struct mlx5_core_dev *dev);
@@ -455,6 +466,7 @@ static inline void mlx5_eswitch_cleanup(struct mlx5_eswitch *esw) {}
 static inline void mlx5_eswitch_vport_event(struct mlx5_eswitch *esw, struct mlx5_eqe *eqe) {}
 static inline int  mlx5_eswitch_enable_sriov(struct mlx5_eswitch *esw, int nvfs, int mode) { return 0; }
 static inline void mlx5_eswitch_disable_sriov(struct mlx5_eswitch *esw) {}
+static inline void esw_host_params_event(struct mlx5_eswitch *esw) {};
 
 #define FDB_MAX_CHAIN 1
 #define FDB_SLOW_PATH_CHAIN (FDB_MAX_CHAIN + 1)
