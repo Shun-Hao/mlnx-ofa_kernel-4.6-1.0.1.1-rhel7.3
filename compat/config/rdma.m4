@@ -9121,9 +9121,9 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
-	AC_MSG_CHECKING([if net/tc_act/tc_csum.h has TCA_CSUM_UPDATE_FLAG_IPV4HDR])
+	AC_MSG_CHECKING([if linux/tc_act/tc_csum.h has TCA_CSUM_UPDATE_FLAG_IPV4HDR])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
-		#include <net/tc_act/tc_csum.h>
+		#include <linux/tc_act/tc_csum.h>
 	],[
 		int x = TCA_CSUM_UPDATE_FLAG_IPV4HDR;
 
@@ -9132,6 +9132,36 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_TCA_CSUM_UPDATE_FLAG_IPV4HDR, 1,
 			  [TCA_CSUM_UPDATE_FLAG_IPV4HDR is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if net/tc_act/tc_sum.h has is_tcf_csum])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <net/tc_act/tc_csum.h>
+	],[
+		is_tcf_csum(NULL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_IS_TCF_CSUM, 1,
+			  [is_tcf_csum is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if struct tcf_common exists])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <net/act_api.h>
+	],[
+		struct tcf_common pc;
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_TCF_COMMON, 1,
+			  [struct tcf_common is defined])
 	],[
 		AC_MSG_RESULT(no)
 	])
