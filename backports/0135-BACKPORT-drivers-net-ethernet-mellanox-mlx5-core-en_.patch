@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en_rep.c
 
 Change-Id: If45897304ef7a0136d4f19df6a992ac27b780d03
 ---
- drivers/net/ethernet/mellanox/mlx5/core/en_rep.c | 395 ++++++++++++++++++++++-
- 1 file changed, 381 insertions(+), 14 deletions(-)
+ drivers/net/ethernet/mellanox/mlx5/core/en_rep.c | 398 ++++++++++++++++++++++-
+ 1 file changed, 383 insertions(+), 15 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en_rep.c b/drivers/net/ethernet/mellanox/mlx5/core/en_rep.c
 index xxxxxxx..xxxxxxx 100644
@@ -622,7 +622,16 @@ index xxxxxxx..xxxxxxx 100644
  };
  
  static void mlx5e_build_rep_params(struct mlx5_core_dev *mdev,
-@@ -1057,9 +1301,11 @@ static void mlx5e_build_rep_params(struct mlx5_core_dev *mdev,
+@@ -1050,16 +1294,19 @@ static void mlx5e_build_rep_params(struct mlx5_core_dev *mdev,
+ 	params->num_tc                = 1;
+ 
+ 	mlx5_query_min_inline(mdev, &params->tx_min_inline_mode);
+-
++#ifdef HAVE_ETH_SS_RSS_HASH_FUNCS
+ 	/* RSS */
+ 	mlx5e_build_rss_params(params);
++#endif
+ }
  
  static void mlx5e_build_rep_netdev(struct net_device *netdev)
  {
@@ -634,7 +643,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	netdev->netdev_ops = &mlx5e_netdev_ops_rep;
  
-@@ -1067,10 +1313,21 @@ static void mlx5e_build_rep_netdev(struct net_device *netdev)
+@@ -1067,10 +1314,21 @@ static void mlx5e_build_rep_netdev(struct net_device *netdev)
  
  	netdev->ethtool_ops	  = &mlx5e_rep_ethtool_ops;
  
@@ -656,7 +665,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	netdev->hw_features    |= NETIF_F_SG;
  	netdev->hw_features    |= NETIF_F_IP_CSUM;
-@@ -1081,12 +1338,20 @@ static void mlx5e_build_rep_netdev(struct net_device *netdev)
+@@ -1081,12 +1339,20 @@ static void mlx5e_build_rep_netdev(struct net_device *netdev)
  	netdev->hw_features    |= NETIF_F_RXCSUM;
  
  	netdev->features |= netdev->hw_features;
@@ -677,7 +686,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static int mlx5e_init_rep(struct mlx5_core_dev *mdev,
-@@ -1299,13 +1564,84 @@ mlx5e_nic_rep_unload(struct mlx5_eswitch_rep *rep)
+@@ -1299,13 +1565,84 @@ mlx5e_nic_rep_unload(struct mlx5_eswitch_rep *rep)
  	mlx5e_rep_neigh_cleanup(rpriv);
  }
  
@@ -762,7 +771,7 @@ index xxxxxxx..xxxxxxx 100644
  	int nch, err;
  
  	rpriv = kzalloc(sizeof(*rpriv), GFP_KERNEL);
-@@ -1340,12 +1676,25 @@ mlx5e_vport_rep_load(struct mlx5_core_dev *dev, struct mlx5_eswitch_rep *rep)
+@@ -1340,12 +1677,25 @@ mlx5e_vport_rep_load(struct mlx5_core_dev *dev, struct mlx5_eswitch_rep *rep)
  		goto err_detach_netdev;
  	}
  
@@ -788,7 +797,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	err = register_netdev(netdev);
  	if (err) {
-@@ -1357,10 +1706,17 @@ mlx5e_vport_rep_load(struct mlx5_core_dev *dev, struct mlx5_eswitch_rep *rep)
+@@ -1357,10 +1707,17 @@ mlx5e_vport_rep_load(struct mlx5_core_dev *dev, struct mlx5_eswitch_rep *rep)
  	return 0;
  
  err_egdev_cleanup:
@@ -806,7 +815,7 @@ index xxxxxxx..xxxxxxx 100644
  	mlx5e_rep_neigh_cleanup(rpriv);
  
  err_detach_netdev:
-@@ -1378,16 +1734,27 @@ mlx5e_vport_rep_unload(struct mlx5_eswitch_rep *rep)
+@@ -1378,16 +1735,27 @@ mlx5e_vport_rep_unload(struct mlx5_eswitch_rep *rep)
  	struct mlx5e_rep_priv *rpriv = mlx5e_rep_to_rep_priv(rep);
  	struct net_device *netdev = rpriv->netdev;
  	struct mlx5e_priv *priv = netdev_priv(netdev);
