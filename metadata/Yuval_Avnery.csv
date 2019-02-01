@@ -1,3 +1,4 @@
 sep=;
 Change-Id=If841a28258d705a29ac7825c3811814c4d5f867a; subject=net/mlx5e: Use correct number of channles when re-attaching; feature=mlx5_en_bugs; upstream_status=in_progress; general=;
 Change-Id=Icb00407f25c2594e863d3d952662434126e2462b; subject=net/mlx5: Typo fix in del_sw_hw_rule; feature=rebase; upstream_status=accepted; general=upstream commit ID: f0337889147c, tag: v4.20;
+Change-Id=I8ba66914c239e288ffcc915ea154505280abf5fb; subject=IB/mlx5: Consider vlan of lower netdev for macvlan GID entries; feature=mlx5_ib_bugs; upstream_status=in_progress; general=;

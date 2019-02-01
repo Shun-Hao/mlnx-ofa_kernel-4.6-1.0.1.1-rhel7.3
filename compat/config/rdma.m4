@@ -5160,6 +5160,27 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if netdevice.h has netdev_walk_all_lower_dev_rcu])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/netdevice.h>
+
+		static int netdev_lower_walk(struct net_device *lower, void *data) {
+			return 0;
+		}
+	],[
+		struct net_device *ndev;
+		void *data;
+
+		netdev_walk_all_lower_dev_rcu(ndev, netdev_lower_walk, &data);
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_NETDEV_WALK_ALL_LOWER_DEV_RCU, 1,
+			  [netdev_walk_all_lower_dev_rcu is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if netdevice.h has netdev_has_upper_dev_all_rcu])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/netdevice.h>
