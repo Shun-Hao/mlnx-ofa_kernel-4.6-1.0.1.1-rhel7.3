@@ -1,0 +1,45 @@
+From: Talat Batheesh <talatb@mellanox.com>
+Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/lib/vxlan.c
+
+Change-Id: Icab7a79c4a97de1fda2efbb94dab2a525f59f835
+---
+ drivers/net/ethernet/mellanox/mlx5/core/lib/vxlan.c | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/mellanox/mlx5/core/lib/vxlan.c b/drivers/net/ethernet/mellanox/mlx5/core/lib/vxlan.c
+index xxxxxxx..xxxxxxx 100644
+--- a/drivers/net/ethernet/mellanox/mlx5/core/lib/vxlan.c
++++ b/drivers/net/ethernet/mellanox/mlx5/core/lib/vxlan.c
+@@ -79,7 +79,12 @@ mlx5_vxlan_lookup_port_locked(struct mlx5_vxlan *vxlan, u16 port)
+ {
+ 	struct mlx5_vxlan_port *vxlanp;
+ 
++#ifdef HAVE_HLIST_FOR_EACH_ENTRY_3_PARAMS
+ 	hash_for_each_possible(vxlan->htable, vxlanp, hlist, port) {
++#else
++	COMPAT_HL_NODE
++	hash_for_each_possible(vxlan->htable, vxlanp, hlnode, hlist, port) {
++#endif
+ 		if (vxlanp->udp_port == port)
+ 			return vxlanp;
+ 	}
+@@ -248,12 +253,18 @@ void mlx5_vxlan_destroy(struct mlx5_vxlan *vxlan)
+ 	struct mlx5_vxlan_port *vxlanp;
+ 	struct hlist_node *tmp;
+ 	int bkt;
+-
++#ifndef HAVE_HLIST_FOR_EACH_ENTRY_3_PARAMS
++	COMPAT_HL_NODE
++#endif
+ 	if (!mlx5_vxlan_allowed(vxlan))
+ 		return;
+ 
+ 	/* Lockless since we are the only hash table consumers*/
++#ifdef HAVE_HLIST_FOR_EACH_ENTRY_3_PARAMS
+ 	hash_for_each_safe(vxlan->htable, bkt, tmp, vxlanp, hlist) {
++#else
++	hash_for_each_safe(vxlan->htable, bkt, tmp, hlnode, vxlanp, hlist) {
++#endif
+ 		hash_del(&vxlanp->hlist);
+ 		mlx5_vxlan_debugfs_remove(vxlan->mdev, vxlanp);
+ /* Talat - Saeed need to add the rule with the new design
