@@ -845,7 +845,7 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		#include <linux/netdevice.h>
 	],[
 		struct net_device_ops_extended netdev_ops_extended = {
-			.ndo_xdp = NULL,
+			.extended.ndo_xdp = NULL,
 		};
 
 		return 0;
