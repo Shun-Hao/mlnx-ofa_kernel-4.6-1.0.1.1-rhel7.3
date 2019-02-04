@@ -1154,7 +1154,7 @@ index xxxxxxx..xxxxxxx 100644
  }
 +#endif
  
-+#ifdef HAVE_XDP_BUFF
++#if defined(HAVE_XDP_BUFF) && (defined(HAVE_NDO_XDP) || defined(HAVE_NDO_XDP_EXTENDED))
  static int mlx4_xdp_set(struct net_device *dev, struct bpf_prog *prog)
  {
  	struct mlx4_en_priv *priv = netdev_priv(dev);
@@ -1299,7 +1299,7 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
 +#ifdef HAVE_NDO_XDP_EXTENDED
 +	.extended.ndo_xdp        = mlx4_xdp,
-+#elif defined(HAVE_XDP_BUFF)
++#elif defined(HAVE_XDP_BUFF) && defined(HAVE_NDO_XDP)
  	.ndo_bpf		= mlx4_xdp,
 +#endif
 +};
