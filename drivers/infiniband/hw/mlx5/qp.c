@@ -2837,8 +2837,10 @@ struct ib_qp *mlx5_ib_create_dct(struct ib_pd *pd,
 		MLX5_SET(dctc, dctc, user_index, uidx);
 	}
 
-	if (ucmd->flags & MLX5_QP_FLAG_SCATTER_CQE)
-		configure_responder_scat_cqe(attr, dctc);
+	if (ucmd) {
+		if (ucmd->flags & MLX5_QP_FLAG_SCATTER_CQE)
+			configure_responder_scat_cqe(attr, dctc);
+	}
 
 	qp->state = IB_QPS_RESET;
 

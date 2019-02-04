@@ -1,3 +1,4 @@
 sep=;
 Change-Id=Id1171f9592015fa0ddca9e89284e005b3c2a3212; subject=IB/mlx4: Choose NUMA node instead of hard-coded 0; feature=mlx4_ib_bugs; upstream_status=NA; general=;
 Change-Id=Ie8a940e075a5d85a94a33b8ac47f832c90f4b31d; subject=IB/core: Fix uninitialized boolean in ODP handling; feature=ib_core_bugs; upstream_status=NA; general=;
+Change-Id=I958509bd1d0001318c489de1297a130e1e287b5d; subject=fixup! Set base code to Linux v4.20-rc3; feature=mlx5_ib_bugs; upstream_status=NA; general=;
