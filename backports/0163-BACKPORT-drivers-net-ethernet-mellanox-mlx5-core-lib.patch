@@ -3,7 +3,7 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/lib/clock.c
 
 Change-Id: I076fa772f9a4c5da26b498e257a0a285e19b70f9
 ---
- .../net/ethernet/mellanox/mlx5/core/lib/clock.c    | 97 ++++++++++++++++++++++
+ .../ethernet/mellanox/mlx5/core/lib/clock.c   | 97 +++++++++++++++++++
  1 file changed, 97 insertions(+)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/lib/clock.c b/drivers/net/ethernet/mellanox/mlx5/core/lib/clock.c
@@ -273,7 +273,7 @@ index xxxxxxx..xxxxxxx 100644
  	do_div(ns, NSEC_PER_SEC / HZ);
  	clock->overflow_period = ns;
  
-@@ -538,22 +621,28 @@ void mlx5_init_clock(struct mlx5_core_dev *mdev)
+@@ -538,27 +621,34 @@ void mlx5_init_clock(struct mlx5_core_dev *mdev)
  			mdev->clock_info->mask   = clock->cycles.mask;
  			mdev->clock_info->mult   = clock->nominal_c_mult;
  			mdev->clock_info->shift  = clock->cycles.shift;
@@ -302,11 +302,16 @@ index xxxxxxx..xxxxxxx 100644
  	/* Initialize 1PPS data structures */
  	if (MLX5_PPS_CAP(mdev))
  		mlx5_get_pps_caps(mdev);
-@@ -567,6 +656,8 @@ void mlx5_init_clock(struct mlx5_core_dev *mdev)
+ 	if (clock->ptp_info.n_pins)
+ 		mlx5_init_pin_config(clock);
++#endif
+ 
+ 	clock->ptp = ptp_clock_register(&clock->ptp_info,
+ 					&mdev->pdev->dev);
+@@ -567,6 +657,7 @@ void mlx5_init_clock(struct mlx5_core_dev *mdev)
  			       PTR_ERR(clock->ptp));
  		clock->ptp = NULL;
  	}
-+#endif
 +#endif
  }
  
