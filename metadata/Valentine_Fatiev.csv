@@ -3,3 +3,4 @@ Change-Id=I136d4ddd02c4ba56aa0e0874df1599b3ad16453e; subject=net/mlx5e: Fix self
 Change-Id=Ic4f9cc896d663126ab59ec936f17c10f66179bbf; subject=BACKPORTS: Fix Redhat 7.1 Makefile issues; feature=backports; upstream_status=ignore; general=;
 Change-Id=I5bbd08a0095370d42fc03fb360ddc7a8c33edde4; subject=BACKPORTS:Fix fedora27 undefined symbol issue; feature=backports; upstream_status=ignore; general=;
 Change-Id=I64a72b744bc45538dc9b6d361ac05d44867e6706; subject=BACKPORTS: Replace difines order in mlx5e_tc_add_fdb_flow; feature=backports; upstream_status=ignore; general=;
+Change-Id=I14f73dfc769629962cb942468911c0dcd21ada79; subject=BACKPORTS:fix static-checkers failures; feature=backports; upstream_status=ignore; general=;

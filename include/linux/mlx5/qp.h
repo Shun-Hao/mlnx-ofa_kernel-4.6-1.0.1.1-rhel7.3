@@ -33,6 +33,8 @@
 #ifndef MLX5_QP_H
 #define MLX5_QP_H
 
+#include "../../../compat/config.h"
+
 #include <linux/mlx5/device.h>
 #include <linux/mlx5/driver.h>
 

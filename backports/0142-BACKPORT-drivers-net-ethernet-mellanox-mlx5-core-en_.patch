@@ -651,7 +651,7 @@ index xxxxxxx..xxxxxxx 100644
  				       outer_headers);
  	void *headers_v = MLX5_ADDR_OF(fte_match_param, spec->match_value,
  				       outer_headers);
-+#ifdef HAVE_FLOW_DISSECTOR_KEY_CVLAN /*TODO - need to backport this feature*/ 
++#ifdef HAVE_FLOW_DISSECTOR_KEY_CVLAN 
  	void *misc_c = MLX5_ADDR_OF(fte_match_param, spec->match_criteria,
  				    misc_parameters);
  	void *misc_v = MLX5_ADDR_OF(fte_match_param, spec->match_value,
@@ -669,7 +669,7 @@ index xxxxxxx..xxxxxxx 100644
 +#else
 +	      BIT(FLOW_DISSECTOR_KEY_VLANID) |
 +#endif
-+#ifdef HAVE_FLOW_DISSECTOR_KEY_CVLAN /*TODO - need to backport this feature*/ 
++#ifdef HAVE_FLOW_DISSECTOR_KEY_CVLAN 
  	      BIT(FLOW_DISSECTOR_KEY_CVLAN) |
 +#endif
  	      BIT(FLOW_DISSECTOR_KEY_IPV4_ADDRS) |
@@ -725,7 +725,7 @@ index xxxxxxx..xxxxxxx 100644
  			skb_flow_dissector_target(f->dissector,
  						  FLOW_DISSECTOR_KEY_VLAN,
  						  f->mask);
-+#ifdef HAVE_FLOW_DISSECTOR_KEY_CVLAN /*TODO - need to backport this feature*/ 
++#ifdef HAVE_FLOW_DISSECTOR_KEY_CVLAN  
  		if (mask->vlan_id || mask->vlan_priority || mask->vlan_tpid) {
  			if (key->vlan_tpid == htons(ETH_P_8021AD)) {
  				MLX5_SET(fte_match_set_lyr_2_4, headers_c,
@@ -771,7 +771,7 @@ index xxxxxxx..xxxxxxx 100644
  		*match_level = MLX5_MATCH_L2;
  	}
  
-+#ifdef HAVE_FLOW_DISSECTOR_KEY_CVLAN /*TODO - need to backport this feature*/ 
++#ifdef HAVE_FLOW_DISSECTOR_KEY_CVLAN 
  	if (dissector_uses_key(f->dissector, FLOW_DISSECTOR_KEY_CVLAN)) {
  		struct flow_dissector_key_vlan *key =
  			skb_flow_dissector_target(f->dissector,

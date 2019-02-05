@@ -1170,23 +1170,6 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
-	AC_MSG_CHECKING([if struct request_queue has request_fn_active])
-	MLNX_BG_LB_LINUX_TRY_COMPILE([
-		#include <linux/blkdev.h>
-	],[
-		struct request_queue rq = {
-			.request_fn_active = 0,
-		};
-
-		return 0;
-	],[
-		AC_MSG_RESULT(yes)
-		MLNX_AC_DEFINE(HAVE_REQUEST_QUEUE_REQUEST_FN_ACTIVE, 1,
-			  [struct request_queue has request_fn_active])
-	],[
-		AC_MSG_RESULT(no)
-	])
-
 	AC_MSG_CHECKING([if skbuff.h has build_skb])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/skbuff.h>
@@ -2003,6 +1986,21 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_FLOW_DISSECTOR_KEY_VLAN, 1,
 			  [FLOW_DISSECTOR_KEY_VLAN is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if flow_dissector.h enum flow_dissector_key_keyid has FLOW_DISSECTOR_KEY_CVLAN])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <net/flow_dissector.h>
+	],[
+		enum flow_dissector_key_id keyid = FLOW_DISSECTOR_KEY_CVLAN;
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_FLOW_DISSECTOR_KEY_CVLAN, 1,
+			  [FLOW_DISSECTOR_KEY_CVLAN is defined])
 	],[
 		AC_MSG_RESULT(no)
 	])
@@ -3341,6 +3339,25 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 	],[
 		AC_MSG_RESULT(no)
 	])
+
+       AC_MSG_CHECKING([if ethtool supports 25G,50G,100G link speeds])
+       MLNX_BG_LB_LINUX_TRY_COMPILE([
+              #include <uapi/linux/ethtool.h>
+       ],[
+              const enum ethtool_link_mode_bit_indices speeds[] = {
+                      ETHTOOL_LINK_MODE_25000baseCR_Full_BIT,
+                      ETHTOOL_LINK_MODE_50000baseCR2_Full_BIT,
+                      ETHTOOL_LINK_MODE_100000baseCR4_Full_BIT
+              };
+
+              return 0;
+       ],[
+              AC_MSG_RESULT(yes)
+              MLNX_AC_DEFINE(HAVE_ETHTOOL_25G_50G_100G_SPEEDS, 1,
+                        [ethtool supprts 25G,50G,100G link speeds])
+       ],[
+              AC_MSG_RESULT(no)
+       ])
 
 	AC_MSG_CHECKING([if struct ethtool_ops has get/set_priv_flags])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
@@ -6531,29 +6548,6 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_RTNL_LINK_OPS_NEWLINK_5_PARAMS, 1,
 			  [newlink has 5 paramters])
-	],[
-		AC_MSG_RESULT(no)
-	])
-
-	AC_MSG_CHECKING([if rtnetlink.h rtnl_link_ops dellink newlink has 2 paramters])
-	MLNX_BG_LB_LINUX_TRY_COMPILE([
-		#include <linux/netdevice.h>
-		#include <net/rtnetlink.h>
-
-		static void ipoib_unregister_child_dev(struct net_device *dev, struct list_head *head)
-		{
-			return;
-		}
-	],[
-		struct rtnl_link_ops x = {
-			.dellink = ipoib_unregister_child_dev,
-		};
-
-		return 0;
-	],[
-		AC_MSG_RESULT(yes)
-		MLNX_AC_DEFINE(HAVE_RTNL_LINK_OPS_DELLINK_2_PARAMS, 1,
-			  [dellink has 2 paramters])
 	],[
 		AC_MSG_RESULT(no)
 	])
@@ -10415,20 +10409,6 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
-	AC_MSG_CHECKING([if switch_to.h has clear_thread_tidr])
-	MLNX_BG_LB_LINUX_TRY_COMPILE([
-		#include <asm/switch_to.h>
-	],[
-		clear_thread_tidr(NULL);
-		return 0;
-	],[
-		AC_MSG_RESULT(yes)
-		MLNX_AC_DEFINE(HAVE_CLEAR_THREAD_TIDR, 1,
-			[switch_to.h has clear_thread_tidr])
-	],[
-		AC_MSG_RESULT(no)
-	])
-
 	AC_MSG_CHECKING([if rbtree.h has struct rb_root_cached])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/rbtree.h>
@@ -10814,21 +10794,6 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
-	AC_MSG_CHECKING([if netdevice.h has dev_get_by_index_rcu])
-	MLNX_BG_LB_LINUX_TRY_COMPILE([
-		#include <linux/netdevice.h>
-	],[
-		dev_get_by_index_rcu(NULL, 0);
-
-		return 0;
-	],[
-		AC_MSG_RESULT(yes)
-		MLNX_AC_DEFINE(HAVE_NETIF_DEV_GET_BY_INDEX_RCU, 1,
-			  [netif_dev_get_by_index_rcu is defined])
-	],[
-		AC_MSG_RESULT(no)
-	])
-
 	AC_MSG_CHECKING([if netdevice.h has netdev_reg_state])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/netdevice.h>
@@ -11184,63 +11149,6 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_BPF_PROG_PROG_ATTACHED, 1,
 			  [netdev_bpf has prog_attached])
-	],[
-		AC_MSG_RESULT(no)
-	])
-
-	AC_MSG_CHECKING([if tcf_block_cb_register has fifth parameter])
-	MLNX_BG_LB_LINUX_TRY_COMPILE([
-		#include <net/pkt_cls.h>
-	],[
-                tcf_block_cb_register(NULL, NULL, NULL, NULL, NULL);
-	],[
-		AC_MSG_RESULT(yes)
-		MLNX_AC_DEFINE(HAVE_TCF_BLOCK_CB_REGISTER_EXTACK, 1,
-			  [tcf_block_cb_register has fifth parameter])
-	],[
-		AC_MSG_RESULT(no)
-	])
-
-	AC_MSG_CHECKING([if ib_umem_notifier_invalidate_range_start has parameter blockable])
-	MLNX_BG_LB_LINUX_TRY_COMPILE([
-		#include <linux/mmu_notifier.h>
-		static int notifier(struct mmu_notifier *mn,
-				    struct mm_struct *mm,
-				    unsigned long start,
-				    unsigned long end,
-				    bool blockable) {
-			return 0;
-		}
-	],[
-		static const struct mmu_notifier_ops notifiers = {
-			.invalidate_range_start = notifier
-		};
-	],[
-		AC_MSG_RESULT(yes)
-		MLNX_AC_DEFINE(HAVE_UMEM_NOTIFIER_PARAM_BLOCKABLE, 1,
-			  [ib_umem_notifier_invalidate_range_start has parameter blockable])
-	],[
-		AC_MSG_RESULT(no)
-	])
-
-	AC_MSG_CHECKING([if ib_umem_notifier_invalidate_range_start has parameter blockable])
-	MLNX_BG_LB_LINUX_TRY_COMPILE([
-		#include <linux/mmu_notifier.h>
-		static int notifier(struct mmu_notifier *mn,
-				    struct mm_struct *mm,
-				    unsigned long start,
-				    unsigned long end,
-				    bool blockable) {
-			return 0;
-		}
-	],[
-		static const struct mmu_notifier_ops notifiers = {
-			.invalidate_range_start = notifier
-		};
-	],[
-		AC_MSG_RESULT(yes)
-		MLNX_AC_DEFINE(HAVE_UMEM_NOTIFIER_PARAM_BLOCKABLE, 1,
-			  [ib_umem_notifier_invalidate_range_start has parameter blockable])
 	],[
 		AC_MSG_RESULT(no)
 	])
