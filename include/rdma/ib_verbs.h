@@ -681,6 +681,9 @@ enum ib_event_type {
 	IB_EXP_EVENT_DCT_REQ_ERR,
 	IB_EXP_EVENT_XRQ_QP_ERR,
 	IB_EXP_EVENT_XRQ_NVMF_BACKEND_CTRL_ERR,
+#ifdef CONFIG_BF_POWER_FAILURE_EVENT
+	IB_EXP_EVENT_POWER_FAILURE = 63,
+#endif
 };
 
 const char *__attribute_const__ ib_event_msg(enum ib_event_type event);

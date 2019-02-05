@@ -1,0 +1,3 @@
+sep=;
+Change-Id=I1b3691f929ff97db8fbcdf3b644a61dac99f401c; subject=IB/mlx5: Add power failure async event; feature=mlx5_bf; upstream_status=ignore; general=;
+Change-Id=Ic00de25e45aedd24933c65ede2509dc18e9c0f2f; subject=configure: add CONFIG_BF_POWER_FAILURE_EVENT; feature=ofed_scripts; upstream_status=ignore; general=;

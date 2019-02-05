@@ -4680,7 +4680,11 @@ static void mlx5_ib_handle_event(struct work_struct *_work)
 		mlx5_ib_handle_internal_error(ibdev);
 		fatal = true;
 		break;
-
+#ifdef CONFIG_BF_POWER_FAILURE_EVENT
+	case MLX5_DEV_EVENT_POWER_FAILURE_EVENT:
+		ibev.event = IB_EXP_EVENT_POWER_FAILURE;
+		break;
+#endif
 	case MLX5_DEV_EVENT_PORT_UP:
 	case MLX5_DEV_EVENT_PORT_DOWN:
 	case MLX5_DEV_EVENT_PORT_INITIALIZED:

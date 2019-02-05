@@ -533,6 +533,12 @@ static void general_event_handler(struct mlx5_core_dev *dev,
 	case MLX5_GENERAL_SUBTYPE_PCIE_POWER_CHANGE_EVENT:
 		mlx5_pcie_event_handler(dev);
 		break;
+#ifdef CONFIG_BF_POWER_FAILURE_EVENT
+	case MLX5_GENERAL_SUBTYPE_POWER_FAILURE_EVENT:
+		if (dev->event)
+			dev->event(dev, MLX5_DEV_EVENT_POWER_FAILURE_EVENT, 1);
+		break;
+#endif
 	default:
 		mlx5_core_dbg(dev, "General event with unrecognized subtype: sub_type %d\n",
 			      eqe->sub_type);
