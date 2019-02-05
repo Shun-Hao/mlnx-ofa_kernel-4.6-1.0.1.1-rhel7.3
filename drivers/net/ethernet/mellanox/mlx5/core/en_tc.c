@@ -2369,12 +2369,21 @@ static int mlx5e_route_lookup_ipv4(struct mlx5e_priv *priv,
 	struct rtable *rt;
 
 #if IS_ENABLED(CONFIG_INET)
+	struct mlx5_core_dev *mdev = priv->mdev;
 	int ret;
+
+	if (mlx5_lag_is_multipath(mdev)) {
+		uplink_dev = mlx5_eswitch_uplink_get_proto_dev(esw, REP_ETH);
+		fl4->flowi4_oif = uplink_dev->ifindex;
+	}
 
 	rt = ip_route_output_key(dev_net(mirred_dev), fl4);
 	ret = PTR_ERR_OR_ZERO(rt);
 	if (ret)
 		return ret;
+
+	if (mlx5_lag_is_multipath(mdev) && !rt->rt_gateway)
+		return -ENETUNREACH;
 #else
 	return -EOPNOTSUPP;
 #endif
