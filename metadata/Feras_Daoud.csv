@@ -24,7 +24,7 @@ Change-Id=I01df6ba0ce30ebde87e7677ecdf477d9a69ecc91; subject=IB/ipoib: Fix opera
 Change-Id=I2eb779ec1702c38a0fb65fcc5fa012e2df2b0db9; subject=IB/ipoib: Fix cached lid value in ah repath flow; feature=ipoib_bugs; upstream_status=in_progress; general=;
 Change-Id=Id748360bf833b8659355cd4af36d7b73d498581f; subject=IB/core: Memory region registration latency improvement; feature=peer_direct; upstream_status=NA; general=;
 Change-Id=I326a0fad676a2357dc61ab1e8bfd6a1b3547876a; subject=IB/ipoib: RSS/TSS, Fix CM TX queue race between send and handle flow; feature=ipoib_rss_tss; upstream_status=NA; general=;
-Change-Id=I1f7051f1951dec02f488823b0958852b8945f3df; subject=IB/ipoib: Fix for use-after-free in ipoib_cm_tx_start; feature=ipoib_bugs; upstream_status=in_progress; general=;
+Change-Id=I1f7051f1951dec02f488823b0958852b8945f3df; subject=IB/ipoib: Fix for use-after-free in ipoib_cm_tx_start; feature=ipoib_bugs; upstream_status=accepted; general=upstream commit ID: 6ab4aba00f81, tag: v5.0-rc5;
 Change-Id=I3f19eb80d26bf96ccdd9cfdc71a943920f95b522; subject=net/mlx5: Fix tracer frame size compilation error; feature=mlx5_tracer; upstream_status=in_progress; general=;
 Change-Id=Id0d0e13ffb3d012d794536018af6717fe8ecf5e4; subject=IB/ipoib: Adapt base code to use RSS/TSS; feature=ipoib_rss_tss; upstream_status=NA; general=;
 Change-Id=I245f276d6c6e6f569ee3b31330836173971dba2a; subject=fixup! IB/ipoib: Add ipoib_enhanced module parameter; feature=ipoib_bugs; upstream_status=NA; general=;
