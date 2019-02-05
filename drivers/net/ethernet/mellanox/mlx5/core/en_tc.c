@@ -76,6 +76,7 @@ enum {
 	MLX5E_TC_FLOW_HAIRPIN_RSS = BIT(MLX5E_TC_FLOW_BASE + 2),
 	MLX5E_TC_FLOW_SLOW	  = BIT(MLX5E_TC_FLOW_BASE + 3),
 	MLX5E_TC_FLOW_DUP         = BIT(MLX5E_TC_FLOW_BASE + 4),
+	MLX5E_TC_FLOW_NOT_READY   = BIT(MLX5E_TC_FLOW_BASE + 5),
 };
 
 #define MLX5E_TC_MAX_SPLITS 1
@@ -1015,6 +1016,14 @@ static void mlx5e_tc_del_fdb_flow(struct mlx5e_priv *priv,
 	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
 	struct mlx5_esw_flow_attr *attr = flow->esw_attr;
 	struct mlx5_esw_flow_attr slow_attr;
+
+	if (flow->flags & MLX5E_TC_FLOW_NOT_READY) {
+#ifdef HAVE_TCF_TUNNEL_INFO
+		if (attr->action & MLX5_FLOW_CONTEXT_ACTION_PACKET_REFORMAT)
+			kvfree(attr->parse_attr);
+#endif
+		return;
+	}
 
 	if (flow->flags & MLX5E_TC_FLOW_OFFLOADED) {
 		if (flow->flags & MLX5E_TC_FLOW_SLOW)
@@ -3167,8 +3176,12 @@ __mlx5e_add_fdb_flow(struct mlx5e_priv *priv,
 		flow->esw_attr->counter_dev = priv->mdev;
 
 	err = mlx5e_tc_add_fdb_flow(priv, parse_attr, flow, extack);
-	if (err)
-		goto err_free;
+	if (err) {
+		if (!(err == -ENETUNREACH && mlx5_lag_is_multipath(in_mdev)))
+			goto err_free;
+
+		flow->flags |= MLX5E_TC_FLOW_NOT_READY;
+	}
 
 	if (!(flow->esw_attr->action &
 	      MLX5_FLOW_CONTEXT_ACTION_PACKET_REFORMAT))
