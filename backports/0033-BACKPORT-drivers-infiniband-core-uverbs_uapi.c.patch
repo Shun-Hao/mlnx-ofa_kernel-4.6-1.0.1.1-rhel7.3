@@ -14,7 +14,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	radix_tree_for_each_slot (slot, &uapi->radix, &iter, 0) {
  		kfree(rcu_dereference_protected(*slot, true));
-+#ifdef HAVE_RADIX_TREE_ITER_DELETE
++#if defined(HAVE_RADIX_TREE_ITER_DELETE) && defined (HAVE_RADIX_TREE_ITER_DELETE_EXPORTED)
  		radix_tree_iter_delete(&uapi->radix, &iter, slot);
 +#else
 +		radix_tree_delete(&uapi->radix, iter.index);

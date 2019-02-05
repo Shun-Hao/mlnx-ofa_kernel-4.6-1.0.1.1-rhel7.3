@@ -11039,6 +11039,11 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 			[idr_preload is exported by the kernel])],
 	[])
 
+	LB_CHECK_SYMBOL_EXPORT([radix_tree_iter_delete],
+		[lib/radix-tree.c],
+		[AC_DEFINE(HAVE_RADIX_TREE_ITER_DELETE_EXPORTED, 1,
+			[radix_tree_iter_delete is exported by the kernel])],
+	[])
 	LB_CHECK_SYMBOL_EXPORT([kobj_ns_grab_current],
 		[lib/kobject.c],
 		[AC_DEFINE(HAVE_KOBJ_NS_GRAB_CURRENT_EXPORTED, 1,
