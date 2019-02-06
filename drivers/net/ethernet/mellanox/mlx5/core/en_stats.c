@@ -1255,7 +1255,7 @@ static const struct counter_desc ch_stats_desc[] = {
 #define NUM_RQ_XDPSQ_STATS		ARRAY_SIZE(rq_xdpsq_stats_desc)
 #define NUM_CH_STATS			ARRAY_SIZE(ch_stats_desc)
 #define MLX5E_PER_CHANNEL_STATS(priv) \
-	(priv->channels.num * MLX5E_GET_PFLAG(&(priv)->channels.params, MLX5E_PFLAG_PER_CH_STATS))
+	(mlx5e_get_netdev_max_channels(priv->netdev) * MLX5E_GET_PFLAG(&(priv)->channels.params, MLX5E_PFLAG_PER_CH_STATS))
 
 static int mlx5e_grp_channels_get_num_stats(struct mlx5e_priv *priv)
 {
