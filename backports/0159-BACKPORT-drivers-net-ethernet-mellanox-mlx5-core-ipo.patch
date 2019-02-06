@@ -4,8 +4,8 @@ Subject: [PATCH] BACKPORT:
 
 Change-Id: If2d9779a7f9846e6bdcbcf95bdfbdaf7e5b8f8b5
 ---
- .../net/ethernet/mellanox/mlx5/core/ipoib/ipoib.c  | 83 +++++++++++++++++++++-
- 1 file changed, 82 insertions(+), 1 deletion(-)
+ .../net/ethernet/mellanox/mlx5/core/ipoib/ipoib.c  | 86 +++++++++++++++++++++-
+ 1 file changed, 84 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/ipoib/ipoib.c b/drivers/net/ethernet/mellanox/mlx5/core/ipoib/ipoib.c
 index xxxxxxx..xxxxxxx 100644
@@ -168,7 +168,24 @@ index xxxxxxx..xxxxxxx 100644
  	default:
  		return -EOPNOTSUPP;
  	}
-@@ -750,9 +830,10 @@ static int mlx5_rdma_setup_rn(struct ib_device *ibdev, u8 port_num,
+@@ -682,7 +762,7 @@ static int mlx5i_check_required_hca_cap(struct mlx5_core_dev *mdev)
+ 
+ 	return 0;
+ }
+-
++#ifdef HAVE_NET_DEVICE_NEEDS_FREE_NETDEV
+ static void mlx5_rdma_netdev_free(struct net_device *netdev)
+ {
+ 	struct mlx5e_priv *priv = mlx5i_epriv(netdev);
+@@ -697,6 +777,7 @@ static void mlx5_rdma_netdev_free(struct net_device *netdev)
+ 		mlx5e_destroy_mdev_resources(priv->mdev);
+ 	}
+ }
++#endif
+ 
+ static bool mlx5_is_sub_interface(struct mlx5_core_dev *mdev)
+ {
+@@ -750,9 +831,10 @@ static int mlx5_rdma_setup_rn(struct ib_device *ibdev, u8 port_num,
  	rn->detach_mcast = mlx5i_detach_mcast;
  	rn->set_id = mlx5i_set_pkey_index;
  
