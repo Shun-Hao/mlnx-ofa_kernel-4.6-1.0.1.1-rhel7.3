@@ -1357,7 +1357,7 @@ err_reps:
 	return err;
 }
 
-int esw_offloads_init(struct mlx5_eswitch *esw, int nvports)
+static int esw_offloads_steering_init(struct mlx5_eswitch *esw, int nvports)
 {
 	int err;
 
@@ -1375,14 +1375,7 @@ int esw_offloads_init(struct mlx5_eswitch *esw, int nvports)
 	if (err)
 		goto create_fg_err;
 
-	err = esw_offloads_load_reps(esw, nvports);
-	if (err)
-		goto err_reps;
-
 	return 0;
-
-err_reps:
-	esw_destroy_vport_rx_group(esw);
 
 create_fg_err:
 	esw_destroy_offloads_table(esw);
@@ -1390,6 +1383,36 @@ create_fg_err:
 create_ft_err:
 	esw_destroy_offloads_fdb_tables(esw);
 
+	return err;
+}
+
+static void esw_offloads_steering_cleanup(struct mlx5_eswitch *esw)
+{
+	esw_del_fdb_peer_miss_rules(esw);
+	mlx5_destroy_flow_group(esw->fdb_table.offloads.peer_miss_grp);
+	esw_destroy_vport_rx_group(esw);
+	esw_destroy_offloads_table(esw);
+	esw_destroy_offloads_fdb_tables(esw);
+}
+
+int esw_offloads_init(struct mlx5_eswitch *esw, int nvports)
+{
+	int err;
+
+	mutex_init(&esw->fdb_table.offloads.fdb_prio_lock);
+
+	err = esw_offloads_steering_init(esw, nvports);
+	if (err)
+		return err;
+
+	err = esw_offloads_load_reps(esw, nvports);
+	if (err)
+		goto err_reps;
+
+	return 0;
+
+err_reps:
+	esw_offloads_steering_cleanup(esw);
 	return err;
 }
 
@@ -1415,13 +1438,7 @@ static int esw_offloads_stop(struct mlx5_eswitch *esw,
 void esw_offloads_cleanup(struct mlx5_eswitch *esw, int nvports)
 {
 	esw_offloads_unload_reps(esw, nvports);
-
-	esw_del_fdb_peer_miss_rules(esw);
-	mlx5_destroy_flow_group(esw->fdb_table.offloads.peer_miss_grp);
-
-	esw_destroy_vport_rx_group(esw);
-	esw_destroy_offloads_table(esw);
-	esw_destroy_offloads_fdb_tables(esw);
+	esw_offloads_steering_cleanup(esw);
 }
 
 static int esw_mode_from_devlink(u16 mode, u16 *mlx5_mode)
