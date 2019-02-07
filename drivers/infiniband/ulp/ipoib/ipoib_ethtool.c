@@ -66,10 +66,12 @@ static int ipoib_set_ring_param(struct net_device *dev,
 	unsigned long priv_current_flags;
 	unsigned int dev_current_flags;
 	bool init = false, init_fail = false;
+	bool is_changed_rx = false, is_changed_tx = false;
 
 	if (ringparam->rx_pending <= IPOIB_MAX_QUEUE_SIZE &&
 	    ringparam->rx_pending >= IPOIB_MIN_QUEUE_SIZE) {
 		new_recvq_size = roundup_pow_of_two(ringparam->rx_pending);
+		is_changed_rx = (new_recvq_size != priv->recvq_size);
 		if (ringparam->rx_pending != new_recvq_size)
 			pr_warn("%s: %s: rx_pending should be power of two. rx_pending is %d\n",
 				dev->name, __func__, new_recvq_size);
@@ -83,6 +85,7 @@ static int ipoib_set_ring_param(struct net_device *dev,
 	if (ringparam->tx_pending <= IPOIB_MAX_QUEUE_SIZE &&
 	    ringparam->tx_pending >= IPOIB_MIN_QUEUE_SIZE) {
 		new_sendq_size = roundup_pow_of_two(ringparam->tx_pending);
+		is_changed_tx = (new_sendq_size != priv->sendq_size);
 		if (ringparam->tx_pending != new_sendq_size)
 			pr_warn("%s: %s: tx_pending should be power of two. tx_pending is %d\n",
 				dev->name, __func__, new_sendq_size);
@@ -93,8 +96,7 @@ static int ipoib_set_ring_param(struct net_device *dev,
 		return -EINVAL;
 	}
 
-	if ((new_recvq_size != priv->recvq_size) ||
-	    (new_sendq_size != priv->sendq_size)) {
+	if (is_changed_rx || is_changed_tx) {
 		priv_current_flags = priv->flags;
 		dev_current_flags = dev->flags;
 
@@ -105,8 +107,8 @@ static int ipoib_set_ring_param(struct net_device *dev,
 			priv->recvq_size = new_recvq_size;
 			priv->sendq_size = new_sendq_size;
 			if (priv->rn_ops->ndo_init(dev)) {
-				new_recvq_size >>= 1;
-				new_sendq_size >>= 1;
+				new_recvq_size >>= is_changed_rx;
+				new_sendq_size >>= is_changed_tx;
 				/* keep the values always legal */
 				new_recvq_size = max_t(unsigned int,
 						       new_recvq_size,
