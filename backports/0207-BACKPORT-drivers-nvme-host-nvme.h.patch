@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/nvme/host/nvme.h
 
 Change-Id: I7d4d628aac4be6550135ff71e002a32265e13aa9
 ---
- drivers/nvme/host/nvme.h | 80 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 80 insertions(+)
+ drivers/nvme/host/nvme.h | 82 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 82 insertions(+)
 
 diff --git a/drivers/nvme/host/nvme.h b/drivers/nvme/host/nvme.h
 index xxxxxxx..xxxxxxx 100644
@@ -189,7 +189,19 @@ index xxxxxxx..xxxxxxx 100644
  extern const struct block_device_operations nvme_ns_head_ops;
  
  #ifdef CONFIG_NVME_MULTIPATH
-@@ -554,7 +617,9 @@ void nvme_nvm_update_nvm_info(struct nvme_ns *ns);
+@@ -536,9 +599,11 @@ static inline void nvme_mpath_check_last_path(struct nvme_ns *ns)
+ static inline int nvme_mpath_init(struct nvme_ctrl *ctrl,
+ 		struct nvme_id_ctrl *id)
+ {
++#ifdef HAVE_BLK_TYPES_REQ_DRV
+ 	if (ctrl->subsys->cmic & (1 << 3))
+ 		dev_warn(ctrl->device,
+ "Please enable CONFIG_NVME_MULTIPATH for full support of multi-port devices.\n");
++#endif
+ 	return 0;
+ }
+ static inline void nvme_mpath_uninit(struct nvme_ctrl *ctrl)
+@@ -554,7 +619,9 @@ void nvme_nvm_update_nvm_info(struct nvme_ns *ns);
  int nvme_nvm_register(struct nvme_ns *ns, char *disk_name, int node);
  void nvme_nvm_unregister(struct nvme_ns *ns);
  extern const struct attribute_group nvme_nvm_attr_group;
@@ -199,7 +211,7 @@ index xxxxxxx..xxxxxxx 100644
  #else
  static inline void nvme_nvm_update_nvm_info(struct nvme_ns *ns) {};
  static inline int nvme_nvm_register(struct nvme_ns *ns, char *disk_name,
-@@ -564,11 +629,13 @@ static inline int nvme_nvm_register(struct nvme_ns *ns, char *disk_name,
+@@ -564,11 +631,13 @@ static inline int nvme_nvm_register(struct nvme_ns *ns, char *disk_name,
  }
  
  static inline void nvme_nvm_unregister(struct nvme_ns *ns) {};
@@ -213,7 +225,7 @@ index xxxxxxx..xxxxxxx 100644
  #endif /* CONFIG_NVM */
  
  static inline struct nvme_ns *nvme_get_ns_from_dev(struct device *dev)
-@@ -580,4 +647,17 @@ struct nvme_ns *disk_to_nvme_ns(struct gendisk *disk);
+@@ -580,4 +649,17 @@ struct nvme_ns *disk_to_nvme_ns(struct gendisk *disk);
  int __init nvme_core_init(void);
  void nvme_core_exit(void);
  
