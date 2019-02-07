@@ -69,11 +69,7 @@ static void mlx_lag_compat_changeupper_event(struct bonding *bond,
 	mlx_lag_compat_netdev_event_cb(NETDEV_CHANGEUPPER, &info);
 }
 
-#if defined(HAVE_SOCK_CREATE_KERN_5_PARAMS)
 static void mlx_lag_compat_rtnl_data_ready(struct sock *sk)
-#else
-static void mlx_lag_compat_rtnl_data_ready(struct sock *sk, int bytes)
-#endif
 {
 	struct net_device *ndev;
 	struct ifinfomsg *ifm;

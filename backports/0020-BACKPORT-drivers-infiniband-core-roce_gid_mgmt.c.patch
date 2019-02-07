@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/infiniband/core/roce_gid_mgmt.c
 
 Change-Id: I7103651c4260d3ae678b94686f5c7299e8cea573
 ---
- drivers/infiniband/core/roce_gid_mgmt.c | 125 +++++++++++++++++++++++++++++---
- 1 file changed, 116 insertions(+), 9 deletions(-)
+ drivers/infiniband/core/roce_gid_mgmt.c | 167 ++++++++++++++++++++++++++------
+ 1 file changed, 137 insertions(+), 30 deletions(-)
 
 diff --git a/drivers/infiniband/core/roce_gid_mgmt.c b/drivers/infiniband/core/roce_gid_mgmt.c
 index xxxxxxx..xxxxxxx 100644
@@ -87,7 +87,35 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static void add_netdev_ips(struct ib_device *ib_dev, u8 port,
-@@ -485,7 +506,9 @@ static void enum_all_gids_of_dev_cb(struct ib_device *ib_dev,
+@@ -441,27 +462,6 @@ static void del_netdev_ips(struct ib_device *ib_dev, u8 port,
+ 	ib_cache_gid_del_all_netdev_gids(ib_dev, port, cookie);
+ }
+ 
+-/**
+- * del_default_gids - Delete default GIDs of the event/cookie netdevice
+- * @ib_dev:	RDMA device pointer
+- * @port:	Port of the RDMA device whose GID table to consider
+- * @rdma_ndev:	Unused rdma netdevice
+- * @cookie:	Pointer to event netdevice
+- *
+- * del_default_gids() deletes the default GIDs of the event/cookie netdevice.
+- */
+-static void del_default_gids(struct ib_device *ib_dev, u8 port,
+-			     struct net_device *rdma_ndev, void *cookie)
+-{
+-	struct net_device *cookie_ndev = cookie;
+-	unsigned long gid_type_mask;
+-
+-	gid_type_mask = roce_gid_type_mask_support(ib_dev, port);
+-
+-	ib_cache_gid_set_default_gid(ib_dev, port, cookie_ndev, gid_type_mask,
+-				     IB_CACHE_GID_DEFAULT_MODE_DELETE);
+-}
+-
+ static void add_default_gids(struct ib_device *ib_dev, u8 port,
+ 			     struct net_device *rdma_ndev, void *cookie)
+ {
+@@ -485,7 +485,9 @@ static void enum_all_gids_of_dev_cb(struct ib_device *ib_dev,
  	 * our feet
  	 */
  	rtnl_lock();
@@ -97,7 +125,7 @@ index xxxxxxx..xxxxxxx 100644
  	for_each_net(net)
  		for_each_netdev(net, ndev) {
  			/*
-@@ -501,7 +524,9 @@ static void enum_all_gids_of_dev_cb(struct ib_device *ib_dev,
+@@ -501,7 +503,9 @@ static void enum_all_gids_of_dev_cb(struct ib_device *ib_dev,
  							 rdma_ndev, ndev))
  				_add_netdev_ips(ib_dev, port, ndev);
  		}
@@ -107,7 +135,7 @@ index xxxxxxx..xxxxxxx 100644
  	rtnl_unlock();
  }
  
-@@ -530,6 +555,9 @@ static void callback_for_addr_gid_device_scan(struct ib_device *device,
+@@ -530,6 +534,9 @@ static void callback_for_addr_gid_device_scan(struct ib_device *device,
  			  &parsed->gid_attr);
  }
  
@@ -117,7 +145,7 @@ index xxxxxxx..xxxxxxx 100644
  struct upper_list {
  	struct list_head list;
  	struct net_device *upper;
-@@ -549,6 +577,7 @@ static int netdev_upper_walk(struct net_device *upper, void *data)
+@@ -549,6 +556,7 @@ static int netdev_upper_walk(struct net_device *upper, void *data)
  
  	return 0;
  }
@@ -125,7 +153,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static void handle_netdev_upper(struct ib_device *ib_dev, u8 port,
  				void *cookie,
-@@ -557,13 +586,52 @@ static void handle_netdev_upper(struct ib_device *ib_dev, u8 port,
+@@ -557,13 +565,52 @@ static void handle_netdev_upper(struct ib_device *ib_dev, u8 port,
  						      struct net_device *ndev))
  {
  	struct net_device *ndev = cookie;
@@ -178,7 +206,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	handle_netdev(ib_dev, port, ndev);
  	list_for_each_entry_safe(upper_iter, upper_temp, &upper_list,
-@@ -593,6 +661,8 @@ static void add_netdev_upper_ips(struct ib_device *ib_dev, u8 port,
+@@ -593,6 +640,8 @@ static void add_netdev_upper_ips(struct ib_device *ib_dev, u8 port,
  	handle_netdev_upper(ib_dev, port, cookie, _add_netdev_ips);
  }
  
@@ -187,7 +215,7 @@ index xxxxxxx..xxxxxxx 100644
  static void del_netdev_default_ips_join(struct ib_device *ib_dev, u8 port,
  					struct net_device *rdma_ndev,
  					void *cookie)
-@@ -666,11 +736,12 @@ static const struct netdev_event_work_cmd add_cmd = {
+@@ -666,11 +715,33 @@ static const struct netdev_event_work_cmd add_cmd = {
  	.filter	= is_eth_port_of_netdev_filter
  };
  
@@ -200,6 +228,27 @@ index xxxxxxx..xxxxxxx 100644
  };
  
 +#ifdef USE_UPPER_INFO
++/**
++ * del_default_gids - Delete default GIDs of the event/cookie netdevice
++ * @ib_dev:	RDMA device pointer
++ * @port:	Port of the RDMA device whose GID table to consider
++ * @rdma_ndev:	Unused rdma netdevice
++ * @cookie:	Pointer to event netdevice
++ *
++ * del_default_gids() deletes the default GIDs of the event/cookie netdevice.
++ */
++static void del_default_gids(struct ib_device *ib_dev, u8 port,
++			     struct net_device *rdma_ndev, void *cookie)
++{
++	struct net_device *cookie_ndev = cookie;
++	unsigned long gid_type_mask;
++
++	gid_type_mask = roce_gid_type_mask_support(ib_dev, port);
++
++	ib_cache_gid_set_default_gid(ib_dev, port, cookie_ndev, gid_type_mask,
++				     IB_CACHE_GID_DEFAULT_MODE_DELETE);
++}
++
  static void
  ndev_event_unlink(struct netdev_notifier_changeupper_info *changeupper_info,
  		  struct netdev_event_work_cmd *cmds)

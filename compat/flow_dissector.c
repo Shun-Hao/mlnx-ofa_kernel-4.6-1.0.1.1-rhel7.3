@@ -201,7 +201,7 @@ __skb_flow_dissect_tunnel_info(const struct sk_buff *skb,
 				FLOW_DISSECTOR_KEY_ENC_IP))
 		return;
 
-	info = skb_tunnel_info(skb);
+	info = skb_tunnel_info((struct sk_buff *)skb);
 	if (!info)
 		return;
 

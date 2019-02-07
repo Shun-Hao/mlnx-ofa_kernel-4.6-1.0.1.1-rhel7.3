@@ -1113,7 +1113,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	return true;
  }
-@@ -2238,21 +2557,41 @@ static bool same_hw_devs(struct mlx5e_priv *priv, struct mlx5e_priv *peer_priv)
+@@ -2238,21 +2555,43 @@ static bool same_hw_devs(struct mlx5e_priv *priv, struct mlx5e_priv *peer_priv)
  
  static int parse_tc_nic_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
  				struct mlx5e_tc_flow_parse_attr *parse_attr,
@@ -1134,7 +1134,9 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  	u32 action = 0;
 -	int err, i;
++#ifdef HAVE_TCF_PEDIT_TCFP_KEYS_EX
 +	int err;
++#endif
  
 +#ifdef HAVE_TCF_EXTS_HAS_ACTIONS
  	if (!tcf_exts_has_actions(exts))
