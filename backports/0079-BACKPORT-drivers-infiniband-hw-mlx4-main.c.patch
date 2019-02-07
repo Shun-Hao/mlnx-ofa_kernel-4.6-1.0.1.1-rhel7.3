@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/infiniband/hw/mlx4/main.c
 
 Change-Id: I91abcca50d3559fdcfeb05a4fbcf9d09a463a9df
 ---
- drivers/infiniband/hw/mlx4/main.c | 32 ++++++++++++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
+ drivers/infiniband/hw/mlx4/main.c | 34 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
 
 diff --git a/drivers/infiniband/hw/mlx4/main.c b/drivers/infiniband/hw/mlx4/main.c
 index xxxxxxx..xxxxxxx 100644
@@ -67,7 +67,19 @@ index xxxxxxx..xxxxxxx 100644
  	}
  	if (dev)
  		dev_hold(dev);
-@@ -2867,6 +2888,9 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
+@@ -1146,9 +1167,11 @@ static int mlx4_ib_dealloc_ucontext(struct ib_ucontext *ibcontext)
+ 	return 0;
+ }
+ 
++#if defined(HAVE_PUT_TASK_STRUCT_EXPORTED) && defined(HAVE_GET_TASK_PID_EXPORTED) && defined(HAVE_GET_PID_TASK_EXPORTED)
+ static void mlx4_ib_disassociate_ucontext(struct ib_ucontext *ibcontext)
+ {
+ }
++#endif
+ 
+ static int mlx4_ib_mmap(struct ib_ucontext *context, struct vm_area_struct *vma)
+ {
+@@ -2867,6 +2890,9 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
  	ibdev->ib_dev.exp_create_qp	= mlx4_ib_exp_create_qp;
  	ibdev->ib_dev.exp_query_device	= mlx4_ib_exp_query_device;
  	ibdev->ib_dev.exp_ioctl		= mlx4_ib_exp_ioctl;
@@ -77,7 +89,7 @@ index xxxxxxx..xxxxxxx 100644
  	ibdev->ib_dev.rereg_user_mr	= mlx4_ib_rereg_user_mr;
  	ibdev->ib_dev.dereg_mr		= mlx4_ib_dereg_mr;
  	ibdev->ib_dev.alloc_mr		= mlx4_ib_alloc_mr;
-@@ -2876,7 +2900,9 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
+@@ -2876,7 +2902,9 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
  	ibdev->ib_dev.process_mad	= mlx4_ib_process_mad;
  	ibdev->ib_dev.get_port_immutable = mlx4_port_immutable;
  	ibdev->ib_dev.get_dev_fw_str    = get_fw_ver_str;
@@ -87,7 +99,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	ibdev->ib_dev.uverbs_ex_cmd_mask |=
  		(1ull << IB_USER_VERBS_EX_CMD_MODIFY_CQ);
-@@ -3086,9 +3112,11 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
+@@ -3086,9 +3114,11 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
  	}
  
  	ibdev->ib_active = true;
@@ -99,7 +111,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	if (mlx4_is_mfunc(ibdev->dev))
  		init_pkeys(ibdev);
-@@ -3223,10 +3251,14 @@ static void mlx4_ib_remove(struct mlx4_dev *dev, void *ibdev_ptr)
+@@ -3223,10 +3253,14 @@ static void mlx4_ib_remove(struct mlx4_dev *dev, void *ibdev_ptr)
  	struct mlx4_ib_dev *ibdev = ibdev_ptr;
  	int dev_idx, ret;
  	int p;
