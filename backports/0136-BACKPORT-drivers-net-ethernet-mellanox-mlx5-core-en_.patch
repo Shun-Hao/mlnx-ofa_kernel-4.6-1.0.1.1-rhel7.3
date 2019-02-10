@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en_rep.h
 
 Change-Id: Ica6a7bccb8c5a50fb403c9221eebb5bf2dc13f61
 ---
- drivers/net/ethernet/mellanox/mlx5/core/en_rep.h | 54 ++++++++++++++++++++++++
- 1 file changed, 54 insertions(+)
+ drivers/net/ethernet/mellanox/mlx5/core/en_rep.h | 43 ++++++++++++++++++++++++
+ 1 file changed, 43 insertions(+)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en_rep.h b/drivers/net/ethernet/mellanox/mlx5/core/en_rep.h
 index xxxxxxx..xxxxxxx 100644
@@ -126,25 +126,8 @@ index xxxxxxx..xxxxxxx 100644
  
  struct mlx5e_rep_sq {
  	struct mlx5_flow_handle	*send_to_vport_rule;
-@@ -146,16 +187,29 @@ bool mlx5e_is_uplink_rep(struct mlx5e_priv *priv);
- int mlx5e_add_sqs_fwd_rules(struct mlx5e_priv *priv);
- void mlx5e_remove_sqs_fwd_rules(struct mlx5e_priv *priv);
+@@ -148,10 +189,12 @@ void mlx5e_remove_sqs_fwd_rules(struct mlx5e_priv *priv);
  
-+#if defined(HAVE_NDO_GET_OFFLOAD_STATS) || defined(HAVE_NDO_GET_OFFLOAD_STATS_EXTENDED)
- int mlx5e_get_offload_stats(int attr_id, const struct net_device *dev, void *sp);
-+#endif
-+#if defined(NDO_HAS_OFFLOAD_STATS_GETS_NET_DEVICE) || defined(HAVE_NDO_HAS_OFFLOAD_STATS_EXTENDED)
- bool mlx5e_has_offload_stats(const struct net_device *dev, int attr_id);
-+#endif
- 
-+#if (defined(HAVE_SWITCHDEV_OPS) && defined(CONFIG_NET_SWITCHDEV)) \
-+    || defined(HAVE_SWITCHDEV_H_COMPAT)
- int mlx5e_attr_get(struct net_device *dev, struct switchdev_attr *attr);
-+#endif
-+#ifdef HAVE_SWITCHDEV_H_COMPAT
-+ssize_t phys_switch_id_show(struct device *dev,
-+			   struct device_attribute *attr, char *buf);
-+#endif
  void mlx5e_handle_rx_cqe_rep(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe);
  
 +#ifdef HAVE_TCF_TUNNEL_INFO
