@@ -118,7 +118,6 @@ struct mlx5_exp_ib_alloc_ucontext_resp {
 	__u32						num_uars_per_page;
 	__u32						num_dyn_bfregs;
 	__u32                                           dump_fill_mkey;
-	__u32						reserved3;
 	/* Some more reserved fields for future growth of mlx5_ib_alloc_ucontext_resp */
 	__u64						prefix_reserved[8];
 	struct mlx5_exp_ib_alloc_ucontext_data_resp	exp_data;
