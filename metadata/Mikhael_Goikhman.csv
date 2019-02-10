@@ -6,3 +6,4 @@ Change-Id=Ibe113a9a278843ffe7aee2ff0a612cec3a032adb; subject=net/mlx5e: Remove u
 Change-Id=I956c9918529924511d82f31abec4398c66f5083d; subject=net/mlx5e: TX, Fix calculation of l2 header len for multiple VLANs; feature=mlx5_en_bugs; upstream_status=in_progress; general=;
 Change-Id=I214f9d0e62e9c3256df986bd06c1ba8520f16006; subject=BACKPORTS: Fix PTP backport for RHEL 7.1; feature=backports; upstream_status=ignore; general=;
 Change-Id=I5cc7f93fda553c34c3603a559e3b6867b2983c68; subject=net/mlx5e: Fix per-channel ethtool counters after changing num of channels; feature=mlx5e_counter_groups; upstream_status=NA; general=;
+Change-Id=Id3f90638480b48fdb748b93442609271f749c248; subject=net/mlx5e: Force CHECKSUM_UNNECESSARY for short ethernet frames; feature=rebase; upstream_status=accepted; general=upstream commit ID: e8c8b53ccaff, tag: v5.0-rc3;
