@@ -136,13 +136,13 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 	#include <linux/percpu-defs.h>
 	#include <linux/percpu.h>
-	],[
 
 	struct radix_tree_preload {
 	unsigned nr;
 	struct radix_tree_node *nodes;
 	};
 	static DEFINE_PER_CPU(struct radix_tree_preload, radix_tree_preloads) = { 0, };
+	],[
 	this_cpu_ptr(&per_cpu__radix_tree_preloads);
 	],[
 		AC_MSG_RESULT(yes)
