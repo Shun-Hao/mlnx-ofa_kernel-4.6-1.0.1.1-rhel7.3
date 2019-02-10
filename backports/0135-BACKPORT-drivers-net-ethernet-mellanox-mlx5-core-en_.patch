@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en_rep.c
 
 Change-Id: If45897304ef7a0136d4f19df6a992ac27b780d03
 ---
- drivers/net/ethernet/mellanox/mlx5/core/en_rep.c | 398 ++++++++++++++++++++++-
- 1 file changed, 383 insertions(+), 15 deletions(-)
+ drivers/net/ethernet/mellanox/mlx5/core/en_rep.c | 460 ++++++++++++++++++++++-
+ 1 file changed, 452 insertions(+), 8 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en_rep.c b/drivers/net/ethernet/mellanox/mlx5/core/en_rep.c
 index xxxxxxx..xxxxxxx 100644
@@ -45,7 +45,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static const struct counter_desc sw_rep_stats_desc[] = {
  	{ MLX5E_DECLARE_STAT(struct mlx5e_sw_stats, rx_packets) },
-@@ -104,7 +111,11 @@ static void mlx5e_rep_update_hw_counters(struct mlx5e_priv *priv)
+@@ -104,7 +111,11 @@ static void mlx5e_vf_rep_update_hw_counters(struct mlx5e_priv *priv)
  	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
  	struct mlx5e_rep_priv *rpriv = priv->ppriv;
  	struct mlx5_eswitch_rep *rep = rpriv->rep;
@@ -57,7 +57,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct ifla_vf_stats vf_stats;
  	int err;
  
-@@ -197,6 +208,7 @@ static int mlx5e_rep_set_ringparam(struct net_device *dev,
+@@ -223,6 +234,7 @@ static int mlx5e_rep_set_ringparam(struct net_device *dev,
  	return mlx5e_ethtool_set_ringparam(priv, param);
  }
  
@@ -65,23 +65,45 @@ index xxxxxxx..xxxxxxx 100644
  static int mlx5e_replace_rep_vport_rx_rule(struct mlx5e_priv *priv,
  					   struct mlx5_flow_destination *dest)
  {
-@@ -256,7 +268,8 @@ static int mlx5e_rep_set_channels(struct net_device *dev,
+@@ -282,6 +294,7 @@ static int mlx5e_rep_set_channels(struct net_device *dev,
  
  	return 0;
  }
--
 +#endif
+ 
+ static int mlx5e_rep_get_coalesce(struct net_device *netdev,
+ 				  struct ethtool_coalesce *coal)
+@@ -299,6 +312,7 @@ static int mlx5e_rep_set_coalesce(struct net_device *netdev,
+ 	return mlx5e_ethtool_set_coalesce(priv, coal);
+ }
+ 
 +#if defined(HAVE_GET_SET_RXFH) && !defined(HAVE_GET_SET_RXFH_INDIR_EXT)
  static u32 mlx5e_rep_get_rxfh_key_size(struct net_device *netdev)
  {
  	struct mlx5e_priv *priv = netdev_priv(netdev);
-@@ -270,42 +283,62 @@ static u32 mlx5e_rep_get_rxfh_indir_size(struct net_device *netdev)
+@@ -312,6 +326,7 @@ static u32 mlx5e_rep_get_rxfh_indir_size(struct net_device *netdev)
  
  	return mlx5e_ethtool_get_rxfh_indir_size(priv);
  }
 +#endif
  
- static const struct ethtool_ops mlx5e_rep_ethtool_ops = {
+ static void mlx5e_uplink_rep_get_pauseparam(struct net_device *netdev,
+ 					    struct ethtool_pauseparam *pauseparam)
+@@ -329,6 +344,7 @@ static int mlx5e_uplink_rep_set_pauseparam(struct net_device *netdev,
+ 	return mlx5e_ethtool_set_pauseparam(priv, pauseparam);
+ }
+ 
++#ifdef HAVE_GET_SET_LINK_KSETTINGS
+ static int mlx5e_uplink_rep_get_link_ksettings(struct net_device *netdev,
+ 					       struct ethtool_link_ksettings *link_ksettings)
+ {
+@@ -344,43 +360,63 @@ static int mlx5e_uplink_rep_set_link_ksettings(struct net_device *netdev,
+ 
+ 	return mlx5e_ethtool_set_link_ksettings(priv, link_ksettings);
+ }
++#endif
+ 
+ static const struct ethtool_ops mlx5e_vf_rep_ethtool_ops = {
 +#ifdef HAVE_UTSRELEASE_H
  	.get_drvinfo	   = mlx5e_rep_get_drvinfo,
 +#endif
@@ -89,51 +111,58 @@ index xxxxxxx..xxxxxxx 100644
  	.get_strings       = mlx5e_rep_get_strings,
  	.get_sset_count    = mlx5e_rep_get_sset_count,
  	.get_ethtool_stats = mlx5e_rep_get_ethtool_stats,
-+#ifdef HAVE_GET_SET_LINK_KSETTINGS
- 	.get_link_ksettings  = mlx5e_get_link_ksettings,
- 	.set_link_ksettings  = mlx5e_set_link_ksettings,
-+#else
-+	.get_settings  = mlx5e_get_settings,
-+	.set_settings  = mlx5e_set_settings,
-+#endif
  	.get_ringparam     = mlx5e_rep_get_ringparam,
  	.set_ringparam     = mlx5e_rep_set_ringparam,
 +#ifdef HAVE_ETHTOOL_OPS_GET_SET_CHANNELS
  	.get_channels      = mlx5e_rep_get_channels,
  	.set_channels      = mlx5e_rep_set_channels,
 +#endif
+ 	.get_coalesce      = mlx5e_rep_get_coalesce,
+ 	.set_coalesce      = mlx5e_rep_set_coalesce,
 +#if defined(HAVE_GET_SET_RXFH) && !defined(HAVE_GET_SET_RXFH_INDIR_EXT)
  	.get_rxfh_key_size   = mlx5e_rep_get_rxfh_key_size,
  	.get_rxfh_indir_size = mlx5e_rep_get_rxfh_indir_size,
 +#endif
  };
  
+ static const struct ethtool_ops mlx5e_uplink_rep_ethtool_ops = {
++#ifdef HAVE_UTSRELEASE_H
+ 	.get_drvinfo	   = mlx5e_rep_get_drvinfo,
++#endif
+ 	.get_link	   = ethtool_op_get_link,
+ 	.get_strings       = mlx5e_rep_get_strings,
+ 	.get_sset_count    = mlx5e_rep_get_sset_count,
+ 	.get_ethtool_stats = mlx5e_rep_get_ethtool_stats,
+ 	.get_ringparam     = mlx5e_rep_get_ringparam,
+ 	.set_ringparam     = mlx5e_rep_set_ringparam,
++#ifdef HAVE_ETHTOOL_OPS_GET_SET_CHANNELS
+ 	.get_channels      = mlx5e_rep_get_channels,
+ 	.set_channels      = mlx5e_rep_set_channels,
++#endif
+ 	.get_coalesce      = mlx5e_rep_get_coalesce,
+ 	.set_coalesce      = mlx5e_rep_set_coalesce,
++#ifdef HAVE_GET_SET_LINK_KSETTINGS
+ 	.get_link_ksettings = mlx5e_uplink_rep_get_link_ksettings,
+ 	.set_link_ksettings = mlx5e_uplink_rep_set_link_ksettings,
++#else
++	.get_settings  = mlx5e_get_settings,
++	.set_settings  = mlx5e_set_settings,
++#endif
++#if defined(HAVE_GET_SET_RXFH) && !defined(HAVE_GET_SET_RXFH_INDIR_EXT)
+ 	.get_rxfh_key_size   = mlx5e_rep_get_rxfh_key_size,
+ 	.get_rxfh_indir_size = mlx5e_rep_get_rxfh_indir_size,
++#endif
+ 	.get_pauseparam    = mlx5e_uplink_rep_get_pauseparam,
+ 	.set_pauseparam    = mlx5e_uplink_rep_set_pauseparam,
+ };
+ 
 +#if (defined(HAVE_SWITCHDEV_OPS) && defined(CONFIG_NET_SWITCHDEV)) \
 +    || defined(HAVE_SWITCHDEV_H_COMPAT)
- int mlx5e_attr_get(struct net_device *dev, struct switchdev_attr *attr)
+ static int mlx5e_attr_get(struct net_device *dev, struct switchdev_attr *attr)
  {
  	struct mlx5e_priv *priv = netdev_priv(dev);
- 	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
-  	struct mlx5e_rep_priv *uplink_rpriv;
--	struct net_device *uplink_dev;
--	struct mlx5e_priv *uplink_priv;
--	struct net_device *uplink_upper;
-+	struct net_device *uplink_dev = NULL;
-+	struct mlx5e_priv *uplink_priv = NULL;
-+	struct net_device *uplink_upper = NULL;
- 
- 	if (esw->mode == SRIOV_NONE)
- 		return -EOPNOTSUPP;
- 
-  	uplink_rpriv = mlx5_eswitch_get_uplink_priv(esw, REP_ETH);
--	uplink_dev = uplink_rpriv->netdev;
--	uplink_priv = netdev_priv(uplink_dev);
--	uplink_upper = netdev_master_upper_dev_get(uplink_dev);
-+	if (uplink_rpriv) {
-+		uplink_dev = uplink_rpriv->netdev;
-+		uplink_priv = netdev_priv(uplink_dev);
-+		uplink_upper = netdev_master_upper_dev_get(uplink_dev);
-+	}
+@@ -399,7 +435,11 @@ static int mlx5e_attr_get(struct net_device *dev, struct switchdev_attr *attr)
+ 	uplink_upper = netdev_master_upper_dev_get(uplink_dev);
  
  	switch (attr->id) {
 +#ifdef HAVE_SWITCHDEV_ATTR_ID_PORT_PARENT_ID
@@ -144,7 +173,7 @@ index xxxxxxx..xxxxxxx 100644
  		attr->u.ppid.id_len = ETH_ALEN;
  		if (uplink_upper && mlx5_lag_is_active(uplink_priv->mdev)) {
  			ether_addr_copy(attr->u.ppid.id, uplink_upper->dev_addr);
-@@ -322,6 +355,7 @@ int mlx5e_attr_get(struct net_device *dev, struct switchdev_attr *attr)
+@@ -416,6 +456,7 @@ static int mlx5e_attr_get(struct net_device *dev, struct switchdev_attr *attr)
  
  	return 0;
  }
@@ -152,7 +181,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static void mlx5e_sqs2vport_stop(struct mlx5_eswitch *esw,
  				 struct mlx5_eswitch_rep *rep)
-@@ -419,11 +453,12 @@ void mlx5e_remove_sqs_fwd_rules(struct mlx5e_priv *priv)
+@@ -513,11 +554,12 @@ void mlx5e_remove_sqs_fwd_rules(struct mlx5e_priv *priv)
  	mlx5e_sqs2vport_stop(esw, rep);
  }
  
@@ -167,7 +196,7 @@ index xxxxxxx..xxxxxxx 100644
  #else
  	unsigned long ipv6_interval = ~0UL;
  #endif
-@@ -466,12 +501,20 @@ static void mlx5e_rep_neigh_stats_work(struct work_struct *work)
+@@ -560,12 +602,20 @@ static void mlx5e_rep_neigh_stats_work(struct work_struct *work)
  
  static void mlx5e_rep_neigh_entry_hold(struct mlx5e_neigh_hash_entry *nhe)
  {
@@ -188,7 +217,7 @@ index xxxxxxx..xxxxxxx 100644
  		kfree(nhe);
  }
  
-@@ -550,22 +593,29 @@ static int mlx5e_rep_netevent_event(struct notifier_block *nb,
+@@ -644,22 +694,29 @@ static int mlx5e_rep_netevent_event(struct notifier_block *nb,
  	struct mlx5e_priv *priv = netdev_priv(netdev);
  	struct mlx5e_neigh_hash_entry *nhe = NULL;
  	struct mlx5e_neigh m_neigh = {};
@@ -219,7 +248,7 @@ index xxxxxxx..xxxxxxx 100644
  		memcpy(&m_neigh.dst_ip, n->primary_key, n->tbl->key_len);
  
  		/* We are in atomic context and can't take RTNL mutex, so use
-@@ -597,7 +647,7 @@ static int mlx5e_rep_netevent_event(struct notifier_block *nb,
+@@ -691,7 +748,7 @@ static int mlx5e_rep_netevent_event(struct notifier_block *nb,
  		}
  		spin_unlock_bh(&neigh_update->encap_lock);
  		break;
@@ -228,7 +257,7 @@ index xxxxxxx..xxxxxxx 100644
  	case NETEVENT_DELAY_PROBE_TIME_UPDATE:
  		p = ptr;
  
-@@ -606,7 +656,8 @@ static int mlx5e_rep_netevent_event(struct notifier_block *nb,
+@@ -700,7 +757,8 @@ static int mlx5e_rep_netevent_event(struct notifier_block *nb,
  		 * done per device delay prob time parameter.
  		 */
  #if IS_ENABLED(CONFIG_IPV6)
@@ -238,7 +267,7 @@ index xxxxxxx..xxxxxxx 100644
  #else
  		if (!p->dev || p->tbl != &arp_tbl)
  #endif
-@@ -634,9 +685,11 @@ static int mlx5e_rep_netevent_event(struct notifier_block *nb,
+@@ -728,9 +786,11 @@ static int mlx5e_rep_netevent_event(struct notifier_block *nb,
  		mlx5_fc_update_sampling_interval(priv->mdev,
  						 neigh_update->min_interval);
  		break;
@@ -250,7 +279,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static const struct rhashtable_params mlx5e_neigh_ht_params = {
  	.head_offset = offsetof(struct mlx5e_neigh_hash_entry, rhash_node),
-@@ -655,6 +708,7 @@ static int mlx5e_rep_neigh_init(struct mlx5e_rep_priv *rpriv)
+@@ -749,6 +809,7 @@ static int mlx5e_rep_neigh_init(struct mlx5e_rep_priv *rpriv)
  		return err;
  
  	INIT_LIST_HEAD(&neigh_update->neigh_list);
@@ -258,7 +287,7 @@ index xxxxxxx..xxxxxxx 100644
  	spin_lock_init(&neigh_update->encap_lock);
  	INIT_DELAYED_WORK(&neigh_update->neigh_stats_work,
  			  mlx5e_rep_neigh_stats_work);
-@@ -668,12 +722,14 @@ static int mlx5e_rep_neigh_init(struct mlx5e_rep_priv *rpriv)
+@@ -762,12 +823,14 @@ static int mlx5e_rep_neigh_init(struct mlx5e_rep_priv *rpriv)
  
  out_err:
  	rhashtable_destroy(&neigh_update->neigh_ht);
@@ -273,7 +302,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5e_priv *priv = netdev_priv(rpriv->netdev);
  
  	unregister_netevent_notifier(&neigh_update->netevent_nb);
-@@ -681,10 +737,12 @@ static void mlx5e_rep_neigh_cleanup(struct mlx5e_rep_priv *rpriv)
+@@ -775,10 +838,12 @@ static void mlx5e_rep_neigh_cleanup(struct mlx5e_rep_priv *rpriv)
  	flush_workqueue(priv->wq); /* flush neigh update works */
  
  	cancel_delayed_work_sync(&rpriv->neigh_update.neigh_stats_work);
@@ -286,7 +315,7 @@ index xxxxxxx..xxxxxxx 100644
  static int mlx5e_rep_neigh_entry_insert(struct mlx5e_priv *priv,
  					struct mlx5e_neigh_hash_entry *nhe)
  {
-@@ -707,14 +765,18 @@ static void mlx5e_rep_neigh_entry_remove(struct mlx5e_priv *priv,
+@@ -801,14 +866,18 @@ static void mlx5e_rep_neigh_entry_remove(struct mlx5e_priv *priv,
  {
  	struct mlx5e_rep_priv *rpriv = priv->ppriv;
  
@@ -305,7 +334,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  /* This function must only be called under RTNL lock or under the
-@@ -744,7 +806,11 @@ static int mlx5e_rep_neigh_entry_create(struct mlx5e_priv *priv,
+@@ -838,7 +907,11 @@ static int mlx5e_rep_neigh_entry_create(struct mlx5e_priv *priv,
  	memcpy(&(*nhe)->m_neigh, &e->m_neigh, sizeof(e->m_neigh));
  	INIT_WORK(&(*nhe)->neigh_update_work, mlx5e_rep_neigh_update);
  	INIT_LIST_HEAD(&(*nhe)->encap_list);
@@ -317,15 +346,15 @@ index xxxxxxx..xxxxxxx 100644
  
  	err = mlx5e_rep_neigh_entry_insert(priv, *nhe);
  	if (err)
-@@ -796,6 +862,7 @@ void mlx5e_rep_encap_entry_detach(struct mlx5e_priv *priv,
+@@ -890,6 +963,7 @@ void mlx5e_rep_encap_entry_detach(struct mlx5e_priv *priv,
  	if (list_empty(&nhe->encap_list))
  		mlx5e_rep_neigh_entry_destroy(priv, nhe);
  }
 +#endif /* HAVE_TCF_TUNNEL_INFO */
  
- static int mlx5e_rep_open(struct net_device *dev)
+ static int mlx5e_vf_rep_open(struct net_device *dev)
  {
-@@ -835,6 +902,7 @@ static int mlx5e_rep_close(struct net_device *dev)
+@@ -929,6 +1003,7 @@ static int mlx5e_vf_rep_close(struct net_device *dev)
  	return ret;
  }
  
@@ -333,7 +362,7 @@ index xxxxxxx..xxxxxxx 100644
  static int mlx5e_rep_get_phys_port_name(struct net_device *dev,
  					char *buf, size_t len)
  {
-@@ -849,28 +917,105 @@ static int mlx5e_rep_get_phys_port_name(struct net_device *dev,
+@@ -943,28 +1018,105 @@ static int mlx5e_rep_get_phys_port_name(struct net_device *dev,
  
  	return 0;
  }
@@ -439,7 +468,7 @@ index xxxxxxx..xxxxxxx 100644
  	switch (type) {
  	case TC_SETUP_CLSFLOWER:
  		return mlx5e_rep_setup_tc_cls_flower(priv, type_data, MLX5E_TC_EGRESS);
-@@ -884,6 +1029,10 @@ static int mlx5e_rep_setup_tc_cb(enum tc_setup_type type, void *type_data,
+@@ -978,6 +1130,10 @@ static int mlx5e_rep_setup_tc_cb(enum tc_setup_type type, void *type_data,
  {
  	struct mlx5e_priv *priv = cb_priv;
  
@@ -449,8 +478,8 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  	switch (type) {
  	case TC_SETUP_CLSFLOWER:
- 		return mlx5e_rep_setup_tc_cls_flower(priv, type_data, MLX5E_TC_INGRESS);
-@@ -903,7 +1052,12 @@ static int mlx5e_rep_setup_tc_block(struct net_device *dev,
+ 		return mlx5e_rep_setup_tc_cls_flower(priv, type_data, MLX5E_TC_INGRESS |
+@@ -998,7 +1154,12 @@ static int mlx5e_rep_setup_tc_block(struct net_device *dev,
  	switch (f->command) {
  	case TC_BLOCK_BIND:
  		return tcf_block_cb_register(f->block, mlx5e_rep_setup_tc_cb,
@@ -463,7 +492,7 @@ index xxxxxxx..xxxxxxx 100644
  	case TC_BLOCK_UNBIND:
  		tcf_block_cb_unregister(f->block, mlx5e_rep_setup_tc_cb, priv);
  		return 0;
-@@ -911,17 +1065,57 @@ static int mlx5e_rep_setup_tc_block(struct net_device *dev,
+@@ -1006,17 +1167,57 @@ static int mlx5e_rep_setup_tc_block(struct net_device *dev,
  		return -EOPNOTSUPP;
  	}
  }
@@ -521,15 +550,15 @@ index xxxxxxx..xxxxxxx 100644
  
  bool mlx5e_is_uplink_rep(struct mlx5e_priv *priv)
  {
-@@ -940,6 +1134,7 @@ bool mlx5e_is_uplink_rep(struct mlx5e_priv *priv)
- 	return false;
+@@ -1033,6 +1234,7 @@ bool mlx5e_is_uplink_rep(struct mlx5e_priv *priv)
+ 	return (rep->vport == FDB_UPLINK_VPORT);
  }
  
 +#if defined(NDO_HAS_OFFLOAD_STATS_GETS_NET_DEVICE) || defined(HAVE_NDO_HAS_OFFLOAD_STATS_EXTENDED)
- static bool mlx5e_is_vf_vport_rep(struct mlx5e_priv *priv)
+ static bool mlx5e_rep_has_offload_stats(const struct net_device *dev, int attr_id)
  {
- 	struct mlx5e_rep_priv *rpriv = priv->ppriv;
-@@ -967,7 +1162,9 @@ bool mlx5e_has_offload_stats(const struct net_device *dev, int attr_id)
+ 	switch (attr_id) {
+@@ -1042,7 +1244,9 @@ static bool mlx5e_rep_has_offload_stats(const struct net_device *dev, int attr_i
  
  	return false;
  }
@@ -539,14 +568,14 @@ index xxxxxxx..xxxxxxx 100644
  static int
  mlx5e_get_sw_stats64(const struct net_device *dev,
  		     struct rtnl_link_stats64 *stats)
-@@ -997,20 +1194,38 @@ int mlx5e_get_offload_stats(int attr_id, const struct net_device *dev,
+@@ -1072,15 +1276,29 @@ static int mlx5e_rep_get_offload_stats(int attr_id, const struct net_device *dev
  
  	return -EINVAL;
  }
 +#endif /* defined(HAVE_NDO_GET_OFFLOAD_STATS) || defined(HAVE_NDO_GET_OFFLOAD_STATS_EXTENDED) */
  
 -static void
--mlx5e_rep_get_stats(struct net_device *dev, struct rtnl_link_stats64 *stats)
+-mlx5e_vf_rep_get_stats(struct net_device *dev, struct rtnl_link_stats64 *stats)
 +static
 +#ifdef HAVE_NDO_GET_STATS64_RET_VOID
 +void mlx5e_rep_get_stats(struct net_device *dev, struct rtnl_link_stats64 *stats)
@@ -570,6 +599,11 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  }
  
+ static int mlx5e_vf_rep_change_mtu(struct net_device *netdev, int new_mtu)
+@@ -1104,20 +1322,53 @@ static int mlx5e_uplink_rep_set_mac(struct net_device *netdev, void *addr)
+ 	return 0;
+ }
+ 
 +#ifdef HAVE_SWITCHDEV_OPS
 +#ifdef CONFIG_NET_SWITCHDEV
  static const struct switchdev_ops mlx5e_rep_switchdev_ops = {
@@ -578,55 +612,130 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
 +#endif
  
- static int mlx5e_change_rep_mtu(struct net_device *netdev, int new_mtu)
- {
-@@ -1021,12 +1236,41 @@ static const struct net_device_ops mlx5e_netdev_ops_rep = {
- 	.ndo_open                = mlx5e_rep_open,
- 	.ndo_stop                = mlx5e_rep_close,
+ static const struct net_device_ops mlx5e_netdev_ops_vf_rep = {
+ 	.ndo_open                = mlx5e_vf_rep_open,
+ 	.ndo_stop                = mlx5e_vf_rep_close,
  	.ndo_start_xmit          = mlx5e_xmit,
 +#ifdef HAVE_NET_DEVICE_OPS_EXTENDED
-+    .ndo_size = sizeof(struct net_device_ops),
++	.ndo_size                = sizeof(struct net_device_ops),
 +#endif
 +#ifdef HAVE_NDO_GET_PHYS_PORT_NAME
  	.ndo_get_phys_port_name  = mlx5e_rep_get_phys_port_name,
 +#elif defined(HAVE_NDO_GET_PHYS_PORT_NAME_EXTENDED)
-+    .extended.ndo_get_phys_port_name  = mlx5e_rep_get_phys_port_name,
++	.extended.ndo_get_phys_port_name = mlx5e_rep_get_phys_port_name,
 +#endif
 +#if defined(HAVE_TC_FLOWER_OFFLOAD) && !defined(CONFIG_COMPAT_CLS_FLOWER_MOD)
 +#ifdef HAVE_NDO_SETUP_TC_RH_EXTENDED
-+    .extended.ndo_setup_tc_rh          = mlx5e_rep_setup_tc,
++	.extended.ndo_setup_tc_rh = mlx5e_rep_setup_tc,
++#else
+ 	.ndo_setup_tc            = mlx5e_rep_setup_tc,
+-	.ndo_get_stats64         = mlx5e_vf_rep_get_stats,
++#endif
++#endif
++#if defined(HAVE_NDO_GET_STATS64) || defined(HAVE_NDO_GET_STATS64_RET_VOID)
++	.ndo_get_stats64         = mlx5e_rep_get_stats,
++#else
++	.ndo_get_stats           = mlx5e_rep_get_stats,
++#endif
++#ifdef NDO_HAS_OFFLOAD_STATS_GETS_NET_DEVICE
+ 	.ndo_has_offload_stats	 = mlx5e_rep_has_offload_stats,
++#elif defined(HAVE_NDO_HAS_OFFLOAD_STATS_EXTENDED)
++	.extended.ndo_has_offload_stats   = mlx5e_rep_has_offload_stats,
++#endif
++#ifdef HAVE_NDO_GET_OFFLOAD_STATS
+ 	.ndo_get_offload_stats	 = mlx5e_rep_get_offload_stats,
++#elif defined(HAVE_NDO_GET_OFFLOAD_STATS_EXTENDED)
++	.extended.ndo_get_offload_stats   = mlx5e_rep_get_offload_stats,
++#endif
++#ifdef HAVE_NDO_CHANGE_MTU_EXTENDED
++	.extended.ndo_change_mtu = mlx5e_vf_rep_change_mtu,
++#else
+ 	.ndo_change_mtu          = mlx5e_vf_rep_change_mtu,
++#endif
+ };
+ 
+ static const struct net_device_ops mlx5e_netdev_ops_uplink_rep = {
+@@ -1125,19 +1376,76 @@ static const struct net_device_ops mlx5e_netdev_ops_uplink_rep = {
+ 	.ndo_stop                = mlx5e_close,
+ 	.ndo_start_xmit          = mlx5e_xmit,
+ 	.ndo_set_mac_address     = mlx5e_uplink_rep_set_mac,
++#ifdef HAVE_NET_DEVICE_OPS_EXTENDED
++	.ndo_size                = sizeof(struct net_device_ops),
++#endif
++#ifdef HAVE_NDO_GET_PHYS_PORT_NAME
+ 	.ndo_get_phys_port_name  = mlx5e_rep_get_phys_port_name,
++#elif defined(HAVE_NDO_GET_PHYS_PORT_NAME_EXTENDED)
++	.extended.ndo_get_phys_port_name = mlx5e_rep_get_phys_port_name,
++#endif
++#if defined(HAVE_TC_FLOWER_OFFLOAD) && !defined(CONFIG_COMPAT_CLS_FLOWER_MOD)
++#ifdef HAVE_NDO_SETUP_TC_RH_EXTENDED
++	.extended.ndo_setup_tc_rh = mlx5e_rep_setup_tc,
 +#else
  	.ndo_setup_tc            = mlx5e_rep_setup_tc,
 +#endif
 +#endif
 +#if defined(HAVE_NDO_GET_STATS64) || defined(HAVE_NDO_GET_STATS64_RET_VOID)
- 	.ndo_get_stats64         = mlx5e_rep_get_stats,
+ 	.ndo_get_stats64         = mlx5e_get_stats,
 +#else
-+    .ndo_get_stats           = mlx5e_rep_get_stats,
++	.ndo_get_stats           = mlx5e_get_stats,
 +#endif
 +#ifdef NDO_HAS_OFFLOAD_STATS_GETS_NET_DEVICE
- 	.ndo_has_offload_stats	 = mlx5e_has_offload_stats,
+ 	.ndo_has_offload_stats	 = mlx5e_rep_has_offload_stats,
 +#elif defined(HAVE_NDO_HAS_OFFLOAD_STATS_EXTENDED)
-+    .extended.ndo_has_offload_stats   = mlx5e_has_offload_stats,
++	.extended.ndo_has_offload_stats   = mlx5e_rep_has_offload_stats,
 +#endif
 +#ifdef HAVE_NDO_GET_OFFLOAD_STATS
- 	.ndo_get_offload_stats	 = mlx5e_get_offload_stats,
+ 	.ndo_get_offload_stats	 = mlx5e_rep_get_offload_stats,
 +#elif defined(HAVE_NDO_GET_OFFLOAD_STATS_EXTENDED)
-+    .extended.ndo_get_offload_stats   = mlx5e_get_offload_stats,
++	.extended.ndo_get_offload_stats   = mlx5e_rep_get_offload_stats,
 +#endif
 +#ifdef HAVE_NDO_CHANGE_MTU_EXTENDED
-+	.extended.ndo_change_mtu = mlx5e_change_rep_mtu,
++	.extended.ndo_change_mtu = mlx5e_uplink_rep_change_mtu,
 +#else
- 	.ndo_change_mtu          = mlx5e_change_rep_mtu,
+ 	.ndo_change_mtu          = mlx5e_uplink_rep_change_mtu,
++#endif
++
++#ifdef HAVE_KERNEL_WITH_VXLAN_SUPPORT_ON
++#ifdef HAVE_NDO_UDP_TUNNEL_ADD
+ 	.ndo_udp_tunnel_add      = mlx5e_add_vxlan_port,
+ 	.ndo_udp_tunnel_del      = mlx5e_del_vxlan_port,
++#elif defined(HAVE_NDO_UDP_TUNNEL_ADD_EXTENDED)
++	.extended.ndo_udp_tunnel_add = mlx5e_add_vxlan_port,
++	.extended.ndo_udp_tunnel_del = mlx5e_del_vxlan_port,
++#elif defined(HAVE_NDO_ADD_VXLAN_PORT)
++	.ndo_add_vxlan_port	 = mlx5e_add_vxlan_port,
++	.ndo_del_vxlan_port	 = mlx5e_del_vxlan_port,
++#endif
++#endif
++#ifdef HAVE_NETDEV_FEATURES_T
+ 	.ndo_features_check      = mlx5e_features_check,
++#elif defined(HAVE_KERNEL_WITH_VXLAN_SUPPORT_ON) && defined(HAVE_VXLAN_GSO_CHECK)
++	.ndo_gso_check           = mlx5e_gso_check,
++#endif
++
++#ifdef HAVE_NDO_SET_VF_MAC
+ 	.ndo_set_vf_mac          = mlx5e_set_vf_mac,
++#endif
++#ifdef HAVE_NDO_SET_VF_MAC
++#ifdef HAVE_VF_TX_RATE_LIMITS
+ 	.ndo_set_vf_rate         = mlx5e_set_vf_rate,
++#else
++	.ndo_set_vf_tx_rate      = mlx5e_set_vf_rate,
++#endif
++#endif
++#ifdef HAVE_NDO_SET_VF_MAC
+ 	.ndo_get_vf_config       = mlx5e_get_vf_config,
++#endif
++#ifdef HAVE_NDO_GET_VF_STATS
+ 	.ndo_get_vf_stats        = mlx5e_get_vf_stats,
 +#endif
  };
  
- static void mlx5e_build_rep_params(struct mlx5_core_dev *mdev,
-@@ -1050,16 +1294,19 @@ static void mlx5e_build_rep_params(struct mlx5_core_dev *mdev,
- 	params->num_tc                = 1;
+ static void mlx5e_build_rep_params(struct net_device *netdev)
+@@ -1173,8 +1481,10 @@ static void mlx5e_build_rep_params(struct net_device *netdev)
  
  	mlx5_query_min_inline(mdev, &params->tx_min_inline_mode);
--
+ 
 +#ifdef HAVE_ETH_SS_RSS_HASH_FUNCS
  	/* RSS */
  	mlx5e_build_rss_params(params);
@@ -634,18 +743,22 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static void mlx5e_build_rep_netdev(struct net_device *netdev)
- {
-+#if defined(HAVE_NET_DEVICE_MIN_MAX_MTU) || defined(HAVE_NET_DEVICE_MIN_MAX_MTU_EXTENDED)
- 	struct mlx5e_priv *priv = netdev_priv(netdev);
- 	struct mlx5_core_dev *mdev = priv->mdev;
- 	u16 max_mtu;
+@@ -1190,10 +1500,12 @@ static void mlx5e_build_rep_netdev(struct net_device *netdev)
+ 		/* we want a persistent mac for the uplink rep */
+ 		mlx5_query_nic_vport_mac_address(mdev, 0, netdev->dev_addr);
+ 		netdev->ethtool_ops = &mlx5e_uplink_rep_ethtool_ops;
++#ifdef HAVE_IEEE_DCBNL_ETS
+ #ifdef CONFIG_MLX5_CORE_EN_DCB
+ 		if (MLX5_CAP_GEN(mdev, qos))
+ 			netdev->dcbnl_ops = &mlx5e_dcbnl_ops;
+ #endif
 +#endif
+ 	} else {
+ 		netdev->netdev_ops = &mlx5e_netdev_ops_vf_rep;
+ 		eth_hw_addr_random(netdev);
+@@ -1203,10 +1515,21 @@ static void mlx5e_build_rep_netdev(struct net_device *netdev)
+ 	netdev->watchdog_timeo    = 15 * HZ;
  
- 	netdev->netdev_ops = &mlx5e_netdev_ops_rep;
- 
-@@ -1067,10 +1314,21 @@ static void mlx5e_build_rep_netdev(struct net_device *netdev)
- 
- 	netdev->ethtool_ops	  = &mlx5e_rep_ethtool_ops;
  
 +#ifdef HAVE_SWITCHDEV_OPS
 +#ifdef CONFIG_NET_SWITCHDEV
@@ -665,31 +778,81 @@ index xxxxxxx..xxxxxxx 100644
  
  	netdev->hw_features    |= NETIF_F_SG;
  	netdev->hw_features    |= NETIF_F_IP_CSUM;
-@@ -1081,12 +1339,20 @@ static void mlx5e_build_rep_netdev(struct net_device *netdev)
+@@ -1217,6 +1540,7 @@ static void mlx5e_build_rep_netdev(struct net_device *netdev)
  	netdev->hw_features    |= NETIF_F_RXCSUM;
  
  	netdev->features |= netdev->hw_features;
 +#endif
+ }
  
- 	eth_hw_addr_random(netdev);
+ static int mlx5e_init_rep(struct mlx5_core_dev *mdev,
+@@ -1396,41 +1720,62 @@ static void mlx5e_cleanup_rep_tx(struct mlx5e_priv *priv)
  
-+#ifdef HAVE_NET_DEVICE_MIN_MAX_MTU
+ static void mlx5e_vf_rep_enable(struct mlx5e_priv *priv)
+ {
++#if defined(HAVE_NET_DEVICE_MIN_MAX_MTU) || defined(HAVE_NET_DEVICE_MIN_MAX_MTU_EXTENDED)
+ 	struct net_device *netdev = priv->netdev;
+ 	struct mlx5_core_dev *mdev = priv->mdev;
+ 	u16 max_mtu;
++#endif
+ 
++#if defined(HAVE_NET_DEVICE_MIN_MAX_MTU)
  	netdev->min_mtu = ETH_MIN_MTU;
  	mlx5_query_port_max_mtu(mdev, &max_mtu, 1);
  	netdev->max_mtu = MLX5E_HW2SW_MTU(&priv->channels.params, max_mtu);
 +#elif defined(HAVE_NET_DEVICE_MIN_MAX_MTU_EXTENDED)
 +	netdev->extended->min_mtu = ETH_MIN_MTU;
 +	mlx5_query_port_max_mtu(mdev, &max_mtu, 1);
-+	netdev->extended->max_mtu = MLX5E_HW2SW_MTU(&priv->channels.params,
-+			max_mtu);
++	netdev->extended->max_mtu = MLX5E_HW2SW_MTU(&priv->channels.params, max_mtu);
 +#endif
  }
  
- static int mlx5e_init_rep(struct mlx5_core_dev *mdev,
-@@ -1299,13 +1565,84 @@ mlx5e_nic_rep_unload(struct mlx5_eswitch_rep *rep)
- 	mlx5e_rep_neigh_cleanup(rpriv);
+ static void mlx5e_uplink_rep_enable(struct mlx5e_priv *priv)
+ {
+ 	struct net_device *netdev = priv->netdev;
+ 	struct mlx5_core_dev *mdev = priv->mdev;
++#if defined(HAVE_NET_DEVICE_MIN_MAX_MTU) || defined(HAVE_NET_DEVICE_MIN_MAX_MTU_EXTENDED)
+ 	u16 max_mtu;
++#endif
+ 
++#if defined(HAVE_NET_DEVICE_MIN_MAX_MTU)
+ 	netdev->min_mtu = ETH_MIN_MTU;
+ 	mlx5_query_port_max_mtu(priv->mdev, &max_mtu, 1);
+ 	netdev->max_mtu = MLX5E_HW2SW_MTU(&priv->channels.params, max_mtu);
++#elif defined(HAVE_NET_DEVICE_MIN_MAX_MTU_EXTENDED)
++	netdev->extended->min_mtu = ETH_MIN_MTU;
++	mlx5_query_port_max_mtu(mdev, &max_mtu, 1);
++	netdev->extended->max_mtu = MLX5E_HW2SW_MTU(&priv->channels.params, max_mtu);
++#endif
++
+ 	mlx5e_set_dev_port_mtu(priv);
+ 
+ 	mlx5_lag_add(mdev, netdev);
+ 	mlx5e_enable_async_events(priv);
++#ifdef HAVE_IEEE_DCBNL_ETS
+ #ifdef CONFIG_MLX5_CORE_EN_DCB
+ 	mlx5e_dcbnl_initialize(priv);
+ 	mlx5e_dcbnl_init_app(priv);
+ #endif
++#endif
  }
  
+ static void mlx5e_uplink_rep_disable(struct mlx5e_priv *priv)
+ {
+ 	struct mlx5_core_dev *mdev = priv->mdev;
+ 
++#ifdef HAVE_IEEE_DCBNL_ETS
+ #ifdef CONFIG_MLX5_CORE_EN_DCB
+ 	mlx5e_dcbnl_delete_app(priv);
+ #endif
++#endif
+ 	mlx5e_disable_async_events(priv);
+ 	mlx5_lag_remove(mdev);
+ }
+@@ -1466,14 +1811,85 @@ static const struct mlx5e_profile mlx5e_uplink_rep_profile = {
+ };
+ 
+ /* e-Switch vport representors */
 +#ifdef HAVE_SWITCHDEV_H_COMPAT
 +static inline int dev_isalive(const struct net_device *dev)
 +{
@@ -763,6 +926,7 @@ index xxxxxxx..xxxxxxx 100644
 +#ifdef HAVE_TC_BLOCK_OFFLOAD
  	struct mlx5e_rep_priv *uplink_rpriv;
 +#endif
+ 	const struct mlx5e_profile *profile;
  	struct mlx5e_rep_priv *rpriv;
  	struct net_device *netdev;
 +#ifdef HAVE_TC_BLOCK_OFFLOAD
@@ -771,7 +935,7 @@ index xxxxxxx..xxxxxxx 100644
  	int nch, err;
  
  	rpriv = kzalloc(sizeof(*rpriv), GFP_KERNEL);
-@@ -1340,12 +1677,25 @@ mlx5e_vport_rep_load(struct mlx5_core_dev *dev, struct mlx5_eswitch_rep *rep)
+@@ -1517,12 +1933,25 @@ mlx5e_vport_rep_load(struct mlx5_core_dev *dev, struct mlx5_eswitch_rep *rep)
  		goto err_detach_netdev;
  	}
  
@@ -797,7 +961,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	err = register_netdev(netdev);
  	if (err) {
-@@ -1357,10 +1707,17 @@ mlx5e_vport_rep_load(struct mlx5_core_dev *dev, struct mlx5_eswitch_rep *rep)
+@@ -1534,10 +1963,17 @@ mlx5e_vport_rep_load(struct mlx5_core_dev *dev, struct mlx5_eswitch_rep *rep)
  	return 0;
  
  err_egdev_cleanup:
@@ -815,7 +979,7 @@ index xxxxxxx..xxxxxxx 100644
  	mlx5e_rep_neigh_cleanup(rpriv);
  
  err_detach_netdev:
-@@ -1378,16 +1735,27 @@ mlx5e_vport_rep_unload(struct mlx5_eswitch_rep *rep)
+@@ -1559,16 +1995,24 @@ mlx5e_vport_rep_unload(struct mlx5_eswitch_rep *rep)
  	struct mlx5e_rep_priv *rpriv = mlx5e_rep_to_rep_priv(rep);
  	struct net_device *netdev = rpriv->netdev;
  	struct mlx5e_priv *priv = netdev_priv(netdev);
@@ -835,11 +999,8 @@ index xxxxxxx..xxxxxxx 100644
  	upriv = netdev_priv(uplink_rpriv->netdev);
  	tc_setup_cb_egdev_unregister(netdev, mlx5e_rep_setup_tc_cb_egdev,
  				     upriv);
-+#else
-+	tc_setup_cb_egdev_unregister(netdev, mlx5e_rep_setup_tc_cb,
-+				     uplink_rpriv->netdev);
 +#endif
 +#endif
  	mlx5e_rep_neigh_cleanup(rpriv);
  	mlx5e_detach_netdev(priv);
- 	mlx5e_destroy_netdev(priv);
+ 	if (rep->vport == FDB_UPLINK_VPORT)
