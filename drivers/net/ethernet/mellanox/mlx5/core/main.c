@@ -1556,6 +1556,8 @@ static int mlx5_load_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
 		}
 	}
 
+	register_pcie_dev_attr_group(dev->pdev);
+
 	set_bit(MLX5_INTERFACE_STATE_UP, &dev->intf_state);
 out:
 	mutex_unlock(&dev->intf_state_mutex);
@@ -1674,6 +1676,7 @@ static int mlx5_unload_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
 	mlx5_reclaim_startup_pages(dev);
 	mlx5_core_disable_hca(dev, 0);
 	mlx5_cmd_cleanup(dev);
+	unregister_pcie_dev_attr_group(dev->pdev);
 
 out:
 	mutex_unlock(&dev->intf_state_mutex);

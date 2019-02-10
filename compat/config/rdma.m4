@@ -11296,6 +11296,26 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 	],[
 		AC_MSG_RESULT(no)
 	])
+
+	AC_MSG_CHECKING([if need expose current_link_speed/width in sysfs])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/device.h>
+		#include <linux/pci_regs.h>
+	],[
+		struct kobject kobj = {};
+		struct device *dev = kobj_to_dev(&kobj);
+		/* https://patchwork.kernel.org/patch/9759133/
+		 * patch exposing link stats also introduce this const */
+		#define PCI_EXP_LNKCAP_SLS_8_0GB value
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_NO_LINKSTA_SYSFS, 1,
+			  [current_link_speed/width not exposed])
+	],[
+		AC_MSG_RESULT(no)
+	])
 ])
 #
 # COMPAT_CONFIG_HEADERS
