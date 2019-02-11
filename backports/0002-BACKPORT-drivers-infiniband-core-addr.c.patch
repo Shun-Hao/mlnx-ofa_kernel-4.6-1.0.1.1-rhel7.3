@@ -102,7 +102,7 @@ index xxxxxxx..xxxxxxx 100644
 +#ifdef HAVE_DST_NEIGH_LOOKUP
  	n = dst_neigh_lookup(dst, daddr);
 +#else
-+	n = dst_get_neighbour(dst);
++	n = dst_get_neighbour((struct dst_entry *)dst);
 +#endif
  	if (!n)
  		return -ENODATA;
