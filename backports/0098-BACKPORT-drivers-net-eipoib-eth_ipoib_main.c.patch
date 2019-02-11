@@ -561,7 +561,7 @@ index xxxxxxx..xxxxxxx 100644
  /* netdev events handlers */
  static inline int is_ipoib_pif_intf(struct net_device *dev)
  {
-+#ifndef HAVE_SYSFS_GET_DIRENT_2_PARAMS
++#if !defined(HAVE_SYSFS_GET_DIRENT_2_PARAMS) || defined(HAVE_SYSFS_GET_DIRENT_2_PARAMS_AND_RETURN_SYSFS_DIRENT)
 +	struct sysfs_dirent *child_sd;
 +#else
  	struct kernfs_node *child_sd;

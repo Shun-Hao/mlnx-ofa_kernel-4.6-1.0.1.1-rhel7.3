@@ -10733,6 +10733,23 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if sysfs_get_dirent gets 2 parameters and return sysfs_dirent])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/sysfs.h>
+	],[
+		struct sysfs_dirent *child_sd;
+
+		child_sd = sysfs_get_dirent(NULL, NULL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_SYSFS_GET_DIRENT_2_PARAMS_AND_RETURN_SYSFS_DIRENT, 1,
+			[sysfs_get_dirent gets 2 parameters and return sysfs_dirent])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if sysfs_create_file_ns supported])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/sysfs.h>

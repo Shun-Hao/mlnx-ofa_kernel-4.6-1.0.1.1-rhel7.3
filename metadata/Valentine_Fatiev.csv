@@ -8,3 +8,4 @@ Change-Id=I10633fe1f53d70fa5239e2d9562c74eee1764a15; subject=BACKPORTS: Warning 
 Change-Id=I54ecaafc50ab53d984b71093752cb6389afdf357; subject=BACKPORTS: Fix warnings in mlx4_ib; feature=backports; upstream_status=ignore; general=;
 Change-Id=I435b7fed50d9986c9fc252e73fe471f0f57f62bd; subject=BACKPORTS: Fix few warnings; feature=backports; upstream_status=ignore; general=;
 Change-Id=I8418bdb7d1adf575a0ebd405762a5290e3b3a566; subject=BACKPORTS: Fix en_ethtool.c backports; feature=backports; upstream_status=ignore; general=;
+Change-Id=Ia4537199512727c82f5b95c1bfab3951afdc4f99; subject=BACKPORTS: Add HAVE_SYSFS_GET_DIRENT_2_PARAMS_AND_RETURN_SYSFS_DIRENT to rdma.m4; feature=backports; upstream_status=ignore; general=;
