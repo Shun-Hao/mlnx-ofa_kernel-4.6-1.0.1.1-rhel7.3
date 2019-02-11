@@ -5423,6 +5423,22 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if sock.h sk_data_ready has 2 parameters])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <net/sock.h>
+	],[
+		static struct socket *mlx_lag_compat_rtnl_sock;
+                mlx_lag_compat_rtnl_sock->sk->sk_data_ready(NULL , 0);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_SK_DATA_READY_2_PARAMS, 1,
+			  [sk_data_ready has 2 params])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if proc_fs.h has PDE_DATA])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/proc_fs.h>
