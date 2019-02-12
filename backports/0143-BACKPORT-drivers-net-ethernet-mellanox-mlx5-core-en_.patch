@@ -18,7 +18,7 @@ index xxxxxxx..xxxxxxx 100644
  
  #define MLX5E_TC_FLOW_ID_MASK 0x0000ffff
  
-@@ -51,14 +52,18 @@ void mlx5e_tc_nic_cleanup(struct mlx5e_priv *priv);
+@@ -53,14 +54,18 @@ void mlx5e_tc_nic_cleanup(struct mlx5e_priv *priv);
  int mlx5e_tc_esw_init(struct rhashtable *tc_ht);
  void mlx5e_tc_esw_cleanup(struct rhashtable *tc_ht);
  
@@ -37,13 +37,13 @@ index xxxxxxx..xxxxxxx 100644
  struct mlx5e_encap_entry;
  void mlx5e_tc_encap_flows_add(struct mlx5e_priv *priv,
  			      struct mlx5e_encap_entry *e);
-@@ -67,8 +72,10 @@ void mlx5e_tc_encap_flows_del(struct mlx5e_priv *priv,
+@@ -69,8 +74,10 @@ void mlx5e_tc_encap_flows_del(struct mlx5e_priv *priv,
  
  struct mlx5e_neigh_hash_entry;
  void mlx5e_tc_update_neigh_used_value(struct mlx5e_neigh_hash_entry *nhe);
 +#endif
  
- int mlx5e_tc_num_filters(struct mlx5e_priv *priv);
+ int mlx5e_tc_num_filters(struct mlx5e_priv *priv, int flags);
 +#endif /* HAVE_TC_FLOWER_OFFLOAD */
  
  #else /* CONFIG_MLX5_ESWITCH */
