@@ -39,3 +39,4 @@ Change-Id=I7d3c56e82168f3534515202b666e1c37212bea92; subject=IB/uverbs: Remove E
 Change-Id=I4a98f959b689f96161a35f9a29b6c71483aa10f9; subject=net/mlx5e: Don't access eswitch when not in SRIOV mode; feature=mlx5_ib_reps; upstream_status=in_progress; general=;
 Change-Id=I67bf4c41a6decd42577aad7c0aaabcc69d67c2ed; subject=RDMA/mlx5: Attach a DEVX counter via raw flow creation; feature=flow_actions; upstream_status=accepted; general=upstream commit ID: bfc5d839184f, tag: v5.0-rc1;
 Change-Id=I0828426f7f73c889ac1ebd2d01357d4a912ad1e9; subject=RDMA/mlx5: ingress_log_flow_table_size should be part of the flow DB; feature=50k_rules; upstream_status=NA; general=;
+Change-Id=I17a66ea4ca96bf596b8b6567bf93fb9150e6c8fd; subject=IB/mlx5: Unify e-switch representors load approach between uplink and VFs; feature=mlx5_asap; upstream_status=accepted; general=tag: v5.0-rc1;
