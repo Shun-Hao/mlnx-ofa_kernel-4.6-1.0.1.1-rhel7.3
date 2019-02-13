@@ -14,3 +14,4 @@ Change-Id=Ia74a3461fc098843d13369d3f94693f085c70811; subject=IB/cm: Make the cm_
 Change-Id=I0b1e5d87720211002662ebb0da3f1c83eeb77c90; subject=BACKPORTS: Add srp backports; feature=backports; upstream_status=ignore; general=;
 Change-Id=Idf56391dd1c4f21ddf1d0924fbc82435df2f6a1d; subject=BACKPORTS: Add iser backports; feature=backports; upstream_status=ignore; general=;
 Change-Id=I2ce9dc2ab11c8fddb917c4e2f51b49bf76fbd7a7; subject=BACKPORTS: Add isert backports; feature=backports; upstream_status=ignore; general=;
+Change-Id=I64c3e02f874143a532ea407c60ab65b33bf74e4f; subject=BACKPORTS: Fix compilation warning in ib_srp; feature=backports; upstream_status=ignore; general=;

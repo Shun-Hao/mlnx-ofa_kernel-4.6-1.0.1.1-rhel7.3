@@ -7636,25 +7636,6 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
-	AC_MSG_CHECKING([if scsi_device.h struct scsi_device has u64 lun])
-	MLNX_BG_LB_LINUX_TRY_COMPILE([
-		#include <scsi/scsi_device.h>
-	],[
-		struct scsi_device sdev = {
-			.lun = 0,
-		};
-
-		pr_err("lun %llu", sdev.lun);
-
-		return 0;
-	],[
-		AC_MSG_RESULT(yes)
-		MLNX_AC_DEFINE(HAVE_SCSI_DEVICE_U64_LUN, 1,
-			  [scsi_device.h struct scsi_device has u64 lun])
-	],[
-		AC_MSG_RESULT(no)
-	])
-
 	AC_MSG_CHECKING([if scsi_device.h struct scsi_device has member state_mutex])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/mutex.h>
