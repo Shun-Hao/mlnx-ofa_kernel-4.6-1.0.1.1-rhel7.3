@@ -50,7 +50,7 @@ index xxxxxxx..xxxxxxx 100644
  	for (i = 0; i < c->num_tc; i++)
  		busy |= mlx5e_poll_tx_cq(&c->sq[i].cq, budget);
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	busy |= mlx5e_poll_xdpsq_cq(&c->xdpsq.cq);
  
  	if (c->xdp)
@@ -95,7 +95,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	mlx5e_cq_arm(&c->rq.cq);
  	mlx5e_cq_arm(&c->icosq.cq);
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	mlx5e_cq_arm(&c->xdpsq.cq);
 +#endif
  

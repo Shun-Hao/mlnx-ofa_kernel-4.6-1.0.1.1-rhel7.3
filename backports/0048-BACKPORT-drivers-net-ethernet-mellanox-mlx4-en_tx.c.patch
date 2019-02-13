@@ -14,7 +14,7 @@ index xxxxxxx..xxxxxxx 100644
  #include <linux/ip.h>
  #include <linux/ipv6.h>
  #include <linux/moduleparam.h>
-+#ifdef HAVE_NETDEV_BPF
++#ifdef HAVE_XDP_ENABLE
 +#include <linux/bpf.h>
 +#endif
  

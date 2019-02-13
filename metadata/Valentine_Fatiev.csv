@@ -12,3 +12,4 @@ Change-Id=Ia4537199512727c82f5b95c1bfab3951afdc4f99; subject=BACKPORTS: Add HAVE
 Change-Id=I241f279379e8ed15a988550f29b02859e6e68a64; subject=BACKPORTS: Add HAVE_SK_DATA_READY_2_PARAMS config; feature=backports; upstream_status=ignore; general=;
 Change-Id=I0d84c85f6634a696fc95a3c3c8e8cc9c60707579; subject=BACKPORTS: Fix warning; feature=backports; upstream_status=ignore; general=;
 Change-Id=Idb30947ee6ef82888b3781f7c23c4d4474fd7bea; subject=BACKPORTS: ib-core - Use correct define; feature=backports; upstream_status=ignore; general=;
+Change-Id=I29ee52ab88520d31d0ec6d712c1a4b81a78d7c05; subject=BACKPORTS: mlx5_core - Support XDP feature only from Kernel 4.17; feature=backports; upstream_status=ignore; general=;

@@ -96,7 +96,7 @@ index xxxxxxx..xxxxxxx 100644
 +#if defined(HAVE_VLAN_GRO_RECEIVE) || defined(HAVE_VLAN_HWACCEL_RX)
 +	struct vlan_group          *vlan_grp;
 +#endif
-+#ifdef HAVE_NETDEV_BPF
++#ifdef HAVE_XDP_ENABLE
  	struct bpf_prog *xdp_prog;
 +#endif
  	unsigned int sw_mtu;
@@ -125,7 +125,7 @@ index xxxxxxx..xxxxxxx 100644
  	dma_addr_t            dma_addr;
  	struct mlx5e_dma_info di;
  };
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  
  struct mlx5e_xdpsq {
  	/* data path */
@@ -142,7 +142,7 @@ index xxxxxxx..xxxxxxx 100644
  struct mlx5e_mpw_info {
  	struct mlx5e_umr_dma_info umr;
  	u16 consumed_strides;
-+#ifdef HAVE_NETDEV_BPF
++#ifdef HAVE_XDP_ENABLE
  	DECLARE_BITMAP(xdp_xmit_bitmap, MLX5_MPWRQ_PAGES_PER_WQE);
 +#endif
  };
@@ -171,7 +171,7 @@ index xxxxxxx..xxxxxxx 100644
 +#ifdef HAVE_XDP_BUFF_DATA_HARD_START
  	struct bpf_prog       *xdp_prog;
 +#endif
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	struct mlx5e_xdpsq     xdpsq;
 +#endif
  	DECLARE_BITMAP(flags, 8);
@@ -204,7 +204,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5e_rq            rq;
  	struct mlx5e_txqsq         sq[MLX5E_MAX_NUM_TC];
  	struct mlx5e_icosq         icosq;   /* internal control operations */
-+#ifdef HAVE_NETDEV_BPF
++#ifdef HAVE_XDP_ENABLE
  	bool                       xdp;
 +#endif
  	struct napi_struct         napi;
@@ -217,7 +217,7 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  
  	/* XDP_REDIRECT */
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	struct mlx5e_xdpsq         xdpsq;
 -
 +#endif

@@ -14,7 +14,7 @@ index xxxxxxx..xxxxxxx 100644
  #include <linux/bpf_trace.h>
  #include "en/xdp.h"
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  static inline bool
  mlx5e_xmit_xdp_buff(struct mlx5e_xdpsq *sq, struct mlx5e_dma_info *di,
  		    struct xdp_buff *xdp)
@@ -25,7 +25,7 @@ index xxxxxxx..xxxxxxx 100644
 -
 +#endif
  /* returns true if packet was consumed by xdp */
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
 +#ifdef HAVE_XDP_BUFF_DATA_HARD_START
  bool mlx5e_xdp_handle(struct mlx5e_rq *rq, struct mlx5e_dma_info *di,
  		      void *va, u16 *rx_headroom, u32 *len)
@@ -113,7 +113,7 @@ index xxxxxxx..xxxxxxx 100644
  }
 -
 +#endif
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  bool mlx5e_xmit_xdp_frame(struct mlx5e_xdpsq *sq, struct mlx5e_xdp_info *xdpi)
  {
  	struct mlx5_wq_cyc       *wq   = &sq->wq;

@@ -14,7 +14,7 @@ index xxxxxxx..xxxxxxx 100644
  #define MLX5E_XDP_TX_DS_COUNT \
  	((sizeof(struct mlx5e_tx_wqe) / MLX5_SEND_WQE_DS) + 1 /* SG DS */)
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
 +#ifdef HAVE_XDP_BUFF_DATA_HARD_START
  bool mlx5e_xdp_handle(struct mlx5e_rq *rq, struct mlx5e_dma_info *di,
  		      void *va, u16 *rx_headroom, u32 *len);
@@ -25,7 +25,7 @@ index xxxxxxx..xxxxxxx 100644
 +				    void *data, u16 len);
 +#endif
 +#endif
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq);
  void mlx5e_free_xdpsq_descs(struct mlx5e_xdpsq *sq);
  

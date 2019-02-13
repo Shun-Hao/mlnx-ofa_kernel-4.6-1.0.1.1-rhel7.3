@@ -94,7 +94,7 @@ index xxxxxxx..xxxxxxx 100644
  static void
  mlx5e_free_rx_mpwqe(struct mlx5e_rq *rq, struct mlx5e_mpw_info *wi, bool recycle)
  {
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	const bool no_xdp_xmit =
  		bitmap_empty(wi->xdp_xmit_bitmap, MLX5_MPWRQ_PAGES_PER_WQE);
  	struct mlx5e_dma_info *dma_info = wi->umr.dma_info;
@@ -128,7 +128,7 @@ index xxxxxxx..xxxxxxx 100644
  		umr_wqe->inline_mtts[i].ptag = cpu_to_be64(dma_info->addr | MLX5_EN_WR);
  	}
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	bitmap_zero(wi->xdp_xmit_bitmap, MLX5_MPWRQ_PAGES_PER_WQE);
 +#endif
  	wi->consumed_strides = 0;
@@ -336,7 +336,7 @@ index xxxxxxx..xxxxxxx 100644
  	u16 rx_headroom = rq->buff.headroom;
  	struct sk_buff *skb;
  	void *va, *data;
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	bool consumed;
 +#endif
  	u32 frag_size;
@@ -346,7 +346,7 @@ index xxxxxxx..xxxxxxx 100644
  		return NULL;
  	}
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	rcu_read_lock();
 +#ifdef HAVE_XDP_BUFF_DATA_HARD_START
  	consumed = mlx5e_xdp_handle(rq, di, va, &rx_headroom, &cqe_bcnt);
@@ -488,7 +488,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct sk_buff *skb;
  	void *va, *data;
  	u32 frag_size;
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	bool consumed;
 +#endif
  
@@ -498,7 +498,7 @@ index xxxxxxx..xxxxxxx 100644
  	prefetchw(va); /* xdp_frame data area */
  	prefetch(data);
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	rcu_read_lock();
 +#ifdef HAVE_XDP_BUFF_DATA_HARD_START
  	consumed = mlx5e_xdp_handle(rq, di, va, &rx_headroom, &cqe_bcnt32);
@@ -580,7 +580,7 @@ index xxxxxxx..xxxxxxx 100644
  int mlx5e_poll_rx_cq(struct mlx5e_cq *cq, int budget)
  {
  	struct mlx5e_rq *rq = container_of(cq, struct mlx5e_rq, cq);
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	struct mlx5e_xdpsq *xdpsq = &rq->xdpsq;
 +#endif
  	struct mlx5_cqe64 *cqe;
@@ -601,7 +601,7 @@ index xxxxxxx..xxxxxxx 100644
  	} while ((++work_done < budget) && (cqe = mlx5_cqwq_get_cqe(&cq->wq)));
  
  out:
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	if (xdpsq->doorbell) {
  		mlx5e_xmit_xdp_doorbell(xdpsq);
  		xdpsq->doorbell = false;

@@ -845,7 +845,7 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		#include <linux/netdevice.h>
 	],[
 		struct net_device_ops netdev_ops = {
-			.ndo_xdp = NULL,
+			.ndo_bpf = NULL,
 		};
 
 		return 0;
@@ -853,6 +853,24 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_NDO_XDP, 1,
 			  [net_device_ops has ndo_xdp is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+
+	AC_MSG_CHECKING([if struct net_device_ops has ndo_xdp_xmit])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/netdevice.h>
+	],[
+		struct net_device_ops netdev_ops = {
+			.ndo_xdp_xmit = NULL,
+		};
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_NDO_XDP_XMIT, 1,
+			  [net_device_ops has ndo_xdp_xmit is defined])
 	],[
 		AC_MSG_RESULT(no)
 	])
@@ -870,22 +888,6 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_NDO_XDP_EXTENDED, 1,
 			  [extended ndo_xdp is defined])
-	],[
-		AC_MSG_RESULT(no)
-	])
-
-	AC_MSG_CHECKING([if struct netdev_bpf exists])
-	MLNX_BG_LB_LINUX_TRY_COMPILE([
-		#include <linux/netdevice.h>
-	],[
-		struct netdev_bpf nbpf;
-		nbpf = nbpf;
-
-		return 0;
-	],[
-		AC_MSG_RESULT(yes)
-		MLNX_AC_DEFINE(HAVE_NETDEV_BPF, 1,
-			  [struct netdev_bpf is defined])
 	],[
 		AC_MSG_RESULT(no)
 	])

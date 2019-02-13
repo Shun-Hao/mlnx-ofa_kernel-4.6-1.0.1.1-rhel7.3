@@ -18,7 +18,7 @@ index xxxxxxx..xxxxxxx 100644
 +#if defined(HAVE_KERNEL_WITH_VXLAN_SUPPORT_ON)
  #include <net/vxlan.h>
 +#endif
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  #include <linux/bpf.h>
 +#endif
 +#ifdef HAVE_NET_PAGE_POOL_H
@@ -41,7 +41,7 @@ index xxxxxxx..xxxxxxx 100644
  struct mlx5e_channel_param {
  	struct mlx5e_rq_param      rq;
  	struct mlx5e_sq_param      sq;
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	struct mlx5e_sq_param      xdp_sq;
 +#endif
  	struct mlx5e_sq_param      icosq;
@@ -51,7 +51,7 @@ index xxxxxxx..xxxxxxx 100644
  static u32 mlx5e_rx_get_linear_frag_sz(struct mlx5e_params *params)
  {
  	u16 hw_mtu = MLX5E_SW2HW_MTU(params, params->sw_mtu);
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	u16 linear_rq_headroom = params->xdp_prog ?
  		XDP_PACKET_HEADROOM : MLX5_RX_HEADROOM;
 +#else
@@ -63,7 +63,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	frag_sz = MLX5_SKB_FRAG_SZ(linear_rq_headroom + hw_mtu);
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	if (params->xdp_prog && frag_sz < PAGE_SIZE)
 +#else
 +	if (frag_sz < PAGE_SIZE)
@@ -87,7 +87,7 @@ index xxxxxxx..xxxxxxx 100644
  static u16 mlx5e_get_rq_headroom(struct mlx5_core_dev *mdev,
  				 struct mlx5e_params *params)
  {
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	u16 linear_rq_headroom = params->xdp_prog ?
  		XDP_PACKET_HEADROOM : MLX5_RX_HEADROOM;
 +#else
@@ -100,7 +100,7 @@ index xxxxxxx..xxxxxxx 100644
  {
  	return mlx5e_check_fragmented_striding_rq_cap(mdev) &&
  		!MLX5_IPSEC_DEV(mdev) &&
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  		!(params->xdp_prog && !mlx5e_rx_mpwqe_is_linear_skb(mdev, params));
 +#else
 +		true;
@@ -141,7 +141,7 @@ index xxxxxxx..xxxxxxx 100644
  	rq->hw_mtu  = MLX5E_SW2HW_MTU(params, params->sw_mtu);
  	rq->stats   = &c->priv->channel_stats[c->ix].rq;
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	rq->xdp_prog = params->xdp_prog ? bpf_prog_inc(params->xdp_prog) : NULL;
  	if (IS_ERR(rq->xdp_prog)) {
  		err = PTR_ERR(rq->xdp_prog);
@@ -206,7 +206,7 @@ index xxxxxxx..xxxxxxx 100644
  	}
  
  err_rq_wq_destroy:
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	if (rq->xdp_prog)
  		bpf_prog_put(rq->xdp_prog);
 +#endif
@@ -224,7 +224,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static void mlx5e_free_rq(struct mlx5e_rq *rq)
  {
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	if (rq->xdp_prog)
  		bpf_prog_put(rq->xdp_prog);
 +#endif
@@ -333,7 +333,7 @@ index xxxxxxx..xxxxxxx 100644
  	mlx5e_free_rq(rq);
  }
  
-+#if defined(HAVE_XDP_CONVERT_TO_XDP_FRAME) && defined(HAVE_XDP_CONVERT_TO_XDP_FRAME)
++#ifdef HAVE_XDP_ENABLE
  static void mlx5e_free_xdpsq_db(struct mlx5e_xdpsq *sq)
  {
  	kvfree(sq->db.xdpi);
@@ -360,7 +360,7 @@ index xxxxxxx..xxxxxxx 100644
  	mlx5e_free_icosq(sq);
  }
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  static int mlx5e_open_xdpsq(struct mlx5e_channel *c,
  			    struct mlx5e_params *params,
  			    struct mlx5e_sq_param *param,
@@ -368,7 +368,7 @@ index xxxxxxx..xxxxxxx 100644
  	mlx5e_free_xdpsq(sq);
  }
  
-+#endif /* HAVE_XDP_CONVERT_TO_XDP_FRAME */
++#endif /* HAVE_XDP_ENABLE */
 +
  static int mlx5e_alloc_cq_common(struct mlx5_core_dev *mdev,
  				 struct mlx5e_cq_param *param,
@@ -411,7 +411,7 @@ index xxxxxxx..xxxxxxx 100644
  	c->netdev   = priv->netdev;
  	c->mkey_be  = cpu_to_be32(priv->mdev->mlx5e_res.mkey.key);
  	c->num_tc   = params->num_tc;
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	c->xdp      = !!params->xdp_prog;
 +#endif
  	c->stats    = &priv->channel_stats[ix].ch;
@@ -430,7 +430,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (err)
  		goto err_close_icosq_cq;
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	err = mlx5e_open_cq(c, params->tx_cq_moderation, &cparam->tx_cq, &c->xdpsq.cq);
  	if (err)
  		goto err_close_tx_cqs;
@@ -438,14 +438,14 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  	err = mlx5e_open_cq(c, params->rx_cq_moderation, &cparam->rx_cq, &c->rq.cq);
  	if (err)
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  		goto err_close_xdp_tx_cqs;
 +#else
 +		goto err_close_tx_cqs;
 +#endif
  
  	/* XDP SQ CQ params are same as normal TXQ sq CQ params */
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	err = c->xdp ? mlx5e_open_cq(c, params->tx_cq_moderation,
  				     &cparam->tx_cq, &c->rq.xdpsq.cq) : 0;
  	if (err)
@@ -458,7 +458,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (err)
  		goto err_close_icosq;
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	err = c->xdp ? mlx5e_open_xdpsq(c, params, &cparam->xdp_sq, &c->rq.xdpsq, false) : 0;
  	if (err)
  		goto err_close_sqs;
@@ -468,7 +468,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (err)
  		goto err_close_xdp_sq;
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	err = mlx5e_open_xdpsq(c, params, &cparam->xdp_sq, &c->xdpsq, true);
  	if (err)
  		goto err_close_rq;
@@ -478,13 +478,13 @@ index xxxxxxx..xxxxxxx 100644
  
  	return 0;
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  err_close_rq:
  	mlx5e_close_rq(&c->rq);
 -
 +#endif
  err_close_xdp_sq:
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	if (c->xdp)
  		mlx5e_close_xdpsq(&c->rq.xdpsq);
  
@@ -496,7 +496,7 @@ index xxxxxxx..xxxxxxx 100644
  	mlx5e_close_icosq(&c->icosq);
  
  err_disable_napi:
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	napi_disable(&c->napi);
  	if (c->xdp)
  		mlx5e_close_cq(&c->rq.xdpsq.cq);
@@ -505,7 +505,7 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  	mlx5e_close_cq(&c->rq.cq);
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  err_close_xdp_tx_cqs:
  	mlx5e_close_cq(&c->xdpsq.cq);
 -
@@ -520,23 +520,23 @@ index xxxxxxx..xxxxxxx 100644
  
  static void mlx5e_close_channel(struct mlx5e_channel *c)
  {
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	mlx5e_close_xdpsq(&c->xdpsq);
 +#endif
  	mlx5e_close_rq(&c->rq);
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	if (c->xdp)
  		mlx5e_close_xdpsq(&c->rq.xdpsq);
 +#endif
  	mlx5e_close_sqs(c);
  	mlx5e_close_icosq(&c->icosq);
  	napi_disable(&c->napi);
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	if (c->xdp)
  		mlx5e_close_cq(&c->rq.xdpsq.cq);
 +#endif
  	mlx5e_close_cq(&c->rq.cq);
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	mlx5e_close_cq(&c->xdpsq.cq);
 +#endif
  	mlx5e_close_tx_cqs(c);
@@ -546,7 +546,7 @@ index xxxxxxx..xxxxxxx 100644
  	MLX5_SET(sqc, sqc, reg_umr, MLX5_CAP_ETH(priv->mdev, reg_umr_sq));
  }
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  static void mlx5e_build_xdpsq_param(struct mlx5e_priv *priv,
  				    struct mlx5e_params *params,
  				    struct mlx5e_sq_param *param)
@@ -562,7 +562,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	mlx5e_build_rq_param(priv, params, &cparam->rq);
  	mlx5e_build_sq_param(priv, params, &cparam->sq);
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	mlx5e_build_xdpsq_param(priv, params, &cparam->xdp_sq);
 +#endif
  	mlx5e_build_icosq_param(priv, icosq_log_wq_sz, &cparam->icosq);
@@ -1158,7 +1158,7 @@ index xxxxxxx..xxxxxxx 100644
  	new_channels.params = *params;
  	new_channels.params.sw_mtu = new_mtu;
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	if (params->xdp_prog &&
  	    !mlx5e_rx_is_linear_skb(priv->mdev, &new_channels.params)) {
  		netdev_err(netdev, "MTU(%d) > %d is not allowed while XDP enabled\n",
@@ -1525,7 +1525,7 @@ index xxxxxxx..xxxxxxx 100644
  	queue_work(priv->wq, &priv->tx_timeout_work);
  }
  
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  static int mlx5e_xdp_allowed(struct mlx5e_priv *priv, struct bpf_prog *prog)
  {
  	struct net_device *netdev = priv->netdev;
@@ -1644,12 +1644,12 @@ index xxxxxxx..xxxxxxx 100644
 +	.ndo_gso_check           = mlx5e_gso_check,
 +#endif
  	.ndo_tx_timeout          = mlx5e_tx_timeout,
-+#ifdef HAVE_NDO_XDP_EXTENDED
++#ifdef HAVE_XDP_EXTENDED
 +	.extended.ndo_xdp        = mlx5e_xdp,
-+#elif defined(HAVE_XDP_CONVERT_TO_XDP_FRAME)
++#elif defined(HAVE_XDP)
  	.ndo_bpf		 = mlx5e_xdp,
 +#endif
-+#ifdef HAVE_XDP_CONVERT_TO_XDP_FRAME
++#ifdef HAVE_XDP_ENABLE
  	.ndo_xdp_xmit            = mlx5e_xdp_xmit,
 +#endif
 +#ifdef HAVE_NDO_RX_FLOW_STEER
