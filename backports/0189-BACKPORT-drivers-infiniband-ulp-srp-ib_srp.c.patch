@@ -3,7 +3,7 @@ Subject: [PATCH] BACKPORT: drivers/infiniband/ulp/srp/ib_srp.c
 
 Change-Id: I57a2644fdeff5635ff4d33ee51f7df643f937c6e
 ---
- drivers/infiniband/ulp/srp/ib_srp.c | 377 +++++++++++++++++++++++++++-
+ drivers/infiniband/ulp/srp/ib_srp.c | 377 +++++++++++++++++++++++++++++++++++-
  1 file changed, 373 insertions(+), 4 deletions(-)
 
 diff --git a/drivers/infiniband/ulp/srp/ib_srp.c b/drivers/infiniband/ulp/srp/ib_srp.c

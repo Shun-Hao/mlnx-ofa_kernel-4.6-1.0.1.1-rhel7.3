@@ -111,7 +111,7 @@ index xxxxxxx..xxxxxxx 100644
  	up_read(&per_mm->umem_rwsem);
  }
  
-@@ -275,7 +317,11 @@ static struct ib_ucontext_per_mm *alloc_per_mm(struct ib_ucontext *ctx,
+@@ -279,7 +321,11 @@ static struct ib_ucontext_per_mm *alloc_per_mm(struct ib_ucontext *ctx,
  
  	per_mm->context = ctx;
  	per_mm->mm = mm;
@@ -124,17 +124,17 @@ index xxxxxxx..xxxxxxx 100644
  	init_rwsem(&per_mm->umem_rwsem);
  	per_mm->active = ctx->invalidate_range;
  
-@@ -363,7 +409,9 @@ void put_per_mm(struct ib_umem_odp *umem_odp)
+@@ -367,7 +413,9 @@ void put_per_mm(struct ib_umem_odp *umem_odp)
  	per_mm->active = false;
  	up_write(&per_mm->umem_rwsem);
  
-+#ifdef HAVE_RB_ROOT_CACHED
++#ifndef HAVE_INTERVAL_TREE_TAKES_RB_ROOT
  	WARN_ON(!RB_EMPTY_ROOT(&per_mm->umem_tree.rb_root));
 +#endif
  	mmu_notifier_unregister_no_release(&per_mm->mn, per_mm->mm);
  	put_pid(per_mm->tgid);
  	mmu_notifier_call_srcu(&per_mm->rcu, free_per_mm);
-@@ -638,7 +686,9 @@ int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 user_virt,
+@@ -642,7 +690,9 @@ int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 user_virt,
  	struct page       **local_page_list = NULL;
  	u64 page_mask, off;
  	int j, k, ret = 0, start_idx, npages = 0, page_shift;
@@ -144,7 +144,7 @@ index xxxxxxx..xxxxxxx 100644
  	phys_addr_t p = 0;
  
  	if (access_mask == 0)
-@@ -669,8 +719,10 @@ int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 user_virt,
+@@ -673,8 +723,10 @@ int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 user_virt,
  		goto out_put_task;
  	}
  
@@ -155,7 +155,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	start_idx = (user_virt - ib_umem_start(umem)) >> page_shift;
  	k = start_idx;
-@@ -688,9 +740,25 @@ int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 user_virt,
+@@ -692,9 +744,25 @@ int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 user_virt,
  		 * complex (and doesn't gain us much performance in most use
  		 * cases).
  		 */
@@ -181,7 +181,7 @@ index xxxxxxx..xxxxxxx 100644
  		up_read(&owning_mm->mmap_sem);
  
  		if (npages < 0) {
-@@ -821,10 +889,16 @@ EXPORT_SYMBOL(ib_umem_odp_unmap_dma_pages);
+@@ -825,10 +893,16 @@ EXPORT_SYMBOL(ib_umem_odp_unmap_dma_pages);
  /* @last is not a part of the interval. See comment for function
   * node_last.
   */
@@ -198,7 +198,7 @@ index xxxxxxx..xxxxxxx 100644
  				  void *cookie)
  {
  	int ret_val = 0;
-@@ -837,8 +911,10 @@ int rbt_ib_umem_for_each_in_range(struct rb_root_cached *root,
+@@ -841,8 +915,10 @@ int rbt_ib_umem_for_each_in_range(struct rb_root_cached *root,
  	for (node = rbt_ib_umem_iter_first(root, start, last - 1);
  			node; node = next) {
  		/* TODO move the blockable decision up to the callback */
@@ -209,7 +209,7 @@ index xxxxxxx..xxxxxxx 100644
  		next = rbt_ib_umem_iter_next(node, start, last - 1);
  		umem = container_of(node, struct ib_umem_odp, interval_tree);
  		ret_val = cb(umem, start, last, cookie) || ret_val;
-@@ -847,8 +923,13 @@ int rbt_ib_umem_for_each_in_range(struct rb_root_cached *root,
+@@ -851,8 +927,13 @@ int rbt_ib_umem_for_each_in_range(struct rb_root_cached *root,
  	return ret_val;
  }
  EXPORT_SYMBOL(rbt_ib_umem_for_each_in_range);
