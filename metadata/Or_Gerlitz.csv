@@ -24,3 +24,9 @@ Change-Id=I18d1e0f5a0a5a0ef91646862ab227b174888e796; subject=BACKPORTS: Update e
 Change-Id=Ibae710e90fc4211c82447b8e2f23935a05c82a29; subject=BACKPORTS: Update en_tc.c for uplink rep changes; feature=backports; upstream_status=ignore; general=;
 Change-Id=I02c444c8687cf49dc0df0e2a84e291c7a6034403; subject=BACKPORTS: Update en_tc.h for uplink rep changes; feature=backports; upstream_status=ignore; general=;
 Change-Id=I9a3c3d2016d4096ff7436d2a06609fe01ae5eb81; subject=update meta-data for uplink rep series; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I0f410c2c8372fdbfd85cfa94871f0875f7b0ce60; subject=net/mlx5e: Allow vlans on e-switch uplink reps; feature=mlx5_asap; upstream_status=accepted; general=tag: v5.0-rc5;
+Change-Id=Ieb4706c4df047fbae935a76816edd1a83c067eb3; subject=net/mlx5e: Move to use common phys port names for vport representors; feature=mlx5_asap; upstream_status=accepted; general=tag: v5.0-rc5;
+Change-Id=I002d547a538887ef7cda1c5c244d489f103037c4; subject=net/mlx5e: Unblock setting vid 0 for VFs through the uplink rep; feature=mlx5_asap; upstream_status=accepted; general=tag: v5.0-rc5;
+Change-Id=If2b9297a75eb0a9faba8f36067c655ea4344c65b; subject=BACKPORTS: Update en_rep.c for more uplink rep changes; feature=backports; upstream_status=ignore; general=;
+Change-Id=I443d9b8dc74b5701548c067916a2292a0e25d16b; subject=BACKPORTS: Update lag.c for more uplink rep changes; feature=backports; upstream_status=ignore; general=;
+Change-Id=I44635632e02ec1970a5b00708309e52e35fd7586; subject=update meta-data for uplink rep series - phase II; feature=ofed_scripts; upstream_status=ignore; general=;
