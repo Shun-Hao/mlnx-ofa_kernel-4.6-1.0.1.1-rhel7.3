@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/infiniband/core/umem_odp.c
 
 Change-Id: I7521ac463c4930da1679b7cb2e1f3451e5602c1e
 ---
- drivers/infiniband/core/umem_odp.c | 85 +++++++++++++++++++++++++++++++++++++-
- 1 file changed, 83 insertions(+), 2 deletions(-)
+ drivers/infiniband/core/umem_odp.c | 108 ++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 106 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/infiniband/core/umem_odp.c b/drivers/infiniband/core/umem_odp.c
 index xxxxxxx..xxxxxxx 100644
@@ -18,7 +18,7 @@ index xxxxxxx..xxxxxxx 100644
  #include <linux/types.h>
  #include <linux/sched.h>
  #include <linux/sched/mm.h>
-@@ -140,11 +141,26 @@ static void ib_umem_notifier_release(struct mmu_notifier *mn,
+@@ -140,11 +141,46 @@ static void ib_umem_notifier_release(struct mmu_notifier *mn,
  	if (per_mm->active)
  		rbt_ib_umem_for_each_in_range(
  			&per_mm->umem_tree, 0, ULLONG_MAX,
@@ -32,20 +32,40 @@ index xxxxxxx..xxxxxxx 100644
  }
  
 +#ifdef HAVE_INVALIDATE_PAGE
-+static int invalidate_page_trampoline(struct ib_umem *item, u64 start,
++static int invalidate_page_trampoline(struct ib_umem_odp *item, u64 start,
 +				      u64 end, void *cookie)
 +{
-+       ib_umem_notifier_start_account(to_ib_umem_odp(item));
-+       item->context->invalidate_range(to_ib_umem_odp(item), start, start + PAGE_SIZE);
-+       ib_umem_notifier_end_account(to_ib_umem_odp(item));
++       ib_umem_notifier_start_account(item);
++       item->umem.context->invalidate_range(item, start, start + PAGE_SIZE);
++       ib_umem_notifier_end_account(item);
 +       *(bool *)cookie = true;
 +       return 0;
 +}
++
++static void ib_umem_notifier_invalidate_page(struct mmu_notifier *mn,
++					      struct mm_struct *mm,
++					      unsigned long address)
++{
++	struct ib_ucontext_per_mm *per_mm =
++				container_of(mn, struct ib_ucontext_per_mm, mn);
++	bool call_rsync = false;
++
++	down_read(&per_mm->umem_rwsem);
++	if (per_mm->active)
++		rbt_ib_umem_for_each_in_range(&per_mm->umem_tree, address,
++					      address + PAGE_SIZE,
++					      invalidate_page_trampoline, &call_rsync);
++	if (call_rsync)
++		ib_invoke_sync_clients(mm, address, PAGE_SIZE);
++
++	up_read(&per_mm->umem_rwsem);
++}
 +#endif
++
  static int invalidate_range_start_trampoline(struct ib_umem_odp *item,
  					     u64 start, u64 end, void *cookie)
  {
-@@ -154,15 +170,24 @@ static int invalidate_range_start_trampoline(struct ib_umem_odp *item,
+@@ -154,15 +190,24 @@ static int invalidate_range_start_trampoline(struct ib_umem_odp *item,
  	return 0;
  }
  
@@ -70,7 +90,7 @@ index xxxxxxx..xxxxxxx 100644
  	int ret;
  
  	if (blockable)
-@@ -179,14 +204,27 @@ static int ib_umem_notifier_invalidate_range_start(struct mmu_notifier *mn,
+@@ -179,14 +224,27 @@ static int ib_umem_notifier_invalidate_range_start(struct mmu_notifier *mn,
  		 */
  		return 0;
  	}
@@ -99,7 +119,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static int invalidate_range_end_trampoline(struct ib_umem_odp *item, u64 start,
-@@ -209,7 +247,11 @@ static void ib_umem_notifier_invalidate_range_end(struct mmu_notifier *mn,
+@@ -209,7 +267,11 @@ static void ib_umem_notifier_invalidate_range_end(struct mmu_notifier *mn,
  
  	rbt_ib_umem_for_each_in_range(&per_mm->umem_tree, start,
  				      end,
@@ -111,7 +131,17 @@ index xxxxxxx..xxxxxxx 100644
  	up_read(&per_mm->umem_rwsem);
  }
  
-@@ -279,7 +321,11 @@ static struct ib_ucontext_per_mm *alloc_per_mm(struct ib_ucontext *ctx,
+@@ -239,6 +301,9 @@ static const struct mmu_notifier_ops ib_umem_notifiers = {
+ #ifdef CONFIG_CXL_LIB
+ 	.invalidate_range	    = ib_umem_notifier_invalidate_range,
+ #endif
++#ifdef HAVE_INVALIDATE_PAGE
++	.invalidate_page            = ib_umem_notifier_invalidate_page,
++#endif
+ };
+ 
+ static void add_umem_to_per_mm(struct ib_umem_odp *umem_odp)
+@@ -279,7 +344,11 @@ static struct ib_ucontext_per_mm *alloc_per_mm(struct ib_ucontext *ctx,
  
  	per_mm->context = ctx;
  	per_mm->mm = mm;
@@ -124,7 +154,7 @@ index xxxxxxx..xxxxxxx 100644
  	init_rwsem(&per_mm->umem_rwsem);
  	per_mm->active = ctx->invalidate_range;
  
-@@ -367,7 +413,9 @@ void put_per_mm(struct ib_umem_odp *umem_odp)
+@@ -367,7 +436,9 @@ void put_per_mm(struct ib_umem_odp *umem_odp)
  	per_mm->active = false;
  	up_write(&per_mm->umem_rwsem);
  
@@ -134,7 +164,7 @@ index xxxxxxx..xxxxxxx 100644
  	mmu_notifier_unregister_no_release(&per_mm->mn, per_mm->mm);
  	put_pid(per_mm->tgid);
  	mmu_notifier_call_srcu(&per_mm->rcu, free_per_mm);
-@@ -642,7 +690,9 @@ int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 user_virt,
+@@ -642,7 +713,9 @@ int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 user_virt,
  	struct page       **local_page_list = NULL;
  	u64 page_mask, off;
  	int j, k, ret = 0, start_idx, npages = 0, page_shift;
@@ -144,7 +174,7 @@ index xxxxxxx..xxxxxxx 100644
  	phys_addr_t p = 0;
  
  	if (access_mask == 0)
-@@ -673,8 +723,10 @@ int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 user_virt,
+@@ -673,8 +746,10 @@ int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 user_virt,
  		goto out_put_task;
  	}
  
@@ -155,7 +185,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	start_idx = (user_virt - ib_umem_start(umem)) >> page_shift;
  	k = start_idx;
-@@ -692,9 +744,25 @@ int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 user_virt,
+@@ -692,9 +767,25 @@ int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 user_virt,
  		 * complex (and doesn't gain us much performance in most use
  		 * cases).
  		 */
@@ -181,7 +211,7 @@ index xxxxxxx..xxxxxxx 100644
  		up_read(&owning_mm->mmap_sem);
  
  		if (npages < 0) {
-@@ -825,10 +893,16 @@ EXPORT_SYMBOL(ib_umem_odp_unmap_dma_pages);
+@@ -825,10 +916,16 @@ EXPORT_SYMBOL(ib_umem_odp_unmap_dma_pages);
  /* @last is not a part of the interval. See comment for function
   * node_last.
   */
@@ -198,7 +228,7 @@ index xxxxxxx..xxxxxxx 100644
  				  void *cookie)
  {
  	int ret_val = 0;
-@@ -841,8 +915,10 @@ int rbt_ib_umem_for_each_in_range(struct rb_root_cached *root,
+@@ -841,8 +938,10 @@ int rbt_ib_umem_for_each_in_range(struct rb_root_cached *root,
  	for (node = rbt_ib_umem_iter_first(root, start, last - 1);
  			node; node = next) {
  		/* TODO move the blockable decision up to the callback */
@@ -209,7 +239,7 @@ index xxxxxxx..xxxxxxx 100644
  		next = rbt_ib_umem_iter_next(node, start, last - 1);
  		umem = container_of(node, struct ib_umem_odp, interval_tree);
  		ret_val = cb(umem, start, last, cookie) || ret_val;
-@@ -851,8 +927,13 @@ int rbt_ib_umem_for_each_in_range(struct rb_root_cached *root,
+@@ -851,8 +950,13 @@ int rbt_ib_umem_for_each_in_range(struct rb_root_cached *root,
  	return ret_val;
  }
  EXPORT_SYMBOL(rbt_ib_umem_for_each_in_range);
