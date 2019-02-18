@@ -3,7 +3,7 @@ Change-Id=I9b1ed787745391f457f67cbc0922f25b68d02d38; subject=net/mlx4_en: Fix cr
 Change-Id=Ic1831de3c1851d16d531e52836aed07c45308cac; subject=net/mlx5: Add command to control virtual function's roce; feature=mlx5_vf_roce_cmd; upstream_status=NA; general=;
 Change-Id=I97162679bd3e23257f7cf7230d1f79eec52f1814; subject=net/mlx5: sysfs for vf roce control interface; feature=mlx5_vf_roce_sysfs; upstream_status=NA; general=;
 Change-Id=Icedbbc24ef6cb1e36316d655dfc04dc5f958e1fb; subject=net/mlx4_en: Skip completion interrupt test when the interface is down; feature=mlx4_en_bugs; upstream_status=in_progress; general=;
-Change-Id=I457f118fc2eee9b0a2e91390a7f8fb4984f02bef; subject=net/mlx5: No command allowed when command interface is not ready; feature=mlx5_eeh_cmd_time_out; upstream_status=in_progress; general=;
+Change-Id=I457f118fc2eee9b0a2e91390a7f8fb4984f02bef; subject=net/mlx5: No command allowed when command interface is not ready; feature=mlx5_eeh_cmd_time_out; upstream_status=accepted; general=upstream commit ID: 4cab346bcf74, tag: v5.0-rc7;
 Change-Id=I5f5934e74c6f951765f00093cd8a44354dc5995c; subject=net/mlx5e: Sniffer support for kernel offload (RoCE) traffic; feature=roce_sniffer; upstream_status=NA; general=;
 Change-Id=Ib4c61ff8c75b302770d1d0075b294726281aaab0; subject=net/mlx5: Reset the icm page count for vf after IBM's EEH; feature=mlx5_eeh_cmd_time_out; upstream_status=NA; general=;
 Change-Id=Ifdd5fc28ae651bbc3bb83eb2cdd6d3b9513fa77e; subject=net/mlx5e: Only expose vf_roce sysfs on PF; feature=mlx5_vf_roce_for_pf_only; upstream_status=NA; general=;
