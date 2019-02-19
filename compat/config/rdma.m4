@@ -5999,8 +5999,14 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 
 	LB_CHECK_SYMBOL_EXPORT([idr_get_next_ul],
 		[lib/idr.c],
-		[AC_DEFINE(HAVE_IDR_GET_NEXT_UL, 1,
+		[AC_DEFINE(HAVE_IDR_GET_NEXT_UL_EXPORTED, 1,
 			[idr_get_next_ul is exported by the kernel])],
+	[])
+
+	LB_CHECK_SYMBOL_EXPORT([idr_get_next],
+		[lib/idr.c],
+		[AC_DEFINE(HAVE_IDR_GET_NEXT_EXPORTED, 1,
+			[idr_get_next is exported by the kernel])],
 	[])
 
 	AC_MSG_CHECKING([if idr struct has idr_rt])

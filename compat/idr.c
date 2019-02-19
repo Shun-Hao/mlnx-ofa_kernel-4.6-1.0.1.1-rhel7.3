@@ -1,4 +1,3 @@
-#ifndef HAVE_IDA_SIMPLE_GET
 
 #include <linux/slab.h>
 #include <linux/init.h>
@@ -9,6 +8,46 @@
 #include <linux/spinlock.h>
 #include <linux/export.h>
 
+
+#ifndef HAVE_IDR_GET_NEXT_EXPORTED
+void *idr_get_next(struct idr *idp, int *nextidp)
+{
+	struct idr_layer *p, *pa[MAX_LEVEL];
+	struct idr_layer **paa = &pa[0];
+	int id = *nextidp;
+	int n, max;
+
+	/* find first ent */
+	n = idp->layers * IDR_BITS;
+	max = 1 << n;
+	p = rcu_dereference(idp->top);
+	if (!p)
+		return NULL;
+
+	while (id < max) {
+		while (n > 0 && p) {
+			n -= IDR_BITS;
+			*paa++ = p;
+			p = rcu_dereference(p->ary[(id >> n) & IDR_MASK]);
+		}
+
+		if (p) {
+			*nextidp = id;
+			return p;
+		}
+
+		id += 1 << n;
+		while (n < fls(id)) {
+			n += IDR_BITS;
+			p = *--paa;
+		}
+	}
+	return NULL;
+}
+EXPORT_SYMBOL(idr_get_next);
+#endif
+
+#ifndef HAVE_IDA_SIMPLE_GET
 static DEFINE_SPINLOCK(simple_ida_lock);
 
 void ida_simple_remove(struct ida *ida, unsigned int id)
@@ -59,7 +98,7 @@ again:
 }
 EXPORT_SYMBOL(ida_simple_get);
 
-#ifndef HAVE_IDR_GET_NEXT_UL
+#ifndef HAVE_IDR_GET_NEXT_UL_EXPORTED
 
 #ifdef HAVE_IDR_RT
 void *idr_get_next_ul(struct idr *idr, unsigned long *nextid)

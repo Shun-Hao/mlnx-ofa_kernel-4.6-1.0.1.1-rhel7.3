@@ -14,3 +14,4 @@ Change-Id=I0d84c85f6634a696fc95a3c3c8e8cc9c60707579; subject=BACKPORTS: Fix warn
 Change-Id=Idb30947ee6ef82888b3781f7c23c4d4474fd7bea; subject=BACKPORTS: ib-core - Use correct define; feature=backports; upstream_status=ignore; general=;
 Change-Id=I29ee52ab88520d31d0ec6d712c1a4b81a78d7c05; subject=BACKPORTS: mlx5_core - Support XDP feature only from Kernel 4.17; feature=backports; upstream_status=ignore; general=;
 Change-Id=I6738a71a9a8f6cc95a82a44027f76b5486e8410d; subject=BACKPORTS: ib_core - alligning ODP bacport to upstream 4.20; feature=backports; upstream_status=ignore; general=;
+Change-Id=I6b0c3e2cef9e50c2ee43faf8280b27aeffb2e8db; subject=BACKPORTS: Add idr_get_next function for RH6.9-6.10; feature=backports; upstream_status=ignore; general=;
