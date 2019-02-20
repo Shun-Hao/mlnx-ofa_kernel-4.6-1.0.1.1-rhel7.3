@@ -27,8 +27,8 @@ import commands
 import string
 from logging.handlers import RotatingFileHandler
 from optparse import OptionParser
-import libxml2
 import signal
+import xml.etree.ElementTree as ElementTree
 
 VERSION = "2.4-2.0.3"
 
@@ -245,25 +245,27 @@ class KVMDomain(IDomain):
 			## <mac address="02:00:05:3e:aa:6a"/>
 			## <target dev="vnet0"/>
 			## ..
-			try: doc = libxml2.parseDoc(out)
-			except: continue
-			mac = None
-			dev = None
-			for node in doc.xpathEval('//interface/target|//interface/mac'):
-				node = str(node)
-				attr = node.split('=')[-1].strip()
-				attr = attr.replace('"', '')
-				attr = attr.replace("/>", '')
-				if node.count("target dev"):
-					dev = attr
-				if node.count("mac address"):
-					mac = attr
-				if mac != None and dev == vif:
+			(rc, out) = commands.getstatusoutput(cmd)
+			try:
+				doc = ElementTree.fromstring(out)
+			except ElementTree.ParseError:
+				continue
+
+			#for node in doc.xpathEval('//interface/target|//interface/mac'):
+			for iface in doc.findall('*/interface'):
+				mac_node = iface.find('mac')
+				target_node = iface.find('target')
+				if (mac_node is None) or (target_node is None):
+					continue
+				try:
+					mac = mac_node.attrib['address']
+					dev = target_node.attrib['dev']
+				except KeyError:
+					continue
+				if dev == vif:
 					mac = mac.lower()
 					if is_ucast_eth_mac(mac):
-						doc.freeDoc()
 						return mac
-			doc.freeDoc()
 		self.logger.debug("No domain object here, returns the original mac for %s" % vif)
 		return get_mac_by_name(vif)
 
