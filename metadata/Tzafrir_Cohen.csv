@@ -12,4 +12,5 @@ Change-Id=I4f5cbf1d47b16d131557ebd786bf6ab90aec8c25; subject=net/mlx5: fixup: if
 Change-Id=I721882967ed9c755995081734504d94be655a0e3; subject=net/mlx5: fixup: ifdef CONFIG_MLX5_ESWITCH in sriov.c; feature=mlx5_vf_lag; upstream_status=accepted; general=;
 Change-Id=I3db0b0e171ea7fa4a0261e4d9980b8f7b729e91b; subject=ofed_scripts: mlx4: reenable support for CX2 cards; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=Ib3a64c4d524c34d495c63071ad7175a30d32a893; subject=compat: percpu__radix_tree_preload: not using local; feature=backports; upstream_status=ignore; general=;
-Change-Id=If9e66e5b2f15e9da968342505264efc4b72f8c61; subject=overflow.h: array_size and struct_size; feature=backports; upstream_status=NA; general=;
+Change-Id=If9e66e5b2f15e9da968342505264efc4b72f8c61; subject=BACKPORTS: overflow.h: array_size and struct_size; feature=backports; upstream_status=NA; general=;
+Change-Id=Idbaceb0e82fa2c205927015eab86d74877fe31ca; subject=metadata: Fixup: metadata/Tzafrir_Cohen.csv; feature=ofed_scripts; upstream_status=ignore; general=;
