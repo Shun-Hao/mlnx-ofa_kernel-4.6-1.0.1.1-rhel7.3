@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx4/main.c
 
 Change-Id: Ic17a5d0dc4d90482133ee6297a98683135872be5
 ---
- drivers/net/ethernet/mellanox/mlx4/main.c | 118 ++++++++++++++++++++++++++++--
- 1 file changed, 110 insertions(+), 8 deletions(-)
+ drivers/net/ethernet/mellanox/mlx4/main.c | 120 ++++++++++++++++++++++++++++--
+ 1 file changed, 112 insertions(+), 8 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx4/main.c b/drivers/net/ethernet/mellanox/mlx4/main.c
 index xxxxxxx..xxxxxxx 100644
@@ -337,12 +337,11 @@ index xxxxxxx..xxxxxxx 100644
  	return ret;
  }
  
-@@ -4919,8 +5001,10 @@ static void mlx4_remove_one(struct pci_dev *pdev)
- {
+@@ -4920,7 +5002,9 @@ static void mlx4_remove_one(struct pci_dev *pdev)
  	struct mlx4_dev_persistent *persist = pci_get_drvdata(pdev);
  	struct mlx4_dev  *dev  = persist->dev;
-+#ifdef HAVE_DEVLINK_H
  	struct mlx4_priv *priv = mlx4_priv(dev);
++#ifdef HAVE_DEVLINK_H
  	struct devlink *devlink = priv_to_devlink(priv);
 +#endif
  	int active_vfs = 0;
@@ -358,7 +357,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (dev->flags & MLX4_FLAG_SRIOV && !active_vfs) {
  		mlx4_warn(dev, "Disabling SR-IOV\n");
  		pci_disable_sriov(pdev);
-@@ -4955,11 +5041,17 @@ static void mlx4_remove_one(struct pci_dev *pdev)
+@@ -4955,11 +5041,19 @@ static void mlx4_remove_one(struct pci_dev *pdev)
  
  	pci_release_regions(pdev);
  	mlx4_pci_disable_device(dev);
@@ -372,11 +371,13 @@ index xxxxxxx..xxxxxxx 100644
  	kfree(dev->persist);
 +#ifdef HAVE_DEVLINK_H
  	devlink_free(devlink);
++#else
++	kfree(priv);
 +#endif
  }
  
  static int restore_current_port_types(struct mlx4_dev *dev,
-@@ -4981,7 +5073,11 @@ static int restore_current_port_types(struct mlx4_dev *dev,
+@@ -4981,7 +5075,11 @@ static int restore_current_port_types(struct mlx4_dev *dev,
  	return err;
  }
  
@@ -388,7 +389,7 @@ index xxxxxxx..xxxxxxx 100644
  {
  	struct mlx4_dev_persistent *persist = pci_get_drvdata(pdev);
  	struct mlx4_dev	 *dev  = persist->dev;
-@@ -4994,8 +5090,10 @@ int mlx4_restart_one(struct pci_dev *pdev, bool reload, struct devlink *devlink)
+@@ -4994,8 +5092,10 @@ int mlx4_restart_one(struct pci_dev *pdev, bool reload, struct devlink *devlink)
  	memcpy(nvfs, dev->persist->nvfs, sizeof(dev->persist->nvfs));
  
  	mlx4_unload_one(pdev);
@@ -399,7 +400,7 @@ index xxxxxxx..xxxxxxx 100644
  	err = mlx4_load_one(pdev, pci_dev_data, total_vfs, nvfs, priv, 1);
  	if (err) {
  		mlx4_err(dev, "%s: ERROR: mlx4_load_one failed, pci_name=%s, err=%d\n",
-@@ -5148,7 +5246,11 @@ static void mlx4_shutdown(struct pci_dev *pdev)
+@@ -5148,7 +5248,11 @@ static void mlx4_shutdown(struct pci_dev *pdev)
  	mutex_unlock(&persist->interface_state_mutex);
  }
  
