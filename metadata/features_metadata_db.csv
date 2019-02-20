@@ -297,3 +297,7 @@ name=mlx5_bf; type=feature; upstream_status=accepted;
 name=net_sched; type=feature; upstream_status=NA;
 name=mlx5_advise_mr; type=feature; upstream_status=accepted;
 name=mlx5e_perf_improvements; type=feature; upstream_status=in_progress;
+name=mlx5e_decapsulated_tunnel_hw_offloads; type=feature; upstream_status=in_progress;
+name=shared_msix; type=feature; upstream_status=in_progress;
+name=mlx5_roce_lag_ecmp; type=feature; upstream_status=in_progress;
+name=mlx5e_xdp_redirect; type=feature; upstream_status=accepted;

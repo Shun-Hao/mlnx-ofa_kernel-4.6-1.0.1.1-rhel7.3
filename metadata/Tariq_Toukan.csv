@@ -15,3 +15,4 @@ Change-Id=I63f4097b79e2c74afe80b6118ab1b877644fbfa6; subject=net/mlx4_en: Add et
 Change-Id=Iff9f5bbe995847e38d5cdc95d77c6cb21c28aedc; subject=net/mlx4_en: Remove high order pre-allocations in RX datapath; feature=mlx4_en_bugs; upstream_status=NA; general=;
 Change-Id=Id099887dcb17b0cfa3e51f2654cc2851a2b4f171; subject=net/mlx5e: Do not call open_channels outside switch_priv_channels; feature=iommu_soft_lockup_WA; upstream_status=NA; general=;
 Change-Id=I14b890a7a2caadf3b0a2af80872d03a01129d337; subject=net/mlx5e: RX, Fix wrong early return in receive queue poll; feature=rebase; upstream_status=accepted; general=upstream commit ID: bfc698254ba9, tag: v4.20;
+Change-Id=Iee6333ec84769d4c20263d61afab5559a6854c25; subject=net/mlx5e: Align XDP_REDIRECT refcount with the refcnt optimizaiton; feature=mlx5e_xdp_redirect; upstream_status=NA; general=;
