@@ -14,3 +14,5 @@ Change-Id=I3db0b0e171ea7fa4a0261e4d9980b8f7b729e91b; subject=ofed_scripts: mlx4:
 Change-Id=Ib3a64c4d524c34d495c63071ad7175a30d32a893; subject=compat: percpu__radix_tree_preload: not using local; feature=backports; upstream_status=ignore; general=;
 Change-Id=If9e66e5b2f15e9da968342505264efc4b72f8c61; subject=BACKPORTS: overflow.h: array_size and struct_size; feature=backports; upstream_status=NA; general=;
 Change-Id=Idbaceb0e82fa2c205927015eab86d74877fe31ca; subject=metadata: Fixup: metadata/Tzafrir_Cohen.csv; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=Ie9a812c8e474e001a95f38f79c8221fbf21912a1; subject=ofed_scripts: fix python3 syntax; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=Iabb1e59c8329bb90b220eb30097b17dc1237043e; subject=spec: use python3 on RHEL8; feature=ofed_scripts; upstream_status=ignore; general=;

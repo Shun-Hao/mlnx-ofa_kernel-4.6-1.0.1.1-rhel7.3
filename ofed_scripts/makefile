@@ -14,6 +14,11 @@ export KSRC_OBJ
 export KLIB_BUILD
 export KVERSION
 export MAKE
+ifneq (,$(MLNX_PYTHON_EXECUTABLE))
+MLNX_PYTHON = $(MLNX_PYTHON_EXECUTABLE)
+else
+MLNX_PYTHON = python
+endif
 
 -include $(COMPAT_CONFIG)
 
@@ -302,6 +307,10 @@ else
 	install -m 0755 ofed_scripts/mlnx-ofed-kernel-utils.openibd.init $(INSTALL_MOD_PATH)/etc/init.d/openibd
 endif
 
+ifneq (,$(MLNX_PYTHON_EXECUTABLE))
+	sed -s -i -e '1s|python\>|$(MLNX_PYTHON_EXECUTABLE)|' \
+		`grep -rl '^#!.*python' $(INSTALL_MOD_PATH)`
+endif
 	@echo "Running install helper script"
 	ofed_scripts/install_helper $(INSTALL_MOD_PATH)
 
@@ -372,16 +381,16 @@ endif
 # build the python scripts
 build_py_scripts:
 ifeq ($(shell /usr/bin/lsb_release -s -i 2>/dev/null | grep -qiE "debian|ubuntu" 2>/dev/null && echo YES || echo ''),)
-	cd ofed_scripts/utils && python setup.py build && cd -
+	cd ofed_scripts/utils && $(MLNX_PYTHON) setup.py build && cd -
 endif
 
 
 # install the python scripts
 install_py_scripts:
 ifeq ($(RECORD_PY_FILES),1)
-	cd ofed_scripts/utils && python setup.py install -O1 --root=$(INSTALL_MOD_PATH) --record ../../../../ofed-files && cd -
+	cd ofed_scripts/utils && $(MLNX_PYTHON) setup.py install -O1 --root=$(INSTALL_MOD_PATH) --record ../../../../ofed-files && cd -
 else
-	cd ofed_scripts/utils && python setup.py install -O1 --root=$(INSTALL_MOD_PATH)/ && cd -
+	cd ofed_scripts/utils && $(MLNX_PYTHON) setup.py install -O1 --root=$(INSTALL_MOD_PATH)/ && cd -
 endif
 
 
