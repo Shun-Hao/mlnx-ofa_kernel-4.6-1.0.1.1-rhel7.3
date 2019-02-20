@@ -16,3 +16,7 @@ Change-Id=If9e66e5b2f15e9da968342505264efc4b72f8c61; subject=BACKPORTS: overflow
 Change-Id=Idbaceb0e82fa2c205927015eab86d74877fe31ca; subject=metadata: Fixup: metadata/Tzafrir_Cohen.csv; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=Ie9a812c8e474e001a95f38f79c8221fbf21912a1; subject=ofed_scripts: fix python3 syntax; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=Iabb1e59c8329bb90b220eb30097b17dc1237043e; subject=spec: use python3 on RHEL8; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=Id4b23ad43814dface526d60957cffafb97f7059f; subject=ipoibd: is_ucast_eth_mac(): stand-alone; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I8030266cf11285e8146a17eed4f0d25ed65ecb86; subject=ipoibd: replace libxml2 with ElementTree; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I879238d522cba46dd214f1e035289cd465bdfa5a; subject=deb packaging: remove python-libxml2 dependency; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I5769845aee7d49c5ec7b9b635026fca8bb32948e; subject=Update metadata for remove_python_libxml2; feature=ofed_scripts; upstream_status=ignore; general=;
