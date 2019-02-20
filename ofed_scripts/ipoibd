@@ -157,6 +157,20 @@ def get_mac_by_name(name, namespace = None):
 		return None
 	return out.strip().lower()
 
+
+def is_ucast_eth_mac(mac):
+	""" check if the mac address is valid """
+	mac_len = 6
+	mac_hex_len = 2 * mac_len
+	if len(mac.replace(':', '')) != mac_hex_len:
+		return False
+	if not mac[1] in string.hexdigits:
+		return False
+	if mac.replace(':', '') == ("0" * mac_hex_len):
+		return False
+	return True
+
+
 ################################################################################
 #Abstract metaclass
 ################################################################################
@@ -200,7 +214,7 @@ class XENDomain(IDomain):
 			# non-vif slaves are ok to fail here
 			return None
 		mac = out.strip().lower()
-		if self.is_ucast_eth_mac(mac):
+		if is_ucast_eth_mac(mac):
 			return mac
 		return None
 
@@ -246,7 +260,7 @@ class KVMDomain(IDomain):
 					mac = attr
 				if mac != None and dev == vif:
 					mac = mac.lower()
-					if self.is_ucast_eth_mac(mac):
+					if is_ucast_eth_mac(mac):
 						doc.freeDoc()
 						return mac
 			doc.freeDoc()
@@ -497,17 +511,6 @@ class NicObserver(Observer):
 		else:
 			self.logger.error("the interface %s is not in the right format ibx.y" % interface)
 		return None
-
-	def is_ucast_eth_mac(self, mac): #check if the mac address is valid
-		mac_len = 6
-		mac_hex_len = 2 * mac_len
-		if len(mac.replace(':', '')) != mac_hex_len:
-			return False
-		if not mac[1] in string.hexdigits:
-			return False
-		if mac.replace(':', '') == ("0" * mac_hex_len):
-			return False
-		return True
 
 	def create_child (self, new_child):
 		cmd = "/bin/echo %s > %s" % (new_child, "/sys/class/net/" + self.parent.physical_port + os.sep + "create_child")
