@@ -3,3 +3,4 @@ Change-Id=I5e9ccc1dae88ee413e4aba79dd22e87f6aed3bda; subject=ASAP: always enable
 Change-Id=I71158093aeeffd42a6402a8337c8ad429697dfdf; subject=net/sched: Fix incorrect match on vlan packet in centos 7.2; feature=mlx5_asap; upstream_status=NA; general=;
 Change-Id=I2d006c38040a302309631a47fc37cba05799961c; subject=net/mlx5: Fix the data structure for eswitch capabilities; feature=mlx5_asap; upstream_status=NA; general=;
 Change-Id=I410faa88b3b5f5d95f2327da6becb2c0f1c161ed; subject=BACKPORTS: Add more checking for nd_tbl in ipv6_stub; feature=mlx5_asap; upstream_status=NA; general=;
+Change-Id=I57e50f6bd7f68f45fdb6940a91d9a65eaf9419a4; subject=compat/rehashtable.c: check for compat rhltable; feature=backports; upstream_status=NA; general=;
