@@ -8,9 +8,10 @@
 
 enum {
 	MLX5_LAG_FLAG_BONDED = 1 << 0,
+	MLX5_LAG_FLAG_MULTIPATH = 1 << 1,
 };
 
-#define MLX5_LAG_MODE_FLAGS (MLX5_LAG_FLAG_BONDED)
+#define MLX5_LAG_MODE_FLAGS (MLX5_LAG_FLAG_BONDED | MLX5_LAG_FLAG_MULTIPATH)
 
 struct lag_func {
 	struct mlx5_core_dev *dev;
