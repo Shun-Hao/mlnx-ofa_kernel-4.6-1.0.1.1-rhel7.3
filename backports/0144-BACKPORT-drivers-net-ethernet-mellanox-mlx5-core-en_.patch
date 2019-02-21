@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en_tx.c
 
 Change-Id: I5b4cc21b6c96af01d602ecdc02031a8ab44f233e
 ---
- drivers/net/ethernet/mellanox/mlx5/core/en_tx.c | 89 +++++++++++++++++++++++--
- 1 file changed, 85 insertions(+), 4 deletions(-)
+ drivers/net/ethernet/mellanox/mlx5/core/en_tx.c | 93 +++++++++++++++++++++++--
+ 1 file changed, 87 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en_tx.c b/drivers/net/ethernet/mellanox/mlx5/core/en_tx.c
 index xxxxxxx..xxxxxxx 100644
@@ -27,11 +27,20 @@ index xxxxxxx..xxxxxxx 100644
  #ifdef CONFIG_MLX5_CORE_EN_DCB
  static inline int mlx5e_get_dscp_up(struct mlx5e_priv *priv, struct sk_buff *skb)
  {
-@@ -108,24 +109,45 @@ static inline int mlx5e_get_dscp_up(struct mlx5e_priv *priv, struct sk_buff *skb
+@@ -108,8 +109,9 @@ static inline int mlx5e_get_dscp_up(struct mlx5e_priv *priv, struct sk_buff *skb
  	return priv->dcbx_dp.dscp2prio[dscp_cp];
  }
  #endif
 +#endif
+ 
+-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
++#if defined(CONFIG_MLX5_EN_SPECIAL_SQ) && defined(HAVE_NDO_SET_TX_MAXRATE)
+ static u16 mlx5e_select_queue_assigned(struct mlx5e_priv *priv,
+ 				       struct sk_buff *skb)
+ {
+@@ -156,16 +158,28 @@ fallback:
+ }
+ #endif
  
 +#if defined(NDO_SELECT_QUEUE_HAS_ACCEL_PRIV) || defined(HAVE_SELECT_QUEUE_FALLBACK_T)
  u16 mlx5e_select_queue(struct net_device *dev, struct sk_buff *skb,
@@ -50,13 +59,25 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  {
  	struct mlx5e_priv *priv = netdev_priv(dev);
-+#ifdef HAVE_SELECT_QUEUE_FALLBACK_T_3_PARAMS
- 	int channel_ix = fallback(dev, skb, NULL);
-+#else
-+	int channel_ix = fallback(dev, skb);
-+#endif
+ 	int channel_ix;
  	u16 num_channels;
- 	int up = 0;
+ 	int up;
+ 
+-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
++#if defined(CONFIG_MLX5_EN_SPECIAL_SQ) && defined(HAVE_NDO_SET_TX_MAXRATE)
+ 	if (priv->channels.params.num_rl_txqs) {
+ 		u16 ix = mlx5e_select_queue_assigned(priv, skb);
+ 
+@@ -176,17 +190,25 @@ u16 mlx5e_select_queue(struct net_device *dev, struct sk_buff *skb,
+ 	}
+ #endif
+ 
++#ifdef HAVE_SELECT_QUEUE_FALLBACK_T_3_PARAMS
++ 	channel_ix = fallback(dev, skb, NULL);
++#else
+ 	channel_ix = fallback(dev, skb);
++#endif
+ 	up = 0;
  
 +#ifdef HAVE_NETDEV_GET_NUM_TC
  	if (!netdev_get_num_tc(dev))
@@ -73,7 +94,7 @@ index xxxxxxx..xxxxxxx 100644
  		if (skb_vlan_tag_present(skb))
  			up = skb->vlan_tci >> VLAN_PRIO_SHIFT;
  
-@@ -148,14 +170,29 @@ static inline int mlx5e_skb_l2_header_offset(struct sk_buff *skb)
+@@ -215,14 +237,29 @@ static inline int mlx5e_skb_l2_header_offset(struct sk_buff *skb)
  
  static inline int mlx5e_skb_l3_header_offset(struct sk_buff *skb)
  {
@@ -106,7 +127,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static inline u16 mlx5e_calc_min_inline(enum mlx5_inline_modes mode,
-@@ -167,11 +204,13 @@ static inline u16 mlx5e_calc_min_inline(enum mlx5_inline_modes mode,
+@@ -234,11 +271,13 @@ static inline u16 mlx5e_calc_min_inline(enum mlx5_inline_modes mode,
  	switch (mode) {
  	case MLX5_INLINE_MODE_NONE:
  		return 0;
@@ -120,7 +141,7 @@ index xxxxxxx..xxxxxxx 100644
  	case MLX5_INLINE_MODE_IP:
  		/* When transport header is set to zero, it means no transport
  		 * header. When transport header is set to 0xff's, it means
-@@ -198,7 +237,11 @@ static inline void mlx5e_insert_vlan(void *start, struct sk_buff *skb, u16 ihs)
+@@ -265,7 +304,11 @@ static inline void mlx5e_insert_vlan(void *start, struct sk_buff *skb, u16 ihs)
  	int cpy2_sz = ihs - cpy1_sz;
  
  	memcpy(vhdr, skb->data, cpy1_sz);
@@ -132,7 +153,7 @@ index xxxxxxx..xxxxxxx 100644
  	vhdr->h_vlan_TCI = cpu_to_be16(skb_vlan_tag_get(skb));
  	memcpy(&vhdr->h_vlan_encapsulated_proto, skb->data + cpy1_sz, cpy2_sz);
  }
-@@ -208,6 +251,7 @@ mlx5e_txwqe_build_eseg_csum(struct mlx5e_txqsq *sq, struct sk_buff *skb, struct
+@@ -275,6 +318,7 @@ mlx5e_txwqe_build_eseg_csum(struct mlx5e_txqsq *sq, struct sk_buff *skb, struct
  {
  	if (likely(skb->ip_summed == CHECKSUM_PARTIAL)) {
  		eseg->cs_flags = MLX5_ETH_WQE_L3_CSUM;
@@ -140,7 +161,7 @@ index xxxxxxx..xxxxxxx 100644
  		if (skb->encapsulation) {
  			eseg->cs_flags |= MLX5_ETH_WQE_L3_INNER_CSUM |
  					  MLX5_ETH_WQE_L4_INNER_CSUM;
-@@ -216,6 +260,9 @@ mlx5e_txwqe_build_eseg_csum(struct mlx5e_txqsq *sq, struct sk_buff *skb, struct
+@@ -283,6 +327,9 @@ mlx5e_txwqe_build_eseg_csum(struct mlx5e_txqsq *sq, struct sk_buff *skb, struct
  			eseg->cs_flags |= MLX5_ETH_WQE_L4_CSUM;
  			sq->stats->csum_partial++;
  		}
@@ -150,7 +171,7 @@ index xxxxxxx..xxxxxxx 100644
  	} else
  		sq->stats->csum_none++;
  }
-@@ -226,18 +273,28 @@ mlx5e_tx_get_gso_ihs(struct mlx5e_txqsq *sq, struct sk_buff *skb)
+@@ -293,18 +340,28 @@ mlx5e_tx_get_gso_ihs(struct mlx5e_txqsq *sq, struct sk_buff *skb)
  	struct mlx5e_sq_stats *stats = sq->stats;
  	u16 ihs;
  
@@ -179,7 +200,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	return ihs;
  }
-@@ -325,8 +382,16 @@ mlx5e_txwqe_complete(struct mlx5e_txqsq *sq, struct sk_buff *skb,
+@@ -392,8 +449,16 @@ mlx5e_txwqe_complete(struct mlx5e_txqsq *sq, struct sk_buff *skb,
  
  	netdev_tx_sent_queue(sq->txq, num_bytes);
  
@@ -196,7 +217,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	sq->pc += wi->num_wqebbs;
  	if (unlikely(!mlx5e_wqc_has_room_for(wq, sq->cc, sq->pc, MLX5E_SQ_STOP_ROOM))) {
-@@ -334,7 +399,9 @@ mlx5e_txwqe_complete(struct mlx5e_txqsq *sq, struct sk_buff *skb,
+@@ -401,7 +466,9 @@ mlx5e_txwqe_complete(struct mlx5e_txqsq *sq, struct sk_buff *skb,
  		sq->stats->stopped++;
  	}
  
@@ -206,7 +227,7 @@ index xxxxxxx..xxxxxxx 100644
  		mlx5e_notify_hw(wq, sq->pc, sq->uar_map, cseg);
  }
  
-@@ -376,7 +443,9 @@ netdev_tx_t mlx5e_sq_xmit(struct mlx5e_txqsq *sq, struct sk_buff *skb,
+@@ -443,7 +510,9 @@ netdev_tx_t mlx5e_sq_xmit(struct mlx5e_txqsq *sq, struct sk_buff *skb,
  	}
  
  	stats->bytes     += num_bytes;
@@ -216,7 +237,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	headlen = skb->len - ihs - skb->data_len;
  	ds_cnt += !!headlen;
-@@ -418,8 +487,10 @@ netdev_tx_t mlx5e_sq_xmit(struct mlx5e_txqsq *sq, struct sk_buff *skb,
+@@ -485,8 +554,10 @@ netdev_tx_t mlx5e_sq_xmit(struct mlx5e_txqsq *sq, struct sk_buff *skb,
  		dseg += ds_cnt_inl;
  	} else if (vlan_present) {
  		eseg->insert.type = cpu_to_be16(MLX5_ETH_WQE_INSERT_VLAN);
@@ -227,7 +248,7 @@ index xxxxxxx..xxxxxxx 100644
  		eseg->insert.vlan_tci = cpu_to_be16(skb_vlan_tag_get(skb));
  		stats->added_vlan_packets++;
  	}
-@@ -540,7 +611,11 @@ bool mlx5e_poll_tx_cq(struct mlx5e_cq *cq, int napi_budget)
+@@ -607,7 +678,11 @@ bool mlx5e_poll_tx_cq(struct mlx5e_cq *cq, int napi_budget)
  				continue;
  			}
  
@@ -239,7 +260,7 @@ index xxxxxxx..xxxxxxx 100644
  				     SKBTX_HW_TSTAMP)) {
  				struct skb_shared_hwtstamps hwts = {};
  
-@@ -560,7 +635,11 @@ bool mlx5e_poll_tx_cq(struct mlx5e_cq *cq, int napi_budget)
+@@ -627,7 +702,11 @@ bool mlx5e_poll_tx_cq(struct mlx5e_cq *cq, int napi_budget)
  			npkts++;
  			nbytes += wi->num_bytes;
  			sqcc += wi->num_wqebbs;
@@ -251,7 +272,7 @@ index xxxxxxx..xxxxxxx 100644
  		} while (!last_wqe);
  
  	} while ((++i < MLX5E_TX_CQ_POLL_BUDGET) && (cqe = mlx5_cqwq_get_cqe(&cq->wq)));
-@@ -666,7 +745,9 @@ netdev_tx_t mlx5i_sq_xmit(struct mlx5e_txqsq *sq, struct sk_buff *skb,
+@@ -733,7 +812,9 @@ netdev_tx_t mlx5i_sq_xmit(struct mlx5e_txqsq *sq, struct sk_buff *skb,
  	}
  
  	stats->bytes     += num_bytes;

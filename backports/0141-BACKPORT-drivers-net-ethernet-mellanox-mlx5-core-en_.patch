@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en_sysfs.c
 
 Change-Id: I467e60936fdc94c14d0305dfc5a3205f5f68e685
 ---
- drivers/net/ethernet/mellanox/mlx5/core/en_sysfs.c | 37 ++++++++++++++++++++++
- 1 file changed, 37 insertions(+)
+ drivers/net/ethernet/mellanox/mlx5/core/en_sysfs.c | 39 +++++++++++++++++++++-
+ 1 file changed, 38 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en_sysfs.c b/drivers/net/ethernet/mellanox/mlx5/core/en_sysfs.c
 index xxxxxxx..xxxxxxx 100644
@@ -164,3 +164,12 @@ index xxxxxxx..xxxxxxx 100644
  	sysfs_remove_group(&dev->dev.kobj, &qos_group);
  	sysfs_remove_group(&dev->dev.kobj, &debug_group);
  	sysfs_remove_group(&dev->dev.kobj, &settings_group);
+@@ -1138,7 +1175,7 @@ void mlx5e_sysfs_remove(struct net_device *dev)
+ 	kobject_put(priv->ecn_root_kobj);
+ }
+ 
+-#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
++#if defined(CONFIG_MLX5_EN_SPECIAL_SQ) && defined(HAVE_NDO_SET_TX_MAXRATE)
+ enum {
+ 	ATTR_DST_IP,
+ 	ATTR_DST_PORT,
