@@ -132,26 +132,6 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
-	AC_MSG_CHECKING([if  percpu has per_cpu__ prefix])
-	MLNX_BG_LB_LINUX_TRY_COMPILE([
-	#include <linux/percpu-defs.h>
-	#include <linux/percpu.h>
-
-	struct radix_tree_preload {
-	unsigned nr;
-	struct radix_tree_node *nodes;
-	};
-	static DEFINE_PER_CPU(struct radix_tree_preload, radix_tree_preloads) = { 0, };
-	],[
-	this_cpu_ptr(&per_cpu__radix_tree_preloads);
-	],[
-		AC_MSG_RESULT(yes)
-		MLNX_AC_DEFINE(HAVE_PERCPU_CPU__PREFIX, 1,
-		[rtble has direct dst])
-	],[
-		AC_MSG_RESULT(no)
-	])
-
 	AC_MSG_CHECKING([if rtble has direct dst])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 	#include <net/route.h>
