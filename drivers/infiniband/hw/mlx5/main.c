@@ -6040,7 +6040,6 @@ void mlx5_ib_stage_init_cleanup(struct mlx5_ib_dev *dev)
 	srcu_barrier(&dev->mr_srcu);
 	cleanup_srcu_struct(&dev->mr_srcu);
 #endif
-	kfree(dev->port);
 
 	WARN_ON(!bitmap_empty(dev->dm.memic_alloc_pages, MLX5_MAX_MEMIC_PAGES));
 
@@ -6067,11 +6066,6 @@ int mlx5_ib_stage_init_init(struct mlx5_ib_dev *dev)
 	int err;
 	int i;
 
-	dev->port = kcalloc(dev->num_ports, sizeof(*dev->port),
-			    GFP_KERNEL);
-	if (!dev->port)
-		return -ENOMEM;
-
 	for (i = 0; i < dev->num_ports; i++) {
 		spin_lock_init(&dev->port[i].mp.mpi_lock);
 		rwlock_init(&dev->port[i].roce.netdev_lock);
@@ -6079,7 +6073,7 @@ int mlx5_ib_stage_init_init(struct mlx5_ib_dev *dev)
 
 	err = mlx5_ib_init_multiport_master(dev);
 	if (err)
-		goto err_free_port;
+		return err;
 
 	if (!mlx5_core_mp_enabled(mdev)) {
 		for (i = 1; i <= dev->num_ports; i++) {
@@ -6148,9 +6142,6 @@ err_dm:
 
 err_mp:
 	mlx5_ib_cleanup_multiport_master(dev);
-
-err_free_port:
-	kfree(dev->port);
 
 	return -ENOMEM;
 }
@@ -6733,6 +6724,7 @@ void __mlx5_ib_remove(struct mlx5_ib_dev *dev,
 
 	if (dev->devx_whitelist_uid)
 		mlx5_ib_devx_destroy(dev, dev->devx_whitelist_uid);
+	kfree(dev->port);
 	ib_dealloc_device(&dev->ib_dev);
 }
 
@@ -7009,6 +7001,7 @@ static void *mlx5_ib_add(struct mlx5_core_dev *mdev)
 	enum rdma_link_layer ll;
 	struct mlx5_ib_dev *dev;
 	int port_type_cap;
+	int num_ports;
 
 	if (mdev->roce.enabled)
 		profile = &pf_profile;
@@ -7029,13 +7022,20 @@ static void *mlx5_ib_add(struct mlx5_core_dev *mdev)
 	if (mlx5_core_is_mp_slave(mdev) && ll == IB_LINK_LAYER_ETHERNET)
 		return mlx5_ib_add_slave_port(mdev);
 
+	num_ports = max(MLX5_CAP_GEN(mdev, num_ports),
+			MLX5_CAP_GEN(mdev, num_vhca_ports));
 	dev = (struct mlx5_ib_dev *)ib_alloc_device(sizeof(*dev));
 	if (!dev)
 		return NULL;
 
+	dev->port = kcalloc(num_ports, sizeof(*dev->port),
+			     GFP_KERNEL);
+	if (!dev->port) {
+		ib_dealloc_device((struct ib_device *)dev);
+		return NULL;
+	}
 	dev->mdev = mdev;
-	dev->num_ports = max(MLX5_CAP_GEN(mdev, num_ports),
-			     MLX5_CAP_GEN(mdev, num_vhca_ports));
+	dev->num_ports = num_ports;
 
 	return __mlx5_ib_add(dev, profile);
 }
