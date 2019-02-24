@@ -4,14 +4,22 @@ Subject: [PATCH] BACKPORT:
 
 Change-Id: I03723e46262e7b56da9ecc0de4e049062d4e00fa
 ---
- .../ulp/ipoib/rss_tss/ipoib_ethtool_rss.c          | 39 +++++++++++++++++++++-
- 1 file changed, 38 insertions(+), 1 deletion(-)
+ .../ulp/ipoib/rss_tss/ipoib_ethtool_rss.c          | 43 +++++++++++++++++++++-
+ 1 file changed, 41 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/infiniband/ulp/ipoib/rss_tss/ipoib_ethtool_rss.c b/drivers/infiniband/ulp/ipoib/rss_tss/ipoib_ethtool_rss.c
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/infiniband/ulp/ipoib/rss_tss/ipoib_ethtool_rss.c
 +++ b/drivers/infiniband/ulp/ipoib/rss_tss/ipoib_ethtool_rss.c
-@@ -146,7 +146,7 @@ static int ipoib_get_sset_count_rss(struct net_device __always_unused *dev,
+@@ -59,7 +59,6 @@ static int ipoib_set_coalesce_rss(struct net_device *dev,
+
+ 	return 0;
+ }
+-
+ static void ipoib_get_ethtool_stats_rss(struct net_device *dev,
+ 					struct ethtool_stats __always_unused *stats,
+ 					u64 *data)
+@@ -146,7 +145,7 @@ static int ipoib_get_sset_count_rss(struct net_device __always_unused *dev,
  	}
  	return -EOPNOTSUPP;
  }
@@ -20,7 +28,7 @@ index xxxxxxx..xxxxxxx 100644
  static void ipoib_get_channels(struct net_device *dev,
  			       struct ethtool_channels *channel)
  {
-@@ -205,6 +205,7 @@ static int ipoib_set_channels(struct net_device *dev,
+@@ -205,22 +204,62 @@ static int ipoib_set_channels(struct net_device *dev,
  
  	return ipoib_reinit_rss(dev, channel->rx_count, channel->tx_count);
  }
@@ -28,7 +36,12 @@ index xxxxxxx..xxxxxxx 100644
  
  static const struct ethtool_ops ipoib_ethtool_ops_rss = {
  	.get_drvinfo		= ipoib_get_drvinfo,
-@@ -215,13 +216,49 @@ static const struct ethtool_ops ipoib_ethtool_ops_rss = {
+ 	.get_coalesce		= ipoib_get_coalesce,
+ 	.set_coalesce		= ipoib_set_coalesce_rss,
++#ifdef HAVE_ETHTOOL_GET_SET_SETTINGS
++	.get_settings           = ipoib_get_settings,
++#endif
+ 	.get_link		= ethtool_op_get_link,
  	.get_strings		= ipoib_get_strings_rss,
  	.get_ethtool_stats	= ipoib_get_ethtool_stats_rss,
  	.get_sset_count		= ipoib_get_sset_count_rss,
