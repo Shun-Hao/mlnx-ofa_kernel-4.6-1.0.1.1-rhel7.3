@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en_tc.c
 
 Change-Id: I409d0c273d880163a0df891152c9dd8cf93e1c8e
 ---
- drivers/net/ethernet/mellanox/mlx5/core/en_tc.c | 752 +++++++++++++++++++++---
- 1 file changed, 679 insertions(+), 73 deletions(-)
+ drivers/net/ethernet/mellanox/mlx5/core/en_tc.c | 754 +++++++++++++++++++++---
+ 1 file changed, 681 insertions(+), 73 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en_tc.c b/drivers/net/ethernet/mellanox/mlx5/core/en_tc.c
 index xxxxxxx..xxxxxxx 100644
@@ -858,7 +858,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5_eswitch *esw = dev->priv.eswitch;
  	struct mlx5e_rep_priv *rpriv = priv->ppriv;
 @@ -1808,8 +2062,10 @@ static int parse_cls_flower(struct mlx5e_priv *priv,
- 		if (rep->vport != FDB_UPLINK_VPORT &&
+ 		if (rep->vport != MLX5_VPORT_UPLINK &&
  		    (esw->offloads.inline_mode != MLX5_INLINE_MODE_NONE &&
  		    esw->offloads.inline_mode < match_level)) {
 +#ifdef HAVE_TC_CLS_OFFLOAD_EXTACK
@@ -1113,7 +1113,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	return true;
  }
-@@ -2238,21 +2555,43 @@ static bool same_hw_devs(struct mlx5e_priv *priv, struct mlx5e_priv *peer_priv)
+@@ -2238,21 +2557,43 @@ static bool same_hw_devs(struct mlx5e_priv *priv, struct mlx5e_priv *peer_priv)
  
  static int parse_tc_nic_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
  				struct mlx5e_tc_flow_parse_attr *parse_attr,
@@ -1161,7 +1161,7 @@ index xxxxxxx..xxxxxxx 100644
  		if (is_tcf_gact_shot(a)) {
  			action |= MLX5_FLOW_CONTEXT_ACTION_DROP;
  			if (MLX5_CAP_FLOWTABLE(priv->mdev,
-@@ -2260,10 +2599,16 @@ static int parse_tc_nic_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
+@@ -2260,10 +2601,16 @@ static int parse_tc_nic_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
  				action |= MLX5_FLOW_CONTEXT_ACTION_COUNT;
  			continue;
  		}
@@ -1178,7 +1178,7 @@ index xxxxxxx..xxxxxxx 100644
  			if (err)
  				return err;
  
-@@ -2271,18 +2616,30 @@ static int parse_tc_nic_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
+@@ -2271,18 +2618,30 @@ static int parse_tc_nic_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
  				  MLX5_FLOW_CONTEXT_ACTION_FWD_DEST;
  			continue;
  		}
@@ -1211,7 +1211,7 @@ index xxxxxxx..xxxxxxx 100644
  
  			if (priv->netdev->netdev_ops == peer_dev->netdev_ops &&
  			    same_hw_devs(priv, netdev_priv(peer_dev))) {
-@@ -2291,8 +2648,10 @@ static int parse_tc_nic_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
+@@ -2291,8 +2650,10 @@ static int parse_tc_nic_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
  				action |= MLX5_FLOW_CONTEXT_ACTION_FWD_DEST |
  					  MLX5_FLOW_CONTEXT_ACTION_COUNT;
  			} else {
@@ -1222,7 +1222,7 @@ index xxxxxxx..xxxxxxx 100644
  				netdev_warn(priv->netdev, "device %s not on same HW, can't offload\n",
  					    peer_dev->name);
  				return -EINVAL;
-@@ -2300,12 +2659,17 @@ static int parse_tc_nic_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
+@@ -2300,12 +2661,17 @@ static int parse_tc_nic_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
  			continue;
  		}
  
@@ -1240,7 +1240,7 @@ index xxxxxxx..xxxxxxx 100644
  				return -EINVAL;
  			}
  
-@@ -2315,11 +2679,18 @@ static int parse_tc_nic_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
+@@ -2315,11 +2681,18 @@ static int parse_tc_nic_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
  		}
  
  		return -EINVAL;
@@ -1259,7 +1259,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	return 0;
  }
-@@ -2328,12 +2699,17 @@ static struct net_device *mlx5_upper_lag_dev_get(struct net_device *uplink_dev)
+@@ -2328,12 +2701,17 @@ static struct net_device *mlx5_upper_lag_dev_get(struct net_device *uplink_dev)
  {
          struct net_device *upper = netdev_master_upper_dev_get(uplink_dev);
  
@@ -1281,7 +1281,7 @@ index xxxxxxx..xxxxxxx 100644
  static inline int cmp_encap_info(struct ip_tunnel_key *a,
  				 struct ip_tunnel_key *b)
  {
-@@ -2394,6 +2770,7 @@ static int mlx5e_route_lookup_ipv4(struct mlx5e_priv *priv,
+@@ -2394,6 +2772,7 @@ static int mlx5e_route_lookup_ipv4(struct mlx5e_priv *priv,
  	*out_n = n;
  	return 0;
  }
@@ -1289,7 +1289,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static bool is_merged_eswitch_dev(struct mlx5e_priv *priv,
  				  struct net_device *peer_netdev)
-@@ -2409,6 +2786,8 @@ static bool is_merged_eswitch_dev(struct mlx5e_priv *priv,
+@@ -2409,6 +2788,8 @@ static bool is_merged_eswitch_dev(struct mlx5e_priv *priv,
  		(peer_priv->mdev->priv.eswitch->mode == SRIOV_OFFLOADS));
  }
  
@@ -1298,7 +1298,7 @@ index xxxxxxx..xxxxxxx 100644
  static int mlx5e_route_lookup_ipv6(struct mlx5e_priv *priv,
  				   struct net_device *mirred_dev,
  				   struct net_device **out_dev,
-@@ -2461,6 +2840,7 @@ static int mlx5e_route_lookup_ipv6(struct mlx5e_priv *priv,
+@@ -2461,6 +2842,7 @@ static int mlx5e_route_lookup_ipv6(struct mlx5e_priv *priv,
  	*out_n = n;
  	return 0;
  }
@@ -1306,7 +1306,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static void gen_vxlan_header_ipv4(struct net_device *out_dev,
  				  char buf[], int encap_size,
-@@ -2496,6 +2876,7 @@ static void gen_vxlan_header_ipv4(struct net_device *out_dev,
+@@ -2496,6 +2878,7 @@ static void gen_vxlan_header_ipv4(struct net_device *out_dev,
  	vxh->vx_vni = vxlan_vni_field(vx_vni);
  }
  
@@ -1314,7 +1314,7 @@ index xxxxxxx..xxxxxxx 100644
  static void gen_vxlan_header_ipv6(struct net_device *out_dev,
  				  char buf[], int encap_size,
  				  unsigned char h_dest[ETH_ALEN],
-@@ -2527,6 +2908,7 @@ static void gen_vxlan_header_ipv6(struct net_device *out_dev,
+@@ -2527,6 +2910,7 @@ static void gen_vxlan_header_ipv6(struct net_device *out_dev,
  	vxh->vx_flags = VXLAN_HF_VNI;
  	vxh->vx_vni = vxlan_vni_field(vx_vni);
  }
@@ -1322,7 +1322,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static int mlx5e_create_encap_header_ipv4(struct mlx5e_priv *priv,
  					  struct net_device *mirred_dev,
-@@ -2639,6 +3021,7 @@ out:
+@@ -2639,6 +3023,7 @@ out:
  	return err;
  }
  
@@ -1330,7 +1330,7 @@ index xxxxxxx..xxxxxxx 100644
  static int mlx5e_create_encap_header_ipv6(struct mlx5e_priv *priv,
  					  struct net_device *mirred_dev,
  					  struct mlx5e_encap_entry *e)
-@@ -2750,13 +3133,17 @@ out:
+@@ -2750,13 +3135,17 @@ out:
  		neigh_release(n);
  	return err;
  }
@@ -1350,7 +1350,7 @@ index xxxxxxx..xxxxxxx 100644
  {
  	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
  	unsigned short family = ip_tunnel_info_af(tun_info);
-@@ -2774,8 +3161,10 @@ static int mlx5e_attach_encap(struct mlx5e_priv *priv,
+@@ -2774,8 +3163,10 @@ static int mlx5e_attach_encap(struct mlx5e_priv *priv,
  	/* setting udp src port isn't supported */
  	if (memchr_inv(&key->tp_src, 0, sizeof(key->tp_src))) {
  vxlan_encap_offload_err:
@@ -1361,7 +1361,7 @@ index xxxxxxx..xxxxxxx 100644
  		netdev_warn(priv->netdev,
  			    "must set udp dst port and not set udp src port\n");
  		return -EOPNOTSUPP;
-@@ -2785,8 +3174,10 @@ vxlan_encap_offload_err:
+@@ -2785,8 +3176,10 @@ vxlan_encap_offload_err:
  	    MLX5_CAP_ESW(priv->mdev, vxlan_encap_decap)) {
  		tunnel_type = MLX5_REFORMAT_TYPE_L2_TO_VXLAN;
  	} else {
@@ -1372,7 +1372,7 @@ index xxxxxxx..xxxxxxx 100644
  		netdev_warn(priv->netdev,
  			    "%d isn't an offloaded vxlan udp dport\n", be16_to_cpu(key->tp_dst));
  		return -EOPNOTSUPP;
-@@ -2816,8 +3207,13 @@ vxlan_encap_offload_err:
+@@ -2816,8 +3209,13 @@ vxlan_encap_offload_err:
  
  	if (family == AF_INET)
  		err = mlx5e_create_encap_header_ipv4(priv, mirred_dev, e);
@@ -1386,7 +1386,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	if (err && err != -EAGAIN)
  		goto out_err;
-@@ -2888,38 +3284,85 @@ static int parse_tc_vlan_action(struct mlx5e_priv *priv,
+@@ -2888,38 +3286,85 @@ static int parse_tc_vlan_action(struct mlx5e_priv *priv,
  
  	return 0;
  }
@@ -1475,7 +1475,7 @@ index xxxxxxx..xxxxxxx 100644
  			if (err)
  				return err;
  
-@@ -2927,25 +3370,39 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
+@@ -2927,25 +3372,39 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
  			attr->mirror_count = attr->out_count;
  			continue;
  		}
@@ -1517,7 +1517,7 @@ index xxxxxxx..xxxxxxx 100644
  				pr_err("can't support more than %d output ports, can't offload forwarding\n",
  				       attr->out_count);
  				return -EOPNOTSUPP;
-@@ -2967,8 +3424,13 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
+@@ -2967,8 +3426,13 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
  				rpriv = out_priv->ppriv;
  				attr->out_rep[attr->out_count] = rpriv->rep;
  				attr->out_mdev[attr->out_count++] = out_priv->mdev;
@@ -1531,7 +1531,7 @@ index xxxxxxx..xxxxxxx 100644
  				parse_attr->tun_info = *info;
  				attr->parse_attr = parse_attr;
  				action |= MLX5_FLOW_CONTEXT_ACTION_PACKET_REFORMAT |
-@@ -2976,17 +3438,22 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
+@@ -2976,17 +3440,22 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
  					  MLX5_FLOW_CONTEXT_ACTION_COUNT;
  				/* attr->out_rep is resolved when we handle encap */
  			} else {
@@ -1555,7 +1555,7 @@ index xxxxxxx..xxxxxxx 100644
  			if (info)
  				encap = true;
  			else
-@@ -2994,7 +3461,23 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
+@@ -2994,7 +3463,23 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
  			attr->mirror_count = attr->out_count;
  			continue;
  		}
@@ -1579,7 +1579,7 @@ index xxxxxxx..xxxxxxx 100644
  		if (is_tcf_vlan(a)) {
  			err = parse_tc_vlan_action(priv, a, attr, &action);
  
-@@ -3004,22 +3487,33 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
+@@ -3004,22 +3489,33 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
  			attr->mirror_count = attr->out_count;
  			continue;
  		}
@@ -1613,7 +1613,7 @@ index xxxxxxx..xxxxxxx 100644
  				return -EOPNOTSUPP;
  			}
  			action |= MLX5_FLOW_CONTEXT_ACTION_COUNT;
-@@ -3027,25 +3521,38 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
+@@ -3027,25 +3523,38 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
  
  			continue;
  		}
@@ -1652,7 +1652,7 @@ index xxxxxxx..xxxxxxx 100644
  		netdev_warn_once(priv->netdev, "current firmware doesn't support split rule for port mirroring\n");
  		return -EOPNOTSUPP;
  	}
-@@ -3062,10 +3569,13 @@ static void get_flags(int flags, u16 *flow_flags)
+@@ -3062,10 +3571,13 @@ static void get_flags(int flags, u16 *flow_flags)
  {
  	u16 __flow_flags = 0;
  
@@ -1666,7 +1666,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	if (flags & MLX5E_TC_ESW_OFFLOAD)
  		__flow_flags |= MLX5E_TC_FLOW_ESWITCH;
-@@ -3139,7 +3649,9 @@ __mlx5e_add_fdb_flow(struct mlx5e_priv *priv,
+@@ -3139,7 +3651,9 @@ __mlx5e_add_fdb_flow(struct mlx5e_priv *priv,
  		     struct mlx5e_tc_flow **__flow)
  {
  	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
@@ -1676,7 +1676,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5e_tc_flow_parse_attr *parse_attr;
  	struct mlx5e_tc_flow *flow;
  	int attr_size, err;
-@@ -3150,10 +3662,19 @@ __mlx5e_add_fdb_flow(struct mlx5e_priv *priv,
+@@ -3150,10 +3664,19 @@ __mlx5e_add_fdb_flow(struct mlx5e_priv *priv,
  			       &parse_attr, &flow);
  	if (err)
  		goto out;
@@ -1697,7 +1697,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (err)
  		goto err_free;
  
-@@ -3166,7 +3687,11 @@ __mlx5e_add_fdb_flow(struct mlx5e_priv *priv,
+@@ -3166,7 +3689,11 @@ __mlx5e_add_fdb_flow(struct mlx5e_priv *priv,
  	else
  		flow->esw_attr->counter_dev = priv->mdev;
  
@@ -1709,7 +1709,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (err)
  		goto err_free;
  
-@@ -3245,15 +3770,20 @@ mlx5e_add_nic_flow(struct mlx5e_priv *priv,
+@@ -3245,15 +3772,20 @@ mlx5e_add_nic_flow(struct mlx5e_priv *priv,
  		   u16 flow_flags,
  		   struct mlx5e_tc_flow **__flow)
  {
@@ -1731,7 +1731,7 @@ index xxxxxxx..xxxxxxx 100644
  	flow_flags |= MLX5E_TC_FLOW_NIC;
  	attr_size  = sizeof(struct mlx5_nic_flow_attr);
  	err = mlx5e_alloc_flow(priv, attr_size, f, flow_flags,
-@@ -3261,11 +3791,19 @@ mlx5e_add_nic_flow(struct mlx5e_priv *priv,
+@@ -3261,11 +3793,19 @@ mlx5e_add_nic_flow(struct mlx5e_priv *priv,
  	if (err)
  		goto out;
  
@@ -1751,7 +1751,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (err)
  		goto err_free;
  
-@@ -3294,9 +3832,10 @@ mlx5e_tc_add_flow(struct mlx5e_priv *priv,
+@@ -3294,9 +3834,10 @@ mlx5e_tc_add_flow(struct mlx5e_priv *priv,
  
  	get_flags(flags, &flow_flags);
  
@@ -1763,7 +1763,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (esw && esw->mode == SRIOV_OFFLOADS)
  		err = mlx5e_add_fdb_flow(priv, f, flow_flags, flow);
  	else
-@@ -3308,15 +3847,19 @@ mlx5e_tc_add_flow(struct mlx5e_priv *priv,
+@@ -3308,15 +3849,19 @@ mlx5e_tc_add_flow(struct mlx5e_priv *priv,
  int mlx5e_configure_flower(struct mlx5e_priv *priv,
  			   struct tc_cls_flower_offload *f, int flags)
  {
@@ -1783,7 +1783,7 @@ index xxxxxxx..xxxxxxx 100644
  		netdev_warn_once(priv->netdev,
  				 "flow cookie %lx already exists, ignoring\n",
  				 f->cookie);
-@@ -3339,16 +3882,23 @@ err_free:
+@@ -3339,16 +3884,23 @@ err_free:
  out:
  	return err;
  }
@@ -1807,7 +1807,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  int mlx5e_delete_flower(struct mlx5e_priv *priv,
-@@ -3369,13 +3919,21 @@ int mlx5e_delete_flower(struct mlx5e_priv *priv,
+@@ -3369,13 +3921,21 @@ int mlx5e_delete_flower(struct mlx5e_priv *priv,
  
  	return 0;
  }
@@ -1829,7 +1829,7 @@ index xxxxxxx..xxxxxxx 100644
  	u64 bytes;
  	u64 packets;
  	u64 lastuse;
-@@ -3408,10 +3966,39 @@ int mlx5e_stats_flower(struct mlx5e_priv *priv,
+@@ -3408,10 +3968,39 @@ int mlx5e_stats_flower(struct mlx5e_priv *priv,
  	}
  
  
@@ -1869,7 +1869,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static void mlx5e_tc_hairpin_update_dead_peer(struct mlx5e_priv *priv,
  					      struct mlx5e_priv *peer_priv)
-@@ -3459,12 +4046,16 @@ static int mlx5e_tc_netdev_event(struct notifier_block *this,
+@@ -3459,12 +4048,16 @@ static int mlx5e_tc_netdev_event(struct notifier_block *this,
  	return NOTIFY_DONE;
  }
  
@@ -1886,7 +1886,7 @@ index xxxxxxx..xxxxxxx 100644
  	hash_init(tc->hairpin_tbl);
  
  	err = rhashtable_init(&tc->ht, &tc_ht_params);
-@@ -3478,8 +4069,12 @@ int mlx5e_tc_nic_init(struct mlx5e_priv *priv)
+@@ -3478,8 +4071,12 @@ int mlx5e_tc_nic_init(struct mlx5e_priv *priv)
  	}
  
  	return err;
@@ -1899,7 +1899,7 @@ index xxxxxxx..xxxxxxx 100644
  static void _mlx5e_tc_del_flow(void *ptr, void *arg)
  {
  	struct mlx5e_tc_flow *flow = ptr;
-@@ -3488,9 +4083,11 @@ static void _mlx5e_tc_del_flow(void *ptr, void *arg)
+@@ -3488,9 +4085,11 @@ static void _mlx5e_tc_del_flow(void *ptr, void *arg)
  	mlx5e_tc_del_flow(priv, flow);
  	kfree(flow);
  }
@@ -1911,7 +1911,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5e_tc_table *tc = &priv->fs.tc;
  
  	if (tc->netdevice_nb.notifier_call)
-@@ -3502,21 +4099,30 @@ void mlx5e_tc_nic_cleanup(struct mlx5e_priv *priv)
+@@ -3502,21 +4101,30 @@ void mlx5e_tc_nic_cleanup(struct mlx5e_priv *priv)
  		mlx5_destroy_flow_table(tc->t);
  		tc->t = NULL;
  	}

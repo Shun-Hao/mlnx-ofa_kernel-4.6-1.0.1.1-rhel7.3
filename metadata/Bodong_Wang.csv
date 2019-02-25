@@ -13,3 +13,17 @@ Change-Id=Iff9d3a36af62984116beac60f2f269cd20b6f49a; subject=IB/core: Add suppor
 Change-Id=I074b2ab49595acdc295700fff6955d3926782799; subject=IB/mlx5: Add support for tunneled atomic; feature=tunneled_atomic; upstream_status=NA; general=;
 Change-Id=I2130cb7b5313727b156a0e1d3f2fa1ad125e1a66; subject=mlx5/core: Get pp rate limit queues based on capability; feature=mlx5e_pp_special_queue; upstream_status=NA; general=;
 Change-Id=I86ed9d9f9ed09e0aadf86dd548478b10e19fb06b; subject=IB/mlx5: Support enablement of relaxed packet ordering(ooo) from debugfs; feature=mlx5_ooo; upstream_status=NA; general=;
+Change-Id=I74f7f839e45a05aaa4fec2e50df3115df0f87e2d; subject=net/mlx5: Use void pointer as the type in address_of macro; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=Iebdebf3cf61d7cddae5e1585195694e3924c4cdd; subject=net/mlx5: Use consistent vport num argument type; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=If47aa9717cc11139166236438e4edde88154d219; subject=IB/mlx5: Use unified register/load function for uplink and VF vports; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=I9d1a8e06d85e48aafe01ad8bb3912add265b9d71; subject=net/mlx5: Introduce Mellanox SmartNIC and modify page management logic; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=Ic4a688bdb33b08e3b79fe9e27030c998476c2b66; subject=net/mlx5: Update enable HCA dependency; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=Ide0a9b09f004dd2657ac9a92781557562e2aec6d; subject=net/mlx5: Add query host params command; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=I8e54f652f75362f0aae302df2ffbea92f3a41539; subject=net/mlx5: Add host params change event; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=I79a2f134f936a3dfe25ba73b0f085f22f6f6e31b; subject=net/mlx5: Provide an alternative VF upper bound for ECPF; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=I5accb094f616c711ea88ffaf33a18da3dfd66e6f; subject=net/mlx5: E-Switch, Normalize the name of uplink vport number; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=I1f9c6cedf23f3dced14575e4aa31b7b82e40e9df; subject=net/mlx5: E-Switch, Properly refer to the esw manager vport; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=I15c92337e8bb71fcdf4934a06dbc60e0120578e2; subject=net/mlx5: E-Switch, Properly refer to host PF vport as other vport; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=Ie1301a47d9a2f854cb5a9144eb735823d248f7a5; subject=net/mlx5: Relocate vport macros to the vport header file; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=Id8cefde2ecc7f4fe45eb2b70ce4d30adf1ef00e2; subject=net/mlx5: E-Switch, Avoid magic numbers when initializing offloads mode; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=I99b05671352ba628511b66181838f7de6aa11a5e; subject=BACKPORTS: Fix MLX5 backports; feature=backports; upstream_status=ignore; general=;

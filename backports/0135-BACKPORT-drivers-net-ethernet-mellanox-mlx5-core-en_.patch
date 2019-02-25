@@ -181,7 +181,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static void mlx5e_sqs2vport_stop(struct mlx5_eswitch *esw,
  				 struct mlx5_eswitch_rep *rep)
-@@ -513,11 +554,12 @@ void mlx5e_remove_sqs_fwd_rules(struct mlx5e_priv *priv)
+@@ -520,11 +561,12 @@ void mlx5e_remove_sqs_fwd_rules(struct mlx5e_priv *priv)
  	mlx5e_sqs2vport_stop(esw, rep);
  }
  
@@ -196,7 +196,7 @@ index xxxxxxx..xxxxxxx 100644
  #else
  	unsigned long ipv6_interval = ~0UL;
  #endif
-@@ -560,12 +602,20 @@ static void mlx5e_rep_neigh_stats_work(struct work_struct *work)
+@@ -567,12 +609,20 @@ static void mlx5e_rep_neigh_stats_work(struct work_struct *work)
  
  static void mlx5e_rep_neigh_entry_hold(struct mlx5e_neigh_hash_entry *nhe)
  {
@@ -217,7 +217,7 @@ index xxxxxxx..xxxxxxx 100644
  		kfree(nhe);
  }
  
-@@ -644,22 +694,29 @@ static int mlx5e_rep_netevent_event(struct notifier_block *nb,
+@@ -651,22 +701,29 @@ static int mlx5e_rep_netevent_event(struct notifier_block *nb,
  	struct mlx5e_priv *priv = netdev_priv(netdev);
  	struct mlx5e_neigh_hash_entry *nhe = NULL;
  	struct mlx5e_neigh m_neigh = {};
@@ -248,7 +248,7 @@ index xxxxxxx..xxxxxxx 100644
  		memcpy(&m_neigh.dst_ip, n->primary_key, n->tbl->key_len);
  
  		/* We are in atomic context and can't take RTNL mutex, so use
-@@ -691,7 +748,7 @@ static int mlx5e_rep_netevent_event(struct notifier_block *nb,
+@@ -698,7 +755,7 @@ static int mlx5e_rep_netevent_event(struct notifier_block *nb,
  		}
  		spin_unlock_bh(&neigh_update->encap_lock);
  		break;
@@ -257,7 +257,7 @@ index xxxxxxx..xxxxxxx 100644
  	case NETEVENT_DELAY_PROBE_TIME_UPDATE:
  		p = ptr;
  
-@@ -700,7 +757,8 @@ static int mlx5e_rep_netevent_event(struct notifier_block *nb,
+@@ -707,7 +764,8 @@ static int mlx5e_rep_netevent_event(struct notifier_block *nb,
  		 * done per device delay prob time parameter.
  		 */
  #if IS_ENABLED(CONFIG_IPV6)
@@ -267,7 +267,7 @@ index xxxxxxx..xxxxxxx 100644
  #else
  		if (!p->dev || p->tbl != &arp_tbl)
  #endif
-@@ -728,9 +786,11 @@ static int mlx5e_rep_netevent_event(struct notifier_block *nb,
+@@ -735,9 +793,11 @@ static int mlx5e_rep_netevent_event(struct notifier_block *nb,
  		mlx5_fc_update_sampling_interval(priv->mdev,
  						 neigh_update->min_interval);
  		break;
@@ -279,7 +279,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static const struct rhashtable_params mlx5e_neigh_ht_params = {
  	.head_offset = offsetof(struct mlx5e_neigh_hash_entry, rhash_node),
-@@ -749,6 +809,7 @@ static int mlx5e_rep_neigh_init(struct mlx5e_rep_priv *rpriv)
+@@ -756,6 +816,7 @@ static int mlx5e_rep_neigh_init(struct mlx5e_rep_priv *rpriv)
  		return err;
  
  	INIT_LIST_HEAD(&neigh_update->neigh_list);
@@ -287,7 +287,7 @@ index xxxxxxx..xxxxxxx 100644
  	spin_lock_init(&neigh_update->encap_lock);
  	INIT_DELAYED_WORK(&neigh_update->neigh_stats_work,
  			  mlx5e_rep_neigh_stats_work);
-@@ -762,12 +823,14 @@ static int mlx5e_rep_neigh_init(struct mlx5e_rep_priv *rpriv)
+@@ -769,12 +830,14 @@ static int mlx5e_rep_neigh_init(struct mlx5e_rep_priv *rpriv)
  
  out_err:
  	rhashtable_destroy(&neigh_update->neigh_ht);
@@ -302,7 +302,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5e_priv *priv = netdev_priv(rpriv->netdev);
  
  	unregister_netevent_notifier(&neigh_update->netevent_nb);
-@@ -775,10 +838,12 @@ static void mlx5e_rep_neigh_cleanup(struct mlx5e_rep_priv *rpriv)
+@@ -782,10 +845,12 @@ static void mlx5e_rep_neigh_cleanup(struct mlx5e_rep_priv *rpriv)
  	flush_workqueue(priv->wq); /* flush neigh update works */
  
  	cancel_delayed_work_sync(&rpriv->neigh_update.neigh_stats_work);
@@ -315,7 +315,7 @@ index xxxxxxx..xxxxxxx 100644
  static int mlx5e_rep_neigh_entry_insert(struct mlx5e_priv *priv,
  					struct mlx5e_neigh_hash_entry *nhe)
  {
-@@ -801,14 +866,18 @@ static void mlx5e_rep_neigh_entry_remove(struct mlx5e_priv *priv,
+@@ -808,14 +873,18 @@ static void mlx5e_rep_neigh_entry_remove(struct mlx5e_priv *priv,
  {
  	struct mlx5e_rep_priv *rpriv = priv->ppriv;
  
@@ -334,7 +334,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  /* This function must only be called under RTNL lock or under the
-@@ -838,7 +907,11 @@ static int mlx5e_rep_neigh_entry_create(struct mlx5e_priv *priv,
+@@ -845,7 +914,11 @@ static int mlx5e_rep_neigh_entry_create(struct mlx5e_priv *priv,
  	memcpy(&(*nhe)->m_neigh, &e->m_neigh, sizeof(e->m_neigh));
  	INIT_WORK(&(*nhe)->neigh_update_work, mlx5e_rep_neigh_update);
  	INIT_LIST_HEAD(&(*nhe)->encap_list);
@@ -346,7 +346,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	err = mlx5e_rep_neigh_entry_insert(priv, *nhe);
  	if (err)
-@@ -890,6 +963,7 @@ void mlx5e_rep_encap_entry_detach(struct mlx5e_priv *priv,
+@@ -897,6 +970,7 @@ void mlx5e_rep_encap_entry_detach(struct mlx5e_priv *priv,
  	if (list_empty(&nhe->encap_list))
  		mlx5e_rep_neigh_entry_destroy(priv, nhe);
  }
@@ -354,7 +354,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static int mlx5e_vf_rep_open(struct net_device *dev)
  {
-@@ -929,6 +1003,7 @@ static int mlx5e_vf_rep_close(struct net_device *dev)
+@@ -938,6 +1012,7 @@ static int mlx5e_vf_rep_close(struct net_device *dev)
  	return ret;
  }
  
@@ -362,7 +362,7 @@ index xxxxxxx..xxxxxxx 100644
  static int mlx5e_rep_get_phys_port_name(struct net_device *dev,
  					char *buf, size_t len)
  {
-@@ -951,28 +1026,105 @@ static int mlx5e_rep_get_phys_port_name(struct net_device *dev,
+@@ -960,28 +1035,105 @@ static int mlx5e_rep_get_phys_port_name(struct net_device *dev,
  
  	return 0;
  }
@@ -468,7 +468,7 @@ index xxxxxxx..xxxxxxx 100644
  	switch (type) {
  	case TC_SETUP_CLSFLOWER:
  		return mlx5e_rep_setup_tc_cls_flower(priv, type_data, MLX5E_TC_EGRESS);
-@@ -986,6 +1138,10 @@ static int mlx5e_rep_setup_tc_cb(enum tc_setup_type type, void *type_data,
+@@ -995,6 +1147,10 @@ static int mlx5e_rep_setup_tc_cb(enum tc_setup_type type, void *type_data,
  {
  	struct mlx5e_priv *priv = cb_priv;
  
@@ -479,7 +479,7 @@ index xxxxxxx..xxxxxxx 100644
  	switch (type) {
  	case TC_SETUP_CLSFLOWER:
  		return mlx5e_rep_setup_tc_cls_flower(priv, type_data, MLX5E_TC_INGRESS |
-@@ -1006,7 +1162,12 @@ static int mlx5e_rep_setup_tc_block(struct net_device *dev,
+@@ -1015,7 +1171,12 @@ static int mlx5e_rep_setup_tc_block(struct net_device *dev,
  	switch (f->command) {
  	case TC_BLOCK_BIND:
  		return tcf_block_cb_register(f->block, mlx5e_rep_setup_tc_cb,
@@ -492,7 +492,7 @@ index xxxxxxx..xxxxxxx 100644
  	case TC_BLOCK_UNBIND:
  		tcf_block_cb_unregister(f->block, mlx5e_rep_setup_tc_cb, priv);
  		return 0;
-@@ -1014,17 +1175,57 @@ static int mlx5e_rep_setup_tc_block(struct net_device *dev,
+@@ -1023,17 +1184,57 @@ static int mlx5e_rep_setup_tc_block(struct net_device *dev,
  		return -EOPNOTSUPP;
  	}
  }
@@ -550,15 +550,15 @@ index xxxxxxx..xxxxxxx 100644
  
  bool mlx5e_is_uplink_rep(struct mlx5e_priv *priv)
  {
-@@ -1041,6 +1242,7 @@ bool mlx5e_is_uplink_rep(struct mlx5e_priv *priv)
- 	return (rep->vport == FDB_UPLINK_VPORT);
+@@ -1050,6 +1251,7 @@ bool mlx5e_is_uplink_rep(struct mlx5e_priv *priv)
+ 	return (rep->vport == MLX5_VPORT_UPLINK);
  }
  
 +#if defined(NDO_HAS_OFFLOAD_STATS_GETS_NET_DEVICE) || defined(HAVE_NDO_HAS_OFFLOAD_STATS_EXTENDED)
  static bool mlx5e_rep_has_offload_stats(const struct net_device *dev, int attr_id)
  {
  	switch (attr_id) {
-@@ -1050,7 +1252,9 @@ static bool mlx5e_rep_has_offload_stats(const struct net_device *dev, int attr_i
+@@ -1059,7 +1261,9 @@ static bool mlx5e_rep_has_offload_stats(const struct net_device *dev, int attr_i
  
  	return false;
  }
@@ -568,7 +568,7 @@ index xxxxxxx..xxxxxxx 100644
  static int
  mlx5e_get_sw_stats64(const struct net_device *dev,
  		     struct rtnl_link_stats64 *stats)
-@@ -1080,15 +1284,29 @@ static int mlx5e_rep_get_offload_stats(int attr_id, const struct net_device *dev
+@@ -1089,15 +1293,29 @@ static int mlx5e_rep_get_offload_stats(int attr_id, const struct net_device *dev
  
  	return -EINVAL;
  }
@@ -600,7 +600,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static int mlx5e_vf_rep_change_mtu(struct net_device *netdev, int new_mtu)
-@@ -1124,20 +1342,53 @@ static int mlx5e_uplink_rep_set_vf_vlan(struct net_device *dev, int vf, u16 vlan
+@@ -1133,20 +1351,53 @@ static int mlx5e_uplink_rep_set_vf_vlan(struct net_device *dev, int vf, u16 vlan
  	return 0;
  }
  
@@ -655,7 +655,7 @@ index xxxxxxx..xxxxxxx 100644
  };
  
  static const struct net_device_ops mlx5e_netdev_ops_uplink_rep = {
-@@ -1145,20 +1396,81 @@ static const struct net_device_ops mlx5e_netdev_ops_uplink_rep = {
+@@ -1154,20 +1405,81 @@ static const struct net_device_ops mlx5e_netdev_ops_uplink_rep = {
  	.ndo_stop                = mlx5e_close,
  	.ndo_start_xmit          = mlx5e_xmit,
  	.ndo_set_mac_address     = mlx5e_uplink_rep_set_mac,
@@ -737,7 +737,7 @@ index xxxxxxx..xxxxxxx 100644
  };
  
  static void mlx5e_build_rep_params(struct net_device *netdev)
-@@ -1194,8 +1506,10 @@ static void mlx5e_build_rep_params(struct net_device *netdev)
+@@ -1203,8 +1515,10 @@ static void mlx5e_build_rep_params(struct net_device *netdev)
  
  	mlx5_query_min_inline(mdev, &params->tx_min_inline_mode);
  
@@ -748,7 +748,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static void mlx5e_build_rep_netdev(struct net_device *netdev)
-@@ -1211,10 +1525,12 @@ static void mlx5e_build_rep_netdev(struct net_device *netdev)
+@@ -1220,10 +1534,12 @@ static void mlx5e_build_rep_netdev(struct net_device *netdev)
  		/* we want a persistent mac for the uplink rep */
  		mlx5_query_nic_vport_mac_address(mdev, 0, netdev->dev_addr);
  		netdev->ethtool_ops = &mlx5e_uplink_rep_ethtool_ops;
@@ -761,7 +761,7 @@ index xxxxxxx..xxxxxxx 100644
  	} else {
  		netdev->netdev_ops = &mlx5e_netdev_ops_vf_rep;
  		eth_hw_addr_random(netdev);
-@@ -1224,10 +1540,21 @@ static void mlx5e_build_rep_netdev(struct net_device *netdev)
+@@ -1233,10 +1549,21 @@ static void mlx5e_build_rep_netdev(struct net_device *netdev)
  	netdev->watchdog_timeo    = 15 * HZ;
  
  
@@ -783,21 +783,21 @@ index xxxxxxx..xxxxxxx 100644
  
  	netdev->hw_features    |= NETIF_F_SG;
  	netdev->hw_features    |= NETIF_F_IP_CSUM;
-@@ -1237,10 +1564,11 @@ static void mlx5e_build_rep_netdev(struct net_device *netdev)
+@@ -1246,10 +1573,11 @@ static void mlx5e_build_rep_netdev(struct net_device *netdev)
  	netdev->hw_features    |= NETIF_F_TSO6;
  	netdev->hw_features    |= NETIF_F_RXCSUM;
  
 +	netdev->features |= netdev->hw_features;
 +#endif
 +
- 	if (rep->vport != FDB_UPLINK_VPORT)
+ 	if (rep->vport != MLX5_VPORT_UPLINK)
  		netdev->features |= NETIF_F_VLAN_CHALLENGED;
 -
 -	netdev->features |= netdev->hw_features;
  }
  
  static int mlx5e_init_rep(struct mlx5_core_dev *mdev,
-@@ -1420,41 +1748,62 @@ static void mlx5e_cleanup_rep_tx(struct mlx5e_priv *priv)
+@@ -1429,41 +1757,62 @@ static void mlx5e_cleanup_rep_tx(struct mlx5e_priv *priv)
  
  static void mlx5e_vf_rep_enable(struct mlx5e_priv *priv)
  {
@@ -860,7 +860,7 @@ index xxxxxxx..xxxxxxx 100644
  	mlx5e_disable_async_events(priv);
  	mlx5_lag_remove(mdev);
  }
-@@ -1490,14 +1839,85 @@ static const struct mlx5e_profile mlx5e_uplink_rep_profile = {
+@@ -1499,14 +1848,85 @@ static const struct mlx5e_profile mlx5e_uplink_rep_profile = {
  };
  
  /* e-Switch vport representors */
@@ -946,7 +946,7 @@ index xxxxxxx..xxxxxxx 100644
  	int nch, err;
  
  	rpriv = kzalloc(sizeof(*rpriv), GFP_KERNEL);
-@@ -1541,12 +1961,25 @@ mlx5e_vport_rep_load(struct mlx5_core_dev *dev, struct mlx5_eswitch_rep *rep)
+@@ -1550,12 +1970,25 @@ mlx5e_vport_rep_load(struct mlx5_core_dev *dev, struct mlx5_eswitch_rep *rep)
  		goto err_detach_netdev;
  	}
  
@@ -972,7 +972,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	err = register_netdev(netdev);
  	if (err) {
-@@ -1558,10 +1991,17 @@ mlx5e_vport_rep_load(struct mlx5_core_dev *dev, struct mlx5_eswitch_rep *rep)
+@@ -1567,10 +2000,17 @@ mlx5e_vport_rep_load(struct mlx5_core_dev *dev, struct mlx5_eswitch_rep *rep)
  	return 0;
  
  err_egdev_cleanup:
@@ -990,7 +990,7 @@ index xxxxxxx..xxxxxxx 100644
  	mlx5e_rep_neigh_cleanup(rpriv);
  
  err_detach_netdev:
-@@ -1583,16 +2023,24 @@ mlx5e_vport_rep_unload(struct mlx5_eswitch_rep *rep)
+@@ -1592,16 +2032,24 @@ mlx5e_vport_rep_unload(struct mlx5_eswitch_rep *rep)
  	struct mlx5e_rep_priv *rpriv = mlx5e_rep_to_rep_priv(rep);
  	struct net_device *netdev = rpriv->netdev;
  	struct mlx5e_priv *priv = netdev_priv(netdev);
@@ -1014,4 +1014,4 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  	mlx5e_rep_neigh_cleanup(rpriv);
  	mlx5e_detach_netdev(priv);
- 	if (rep->vport == FDB_UPLINK_VPORT)
+ 	if (rep->vport == MLX5_VPORT_UPLINK)

@@ -13,7 +13,7 @@ index xxxxxxx..xxxxxxx 100644
 @@ -454,6 +454,7 @@ static void update_allmulti_vports(struct mlx5_eswitch *esw,
  {
  	u8 *mac = vaddr->node.addr;
- 	u32 vport_idx = 0;
+ 	u16 vport_idx = 0;
 +	COMPAT_HL_NODE
  
  	for (vport_idx = 0; vport_idx < esw->total_vports; vport_idx++) {
@@ -21,7 +21,7 @@ index xxxxxxx..xxxxxxx 100644
 @@ -501,6 +502,7 @@ static int esw_add_mc_addr(struct mlx5_eswitch *esw, struct vport_addr *vaddr)
  	struct esw_mc_addr *esw_mc;
  	u8 *mac = vaddr->node.addr;
- 	u32 vport = vaddr->vport;
+ 	u16 vport = vaddr->vport;
 +	COMPAT_HL_NODE
  
  	if (!esw->fdb_table.legacy.fdb)
@@ -29,7 +29,7 @@ index xxxxxxx..xxxxxxx 100644
 @@ -541,6 +543,7 @@ static int esw_del_mc_addr(struct mlx5_eswitch *esw, struct vport_addr *vaddr)
  	struct esw_mc_addr *esw_mc;
  	u8 *mac = vaddr->node.addr;
- 	u32 vport = vaddr->vport;
+ 	u16 vport = vaddr->vport;
 +	COMPAT_HL_NODE
  
  	if (!esw->fdb_table.legacy.fdb)
@@ -50,7 +50,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	size = is_uc ? MLX5_MAX_UC_PER_VPORT(esw->dev) :
  		       MLX5_MAX_MC_PER_VPORT(esw->dev);
-@@ -750,6 +755,7 @@ static void esw_update_vport_mc_promisc(struct mlx5_eswitch *esw, u32 vport_num)
+@@ -750,6 +755,7 @@ static void esw_update_vport_mc_promisc(struct mlx5_eswitch *esw, u16 vport_num)
  	struct hlist_head *hash;
  	struct hlist_node *tmp;
  	int hi;
@@ -70,7 +70,7 @@ index xxxxxxx..xxxxxxx 100644
  	/* Wait for current already scheduled events to complete */
  	flush_workqueue(esw->work_queue);
  	/* Disable events from this vport */
-@@ -2035,8 +2045,12 @@ int mlx5_eswitch_init(struct mlx5_core_dev *dev)
+@@ -2040,8 +2050,12 @@ int mlx5_eswitch_init(struct mlx5_core_dev *dev)
  	if (err)
  		goto abort;
  
@@ -83,7 +83,7 @@ index xxxxxxx..xxxxxxx 100644
  	mutex_init(&esw->state_lock);
  
  	access_other_hca_roce = MLX5_CAP_GEN(dev, vhca_group_manager) &&
-@@ -2320,6 +2334,7 @@ unlock:
+@@ -2325,6 +2339,7 @@ unlock:
  	return 0;
  }
  
@@ -91,7 +91,7 @@ index xxxxxxx..xxxxxxx 100644
  int mlx5_eswitch_get_vport_config(struct mlx5_eswitch *esw,
  				  int vport, struct ifla_vf_info *ivi)
  {
-@@ -2337,18 +2352,31 @@ int mlx5_eswitch_get_vport_config(struct mlx5_eswitch *esw,
+@@ -2342,18 +2357,31 @@ int mlx5_eswitch_get_vport_config(struct mlx5_eswitch *esw,
  
  	mutex_lock(&esw->state_lock);
  	ether_addr_copy(ivi->mac, evport->info.mac);
@@ -123,7 +123,7 @@ index xxxxxxx..xxxxxxx 100644
  
  int __mlx5_eswitch_set_vport_vlan(struct mlx5_eswitch *esw, int vport, u16 vlan,
  				  u8 qos, __be16 proto, u8 set_flags)
-@@ -2603,7 +2631,9 @@ int mlx5_eswitch_get_vport_stats(struct mlx5_eswitch *esw,
+@@ -2608,7 +2636,9 @@ int mlx5_eswitch_get_vport_stats(struct mlx5_eswitch *esw,
  {
  	int outlen = MLX5_ST_SZ_BYTES(query_vport_counter_out);
  	u32 in[MLX5_ST_SZ_DW(query_vport_counter_in)] = {0};
@@ -133,7 +133,7 @@ index xxxxxxx..xxxxxxx 100644
  	int err = 0;
  	u32 *out;
  
-@@ -2667,11 +2697,13 @@ int mlx5_eswitch_get_vport_stats(struct mlx5_eswitch *esw,
+@@ -2672,11 +2702,13 @@ int mlx5_eswitch_get_vport_stats(struct mlx5_eswitch *esw,
  	vf_stats->broadcast =
  		MLX5_GET_CTR(out, received_eth_broadcast.packets);
  
