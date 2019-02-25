@@ -1110,3 +1110,21 @@ void mlx5_core_eq_free_irqs(struct mlx5_core_dev *dev)
 #endif
 	pci_free_irq_vectors(dev->pdev);
 }
+
+void mlx5_core_eq_disable_irqs(struct mlx5_core_dev *dev)
+{
+	struct mlx5_eq_table *table = &dev->priv.eq_table;
+	struct mlx5_eq *eq;
+
+	list_for_each_entry(eq, &table->comp_eqs_list, list)
+		disable_irq(eq->irqn);
+
+	disable_irq(table->pages_eq.irqn);
+	disable_irq(table->async_eq.irqn);
+	disable_irq(table->cmd_eq.irqn);
+
+#ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
+	if (MLX5_CAP_GEN(dev, pg))
+		disable_irq(table->pfault_eq.irqn);
+#endif
+}

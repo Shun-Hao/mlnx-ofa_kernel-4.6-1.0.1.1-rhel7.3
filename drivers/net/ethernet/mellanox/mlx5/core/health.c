@@ -205,6 +205,9 @@ void mlx5_enter_error_state(struct mlx5_core_dev *dev, bool force)
 		goto unlock;
 	}
 
+	if (pci_channel_offline(dev->pdev))
+		mlx5_core_eq_disable_irqs(dev);
+
 	if (force)
 		mlx5_core_dbg(dev, "start\n");
 	else
