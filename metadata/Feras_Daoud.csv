@@ -39,3 +39,4 @@ Change-Id=Ie7bfd503c6ca8b022f197ac5e6b35b77080aa515; subject=Backports/m4: Fix t
 Change-Id=If651431a7e4ee2b9aad01cd9e4f3907b94b0c2a9; subject=BACKPORTS: Fix dcbx backport issue in Ubuntu18.04 ARM build; feature=backports; upstream_status=ignore; general=;
 Change-Id=I4dc304c23c49a1c90edfb88145a28f2ae6760360; subject=BACKPORTS: Fix mlx4 core memory leak; feature=backports; upstream_status=ignore; general=;
 Change-Id=I1a9c717119acbdf0d0629d6a59076a6fc3dde41b; subject=RDMA: Clear PD objects during their allocation; feature=mlx5_ib_bugs; upstream_status=accepted; general=;
+Change-Id=Idfead72bea25e1ba6721c9657584a0cbe1179957; subject=RDMA: Clear CQ objects during their allocatio; feature=mlx4_ib_bugs; upstream_status=accepted; general=;
