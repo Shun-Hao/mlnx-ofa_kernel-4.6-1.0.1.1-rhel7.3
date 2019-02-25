@@ -27,3 +27,15 @@ Change-Id=I15c92337e8bb71fcdf4934a06dbc60e0120578e2; subject=net/mlx5: E-Switch,
 Change-Id=Ie1301a47d9a2f854cb5a9144eb735823d248f7a5; subject=net/mlx5: Relocate vport macros to the vport header file; feature=mlx5_bf; upstream_status=accepted; general=;
 Change-Id=Id8cefde2ecc7f4fe45eb2b70ce4d30adf1ef00e2; subject=net/mlx5: E-Switch, Avoid magic numbers when initializing offloads mode; feature=mlx5_bf; upstream_status=accepted; general=;
 Change-Id=I99b05671352ba628511b66181838f7de6aa11a5e; subject=BACKPORTS: Fix MLX5 backports; feature=backports; upstream_status=ignore; general=;
+Change-Id=I3233f66509031b331941fc94efba7cc11cc8f7ae; subject=net/mlx5: E-Switch, Refactor offloads flow steering init/cleanup; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=I47c9657cb090b0aacba2cb3a3ce126b2f93c6519; subject=net/mlx5: E-Switch, Split VF and special vports for offloads mode; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=I2c370d7b82f1179634b2a8bf95670fb77678072a; subject=net/mlx5: E-Switch, Use getter and iterator to access vport/rep; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=I02e9db2dad76ce935081f025ef256ebee80d9b3a; subject=net/mlx5: E-Switch, Add state to eswitch vport representors; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=I1b95d6801d45e0d47ddd2a44443b88508690f106; subject=net/mlx5: E-Switch, Support load/unload reps of specific vport types; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=If18cd735e5fad0cd505d1c6a5adf5154fbab5ec6; subject=net/mlx5: E-Switch, Centralize repersentor reg/unreg to eswitch driver; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=I91cfda79b0b59e125fa94b026e8f4c3a3579eaae; subject=net/mlx5: E-Switch, Assign a different position for uplink rep and vport; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=I27c141b1b57575ea9d01218a2fde26e84918ba5d; subject=net/mlx5: E-Switch, Consider ECPF vport depends on eswitch ownership; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=I1c5287c5f47be2d7f05f4849f2bac8194919bd62; subject=net/mlx5: E-Switch, Load/unload VF reps according to event from host PF; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=I989df213c7699dc265cc301be5423a15c7eeec1f; subject=net/mlx5: E-Switch, Allow transition to offloads mode for ECPF; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=Ic8187fe08047ede9de7f24924fa4973e78f94db9; subject=net/mlx5: Get max number of VFs from PCI for BlueField; feature=mlx5_bf; upstream_status=accepted; general=;
+Change-Id=I624087db46444aeccd02279c2a5a73af23d3922f; subject=BACKPORTS: Fix MLX5 backports; feature=backports; upstream_status=ignore; general=;
