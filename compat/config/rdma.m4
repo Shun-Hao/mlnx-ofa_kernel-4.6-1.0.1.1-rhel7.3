@@ -6043,8 +6043,9 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		#include <linux/idr.h>
 	],[
 		struct idr tmp_idr;
+		struct radix_tree_root tmp_radix;
 
-		tmp_idr.idr_rt=NULL;
+		tmp_idr.idr_rt = tmp_radix;
 
 		return 0;
 	],[
@@ -6075,10 +6076,10 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/idr.h>
 	],[
-                struct ib_uverbs_file ufile
-                struct ib_uobject *entry;
                 int id;
-                idr_for_each_entry(ufile->idr, entry, id);
+		void * entry;
+		struct idr * tmp_idr;
+		idr_for_each_entry(tmp_idr, entry, id);
 
 		return 0;
 	],[
@@ -6185,7 +6186,9 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/idr.h>
 	],[
-		idr_lock(NULL);
+		static DEFINE_IDR(tmp_idr);
+
+		idr_lock(&tmp_idr);
 
 		return 0;
 	],[

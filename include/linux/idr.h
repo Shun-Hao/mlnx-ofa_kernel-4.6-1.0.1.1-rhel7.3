@@ -18,7 +18,10 @@ static inline void idr_preload_end(void)
 #endif
 #ifndef HAVE_IDR_FOR_EACH_ENTRY
 #define compat_idr_for_each_entry(idr, entry, id)                      \
-        for (id = 0; ((entry) = idr_get_next(idr, &(id))) != NULL; ++id)	
+		for (id = 0; ((entry) = idr_get_next(idr, &(id))) != NULL; ++id)
+#else
+#define compat_idr_for_each_entry(idr, entry, id)          \
+		idr_for_each_entry(idr, entry, id)
 #endif
 
 #ifndef HAVE_IDA_SIMPLE_GET

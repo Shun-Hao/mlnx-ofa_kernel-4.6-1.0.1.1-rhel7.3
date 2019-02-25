@@ -20,3 +20,4 @@ Change-Id=Id10c1a02617b8fb6d9bdca0ec85ab451d58eaeda; subject=BACKPORTS: Move get
 Change-Id=Idda33001afe3bea70106053cd2bcb425fdcbf6e8; subject=BACKPORTS: Fix XDP SLES15 issue and IPV6 backport; feature=backports; upstream_status=ignore; general=;
 Change-Id=I2ba1d2eaefce89e6374943155c93fa468bc04ded; subject=BACKPORTS: Fix SLES15 XDP compilation problem; feature=backports; upstream_status=ignore; general=;
 Change-Id=I5e5d5d26a0ab60a3ec17c91bca828d701ff0819d; subject=BACKPORTS: Add RHEL 8.0 support - Part1; feature=backports; upstream_status=ignore; general=;
+Change-Id=I9daffe3e13684ca9bbc2f85d0f59831af819620d; subject=BACKPORTS: rdma.m4: Remove unused defines; feature=backports; upstream_status=ignore; general=;
