@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/infiniband/hw/mlx5/mr.c
 
 Change-Id: I85f57d1c9a9c99008fab363c0b1325d006850522
 ---
- drivers/infiniband/hw/mlx5/mr.c | 27 +++++++++++++++++++++++++++
- 1 file changed, 27 insertions(+)
+ drivers/infiniband/hw/mlx5/mr.c | 29 ++++++++++++++++++++++++++++-
+ 1 file changed, 28 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/infiniband/hw/mlx5/mr.c b/drivers/infiniband/hw/mlx5/mr.c
 index xxxxxxx..xxxxxxx 100644
@@ -20,7 +20,7 @@ index xxxxxxx..xxxxxxx 100644
  #include <rdma/ib_umem.h>
  #include <rdma/ib_umem_odp.h>
  #include <rdma/ib_verbs.h>
-@@ -551,9 +554,17 @@ static void clean_keys(struct mlx5_ib_dev *dev, int c)
+@@ -552,9 +555,17 @@ static void clean_keys(struct mlx5_ib_dev *dev, int c)
  	}
  }
  
@@ -38,19 +38,20 @@ index xxxxxxx..xxxxxxx 100644
  
  	dev->fill_delay = 0;
  }
-@@ -573,7 +584,11 @@ int mlx5_mr_cache_init(struct mlx5_ib_dev *dev)
- 		return -ENOMEM;
+@@ -575,7 +586,11 @@ int mlx5_mr_cache_init(struct mlx5_ib_dev *dev)
  	}
  
+ 	mlx5_cmd_init_async_ctx(dev->mdev, &dev->async_ctx);
+-	timer_setup(&dev->delay_timer, delay_time_func, 0);
 +#ifdef HAVE_TIMER_SETUP
- 	timer_setup(&dev->delay_timer, delay_time_func, 0);
++       timer_setup(&dev->delay_timer, delay_time_func, 0);
 +#else
 +	setup_timer(&dev->delay_timer, delay_time_func, (unsigned long)dev);
 +#endif
  	for (i = 0; i < MAX_MR_CACHE_ENTRIES; i++) {
  		ent = &cache->ent[i];
  		INIT_LIST_HEAD(&ent->head);
-@@ -1659,7 +1674,11 @@ mlx5_alloc_priv_descs(struct ib_device *device,
+@@ -1634,7 +1649,11 @@ mlx5_alloc_priv_descs(struct ib_device *device,
  	int add_size;
  	int ret;
  
@@ -62,7 +63,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	mr->descs_alloc = kzalloc(size + add_size, GFP_KERNEL);
  	if (!mr->descs_alloc)
-@@ -2312,7 +2331,11 @@ static ssize_t order_attr_store(struct kobject *kobj,
+@@ -2287,7 +2306,11 @@ static ssize_t order_attr_store(struct kobject *kobj,
  	return oa->store(co, oa, buf, size);
  }
  
@@ -74,7 +75,7 @@ index xxxxxxx..xxxxxxx 100644
  	.show = order_attr_show,
  	.store = order_attr_store,
  };
-@@ -2450,7 +2473,11 @@ static ssize_t cache_attr_store(struct kobject *kobj,
+@@ -2425,7 +2448,11 @@ static ssize_t cache_attr_store(struct kobject *kobj,
  	return ca->store(dev, buf, size);
  }
  
