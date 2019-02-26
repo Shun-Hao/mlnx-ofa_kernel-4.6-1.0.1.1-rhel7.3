@@ -145,10 +145,24 @@ struct uverbs_api {
 	enum rdma_driver_id driver_id;
 };
 
+/*
+ * Get an uverbs_api_object that corresponds to the given object_id.
+ * Note:
+ * -ENOMSG means that any object is allowed to match during lookup.
+ */
 static inline const struct uverbs_api_object *
 uapi_get_object(struct uverbs_api *uapi, u16 object_id)
 {
-	return radix_tree_lookup(&uapi->radix, uapi_key_obj(object_id));
+	const struct uverbs_api_object *res;
+
+	if (object_id == UVERBS_IDR_ANY_OBJECT)
+		return ERR_PTR(-ENOMSG);
+
+	res = radix_tree_lookup(&uapi->radix, uapi_key_obj(object_id));
+	if (!res)
+		return ERR_PTR(-ENOENT);
+
+	return res;
 }
 
 char *uapi_key_format(char *S, unsigned int key);
