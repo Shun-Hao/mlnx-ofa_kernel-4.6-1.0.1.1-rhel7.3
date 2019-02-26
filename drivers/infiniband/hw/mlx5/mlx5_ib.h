@@ -653,6 +653,7 @@ struct mlx5_ib_mr {
 	struct mlx5_ib_peer_id *peer_id;
 	atomic_t      invalidated;
 	struct completion invalidation_comp;
+	struct mlx5_async_work  cb_work;
 };
 
 struct mlx5_ib_peer_id {
@@ -1083,6 +1084,7 @@ struct mlx5_ib_dev {
 	u64 pf_int_wq_hist[MAX_HIST];
 	u64 pf_cxl_hist[MAX_HIST];
 	u64 inv_hist[MAX_HIST];
+	struct mlx5_async_ctx   async_ctx;
 };
 
 static inline struct mlx5_ib_cq *to_mibcq(struct mlx5_core_cq *mcq)
