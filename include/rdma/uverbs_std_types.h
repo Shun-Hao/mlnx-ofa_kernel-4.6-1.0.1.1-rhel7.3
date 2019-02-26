@@ -191,5 +191,16 @@ static inline void ib_set_flow(struct ib_uobject *uobj, struct ib_flow *ibflow,
 	uflow->resources = uflow_res;
 }
 
+struct uverbs_api_object {
+	const struct uverbs_obj_type *type_attrs;
+	const struct uverbs_obj_type_class *type_class;
+	u32 id;
+};
+
+static inline u32 uobj_get_object_id(struct ib_uobject *uobj)
+{
+	return uobj->uapi_object->id;
+}
+
 #endif
 

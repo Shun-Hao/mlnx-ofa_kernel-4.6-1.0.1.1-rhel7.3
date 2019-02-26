@@ -130,6 +130,7 @@ static int uapi_merge_tree(struct uverbs_api *uapi,
 				return -EINVAL;
 		} else {
 			obj_elm->type_attrs = obj->type_attrs;
+			obj_elm->id = obj->id;
 			if (obj->type_attrs) {
 				obj_elm->type_class =
 					obj->type_attrs->type_class;
