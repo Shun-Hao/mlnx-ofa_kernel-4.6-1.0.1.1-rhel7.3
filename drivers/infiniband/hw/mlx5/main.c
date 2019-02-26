@@ -5877,8 +5877,7 @@ static int populate_specs_root(struct mlx5_ib_dev *dev)
 	    MLX5_GENERAL_OBJ_TYPES_CAP_SW_ICM))
 		trees[num_trees++] = &mlx5_ib_dm;
 
-	if (MLX5_CAP_GEN_64(dev->mdev, general_obj_types) &
-	    MLX5_GENERAL_OBJ_TYPES_CAP_UCTX)
+	if (MLX5_CAP_GEN(dev->mdev, log_max_uctx))
 		trees[num_trees++] = mlx5_ib_get_devx_tree();
 
 	num_trees += mlx5_ib_get_flow_trees(trees + num_trees);

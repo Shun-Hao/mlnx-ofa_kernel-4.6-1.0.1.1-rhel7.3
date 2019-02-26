@@ -78,14 +78,10 @@ enum {
 };
 
 enum {
-	MLX5_OBJ_TYPE_UCTX = 0x0004,
-	MLX5_OBJ_TYPE_UMEM = 0x0005,
 	MLX5_OBJ_TYPE_SW_ICM = 0x0008,
 };
 
 enum {
-	MLX5_GENERAL_OBJ_TYPES_CAP_UCTX = (1ULL << 4),
-	MLX5_GENERAL_OBJ_TYPES_CAP_UMEM = (1ULL << 5),
 	MLX5_GENERAL_OBJ_TYPES_CAP_SW_ICM = (1ULL << MLX5_OBJ_TYPE_SW_ICM),
 };
 
@@ -283,6 +279,10 @@ enum {
 	MLX5_CMD_OP_MODIFY_GENERAL_OBJECT         = 0xa01,
 	MLX5_CMD_OP_QUERY_GENERAL_OBJECT          = 0xa02,
 	MLX5_CMD_OP_DESTROY_GENERAL_OBJECT        = 0xa03,
+	MLX5_CMD_OP_CREATE_UCTX                   = 0xa04,
+	MLX5_CMD_OP_DESTROY_UCTX                  = 0xa06,
+	MLX5_CMD_OP_CREATE_UMEM                   = 0xa08,
+	MLX5_CMD_OP_DESTROY_UMEM                  = 0xa0a,
 	MLX5_CMD_OP_MAX
 };
 
@@ -1307,7 +1307,10 @@ struct mlx5_ifc_cmd_hca_cap_bits {
 
 	u8         reserved_at_440[0x20];
 
-	u8         reserved_at_460[0x10];
+	u8         reserved_at_460[0x3];
+	u8         log_max_uctx[0x5];
+	u8         reserved_at_468[0x3];
+	u8         log_max_umem[0x5];
 	u8         max_num_eqs[0x10];
 
 	u8         reserved_at_480[0x3];
@@ -10016,9 +10019,9 @@ struct mlx5_ifc_general_obj_out_cmd_hdr_bits {
 };
 
 struct mlx5_ifc_umem_bits {
-	u8         modify_field_select[0x40];
+	u8         reserved_at_0[0x80];
 
-	u8         reserved_at_40[0x5b];
+	u8         reserved_at_80[0x1b];
 	u8         log_page_size[0x5];
 
 	u8         page_offset[0x20];
@@ -10029,11 +10032,9 @@ struct mlx5_ifc_umem_bits {
 };
 
 struct mlx5_ifc_uctx_bits {
-	u8         modify_field_select[0x40];
-
 	u8         cap[0x20];
 
-	u8         reserved_at_60[0x1a0];
+	u8         reserved_at_20[0x160];
 };
 
 struct mlx5_ifc_sw_icm_bits {
@@ -10050,13 +10051,40 @@ struct mlx5_ifc_sw_icm_bits {
 };
 
 struct mlx5_ifc_create_umem_in_bits {
-	struct mlx5_ifc_general_obj_in_cmd_hdr_bits   hdr;
-	struct mlx5_ifc_umem_bits                     umem;
+	u8         opcode[0x10];
+	u8         uid[0x10];
+
+	u8         reserved_at_20[0x10];
+	u8         op_mod[0x10];
+
+	u8         reserved_at_40[0x40];
+
+	struct mlx5_ifc_umem_bits  umem;
 };
 
 struct mlx5_ifc_create_uctx_in_bits {
-	struct mlx5_ifc_general_obj_in_cmd_hdr_bits   hdr;
-	struct mlx5_ifc_uctx_bits                     uctx;
+	u8         opcode[0x10];
+	u8         reserved_at_10[0x10];
+
+	u8         reserved_at_20[0x10];
+	u8         op_mod[0x10];
+
+	u8         reserved_at_40[0x40];
+
+	struct mlx5_ifc_uctx_bits  uctx;
+};
+
+struct mlx5_ifc_destroy_uctx_in_bits {
+	u8         opcode[0x10];
+	u8         reserved_at_10[0x10];
+
+	u8         reserved_at_20[0x10];
+	u8         op_mod[0x10];
+
+	u8         reserved_at_40[0x10];
+	u8         uid[0x10];
+
+	u8         reserved_at_60[0x20];
 };
 
 struct mlx5_ifc_mtrc_conf_bits {
