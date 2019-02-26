@@ -1473,12 +1473,8 @@ static inline bool mlx5_ecpf_vport_exists(struct mlx5_core_dev *dev)
 	return mlx5_core_is_pf(dev) && MLX5_CAP_ESW(dev, ecpf_vport_exists);
 }
 
-#define MLX5_HOST_PF_MAX_VFS	(127u)
 static inline u16 mlx5_core_max_vfs(struct mlx5_core_dev *dev)
 {
-	if (mlx5_core_is_ecpf_esw_manager(dev))
-		return MLX5_HOST_PF_MAX_VFS;
-
 	/* In RH6.8 and lower pci_sriov_get_totalvfs might return -EINVAL
 	 * return in that case 1
 	 */
