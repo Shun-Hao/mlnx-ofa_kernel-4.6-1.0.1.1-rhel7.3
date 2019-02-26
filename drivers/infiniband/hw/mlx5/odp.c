@@ -858,6 +858,8 @@ next_mr:
 		} else if (mmkey->type == MLX5_MKEY_MR_USER) {
 			mr = container_of(mmkey, struct mlx5_ib_mr, mmkey);
 			ndescs = mr->max_descs;
+		} else if (mmkey->type == MLX5_MKEY_INDIRECT_DEVX) {
+			ndescs = container_of(mmkey, struct mlx5_ib_devx_mr, mmkey)->ndescs;
 		} else {
 			mlx5_ib_warn(dev, "wrong mkey type %d\n", mmkey->type);
 			ret = -EFAULT;
