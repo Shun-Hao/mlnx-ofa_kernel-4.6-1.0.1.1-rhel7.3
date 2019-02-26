@@ -57,5 +57,10 @@ enum mlx5_ib_uapi_dm_type {
 	MLX5_IB_UAPI_DM_TYPE_HEADER_MODIFY_SW_ICM,
 };
 
+struct mlx5_ib_uapi_devx_async_cmd_hdr {
+	__aligned_u64	wr_id;
+	__u8		out_data[];
+};
+
 #endif
 
