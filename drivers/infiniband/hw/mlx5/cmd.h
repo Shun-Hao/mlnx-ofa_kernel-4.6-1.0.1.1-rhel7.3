@@ -63,4 +63,6 @@ int mlx5_cmd_alloc_sw_icm(struct mlx5_dm_mgr *dm_mgr, u64 *addr,
 			  u64 length, u32 *obj_id, int type);
 int mlx5_cmd_dealloc_sw_icm(struct mlx5_dm_mgr *dm_mgr, u64 addr,
 			    u64 length, u32 obj_id, int type);
+int mlx5_cmd_alloc_q_counter(struct mlx5_core_dev *dev, u16 *counter_id,
+			     u16 uid);
 #endif /* MLX5_IB_CMD_H */
