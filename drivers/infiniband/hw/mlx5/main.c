@@ -1869,7 +1869,7 @@ static struct ib_ucontext *mlx5_ib_alloc_ucontext(struct ib_device *ibdev,
 #endif
 
 	if (req.flags & MLX5_IB_ALLOC_UCTX_DEVX) {
-		err = mlx5_ib_devx_create(dev);
+		err = mlx5_ib_devx_create(dev, true);
 		if (err < 0)
 			goto out_uars;
 		context->devx_uid = err;
@@ -6732,7 +6732,7 @@ void *__mlx5_ib_add(struct mlx5_ib_dev *dev,
 		}
 	}
 
-	uid = mlx5_ib_devx_create(dev);
+	uid = mlx5_ib_devx_create(dev, false);
 	if (uid > 0)
 		dev->devx_whitelist_uid = uid;
 

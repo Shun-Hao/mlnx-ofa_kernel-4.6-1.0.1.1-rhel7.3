@@ -1420,7 +1420,7 @@ int mlx5_ib_destroy_dct(struct mlx5_ib_qp *qp);
 int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 		       int attr_mask, struct ib_udata *udata);
 #if IS_ENABLED(CONFIG_INFINIBAND_USER_ACCESS)
-int mlx5_ib_devx_create(struct mlx5_ib_dev *dev);
+int mlx5_ib_devx_create(struct mlx5_ib_dev *dev, bool is_user);
 void mlx5_ib_devx_destroy(struct mlx5_ib_dev *dev, u16 uid);
 const struct uverbs_object_tree_def *mlx5_ib_get_devx_tree(void);
 struct mlx5_ib_flow_handler *mlx5_ib_raw_fs_rule_add(
@@ -1433,7 +1433,8 @@ int mlx5_ib_get_flow_trees(const struct uverbs_object_tree_def **root);
 void mlx5_ib_destroy_flow_action_raw(struct mlx5_ib_flow_action *maction);
 #else
 static inline int
-mlx5_ib_devx_create(struct mlx5_ib_dev *dev) { return -EOPNOTSUPP; };
+mlx5_ib_devx_create(struct mlx5_ib_dev *dev,
+			   bool is_user) { return -EOPNOTSUPP; }
 static inline void mlx5_ib_devx_destroy(struct mlx5_ib_dev *dev, u16 uid) {}
 static inline const struct uverbs_object_tree_def *
 mlx5_ib_get_devx_tree(void) { return NULL; }
