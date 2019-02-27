@@ -1248,6 +1248,9 @@ int mlx5_cmd_exec_cb(struct mlx5_async_ctx *ctx, void *in, int in_size,
 		     void *out, int out_size, mlx5_async_cbk_t callback,
 		     struct mlx5_async_work *work);
 
+int mlx5_cmd_exec_cb_legacy(struct mlx5_core_dev *dev, void *in, int in_size,
+		void *out, int out_size, mlx5_cmd_cbk_t callback,
+		void *context);
 int mlx5_cmd_exec(struct mlx5_core_dev *dev, void *in, int in_size, void *out,
 		  int out_size);
 int mlx5_cmd_exec_polling(struct mlx5_core_dev *dev, void *in, int in_size,

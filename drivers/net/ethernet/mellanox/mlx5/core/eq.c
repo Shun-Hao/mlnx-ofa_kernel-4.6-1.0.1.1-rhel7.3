@@ -453,7 +453,7 @@ int mlx5_core_page_fault_resume(struct mlx5_core_dev *dev,
 		MLX5_SET(page_fault_resume_in, in, wq_number, wq_num);
 		MLX5_SET(page_fault_resume_in, in, token, token);
 
-		ret = mlx5_cmd_exec_cb(dev,
+		ret = mlx5_cmd_exec_cb_legacy(dev,
 				       in, MLX5_ST_SZ_BYTES(page_fault_resume_in),
 				       out, MLX5_ST_SZ_BYTES(page_fault_resume_out),
 				       page_fault_resume_callback, pfault);

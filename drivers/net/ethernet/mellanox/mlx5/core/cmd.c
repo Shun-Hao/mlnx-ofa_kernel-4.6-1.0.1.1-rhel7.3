@@ -1748,6 +1748,10 @@ out_in:
 	return err;
 }
 
+int mlx5_cmd_exec_cb_legacy(struct mlx5_core_dev *dev, void *in, int in_size,
+		void *out, int out_size, mlx5_cmd_cbk_t callback,
+		void *context);
+
 int mlx5_cmd_exec(struct mlx5_core_dev *dev, void *in, int in_size, void *out,
 		  int out_size)
 {
@@ -1792,6 +1796,15 @@ static void mlx5_cmd_exec_cb_handler(int status, void *_work)
 	if (atomic_dec_and_test(&ctx->num_inflight))
 		wake_up(&ctx->wait);
 }
+
+int mlx5_cmd_exec_cb_legacy(struct mlx5_core_dev *dev, void *in, int in_size,
+		void *out, int out_size, mlx5_cmd_cbk_t callback,
+		void *context)
+{
+	return cmd_exec(dev, in, in_size, out, out_size, callback, context,
+			false);
+}
+EXPORT_SYMBOL(mlx5_cmd_exec_cb_legacy);
 
 int mlx5_cmd_exec_cb(struct mlx5_async_ctx *ctx, void *in, int in_size,
 		     void *out, int out_size, mlx5_async_cbk_t callback,
