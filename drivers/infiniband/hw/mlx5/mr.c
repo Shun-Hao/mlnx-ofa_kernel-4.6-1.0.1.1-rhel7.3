@@ -1785,12 +1785,11 @@ static void dereg_mr(struct mlx5_ib_dev *dev, struct mlx5_ib_mr *mr)
 		mr->peer_id = NULL;
 		if (umem) {
 			ib_umem_release(umem);
+			/* Avoid double-freeing the umem in the next dereg */
+			mr->umem = NULL;
 			atomic_sub(npages, &dev->mdev->priv.reg_pages);
 		}
 	}
-
-	/* Avoid double-freeing the umem in the next dereg */
-	mr->umem = NULL;
 }
 
 int mlx5_ib_invalidate_mr(struct ib_mr *ibmr)
