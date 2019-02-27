@@ -5247,6 +5247,21 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if inet6_hashtables.h __inet6_lookup_established  has 7 params])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <net/inet6_hashtables.h>
+	],[
+	        __inet6_lookup_established(NULL,NULL,NULL,0,NULL,0,0);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE___INET6_LOOKUP_ESTABLISHED_HAS_7_PARAMS, 1,
+			  [__inet6_lookup_established has 7 params])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if workqueue.h has __cancel_delayed_work])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/workqueue.h>

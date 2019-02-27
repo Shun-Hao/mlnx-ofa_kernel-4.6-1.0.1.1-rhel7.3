@@ -17,3 +17,4 @@ Change-Id=I6738a71a9a8f6cc95a82a44027f76b5486e8410d; subject=BACKPORTS: ib_core 
 Change-Id=I6b0c3e2cef9e50c2ee43faf8280b27aeffb2e8db; subject=BACKPORTS: Add idr_get_next function for RH6.9-6.10; feature=backports; upstream_status=ignore; general=;
 Change-Id=Ib89afa05a35067bfaa455a464f4b60d34d1407f1; subject=BACKPORTS: Add radix_tree_next_chunk for Korg 3.4 and below; feature=backports; upstream_status=ignore; general=;
 Change-Id=Id10c1a02617b8fb6d9bdca0ec85ab451d58eaeda; subject=BACKPORTS: Move get_settings function to backport; feature=backports; upstream_status=ignore; general=;
+Change-Id=Idda33001afe3bea70106053cd2bcb425fdcbf6e8; subject=BACKPORTS: Fix XDP SLES15 issue and IPV6 backport; feature=backports; upstream_status=ignore; general=;
