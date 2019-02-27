@@ -87,3 +87,10 @@ Change-Id=Ic64598b729650d40fd1a5965f1bbc357c0568235; subject=IB/mlx5: Introduce 
 Change-Id=Id7169cb5e6a07ccc8c5e31fd56441784b7170197; subject=IB/mlx5: Implement the file ops of DEVX async command FD; feature=devx; upstream_status=accepted; general=;
 Change-Id=I259a27551be2cef9ac3d60afff7e50f065a3dccf; subject=IB/mlx5: Implement DEVX hot unplug for async command FD; feature=devx; upstream_status=accepted; general=;
 Change-Id=Ie7d398d3b03366a44bbaeda25f60313340d975f2; subject=Add MD for DEVX accepted code; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I985c06b54a80e477f6ff1ea84ebb7337ec4704dd; subject=BACKPORTS: Fix mr.c; feature=backports; upstream_status=ignore; general=;
+Change-Id=Ie3ef948b8a13a7132a14c68490f32313dbcd23df; subject=BACKPORTS: Fix devx; feature=backports; upstream_status=ignore; general=;
+Change-Id=I3417b44763d90df5cc14f19e1aab7e4ca29b7239; subject=IB/mlx5: Adapt upstream to MLNX_OFED locking scheme; feature=mlx5_ib_bugs; upstream_status=NA; general=;
+Change-Id=I3e2d46d1ed17ad9f051a05d30e4cd7ad6f8fe2b4; subject=net/mlx5_core: Use for the non-upstream code the legacy cmd callback; feature=mlx5_core_bugs; upstream_status=NA; general=;
+Change-Id=I252113a5672695f284fba575b82520b2b57eea52; subject=compat: Add include/linux/eventpoll.h; feature=backports; upstream_status=ignore; general=;
+Change-Id=If480a457dbf831a49733817f4a68bceec8c419b2; subject=BACKPORT: handle devx.c; feature=backports; upstream_status=ignore; general=;
+Change-Id=I39c9524cf8614b2ffaddcfd203e502a0c202875e; subject=MD: Add metadata for the non upstream patches post rebasing DEVX; feature=ofed_scripts; upstream_status=ignore; general=;

@@ -804,6 +804,21 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if call_srcu exists])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/srcu.h>
+	],[
+		call_srcu(NULL,NULL,NULL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_CALL_SRCU, 1,
+			  [linux/srcu.h call_srcu is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if struct netdev_xdp exists])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/netdevice.h>
