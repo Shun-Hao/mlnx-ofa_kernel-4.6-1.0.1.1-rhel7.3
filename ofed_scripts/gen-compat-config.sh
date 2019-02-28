@@ -201,6 +201,7 @@ if [[ ! -z ${KERNEL4_9} ]]; then
 fi
 
 if [[ ! -z ${KERNEL4_9} ]]; then
+	set_config CONFIG_NET_SCHED_NEW y
 	set_config CONFIG_COMPAT_FLOW_DISSECTOR y
 	set_config CONFIG_COMPAT_CLS_FLOWER_MOD m
 	set_config CONFIG_COMPAT_TCF_TUNNEL_KEY_MOD m

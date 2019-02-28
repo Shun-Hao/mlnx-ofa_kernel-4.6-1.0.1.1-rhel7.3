@@ -9,7 +9,7 @@
 
 #ifdef CONFIG_COMPAT_CLS_FLOWER_MOD
 
-#ifndef CONFIG_COMPAT_KERNEL_4_9
+#ifndef CONFIG_NET_SCHED_NEW
 /* Flower classifier */
 
 enum {
@@ -121,7 +121,7 @@ enum {
 #define TCA_CLS_FLAGS_SKIP_SW	(1 << 1) /* don't use filter in SW */
 #define TCA_CLS_FLAGS_IN_HW	(1 << 2) /* filter is offloaded to HW */
 
-#else /* CONFIG_COMPAT_KERNEL_4_9 */
+#else /* CONFIG_NET_SCHED_NEW */
 
 enum {
 	TCA_FLOWER_KEY_SCTP_SRC_MASK = __TCA_FLOWER_MAX,	/* be16 */
@@ -184,7 +184,7 @@ enum {
 #undef TCA_FLOWER_MAX
 #define TCA_FLOWER_MAX TCA_FLOWER_KEY_ENC_IP_TTL_MASK
 
-#endif /* CONFIG_COMPAT_KERNEL_4_9 */
+#endif /* CONFIG_NET_SCHED_NEW */
 
 #define TCA_CLS_FLAGS_IN_HW	(1 << 2) /* filter is offloaded to HW */
 #define TCA_CLS_FLAGS_NOT_IN_HW (1 << 3) /* filter isn't offloaded to HW */

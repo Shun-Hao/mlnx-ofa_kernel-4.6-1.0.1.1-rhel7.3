@@ -6,7 +6,7 @@
 #ifdef CONFIG_COMPAT_CLS_FLOWER_MOD
 #include <uapi/linux/uapi/pkt_cls.h>
 
-#ifndef CONFIG_COMPAT_KERNEL_4_9
+#ifndef CONFIG_NET_SCHED_NEW
 enum tc_fl_command {
 	TC_CLSFLOWER_REPLACE,
 	TC_CLSFLOWER_DESTROY,
@@ -47,7 +47,7 @@ static inline bool tc_flags_valid(u32 flags)
 	return true;
 }
 
-#endif /* CONFIG_COMPAT_KERNEL_4_9 */
+#endif /* CONFIG_NET_SCHED_NEW */
 
 static inline bool tc_in_hw(u32 flags)
 {

@@ -1,4 +1,4 @@
-#ifndef CONFIG_COMPAT_KERNEL_4_9
+#ifndef CONFIG_NET_SCHED_NEW
 
 /*
  * net/sched/cls_flower.c		Flower classifier
@@ -1549,7 +1549,7 @@ MODULE_AUTHOR("Jiri Pirko <jiri@resnulli.us>");
 MODULE_DESCRIPTION("Flower classifier");
 MODULE_LICENSE("GPL v2");
 
-#else /* CONFIG_COMPAT_KERNEL_4_9 */
+#else /* CONFIG_NET_SCHED_NEW */
 
 /*
  * net/sched/cls_flower.c		Flower classifier
@@ -3017,7 +3017,7 @@ MODULE_AUTHOR("Jiri Pirko <jiri@resnulli.us>");
 MODULE_DESCRIPTION("Flower classifier");
 MODULE_LICENSE("GPL v2");
 
-#endif /* CONFIG_COMPAT_KERNEL_4_9 */
+#endif /* CONFIG_NET_SCHED_NEW */
 
 static void fl_hw_destroy_filter(struct tcf_proto *tp, struct cls_fl_filter *f)
 {
@@ -3030,7 +3030,7 @@ static void fl_hw_destroy_filter(struct tcf_proto *tp, struct cls_fl_filter *f)
 	}
 
 	offload.command = TC_CLSFLOWER_DESTROY;
-#ifndef CONFIG_COMPAT_KERNEL_4_9
+#ifndef CONFIG_NET_SCHED_NEW
 	offload.prio = tp->prio;
 #endif
 	offload.cookie = (unsigned long)f;
@@ -3070,7 +3070,7 @@ static int fl_hw_replace_filter(struct tcf_proto *tp,
 	}
 
 	offload.command = TC_CLSFLOWER_REPLACE;
-#ifndef CONFIG_COMPAT_KERNEL_4_9
+#ifndef CONFIG_NET_SCHED_NEW
 	offload.prio = tp->prio;
 #endif
 	offload.cookie = (unsigned long)f;
@@ -3100,7 +3100,7 @@ static void fl_hw_update_stats(struct tcf_proto *tp, struct cls_fl_filter *f)
 	}
 
 	offload.command = TC_CLSFLOWER_STATS;
-#ifndef CONFIG_COMPAT_KERNEL_4_9
+#ifndef CONFIG_NET_SCHED_NEW
 	offload.prio = tp->prio;
 #endif
 	offload.cookie = (unsigned long)f;

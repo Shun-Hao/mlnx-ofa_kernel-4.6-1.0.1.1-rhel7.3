@@ -59,7 +59,7 @@ static inline bool eth_type_vlan_bp(__be16 ethertype)
 		return false;
 	}
 }
-#ifndef CONFIG_COMPAT_KERNEL_4_9
+#ifndef CONFIG_NET_SCHED_NEW
 bool skb_flow_dissect_flow_keys(const struct sk_buff *skb,
 				struct flow_keys *flow,
 				unsigned int flags)
@@ -1221,7 +1221,7 @@ EXPORT_SYMBOL(make_flow_keys_digest);
 
 static struct flow_dissector flow_keys_dissector_symmetric __read_mostly;
 
-#ifndef CONFIG_COMPAT_KERNEL_4_9
+#ifndef CONFIG_NET_SCHED_NEW
 u32 __skb_get_hash_symmetric(const struct sk_buff *skb)
 {
 	struct flow_keys keys;

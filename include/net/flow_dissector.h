@@ -99,7 +99,7 @@
 #define __skb_flow_get_ports LINUX_BACKPORT(__skb_flow_get_ports)
 #define __skb_flow_dissect LINUX_BACKPORT(__skb_flow_dissect)
 
-#ifndef CONFIG_COMPAT_KERNEL_4_9
+#ifndef CONFIG_NET_SCHED_NEW
 #define __skb_get_hash_symmetric LINUX_BACKPORT(__skb_get_hash_symmetric)
 #endif
 #define __skb_get_hash LINUX_BACKPORT(__skb_get_hash)

@@ -7,7 +7,7 @@
 #include_next <net/tc_act/tc_tunnel_key.h>
 #else
 
-#ifdef CONFIG_COMPAT_KERNEL_4_9
+#ifdef CONFIG_NET_SCHED_NEW
 
 /*
  * Copyright (c) 2016, Amir Vadai <amir@vadai.me>
@@ -73,7 +73,7 @@ static inline struct ip_tunnel_info *tcf_tunnel_info(const struct tc_action *a)
 #endif
 }
 
-#else	/* CONFIG_COMPAT_KERNEL_4_9 */
+#else	/* CONFIG_NET_SCHED_NEW */
 
 #include <uapi/linux/tc_act/tc_tunnel_key.h>
 
@@ -203,7 +203,7 @@ static inline void tcf_tunnel_info_compat(const struct tc_action *a,
 	key->ttl = nt.ttl;
 }
 
-#endif	/* CONFIG_COMPAT_KERNEL_4_9 */
+#endif	/* CONFIG_NET_SCHED_NEW */
 
 #endif	/* CONFIG_COMPAT_TCF_TUNNEL_KEY_MOD */
 

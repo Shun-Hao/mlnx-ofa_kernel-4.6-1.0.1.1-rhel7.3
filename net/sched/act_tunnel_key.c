@@ -1,4 +1,4 @@
-#ifndef CONFIG_COMPAT_KERNEL_4_9
+#ifndef CONFIG_NET_SCHED_NEW
 
 #include <linux/types.h>
 #include <linux/kernel.h>
@@ -226,7 +226,7 @@ MODULE_AUTHOR("Based on original module by Amir Vadai <amir@vadai.me>");
 MODULE_DESCRIPTION("ip tunnel manipulation actions - backport");
 MODULE_LICENSE("GPL v2");
 
-#else /* CONFIG_COMPAT_KERNEL_4_9 */
+#else /* CONFIG_NET_SCHED_NEW */
 
 /*
  * Copyright (c) 2016, Amir Vadai <amir@vadai.me>
@@ -594,4 +594,4 @@ MODULE_AUTHOR("Amir Vadai <amir@vadai.me>");
 MODULE_DESCRIPTION("ip tunnel manipulation actions");
 MODULE_LICENSE("GPL v2");
 
-#endif /* CONFIG_COMPAT_KERNEL_4_9 */
+#endif /* CONFIG_NET_SCHED_NEW */
