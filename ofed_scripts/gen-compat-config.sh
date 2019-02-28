@@ -195,12 +195,17 @@ if [[ ! -z ${RHEL7_2} ]]; then
 	set_config CONFIG_COMPAT_TCF_VLAN_MOD m
 fi
 
+RHEL7_4ALT_AARCH64=$(echo ${KVERSION} | grep 4.11.0-.*el7a.aarch64)
+if [[ ! -z ${RHEL7_4ALT_AARCH64} ]]; then
+	set_config CONFIG_COMPAT_KERNEL_4_11_ARM y
+fi
+
 KERNEL4_9=$(echo ${KVERSION} | grep ^4\.9)
 if [[ ! -z ${KERNEL4_9} ]]; then
 	set_config CONFIG_COMPAT_KERNEL_4_9 y
 fi
 
-if [[ ! -z ${KERNEL4_9} ]]; then
+if [[ ${CONFIG_COMPAT_KERNEL_4_9} = "y" || ${CONFIG_COMPAT_KERNEL_4_11_ARM} = "y" ]]; then
 	set_config CONFIG_NET_SCHED_NEW y
 	set_config CONFIG_COMPAT_FLOW_DISSECTOR y
 	set_config CONFIG_COMPAT_CLS_FLOWER_MOD m
