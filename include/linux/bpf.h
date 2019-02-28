@@ -9,7 +9,6 @@
 #if defined(HAVE_XDP_CONVERT_TO_XDP_FRAME) && \
     defined(HAVE_XDP_REDIRECT)             && \
     defined(HAVE_NDO_XDP)                  && \
-    defined(HAVE_NETDEV_XDP)               && \
     defined(HAVE_NDO_XDP_XMIT) 
 #define HAVE_XDP
 #else
@@ -18,13 +17,14 @@
 
 #if defined(HAVE_XDP_CONVERT_TO_XDP_FRAME) && \
     defined(HAVE_XDP_REDIRECT)             && \
-    defined(HAVE_NETDEV_XDP)               && \
     defined(HAVE_NDO_XDP_EXTENDED)
 #define HAVE_XDP_EXTENDED
 #else
 #undef HAVE_XDP_EXTENDED
 #endif
 
+
+/*Note - if you use HAVE_XDP_ENABLE define you should include <linux/bpf.h> in file you use this define*/
 #if defined(HAVE_XDP) || defined(HAVE_XDP_EXTENDED)
 #define HAVE_XDP_ENABLE
 #else

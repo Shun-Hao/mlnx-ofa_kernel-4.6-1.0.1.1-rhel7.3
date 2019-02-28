@@ -3,24 +3,32 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx4/en_tx.c
 
 Change-Id: I8d7d4246982133d450eee4c27fc3537df7be9c21
 ---
- drivers/net/ethernet/mellanox/mlx4/en_tx.c | 104 +++++++++++++++++++++++++++++
- 1 file changed, 104 insertions(+)
+ drivers/net/ethernet/mellanox/mlx4/en_tx.c | 105 ++++++++++++++++++++++++++++-
+ 1 file changed, 104 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx4/en_tx.c b/drivers/net/ethernet/mellanox/mlx4/en_tx.c
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/net/ethernet/mellanox/mlx4/en_tx.c
 +++ b/drivers/net/ethernet/mellanox/mlx4/en_tx.c
-@@ -43,6 +43,9 @@
+@@ -31,6 +31,9 @@
+  *
+  */
+ 
++#ifdef HAVE_XDP_BUFF
++#include <linux/bpf.h>
++#endif
+ #include <asm/page.h>
+ #include <linux/mlx4/cq.h>
+ #include <linux/slab.h>
+@@ -43,7 +46,6 @@
  #include <linux/ip.h>
  #include <linux/ipv6.h>
  #include <linux/moduleparam.h>
-+#ifdef HAVE_XDP_ENABLE
-+#include <linux/bpf.h>
-+#endif
- 
+-
  #include "mlx4_en.h"
  
-@@ -112,7 +115,11 @@ int mlx4_en_create_tx_ring(struct mlx4_en_priv *priv,
+ int mlx4_en_create_tx_ring(struct mlx4_en_priv *priv,
+@@ -112,7 +114,11 @@ int mlx4_en_create_tx_ring(struct mlx4_en_priv *priv,
  		goto err_hwq_res;
  	}
  
@@ -32,7 +40,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (err) {
  		en_err(priv, "Failed allocating qp %d\n", ring->qpn);
  		goto err_reserve;
-@@ -327,7 +334,11 @@ u32 mlx4_en_free_tx_desc(struct mlx4_en_priv *priv,
+@@ -327,7 +333,11 @@ u32 mlx4_en_free_tx_desc(struct mlx4_en_priv *priv,
  			}
  		}
  	}
@@ -44,7 +52,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	return tx_info->nr_txbb;
  }
-@@ -407,7 +418,13 @@ bool _mlx4_en_process_tx_cq(struct net_device *dev,
+@@ -407,7 +417,13 @@ bool _mlx4_en_process_tx_cq(struct net_device *dev,
  	if (unlikely(!priv->port_up))
  		return true;
  
@@ -58,7 +66,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	index = cons_index & size_mask;
  	cqe = mlx4_en_get_cqe(buf, index, priv->cqe_size) + factor;
-@@ -425,7 +442,11 @@ bool _mlx4_en_process_tx_cq(struct net_device *dev,
+@@ -425,7 +441,11 @@ bool _mlx4_en_process_tx_cq(struct net_device *dev,
  		 * make sure we read the CQE after we read the
  		 * ownership bit
  		 */
@@ -70,7 +78,7 @@ index xxxxxxx..xxxxxxx 100644
  
  		if (unlikely((cqe->owner_sr_opcode & MLX4_CQE_OPCODE_MASK) ==
  			     MLX4_CQE_OPCODE_ERROR)) {
-@@ -623,9 +644,11 @@ static int get_real_size(const struct sk_buff *skb,
+@@ -623,9 +643,11 @@ static int get_real_size(const struct sk_buff *skb,
  
  	if (shinfo->gso_size) {
  		*inline_ok = false;
@@ -82,7 +90,7 @@ index xxxxxxx..xxxxxxx 100644
  			*lso_header_size = skb_transport_offset(skb) + tcp_hdrlen(skb);
  		real_size = CTRL_SIZE + shinfo->nr_frags * DS_SIZE +
  			ALIGN(*lso_header_size + 4, DS_SIZE);
-@@ -699,22 +722,44 @@ static void build_inline_wqe(struct mlx4_en_tx_desc *tx_desc,
+@@ -699,22 +721,44 @@ static void build_inline_wqe(struct mlx4_en_tx_desc *tx_desc,
  				       skb_frag_size(&shinfo->frags[0]));
  		}
  
@@ -127,7 +135,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static void mlx4_bf_copy(void __iomem *dst, const void *src,
-@@ -754,7 +799,11 @@ static void mlx4_en_tx_write_desc(struct mlx4_en_tx_ring *ring,
+@@ -754,7 +798,11 @@ static void mlx4_en_tx_write_desc(struct mlx4_en_tx_ring *ring,
  		/* Ensure new descriptor hits memory
  		 * before setting ownership of this descriptor to HW
  		 */
@@ -139,7 +147,7 @@ index xxxxxxx..xxxxxxx 100644
  		tx_desc->ctrl.owner_opcode = op_own;
  
  		wmb();
-@@ -769,12 +818,18 @@ static void mlx4_en_tx_write_desc(struct mlx4_en_tx_ring *ring,
+@@ -769,12 +817,18 @@ static void mlx4_en_tx_write_desc(struct mlx4_en_tx_ring *ring,
  		/* Ensure new descriptor hits memory
  		 * before setting ownership of this descriptor to HW
  		 */
@@ -158,7 +166,7 @@ index xxxxxxx..xxxxxxx 100644
  	}
  }
  
-@@ -805,7 +860,11 @@ static bool mlx4_en_build_dma_wqe(struct mlx4_en_priv *priv,
+@@ -805,7 +859,11 @@ static bool mlx4_en_build_dma_wqe(struct mlx4_en_priv *priv,
  
  		data->addr = cpu_to_be64(dma);
  		data->lkey = mr_key;
@@ -170,7 +178,7 @@ index xxxxxxx..xxxxxxx 100644
  		data->byte_count = cpu_to_be32(byte_count);
  		--data;
  	}
-@@ -822,7 +881,11 @@ static bool mlx4_en_build_dma_wqe(struct mlx4_en_priv *priv,
+@@ -822,7 +880,11 @@ static bool mlx4_en_build_dma_wqe(struct mlx4_en_priv *priv,
  
  		data->addr = cpu_to_be64(dma);
  		data->lkey = mr_key;
@@ -182,7 +190,7 @@ index xxxxxxx..xxxxxxx 100644
  		data->byte_count = cpu_to_be32(byte_count);
  	}
  	/* tx completion can avoid cache line miss for common cases */
-@@ -892,9 +955,12 @@ static inline netdev_tx_t __mlx4_en_xmit(struct sk_buff *skb,
+@@ -892,9 +954,12 @@ static inline netdev_tx_t __mlx4_en_xmit(struct sk_buff *skb,
  
  	bf_ok = ring->bf_enabled;
  	if (skb_vlan_tag_present(skb)) {
@@ -195,7 +203,7 @@ index xxxxxxx..xxxxxxx 100644
  		vlan_proto = be16_to_cpu(skb->vlan_proto);
  		if (vlan_proto == ETH_P_8021AD)
  			qpn_vlan.ins_vlan = MLX4_WQE_CTRL_INS_SVLAN;
-@@ -902,10 +968,19 @@ static inline netdev_tx_t __mlx4_en_xmit(struct sk_buff *skb,
+@@ -902,10 +967,19 @@ static inline netdev_tx_t __mlx4_en_xmit(struct sk_buff *skb,
  			qpn_vlan.ins_vlan = MLX4_WQE_CTRL_INS_CVLAN;
  		else
  			qpn_vlan.ins_vlan = 0;
@@ -215,7 +223,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	/* Track current inflight packets for performance analysis */
  	AVG_PERF_COUNTER(priv->pstats.inflight_avg,
-@@ -962,8 +1037,13 @@ static inline netdev_tx_t __mlx4_en_xmit(struct sk_buff *skb,
+@@ -962,8 +1036,13 @@ static inline netdev_tx_t __mlx4_en_xmit(struct sk_buff *skb,
  	 */
  	tx_info->ts_requested = 0;
  	if (unlikely(ring->hwtstamp_tx_type == HWTSTAMP_TX_ON &&
@@ -229,7 +237,7 @@ index xxxxxxx..xxxxxxx 100644
  		tx_info->ts_requested = 1;
  	}
  
-@@ -971,11 +1051,16 @@ static inline netdev_tx_t __mlx4_en_xmit(struct sk_buff *skb,
+@@ -971,11 +1050,16 @@ static inline netdev_tx_t __mlx4_en_xmit(struct sk_buff *skb,
  	 * whether LSO is used */
  	tx_desc->ctrl.srcrb_flags = priv->ctrl_flags;
  	if (likely(skb->ip_summed == CHECKSUM_PARTIAL)) {
@@ -246,7 +254,7 @@ index xxxxxxx..xxxxxxx 100644
  		ring->tx_csum++;
  	}
  
-@@ -1021,11 +1106,15 @@ static inline netdev_tx_t __mlx4_en_xmit(struct sk_buff *skb,
+@@ -1021,11 +1105,15 @@ static inline netdev_tx_t __mlx4_en_xmit(struct sk_buff *skb,
  		ring->packets++;
  	}
  	ring->bytes += tx_info->nr_bytes;
@@ -262,7 +270,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (skb->encapsulation) {
  		union {
  			struct iphdr *v4;
-@@ -1043,6 +1132,7 @@ static inline netdev_tx_t __mlx4_en_xmit(struct sk_buff *skb,
+@@ -1043,6 +1131,7 @@ static inline netdev_tx_t __mlx4_en_xmit(struct sk_buff *skb,
  		else
  			op_own |= cpu_to_be32(MLX4_WQE_CTRL_IIP);
  	}
@@ -270,7 +278,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	ring->prod += nr_txbb;
  
-@@ -1059,9 +1149,17 @@ static inline netdev_tx_t __mlx4_en_xmit(struct sk_buff *skb,
+@@ -1059,9 +1148,17 @@ static inline netdev_tx_t __mlx4_en_xmit(struct sk_buff *skb,
  		ring->queue_stopped++;
  	}
  
@@ -288,7 +296,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	real_size = (real_size / 16) & 0x3f;
  
-@@ -1160,6 +1258,7 @@ void mlx4_en_init_tx_xdp_ring_descs(struct mlx4_en_priv *priv,
+@@ -1160,6 +1257,7 @@ void mlx4_en_init_tx_xdp_ring_descs(struct mlx4_en_priv *priv,
  	}
  }
  
@@ -296,7 +304,7 @@ index xxxxxxx..xxxxxxx 100644
  netdev_tx_t mlx4_en_xmit_frame(struct mlx4_en_rx_ring *rx_ring,
  			       struct mlx4_en_rx_alloc *frame,
  			       struct mlx4_en_priv *priv, unsigned int length,
-@@ -1202,7 +1301,11 @@ netdev_tx_t mlx4_en_xmit_frame(struct mlx4_en_rx_ring *rx_ring,
+@@ -1202,7 +1300,11 @@ netdev_tx_t mlx4_en_xmit_frame(struct mlx4_en_rx_ring *rx_ring,
  					 length, PCI_DMA_TODEVICE);
  
  	data->addr = cpu_to_be64(dma + frame->page_offset);
@@ -308,7 +316,7 @@ index xxxxxxx..xxxxxxx 100644
  	data->byte_count = cpu_to_be32(length);
  
  	/* tx completion can avoid cache line miss for common cases */
-@@ -1233,3 +1336,4 @@ tx_drop_count:
+@@ -1233,3 +1335,4 @@ tx_drop_count:
  tx_drop:
  	return NETDEV_TX_BUSY;
  }
