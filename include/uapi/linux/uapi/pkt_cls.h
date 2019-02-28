@@ -123,6 +123,7 @@ enum {
 
 #else /* CONFIG_NET_SCHED_NEW */
 
+#ifndef HAVE_TCA_FLOWER_KEY_SCTP_SRC_MASK
 enum {
 	TCA_FLOWER_KEY_SCTP_SRC_MASK = __TCA_FLOWER_MAX,	/* be16 */
 	TCA_FLOWER_KEY_SCTP_DST_MASK,	/* be16 */
@@ -157,21 +158,35 @@ enum {
 	TCA_FLOWER_KEY_ARP_SHA_MASK,	/* ETH_ALEN */
 	TCA_FLOWER_KEY_ARP_THA,		/* ETH_ALEN */
 	TCA_FLOWER_KEY_ARP_THA_MASK,	/* ETH_ALEN */
+};
 
-	TCA_FLOWER_KEY_MPLS_TTL,	/* u8 - 8 bits */
-	TCA_FLOWER_KEY_MPLS_BOS,	/* u8 - 1 bit */
-	TCA_FLOWER_KEY_MPLS_TC,		/* u8 - 3 bits */
-	TCA_FLOWER_KEY_MPLS_LABEL,	/* be32 - 20 bits */
+#undef TCA_FLOWER_MAX
+#define TCA_FLOWER_MAX TCA_FLOWER_KEY_ARP_THA_MASK
+#endif /* HAVE_TCA_FLOWER_KEY_SCTP_SRC_MASK */
 
-	TCA_FLOWER_KEY_TCP_FLAGS,	/* be16 */
-	TCA_FLOWER_KEY_TCP_FLAGS_MASK,	/* be16 */
+#ifndef HAVE_TCA_FLOWER_KEY_MPLS_TTL
+enum {
+	TCA_FLOWER_KEY_MPLS_TTL = TCA_FLOWER_MAX + 1,     /* u8 - 8 bits */
+	TCA_FLOWER_KEY_MPLS_BOS,        /* u8 - 1 bit */
+	TCA_FLOWER_KEY_MPLS_TC,         /* u8 - 3 bits */
+	TCA_FLOWER_KEY_MPLS_LABEL,      /* be32 - 20 bits */
 
-	TCA_FLOWER_KEY_IP_TOS,		/* u8 */
-	TCA_FLOWER_KEY_IP_TOS_MASK,	/* u8 */
-	TCA_FLOWER_KEY_IP_TTL,		/* u8 */
-	TCA_FLOWER_KEY_IP_TTL_MASK,	/* u8 */
+	TCA_FLOWER_KEY_TCP_FLAGS,       /* be16 */
+	TCA_FLOWER_KEY_TCP_FLAGS_MASK,  /* be16 */
 
-	TCA_FLOWER_KEY_CVLAN_ID,	/* be16 */
+	TCA_FLOWER_KEY_IP_TOS,          /* u8 */
+	TCA_FLOWER_KEY_IP_TOS_MASK,     /* u8 */
+	TCA_FLOWER_KEY_IP_TTL,          /* u8 */
+	TCA_FLOWER_KEY_IP_TTL_MASK,     /* u8 */
+};
+
+#undef TCA_FLOWER_MAX
+#define TCA_FLOWER_MAX TCA_FLOWER_KEY_IP_TTL_MASK
+#endif /* HAVE_TCA_FLOWER_KEY_MPLS_TTL */
+
+#ifndef HAVE_TCA_FLOWER_KEY_CVLAN_ID
+enum {
+	TCA_FLOWER_KEY_CVLAN_ID = TCA_FLOWER_MAX + 1,	/* be16 */
 	TCA_FLOWER_KEY_CVLAN_PRIO,	/* u8   */
 	TCA_FLOWER_KEY_CVLAN_ETH_TYPE,	/* be16 */
 
@@ -183,15 +198,29 @@ enum {
 
 #undef TCA_FLOWER_MAX
 #define TCA_FLOWER_MAX TCA_FLOWER_KEY_ENC_IP_TTL_MASK
+#endif /* HAVE_TCA_FLOWER_KEY_CVLAN_ID */
 
 #endif /* CONFIG_NET_SCHED_NEW */
 
+#ifndef TCA_CLS_FLAGS_IN_HW
 #define TCA_CLS_FLAGS_IN_HW	(1 << 2) /* filter is offloaded to HW */
+#endif
+
+#ifndef TCA_CLS_FLAGS_NOT_IN_HW
 #define TCA_CLS_FLAGS_NOT_IN_HW (1 << 3) /* filter isn't offloaded to HW */
+#endif
+
+#ifndef HAVE_TCA_FLOWER_KEY_FLAGS_IS_FRAGMENT
 enum {
 	TCA_FLOWER_KEY_FLAGS_IS_FRAGMENT = (1 << 0),
+};
+#endif
+
+#ifndef HAVE_TCA_FLOWER_KEY_FLAGS_FRAG_IS_FIRST
+enum {
 	TCA_FLOWER_KEY_FLAGS_FRAG_IS_FIRST = (1 << 1),
 };
+#endif
 
 #endif /* CONFIG_COMPAT_CLS_FLOWER_MOD */
 

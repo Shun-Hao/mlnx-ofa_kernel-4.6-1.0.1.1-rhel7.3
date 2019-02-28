@@ -49,11 +49,13 @@ static inline bool tc_flags_valid(u32 flags)
 
 #endif /* CONFIG_NET_SCHED_NEW */
 
+#define tc_in_hw LINUX_BACKPORT(tc_in_hw)
 static inline bool tc_in_hw(u32 flags)
 {
 	return (flags & TCA_CLS_FLAGS_IN_HW) ? true : false;
 }
 
+#define tc_skip_hw LINUX_BACKPORT(tc_skip_hw)
 static inline bool tc_skip_hw(u32 flags)
 {
 	return (flags & TCA_CLS_FLAGS_SKIP_HW) ? true : false;

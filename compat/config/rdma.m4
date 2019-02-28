@@ -11319,6 +11319,81 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 	],[
 		AC_MSG_RESULT(no)
 	])
+
+	AC_MSG_CHECKING([if uapi/linux/pkt_cls.h has TCA_FLOWER_KEY_FLAGS_IS_FRAGMENT])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <uapi/linux/pkt_cls.h>
+	],[
+		int x = TCA_FLOWER_KEY_FLAGS_IS_FRAGMENT;
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_TCA_FLOWER_KEY_FLAGS_IS_FRAGMENT, 1,
+				[TCA_FLOWER_KEY_FLAGS_IS_FRAGMENT is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if uapi/linux/pkt_cls.h has TCA_FLOWER_KEY_FLAGS_FRAG_IS_FIRST])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <uapi/linux/pkt_cls.h>
+	],[
+		int x = TCA_FLOWER_KEY_FLAGS_FRAG_IS_FIRST;
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_TCA_FLOWER_KEY_FLAGS_FRAG_IS_FIRST, 1,
+				[TCA_FLOWER_KEY_FLAGS_FRAG_IS_FIRST is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if uapi/linux/pkt_cls.h has TCA_FLOWER_KEY_SCTP_SRC_MASK])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+	        #include <uapi/linux/pkt_cls.h>
+	],[
+	        int x = TCA_FLOWER_KEY_SCTP_SRC_MASK;
+
+	        return 0;
+	],[
+	        AC_MSG_RESULT(yes)
+	        MLNX_AC_DEFINE(HAVE_TCA_FLOWER_KEY_SCTP_SRC_MASK, 1,
+	                        [TCA_FLOWER_KEY_SCTP_SRC_MASK is defined])
+	],[
+	        AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if uapi/linux/pkt_cls.h has TCA_FLOWER_KEY_MPLS_TTL])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+	        #include <uapi/linux/pkt_cls.h>
+	],[
+	        int x = TCA_FLOWER_KEY_MPLS_TTL;
+
+	        return 0;
+	],[
+	        AC_MSG_RESULT(yes)
+	        MLNX_AC_DEFINE(HAVE_TCA_FLOWER_KEY_MPLS_TTL, 1,
+	                        [TCA_FLOWER_KEY_MPLS_TTL is defined])
+	],[
+	        AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if uapi/linux/pkt_cls.h has TCA_FLOWER_KEY_CVLAN_ID])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+	        #include <uapi/linux/pkt_cls.h>
+	],[
+	        int x = TCA_FLOWER_KEY_CVLAN_ID;
+
+	        return 0;
+	],[
+	        AC_MSG_RESULT(yes)
+	        MLNX_AC_DEFINE(HAVE_TCA_FLOWER_KEY_CVLAN_ID, 1,
+	                        [TCA_FLOWER_KEY_CVLAN_ID is defined])
+	],[
+	        AC_MSG_RESULT(no)
+	])
 ])
 #
 # COMPAT_CONFIG_HEADERS
