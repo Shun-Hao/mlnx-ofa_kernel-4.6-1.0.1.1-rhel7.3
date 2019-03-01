@@ -885,6 +885,7 @@ struct mlx5_pagefault {
 };
 
 struct mlx5_td {
+	struct mutex     list_lock;
 	struct list_head tirs_list;
 	u32              tdn;
 };
