@@ -88,25 +88,26 @@
 #define flow_keys_have_l4 LINUX_BACKPORT(flow_keys_have_l4)
 #define flow_hash_from_keys LINUX_BACKPORT(flow_hash_from_keys)
 #define dissector_uses_key LINUX_BACKPORT(dissector_uses_key)
+#define init_default_flow_dissectors LINUX_BACKPORT(init_default_flow_dissectors)
+
+#ifndef HAVE_SKB_FLOW_DISSECT
 #define skb_flow_dissector_target LINUX_BACKPORT(skb_flow_dissector_target)
 #define skb_flow_dissect_flow_keys LINUX_BACKPORT(skb_flow_dissect_flow_keys)
 #define __skb_flow_dissect LINUX_BACKPORT(__skb_flow_dissect)
 #define skb_flow_dissect LINUX_BACKPORT(skb_flow_dissect)
-#define init_default_flow_dissectors LINUX_BACKPORT(init_default_flow_dissectors)
 #define skb_flow_dissector_init LINUX_BACKPORT(skb_flow_dissector_init)
 #define skb_get_poff LINUX_BACKPORT(skb_get_poff)
 #define __skb_get_poff LINUX_BACKPORT(__skb_get_poff)
 #define __skb_flow_get_ports LINUX_BACKPORT(__skb_flow_get_ports)
-#define __skb_flow_dissect LINUX_BACKPORT(__skb_flow_dissect)
 
 #ifndef CONFIG_NET_SCHED_NEW
 #define __skb_get_hash_symmetric LINUX_BACKPORT(__skb_get_hash_symmetric)
-#endif
 #define __skb_get_hash LINUX_BACKPORT(__skb_get_hash)
 #define __get_hash_from_flowi6 LINUX_BACKPORT(__get_hash_from_flowi6)
 #define __get_hash_from_flowi4 LINUX_BACKPORT(__get_hash_from_flowi4)
 #define skb_get_hash_perturb LINUX_BACKPORT(skb_get_hash_perturb)
-
+#endif /* CONFIG_NET_SCHED_NEW */
+#endif /* HAVE_SKB_FLOW_DISSECT */
 /**
  * struct flow_dissector_key_control:
  * @thoff: Transport header offset
