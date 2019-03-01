@@ -984,7 +984,8 @@ static int mlx5e_rep_setup_tc_cb_egdev(enum tc_setup_type type, void *type_data,
 
 	switch (type) {
 	case TC_SETUP_CLSFLOWER:
-		return mlx5e_rep_setup_tc_cls_flower(priv, type_data, MLX5E_TC_EGRESS);
+		return mlx5e_rep_setup_tc_cls_flower(priv, type_data, MLX5E_TC_EGRESS |
+						     MLX5E_TC_ESW_OFFLOAD);
 	default:
 		return -EOPNOTSUPP;
 	}
