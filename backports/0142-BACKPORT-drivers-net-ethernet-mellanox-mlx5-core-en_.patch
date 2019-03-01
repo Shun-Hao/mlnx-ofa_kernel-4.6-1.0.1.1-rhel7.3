@@ -1547,7 +1547,7 @@ index xxxxxxx..xxxxxxx 100644
  		}
 -
  		if (is_tcf_tunnel_set(a)) {
-+#if !defined(CONFIG_COMPAT_TCF_TUNNEL_KEY_MOD) || defined (CONFIG_COMPAT_KERNEL_4_9)
++#if !defined(CONFIG_COMPAT_TCF_TUNNEL_KEY_MOD) || defined (CONFIG_NET_SCHED_NEW)
  			info = tcf_tunnel_info(a);
 +#else
 +			tcf_tunnel_info_compat(a, info);

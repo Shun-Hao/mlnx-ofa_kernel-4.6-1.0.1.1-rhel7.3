@@ -39,3 +39,11 @@ Change-Id=I1c5287c5f47be2d7f05f4849f2bac8194919bd62; subject=net/mlx5: E-Switch,
 Change-Id=I989df213c7699dc265cc301be5423a15c7eeec1f; subject=net/mlx5: E-Switch, Allow transition to offloads mode for ECPF; feature=mlx5_bf; upstream_status=accepted; general=;
 Change-Id=Ic8187fe08047ede9de7f24924fa4973e78f94db9; subject=net/mlx5: Get max number of VFs from PCI for BlueField; feature=mlx5_bf; upstream_status=accepted; general=;
 Change-Id=I624087db46444aeccd02279c2a5a73af23d3922f; subject=BACKPORTS: Fix MLX5 backports; feature=backports; upstream_status=ignore; general=;
+Change-Id=Ic56961a2e85e92e8e93cfe952b010ce0b85ba5ba; subject=openibd: Unload cls_flower module whend doing openibd restart; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I08b905fcf3a920dde5e0e44dec73b81fae53d73e; subject=net/sched: Reuse the sched code for other kernel versions; feature=net_sched; upstream_status=ignore; general=;
+Change-Id=Ie45e942c8ba84e88adc42da9d923139739bab76b; subject=net/sched: Added support for RHEL7.4 ALT aarch64; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I11c3af826e072d76fec7863bf3abe1ca59c84960; subject=net/sched: Support more CLS masks based on existing ones; feature=net_sched; upstream_status=ignore; general=;
+Change-Id=I7e2ac1adb677ab49276acf801e796186e2a88f6e; subject=net/sched: Fix HAVE_SKB_FLOW_DISSECT; feature=net_sched; upstream_status=ignore; general=;
+Change-Id=I21d484debea33863c5832e8440c404d92a45996d; subject=net/mlx5e: Flower related operation should pass with offload flags; feature=net_sched; upstream_status=ignore; general=;
+Change-Id=Ia16f57bce9e5a06748c42e3f3655e2b3cb6efaca; subject=mlx5/core: E-Switch, Handle table prio 0 properly; feature=net_sched; upstream_status=ignore; general=;
+Change-Id=Id2bf022e3330285ca8d77c975f0171c816671c65; subject=Backports: Fix mlx5 backports; feature=backports; upstream_status=ignore; general=;

@@ -10,11 +10,11 @@ diff --git a/include/uapi/linux/uapi/pkt_cls.h b/include/uapi/linux/uapi/pkt_cls
 index xxxxxxx..xxxxxxx 100644
 --- a/include/uapi/linux/uapi/pkt_cls.h
 +++ b/include/uapi/linux/uapi/pkt_cls.h
-@@ -186,6 +186,7 @@ enum {
+@@ -202,6 +202,7 @@ enum {
  
- #endif /* CONFIG_COMPAT_KERNEL_4_9 */
+ #endif /* CONFIG_NET_SCHED_NEW */
  
 +
+ #ifndef TCA_CLS_FLAGS_IN_HW
  #define TCA_CLS_FLAGS_IN_HW	(1 << 2) /* filter is offloaded to HW */
- #define TCA_CLS_FLAGS_NOT_IN_HW (1 << 3) /* filter isn't offloaded to HW */
- enum {
+ #endif
