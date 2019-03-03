@@ -295,3 +295,4 @@ name=mlx5_gre; type=feature; upstream_status=accepted;
 name=rdma_cm_set_ack_to; type=feature; upstream_status=accepted;
 name=mlx5_bf; type=feature; upstream_status=accepted;
 name=net_sched; type=feature; upstream_status=NA;
+name=mlx5_advise_mr; type=feature; upstream_status=accepted;

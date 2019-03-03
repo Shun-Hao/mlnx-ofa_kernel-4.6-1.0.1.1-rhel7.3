@@ -88,7 +88,7 @@ index xxxxxxx..xxxxxxx 100644
 @@ -637,7 +661,11 @@ static int nldev_get_doit(struct sk_buff *skb, struct nlmsghdr *nlh,
  	nlmsg_end(msg, nlh);
  
- 	put_device(&device->dev);
+ 	ib_device_put(device);
 +#ifdef HAVE_NETLINK_SKB_PARMS_PORTID
  	return rdma_nl_unicast(msg, NETLINK_CB(skb).portid);
 +#else
@@ -173,7 +173,7 @@ index xxxxxxx..xxxxxxx 100644
  
 @@ -758,7 +810,11 @@ static int nldev_port_get_doit(struct sk_buff *skb, struct nlmsghdr *nlh,
  	nlmsg_end(msg, nlh);
- 	put_device(&device->dev);
+ 	ib_device_put(device);
  
 +#ifdef HAVE_NETLINK_SKB_PARMS_PORTID
  	return rdma_nl_unicast(msg, NETLINK_CB(skb).portid);
@@ -236,7 +236,7 @@ index xxxxxxx..xxxxxxx 100644
 @@ -860,7 +933,11 @@ static int nldev_res_get_doit(struct sk_buff *skb, struct nlmsghdr *nlh,
  
  	nlmsg_end(msg, nlh);
- 	put_device(&device->dev);
+ 	ib_device_put(device);
 +#ifdef HAVE_NETLINK_SKB_PARMS_PORTID
  	return rdma_nl_unicast(msg, NETLINK_CB(skb).portid);
 +#else
