@@ -567,17 +567,11 @@ index xxxxxxx..xxxxxxx 100644
  static int
  mlx5e_get_sw_stats64(const struct net_device *dev,
  		     struct rtnl_link_stats64 *stats)
-@@ -1079,6 +1284,7 @@ mlx5e_get_sw_stats64(const struct net_device *dev,
+@@ -1090,13 +1295,27 @@ static int mlx5e_rep_get_offload_stats(int attr_id, const struct net_device *dev
  
- 	return 0;
- }
-+#endif /* defined(HAVE_NDO_GET_OFFLOAD_STATS) || defined(HAVE_NDO_GET_OFFLOAD_STATS_EXTENDED) */
- 
- static int mlx5e_rep_get_offload_stats(int attr_id, const struct net_device *dev,
- 				       void *sp)
-@@ -1091,12 +1297,25 @@ static int mlx5e_rep_get_offload_stats(int attr_id, const struct net_device *dev
  	return -EINVAL;
  }
++#endif /* defined(HAVE_NDO_GET_OFFLOAD_STATS) || defined(HAVE_NDO_GET_OFFLOAD_STATS_EXTENDED) */
  
 -static void
 -mlx5e_vf_rep_get_stats(struct net_device *dev, struct rtnl_link_stats64 *stats)

@@ -11,3 +11,7 @@ Change-Id=I74402ccfa2235b760e7d0e717a5fcd8966bf2acc; subject=net/mlx4_en: Force 
 Change-Id=I79b67ab9205df2cd4309e9e869e99ae7252e6cf6; subject=net/mlx5e: Revert the HW stat reporting from lagged to periodic (part 1); feature=rebase; upstream_status=ignore; general=upstream commit ID: fd4572b3ff3f, tag: v5.0-rc1, alternative implementation;
 Change-Id=Ieb75ce4e56021f73acbdf5d1e35effc94ab7c5d7; subject=net/mlx5e: Revert the HW stat reporting from lagged to periodic (part 2); feature=rebase; upstream_status=ignore; general=upstream commit ID: fd4572b3ff3f, tag: v5.0-rc1, alternative implementation;
 Change-Id=I07a95ee0c814914c8eed989000d1636670d76bb4; subject=BACKPORTS: Fix backports after restore-periodic-stats-work; feature=backports; upstream_status=ignore; general=;
+Change-Id=I1b9da48faf1db8199d0d070d87e105f7db025328; subject=Revert "Revert "net/mlx5e: Revert the HW stat reporting from lagged to periodic (part 1)""; feature=rebase; upstream_status=ignore; general=;
+Change-Id=Icde54d90b93d504656c44bee29542ac576299a23; subject=Revert "Revert "net/mlx5e: Revert the HW stat reporting from lagged to periodic (part 2)""; feature=rebase; upstream_status=ignore; general=;
+Change-Id=I2101249af85c62da555998af5b97ef0c8ae5bec7; subject=Revert "Revert "BACKPORTS: Fix backports after restore-periodic-stats-work""; feature=rebase; upstream_status=ignore; general=;
+Change-Id=Icdcaab9b080531a2816b21e894fa634dda770d16; subject=BACKPORTS: Fix backports+metadata after revert restore-periodic-stats-work; feature=rebase; upstream_status=ignore; general=;
