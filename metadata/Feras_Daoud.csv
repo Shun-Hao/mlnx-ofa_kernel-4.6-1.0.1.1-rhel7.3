@@ -40,3 +40,6 @@ Change-Id=If651431a7e4ee2b9aad01cd9e4f3907b94b0c2a9; subject=BACKPORTS: Fix dcbx
 Change-Id=I4dc304c23c49a1c90edfb88145a28f2ae6760360; subject=BACKPORTS: Fix mlx4 core memory leak; feature=backports; upstream_status=ignore; general=;
 Change-Id=I1a9c717119acbdf0d0629d6a59076a6fc3dde41b; subject=RDMA: Clear PD objects during their allocation; feature=mlx5_ib_bugs; upstream_status=accepted; general=;
 Change-Id=Idfead72bea25e1ba6721c9657584a0cbe1179957; subject=RDMA: Clear CQ objects during their allocatio; feature=mlx4_ib_bugs; upstream_status=accepted; general=;
+Change-Id=Ibf9bdf9b171abe4bd7fa550d4e53a475113590cd; subject=Revert "BACKPORTS: Fix backports after restore-periodic-stats-work"; feature=rebase; upstream_status=ignore; general=;
+Change-Id=Ie0e07eabdbbe87c090121bfb7a35822aee0b3424; subject=Revert "net/mlx5e: Revert the HW stat reporting from lagged to periodic (part 2)"; feature=rebase; upstream_status=ignore; general=;
+Change-Id=Ic0643cce51d339a54703b8675bdea0147430103e; subject=Revert "net/mlx5e: Revert the HW stat reporting from lagged to periodic (part 1)"; feature=rebase; upstream_status=ignore; general=;

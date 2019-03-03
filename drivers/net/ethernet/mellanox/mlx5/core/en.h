@@ -819,7 +819,7 @@ struct mlx5e_priv {
 	struct work_struct         update_carrier_work;
 	struct work_struct         set_rx_mode_work;
 	struct work_struct         tx_timeout_work;
-	struct delayed_work        update_stats_work;
+	struct work_struct         update_stats_work;
 
 	struct mlx5_core_dev      *mdev;
 	struct net_device         *netdev;
@@ -1125,6 +1125,7 @@ int mlx5e_close(struct net_device *netdev);
 int mlx5e_open(struct net_device *netdev);
 u32 mlx5e_choose_lro_timeout(struct mlx5_core_dev *mdev, u32 wanted_timeout);
 
+void mlx5e_queue_update_stats(struct mlx5e_priv *priv);
 u32 mlx5e_ptys_to_speed(u32 eth_proto_oper);
 int mlx5e_get_port_speed(struct mlx5e_priv *priv, u32 *speed);
 int mlx5e_get_max_linkspeed(struct mlx5_core_dev *mdev, u32 *speed);
