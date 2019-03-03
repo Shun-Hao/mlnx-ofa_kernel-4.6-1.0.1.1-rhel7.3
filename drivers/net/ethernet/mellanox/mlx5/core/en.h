@@ -156,6 +156,7 @@ struct page_pool;
 #endif
 
 #define MLX5E_TX_CQ_POLL_BUDGET        128
+#define MLX5E_UPDATE_STATS_INTERVAL    200 /* msecs */
 #define MLX5E_SQ_RECOVER_MIN_INTERVAL  500 /* msecs */
 
 #define MLX5E_UMR_WQE_INLINE_SZ \
