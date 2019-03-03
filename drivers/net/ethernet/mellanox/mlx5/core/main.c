@@ -2117,6 +2117,7 @@ static int init_one(struct pci_dev *pdev,
 	mutex_init(&priv->bfregs.wc_head.lock);
 	INIT_LIST_HEAD(&priv->bfregs.reg_head.list);
 	INIT_LIST_HEAD(&priv->bfregs.wc_head.list);
+	dev->roce.enabled = true;
 
 	err = mlx5_pci_init(dev, priv);
 	if (err) {
