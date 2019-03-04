@@ -424,7 +424,7 @@ struct ib_dct *mlx5_ib_create_dc_target(struct ib_pd *pd,
 	if (!rdma_is_port_valid(&dev->ib_dev, attr->port))
 		return ERR_PTR(-EINVAL);
 
-	if (mlx5_lag_is_active(dev->mdev) && !MLX5_CAP_GEN(dev->mdev, lag_dct))
+	if (dev->lag_active && !MLX5_CAP_GEN(dev->mdev, lag_dct))
 		return ERR_PTR(-EOPNOTSUPP);
 
 	if (pd && pd->uobject) {

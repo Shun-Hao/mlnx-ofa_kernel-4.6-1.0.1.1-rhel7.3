@@ -2808,7 +2808,7 @@ struct ib_qp *mlx5_ib_create_dct(struct ib_pd *pd,
 	if (!attr->srq || !attr->recv_cq)
 		return ERR_PTR(-EINVAL);
 
-	if (mlx5_lag_is_active(dev->mdev) && !MLX5_CAP_GEN(dev->mdev, lag_dct))
+	if (dev->lag_active && !MLX5_CAP_GEN(dev->mdev, lag_dct))
 		return ERR_PTR(-EOPNOTSUPP);
 
 	if (ucmd) {
@@ -3790,7 +3790,7 @@ static int __mlx5_ib_modify_qp(struct ib_qp *ibqp,
 		    (ibqp->qp_type == IB_QPT_XRC_INI) ||
 		    (ibqp->qp_type == IB_QPT_XRC_TGT) ||
 		    (ibqp->qp_type == IB_EXP_QPT_DC_INI)) {
-			if (mlx5_lag_is_active(dev->mdev)) {
+			if (dev->lag_active) {
 				u8 p = mlx5_core_native_port_num(dev->mdev);
 				tx_affinity = get_tx_affinity(dev, pd, base, p);
 				context->flags |= cpu_to_be32(tx_affinity << 24);
@@ -4192,7 +4192,7 @@ int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 			MLX5_SET(dctc, dctc, rae, 1);
 		}
 		MLX5_SET(dctc, dctc, pkey_index, attr->pkey_index);
-		if (mlx5_lag_is_active(dev->mdev)){
+		if (dev->lag_active) {
 			u8 p = mlx5_core_native_port_num(dev->mdev);
 			MLX5_SET(dctc, dctc, port, get_tx_affinity(dev, pd, base, p));
 		}
@@ -4208,7 +4208,7 @@ int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 		u8 tclass = attr->ah_attr.grh.traffic_class;
 		u8 port = MLX5_GET(dctc, dctc, port);
 
-		if (mlx5_lag_is_active(dev->mdev))
+		if (dev->lag_active)
 			port = 1;
 
 		if (udata && udata->outlen < min_resp_len)
