@@ -43,3 +43,4 @@ Change-Id=Idfead72bea25e1ba6721c9657584a0cbe1179957; subject=RDMA: Clear CQ obje
 Change-Id=Ibf9bdf9b171abe4bd7fa550d4e53a475113590cd; subject=Revert "BACKPORTS: Fix backports after restore-periodic-stats-work"; feature=rebase; upstream_status=ignore; general=;
 Change-Id=Ie0e07eabdbbe87c090121bfb7a35822aee0b3424; subject=Revert "net/mlx5e: Revert the HW stat reporting from lagged to periodic (part 2)"; feature=rebase; upstream_status=ignore; general=;
 Change-Id=Ic0643cce51d339a54703b8675bdea0147430103e; subject=Revert "net/mlx5e: Revert the HW stat reporting from lagged to periodic (part 1)"; feature=rebase; upstream_status=ignore; general=;
+Change-Id=Ia0fd400e66313c604636309d89ea2050d24155a9; subject=net/mlx5e: Declare mlx5e_tx_reporter_recover_from_ctx as static; feature=mlx5_core_bugs; upstream_status=accepted; general=;
