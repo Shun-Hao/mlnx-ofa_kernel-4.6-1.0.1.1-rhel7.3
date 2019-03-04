@@ -55,8 +55,8 @@ __mlx5_lag_is_active(struct mlx5_lag *ldev)
 
 void mlx5_modify_lag(struct mlx5_lag *ldev,
 		     struct lag_tracker *tracker);
-void mlx5_activate_lag(struct mlx5_lag *ldev,
-		       struct lag_tracker *tracker,
+int mlx5_activate_lag(struct mlx5_lag *ldev,
+		      struct lag_tracker *tracker,
 		       u8 flags);
 int mlx5_lag_dev_get_netdev_idx(struct mlx5_lag *ldev,
 				struct net_device *ndev);
