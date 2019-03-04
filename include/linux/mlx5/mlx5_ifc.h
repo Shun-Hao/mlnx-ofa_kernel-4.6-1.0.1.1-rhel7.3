@@ -1078,7 +1078,9 @@ struct mlx5_ifc_cmd_hca_cap_bits {
 	u8         log_max_mkey[0x6];
 	u8         tunneled_atomic[0x1];
 	u8         as_notify[0x1];
-	u8         reserved_at_f0[0x6];
+	u8         reserved_at_f2[0x3];
+	u8         device_emulation_manager[0x1];
+	u8         reserved_at_f6[0x2];
 	u8         dump_fill_mkey[0x1];
 	u8         reserved_at_f9[0x2];
 	u8         fast_teardown[0x1];

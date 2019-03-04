@@ -94,3 +94,4 @@ Change-Id=I3fa875a1dbcd9dc1ed4aed761be028b49232e0e5; subject=net/mlx5: Add nvmf 
 Change-Id=I5558637510410f050393818805741ee563981f75; subject=net/mlx5: Add query_nvmf_namespace_context cmd to mlx5_command_str; feature=nvmf_offload; upstream_status=in_progress; general=;
 Change-Id=I07b1347a1b6ebc1c9f9bcf5fe39fa3855ff0301e; subject=nvmet-rdma: Add error flow for post_recv failures on XRQ; feature=nvmf_offload; upstream_status=in_progress; general=;
 Change-Id=I6195f979ec06f1a421991520df875d5aad2ac803; subject=nvmet-rdma: fix offload ctrl creation condition; feature=nvmf_offload; upstream_status=in_progress; general=;
+Change-Id=Ia3b06abc377113ad0d242e358c67ba5df4b67ba0; subject=IB/mlx5: Introduce device_emulation_manager HCA cap; feature=mlx5_bf; upstream_status=ignore; general=;

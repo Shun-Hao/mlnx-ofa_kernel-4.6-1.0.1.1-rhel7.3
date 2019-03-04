@@ -1552,6 +1552,11 @@ static inline int mlx5_core_is_mp_master(struct mlx5_core_dev *dev)
 	return MLX5_CAP_GEN(dev, num_vhca_ports) > 1;
 }
 
+static inline int mlx5_core_is_dev_emulation_manager(struct mlx5_core_dev *dev)
+{
+	return MLX5_CAP_GEN(dev, device_emulation_manager);
+}
+
 static inline int mlx5_core_mp_enabled(struct mlx5_core_dev *dev)
 {
 	return mlx5_core_is_mp_slave(dev) ||
