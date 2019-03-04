@@ -1,0 +1,46 @@
+From: Roi Dayan <roid@mellanox.com>
+Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c
+
+Change-Id: I696f11ce6fa899c865ad2c82164f23bfd076c79e
+---
+ drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c b/drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c
+index xxxxxxx..xxxxxxx 100644
+--- a/drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c
++++ b/drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c
+@@ -2,11 +2,17 @@
+ /* Copyright (c) 2019 Mellanox Technologies. */
+ 
+ #include <linux/netdevice.h>
+-#include "lag.h"
+-#include "lag_mp.h"
+ #include "mlx5_core.h"
+ #include "eswitch.h"
+ 
++#if defined(MLX_USE_LAG_COMPAT) || defined(HAVE_LAG_TX_TYPE)
++#define MLX_LAG_SUPPORTED
++#endif
++
++#ifdef MLX_LAG_SUPPORTED
++#include "lag.h"
++#include "lag_mp.h"
++
+ static bool mlx5_lag_multipath_check_prereq(struct mlx5_lag *ldev)
+ {
+ 	if (!ldev->pf[0].dev || !ldev->pf[1].dev)
+@@ -31,6 +37,7 @@ bool mlx5_lag_is_multipath(struct mlx5_core_dev *dev)
+ 	return res;
+ }
+ 
++#ifdef HAVE_FIB_NH_NOTIFIER_INFO
+ /**
+  * Set lag port affinity
+  *
+@@ -302,3 +309,5 @@ void mlx5_lag_mp_cleanup(struct mlx5_lag *ldev)
+ 	unregister_fib_notifier(&mp->fib_nb);
+ 	mp->fib_nb.notifier_call = NULL;
+ }
++#endif /* HAVE_FIB_NH_NOTIFIER_INFO */
++#endif /* MLX_LAG_SUPPORTED */

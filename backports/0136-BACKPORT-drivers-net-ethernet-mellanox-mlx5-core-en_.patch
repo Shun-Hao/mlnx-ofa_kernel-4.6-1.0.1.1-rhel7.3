@@ -138,4 +138,4 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  
  void mlx5e_rep_queue_neigh_stats_work(struct mlx5e_priv *priv);
- #else /* CONFIG_MLX5_ESWITCH */
+ bool mlx5e_eswitch_rep(struct net_device *netdev);
