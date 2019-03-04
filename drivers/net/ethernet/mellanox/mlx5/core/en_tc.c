@@ -3104,9 +3104,18 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
 	return 0;
 }
 
-static bool is_peer_flow_needed(struct mlx5_core_dev *dev)
+static bool is_peer_flow_needed(struct mlx5e_tc_flow *flow)
 {
-	return mlx5_lag_is_active(dev);
+	struct mlx5_esw_flow_attr *attr = flow->esw_attr;
+	bool is_rep_ingress = attr->in_rep->vport != MLX5_VPORT_UPLINK &&
+				flow->flags & MLX5E_TC_FLOW_INGRESS;
+	bool act_is_encap = !!(attr->action &
+			       MLX5_FLOW_CONTEXT_ACTION_PACKET_REFORMAT);
+	bool esw_paired = mlx5_devcom_is_paired(attr->in_mdev->priv.devcom,
+						MLX5_DEVCOM_ESW_OFFLOADS);
+
+	return esw_paired && mlx5_lag_is_active(attr->in_mdev) &&
+	       (is_rep_ingress || act_is_encap);
 }
 
 static void get_flags(int flags, u16 *flow_flags)
