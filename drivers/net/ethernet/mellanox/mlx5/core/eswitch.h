@@ -143,10 +143,6 @@ enum offloads_fdb_flags {
 	ESW_FDB_CHAINS_AND_PRIOS_SUPPORTED = BIT(0),
 };
 
-enum {
-	FDB_HAS_PEER_MISS_RULES = BIT(0),
-};
-
 extern const unsigned int ESW_POOLS[4];
 
 #define PRIO_LEVELS 2
@@ -160,7 +156,6 @@ struct mlx5_eswitch_fdb {
 		} legacy;
 
 		struct offloads_fdb {
-			u8 flags;
 			struct mlx5_flow_table *slow_fdb;
 			struct mlx5_flow_group *send_to_vport_grp;
 			struct mlx5_flow_group *peer_miss_grp;
