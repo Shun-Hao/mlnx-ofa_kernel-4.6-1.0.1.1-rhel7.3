@@ -11324,7 +11324,9 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		struct device *dev = kobj_to_dev(&kobj);
 		/* https://patchwork.kernel.org/patch/9759133/
 		 * patch exposing link stats also introduce this const */
-		#define PCI_EXP_LNKCAP_SLS_8_0GB value
+		#ifdef PCI_EXP_LNKCAP_SLS_8_0GB
+		#error no need
+		#endif
 
 		return 0;
 	],[
