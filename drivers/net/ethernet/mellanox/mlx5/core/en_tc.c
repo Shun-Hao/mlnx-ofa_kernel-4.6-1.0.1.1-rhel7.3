@@ -53,6 +53,7 @@
 #include "lib/vxlan.h"
 #include "fs_core.h"
 #include "en/port.h"
+#include <linux/mlx5/devcom.h>
 
 struct mlx5_nic_flow_attr {
 	u32 action;
@@ -91,6 +92,7 @@ struct mlx5e_tc_flow {
 	struct list_head	encap;   /* flows sharing the same encap ID */
 	struct list_head	mod_hdr; /* flows sharing the same mod hdr ID */
 	struct list_head	hairpin; /* flows sharing the same hairpin */
+	struct list_head	peer; /* flows with peer flow */
 	union {
 		struct mlx5_esw_flow_attr esw_attr[0];
 		struct mlx5_nic_flow_attr nic_attr[0];
@@ -1202,15 +1204,44 @@ static void mlx5e_detach_encap(struct mlx5e_priv *priv,
 	}
 }
 
+static void __mlx5e_tc_del_fdb_peer_flow(struct mlx5e_tc_flow *flow)
+{
+	struct mlx5_eswitch *esw = flow->priv->mdev->priv.eswitch;
+
+	if (!(flow->flags & MLX5E_TC_FLOW_ESWITCH) ||
+	    !(flow->flags & MLX5E_TC_FLOW_DUP))
+		return;
+
+	mutex_lock(&esw->offloads.peer_mutex);
+	list_del(&flow->peer);
+	mutex_unlock(&esw->offloads.peer_mutex);
+
+	flow->flags &= ~MLX5E_TC_FLOW_DUP;
+
+	mlx5e_tc_del_fdb_flow(flow->peer_flow->priv, flow->peer_flow);
+	kvfree(flow->peer_flow);
+	flow->peer_flow = NULL;
+}
+
+static void mlx5e_tc_del_fdb_peer_flow(struct mlx5e_tc_flow *flow)
+{
+	struct mlx5_core_dev *dev = flow->priv->mdev;
+	struct mlx5_devcom *devcom = dev->priv.devcom;
+	struct mlx5_eswitch *peer_esw;
+
+	peer_esw = mlx5_devcom_get_peer_data(devcom, MLX5_DEVCOM_ESW_OFFLOADS);
+	if (!peer_esw)
+		return;
+
+	__mlx5e_tc_del_fdb_peer_flow(flow);
+	mlx5_devcom_release_peer_data(devcom, MLX5_DEVCOM_ESW_OFFLOADS);
+}
+
 static void mlx5e_tc_del_flow(struct mlx5e_priv *priv,
 			      struct mlx5e_tc_flow *flow)
 {
 	if (flow->flags & MLX5E_TC_FLOW_ESWITCH) {
-		if (flow->flags & MLX5E_TC_FLOW_DUP) {
-			mlx5e_tc_del_fdb_flow(flow->peer_flow->priv,
-					      flow->peer_flow);
-			kvfree(flow->peer_flow);
-		}
+		mlx5e_tc_del_fdb_peer_flow(flow);
 		mlx5e_tc_del_fdb_flow(priv, flow);
 	} else {
 		mlx5e_tc_del_nic_flow(priv, flow);
@@ -2220,9 +2251,12 @@ static bool actions_match_supported(struct mlx5e_priv *priv,
 	else
 		actions = flow->nic_attr->action;
 
+/* disabled due to hindering VF lag. */
+#if 0
 	if (flow->flags & MLX5E_TC_FLOW_EGRESS &&
 	    !(actions & MLX5_FLOW_CONTEXT_ACTION_DECAP))
 		return false;
+#endif
 
 	if (actions & MLX5_FLOW_CONTEXT_ACTION_MOD_HDR)
 		return modify_header_match_supported(&parse_attr->spec, exts,
@@ -3206,50 +3240,73 @@ out:
 	return err;
 }
 
+static int mlx5e_tc_add_fdb_peer_flow(struct tc_cls_flower_offload *f,
+				      struct mlx5e_tc_flow *flow)
+{
+	struct mlx5e_priv *priv = flow->priv, *peer_priv;
+	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch, *peer_esw;
+	struct mlx5_devcom *devcom = priv->mdev->priv.devcom;
+	struct mlx5e_rep_priv *peer_urpriv;
+	struct mlx5e_tc_flow *peer_flow;
+	struct mlx5_core_dev *in_mdev;
+	int err = 0;
+
+	peer_esw = mlx5_devcom_get_peer_data(devcom, MLX5_DEVCOM_ESW_OFFLOADS);
+	if (!peer_esw)
+		return -ENODEV;
+
+	peer_urpriv = mlx5_eswitch_get_uplink_priv(peer_esw, REP_ETH);
+	peer_priv = netdev_priv(peer_urpriv->netdev);
+
+	/* in_mdev is assigned of which the packet originated from.
+	 * So packets redirected to uplink use the same mdev of the
+	 * original flow and packets redirected from uplink use the
+	 * peer mdev.
+	 */
+	if (flow->esw_attr->in_rep->vport == MLX5_VPORT_UPLINK)
+		in_mdev = peer_priv->mdev;
+	else
+		in_mdev = priv->mdev;
+
+	err = __mlx5e_add_fdb_flow(peer_priv, f, flow->flags,
+				   flow->esw_attr->in_rep, in_mdev, &peer_flow);
+	if (err)
+		goto out;
+
+	flow->peer_flow = peer_flow;
+	flow->flags |= MLX5E_TC_FLOW_DUP;
+	mutex_lock(&esw->offloads.peer_mutex);
+	list_add_tail(&flow->peer, &esw->offloads.peer_flows);
+	mutex_unlock(&esw->offloads.peer_mutex);
+
+out:
+	mlx5_devcom_release_peer_data(devcom, MLX5_DEVCOM_ESW_OFFLOADS);
+	return err;
+}
+
 static int
 mlx5e_add_fdb_flow(struct mlx5e_priv *priv,
 		   struct tc_cls_flower_offload *f,
-		   u8 flow_flags,
+		   u16 flow_flags,
 		   struct mlx5e_tc_flow **__flow)
 {
-	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
 	struct mlx5e_rep_priv *rpriv = priv->ppriv;
 	struct mlx5_eswitch_rep *in_rep = rpriv->rep;
 	struct mlx5_core_dev *in_mdev = priv->mdev;
 	struct mlx5e_tc_flow *flow;
 	int err;
 
-	err = __mlx5e_add_fdb_flow(priv, f, flow_flags, in_rep, in_mdev,
-				   &flow);
-
+	err = __mlx5e_add_fdb_flow(priv, f, flow_flags, in_rep,
+				   in_mdev, &flow);
 	if (err)
 		goto out;
 
-	if (is_peer_flow_needed(esw->dev)) {
-		struct mlx5e_tc_flow *peer_flow;
-		struct net_device *peer_netdev;
-		struct mlx5e_priv *peer_priv;
-
-		peer_netdev = mlx5_lag_get_peer_netdev(priv->mdev);
-		peer_priv = netdev_priv(peer_netdev);
-
-		/* in_mdev is assigned of which the packet originated from.
-		 * So packets redirected to uplink use the same mdev of the
-		 * original flow and packets redirected from uplink use the
-		 * peer mdev.
-		 */
-		if (in_rep->vport == MLX5_VPORT_UPLINK)
-			in_mdev = peer_priv->mdev;
-
-		err = __mlx5e_add_fdb_flow(peer_priv, f, flow_flags,
-					   in_rep, in_mdev, &peer_flow);
+	if (is_peer_flow_needed(flow)) {
+		err = mlx5e_tc_add_fdb_peer_flow(f, flow);
 		if (err) {
 			mlx5e_tc_del_fdb_flow(priv, flow);
 			goto out;
 		}
-
-		flow->peer_flow = peer_flow;
-		flow->flags |= MLX5E_TC_FLOW_DUP;
 	}
 
 	*__flow = flow;
@@ -3394,7 +3451,9 @@ int mlx5e_delete_flower(struct mlx5e_priv *priv,
 int mlx5e_stats_flower(struct mlx5e_priv *priv,
 		       struct tc_cls_flower_offload *f, int flags)
 {
+	struct mlx5_devcom *devcom = priv->mdev->priv.devcom;
 	struct rhashtable *tc_ht = get_tc_ht(priv, flags);
+	struct mlx5_eswitch *peer_esw;
 	struct mlx5e_tc_flow *flow;
 	struct mlx5_fc *counter;
 	u64 lastuse = 0;
@@ -3412,6 +3471,10 @@ int mlx5e_stats_flower(struct mlx5e_priv *priv,
 
 		mlx5_fc_query_cached(counter, &bytes, &packets, &lastuse);
 	}
+
+	peer_esw = mlx5_devcom_get_peer_data(devcom, MLX5_DEVCOM_ESW_OFFLOADS);
+	if (!peer_esw)
+		goto out;
 
 	/* Under multipath it's possible for one rule to be currently
 	 * un-offloaded while the other rule is offloaded.
@@ -3433,7 +3496,8 @@ int mlx5e_stats_flower(struct mlx5e_priv *priv,
 	}
 
 no_peer_counter:
-
+	mlx5_devcom_release_peer_data(devcom, MLX5_DEVCOM_ESW_OFFLOADS);
+out:
 	tcf_exts_stats_update(f->exts, bytes, packets, lastuse);
 
 	return 0;
@@ -3545,4 +3609,12 @@ int mlx5e_tc_num_filters(struct mlx5e_priv *priv, int flags)
 	struct rhashtable *tc_ht = get_tc_ht(priv, flags);
 
 	return atomic_read(&tc_ht->nelems);
+}
+
+void mlx5e_tc_clean_fdb_peer_flows(struct mlx5_eswitch *esw)
+{
+	struct mlx5e_tc_flow *flow, *tmp;
+
+	list_for_each_entry_safe(flow, tmp, &esw->offloads.peer_flows, peer)
+		__mlx5e_tc_del_fdb_peer_flow(flow);
 }
