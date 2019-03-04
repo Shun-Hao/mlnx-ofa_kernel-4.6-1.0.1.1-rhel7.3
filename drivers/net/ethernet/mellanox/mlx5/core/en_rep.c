@@ -1636,3 +1636,12 @@ void mlx5e_rep_unregister_vport_reps(struct mlx5_core_dev *mdev)
 
 	mlx5_eswitch_unregister_vport_reps(esw, REP_ETH);
 }
+
+bool mlx5e_eswitch_rep(struct net_device *netdev)
+{
+       if (netdev->netdev_ops == &mlx5e_netdev_ops_vf_rep ||
+           netdev->netdev_ops == &mlx5e_netdev_ops_uplink_rep)
+               return true;
+
+       return false;
+}
