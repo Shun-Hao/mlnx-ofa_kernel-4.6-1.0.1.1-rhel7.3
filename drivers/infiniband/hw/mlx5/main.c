@@ -6733,6 +6733,7 @@ void __mlx5_ib_remove(struct mlx5_ib_dev *dev,
 
 	if (dev->devx_whitelist_uid)
 		mlx5_ib_devx_destroy(dev, dev->devx_whitelist_uid);
+	ib_dealloc_device(&dev->ib_dev);
 }
 
 static ssize_t ooo_read(struct file *filp, char __user *buf,
@@ -7063,8 +7064,6 @@ static void mlx5_ib_remove(struct mlx5_core_dev *mdev, void *context)
 
 	dev = context;
 	__mlx5_ib_remove(dev, dev->profile, MLX5_IB_STAGE_MAX);
-
-	ib_dealloc_device((struct ib_device *)dev);
 }
 
 static struct mlx5_interface mlx5_ib_interface = {
