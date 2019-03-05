@@ -6,3 +6,16 @@ Change-Id=Ib8c6d703d0f007d61f112e5362813d3916a6cc3d; subject=net/mlx5: Add lag a
 Change-Id=I19990df3bba51f1881b056810166bd05eb8809c1; subject=net/mlx5e: E-Switch, Add peer miss rules; feature=mlx5_vf_lag; upstream_status=accepted; general=upstream commit ID: ac004b832128, tag: v5.0-rc1;
 Change-Id=I2328cd1c357033f78aa9ecb2e9a33dc1ddc0331b; subject=net/mlx5e: Infrastructure for duplicated offloading of TC flows; feature=mlx5_vf_lag; upstream_status=accepted; general=upstream commit ID: 04de7dda7394, tag: v5.0-rc1;
 Change-Id=Icf13ee04820bb946a71f0d1ab32fb2128fc1597d; subject=net/mlx5e: Apply the correct check for supporting TC esw rules split; feature=rebase; upstream_status=accepted; general=upstream commit ID: 1392f44bba22, tag: v4.20-rc4;
+Change-Id=I9b95f5763b60fe2f6652bafa7580cd5fbc8cbb83; subject=net/mlx5: Use unsigned int bit instead of bool as a struct member; feature=mlx5_asap; upstream_status=accepted; general=;
+Change-Id=Ib9783f83dc4035ec591e26b822bfa45dd132666c; subject=net/mlx5: Expose lag operations in header file; feature=mlx5_asap; upstream_status=accepted; general=;
+Change-Id=I373d92eb9835bc4de45db0d19e712904b1becea3; subject=net/mlx5: Use own workqueue for lag netdev events processing; feature=mlx5_asap; upstream_status=accepted; general=;
+Change-Id=I4d5043c964738e3ad4d41f620e977635da9e2b32; subject=net/mlx5: Add multipath mode; feature=mlx5_asap; upstream_status=accepted; general=;
+Change-Id=I168abbe9c2a5ed6519a3e99752bd65376e33c5d1; subject=net/mlx5e: Activate HW multipath and handle port affinity based on FIB events; feature=mlx5_asap; upstream_status=accepted; general=;
+Change-Id=If051ea9b7690e2a4dcc935c9792c2bcce417a2ef; subject=net/mlx5e: Allow one failure when offloading tc encap rules under multipath; feature=mlx5_asap; upstream_status=accepted; general=;
+Change-Id=I5ca3bc4731404e41919a8facecd4b61fcb08abe1; subject=net/mlx5e: Always query offloaded tc peer rule counter; feature=mlx5_asap; upstream_status=accepted; general=;
+Change-Id=I39f1507f607239581afb075266a2541d3c710517; subject=net/mlx5e: Use hint to resolve route when in HW multipath mode; feature=mlx5_asap; upstream_status=accepted; general=;
+Change-Id=Ie3392f2692e62042ae758f281372983903ee5dba; subject=net/mlx5e: Add helper function to detect if device is eswitch representor; feature=mlx5_asap; upstream_status=ignore; general=;
+Change-Id=Ic0ca0d2f370606cfc49c972fdb18e9732a21a30c; subject=net/mlx5e: Update check for merged eswitch device; feature=mlx5_asap; upstream_status=accepted; general=;
+Change-Id=Ia199287b0af143181a7d32d7d5f6bb7edc211e12; subject=BACKPORTS: update; feature=backports; upstream_status=ignore; general=;
+Change-Id=I588d71e2004cf237af68ea97037c83b60ec8d715; subject=compat/rdma.m4: Add test for fib_nh_notifier_info; feature=backports; upstream_status=ignore; general=;
+Change-Id=I01730f281ae891355759763c824a2447ae3c166a; subject=metadata: update; feature=ofed_scripts; upstream_status=ignore; general=;
