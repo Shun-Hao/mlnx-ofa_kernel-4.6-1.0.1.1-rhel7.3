@@ -1,20 +1,46 @@
 #!/bin/bash
 
-SWID="$1"
-PORT="$2"
+SWID=$1
+# might be pf0vf1 so only get vf number
+PORT=${2##*f}
+PORT_UPLINK="65534"
+PORT_UPLINK0="p0"
+PORT_UPLINK1="p1"
 
+if [ "$PORT" = "$PORT_UPLINK0" ] || [ "$PORT" = "$PORT_UPLINK1" ]; then
+    # old systemd (i.e. systemd-219-62 rhel 7.6) doesn't export ID_NET_NAME
+    # but has ID_NET_NAME_PATH
+    if [ -z "$ID_NET_NAME" ] && [ -n "$ID_NET_NAME_PATH" ]; then
+        ID_NET_NAME=$ID_NET_NAME_PATH
+    fi
+    if [ -n "$ID_NET_NAME" ]; then
+        n=${ID_NET_NAME##*n}
+	if [ "$n" = "$PORT_UPLINK0" ] || [ "$n" = "$PORT_UPLINK1" ]; then
+            # strip n*
+            NAME=${ID_NET_NAME%n*}
+        else
+            NAME=$ID_NET_NAME
+        fi
+        echo "NAME=$NAME"
+    fi
+    exit
+fi
+
+if [ "$PORT" = "$PORT_UPLINK" ]; then
+    if [ -n "$ID_NET_NAME" ]; then
+        NAME=${ID_NET_NAME%n$PORT_UPLINK}
+        echo "NAME=$NAME"
+    fi
+    exit
+fi
+
+# WA to make sure uplink port is renamed first
+sleep 0.5
 for i in `ls -1 /sys/class/net/*/address`; do
     nic=`echo $i | cut -d/ -f 5`
     address=`cat $i | tr -d :`
-    sw_id=`cat /sys/class/net/$nic/phys_switch_id 2>/dev/null`
-    if [ "$sw_id" = "$SWID" ]; then
-        if [ "$address" = "$SWID" ] || \
-           [ -d "/sys/class/net/${nic}/device/virtfn0" ]; then
-            dev_name=${nic}_$PORT
-            if [ ! -d "/sys/class/net/${dev_name}" ]; then
-                echo "NAME=$dev_name"
-                break
-            fi
-        fi
+    if [ "$address" = "$SWID" ]; then
+        echo "NAME=${nic}_$PORT"
+        break
     fi
 done
