@@ -8,4 +8,4 @@ Change-Id=Ib3f31f528fa14e2e054faccc6b8be7a4c1f0cffa; subject=RDMA/core: Validate
 Change-Id=I174b2c0f35f278f0c98d850097f3804c0e390011; subject=IB/core: Validate net ns of RoCE gid during destination resolve; feature=ib_core_bugs; upstream_status=in_progress; general=;
 Change-Id=I5f6c84b4339ff03c99f3b87ddce809f4e4577518; subject=IB/ipoib: Allow setting mac address for the VF; feature=ipoib_bugs; upstream_status=NA; general=;
 Change-Id=Ic19e21c74a42ef56688246065bc15dc095011cec; subject=RDMA/core: Add GIDs while changing MAC addr only for registered ndev; feature=ib_core_bugs; upstream_status=accepted; general=upstream commit ID: d52ef88a9f4b, tag: v4.20-rc7;
-Change-Id=Id6827134fc20c90b7c45eaafdf6dcef224474e8b; subject=RDMA/core: Sync unregistration with netlink commands; feature=mlx5_advise_mr; upstream_status=accepted; general=;
+Change-Id=Id6827134fc20c90b7c45eaafdf6dcef224474e8b; subject=RDMA/core: Sync unregistration with netlink commands; feature=mlx5_advise_mr; upstream_status=accepted; general=upstream commit ID: 01b671170d7f, tag: v5.0-rc1;

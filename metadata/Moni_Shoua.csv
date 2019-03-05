@@ -42,9 +42,9 @@ Change-Id=I4678fd620ab51e66455cdd8135ec429925282263; subject=mlx5/core: Use mult
 Change-Id=Ica4760ed2a9c92023e12d643938ffc38b465fc01; subject=mlx5/core: Call PAGE_FAULT_RESUME command asynchronously; feature=mlx5_core_bugs; upstream_status=in_progress; general=;
 Change-Id=Id9f680e431bd891857979b9f34d2eae0b44da71d; subject=IB/mlx5: ODP and CAPI invalidation histogram; feature=mlx5_ib_bugs; upstream_status=in_progress; general=;
 Change-Id=If6ba5fab9db736e9dab5ed6113ca857b4e0a6735; subject=net/mlx4: Don't try to manage device LAG on slaves; feature=mlx4_core_bugs; upstream_status=in_progress; general=;
-Change-Id=Ic2ff76fcbcc8e1159bb9ae278566bef7ce3ea807; subject=IB/uverbs: Add helper to get array size from ptr attribute; feature=mlx5_advise_mr; upstream_status=accepted; general=;
-Change-Id=I3b6ca50f39ccbe6382052d440af064ac228c87bb; subject=IB/uverbs: Add support to advise_mr; feature=mlx5_advise_mr; upstream_status=accepted; general=;
-Change-Id=I7169a10ddbc0834c1d34f01a00367588a7b695f8; subject=IB/mlx5: Add advise_mr() support; feature=mlx5_advise_mr; upstream_status=accepted; general=;
+Change-Id=Ic2ff76fcbcc8e1159bb9ae278566bef7ce3ea807; subject=IB/uverbs: Add helper to get array size from ptr attribute; feature=mlx5_advise_mr; upstream_status=accepted; general=upstream commit ID: cbfdd442c43e, tag: v5.0-rc1;
+Change-Id=I3b6ca50f39ccbe6382052d440af064ac228c87bb; subject=IB/uverbs: Add support to advise_mr; feature=mlx5_advise_mr; upstream_status=accepted; general=upstream commit ID: ad8a4496757f, tag: v5.0-rc1;
+Change-Id=I7169a10ddbc0834c1d34f01a00367588a7b695f8; subject=IB/mlx5: Add advise_mr() support; feature=mlx5_advise_mr; upstream_status=accepted; general=upstream commit ID: 813e90b1aeaa, tag: v5.0-rc1;
 Change-Id=I609afe43c1e7306df496956098e27f8830c2b1eb; subject=IB/mlx5: Change prefetch_mr implementation from exp to upstream; feature=mlx5_advise_mr; upstream_status=accepted; general=;
-Change-Id=Id3e2c655b880542ac431275adfd84858416812f8; subject=net/mlx5: Take lock with IRQs disabled to avoid deadlock; feature=mlx5_advise_mr; upstream_status=accepted; general=;
+Change-Id=Id3e2c655b880542ac431275adfd84858416812f8; subject=net/mlx5: Take lock with IRQs disabled to avoid deadlock; feature=mlx5_advise_mr; upstream_status=accepted; general=upstream commit ID: 33814e5d127e, tag: v5.0-rc5;
 Change-Id=I21b12f1aa8aa62d5673d8330f1abe1fdf4f4d86a; subject=BACKPORTS: Fix after advise_mr series; feature=backports; upstream_status=ignore; general=;

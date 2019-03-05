@@ -1,2 +1,2 @@
 sep=;
-Change-Id=I8883351cc3561bfc3751bb33e4bf2cb93db2b061; subject=RDMA/device: Expose ib_device_try_get((); feature=mlx5_advise_mr; upstream_status=accepted; general=;
+Change-Id=I8883351cc3561bfc3751bb33e4bf2cb93db2b061; subject=RDMA/device: Expose ib_device_try_get((); feature=mlx5_advise_mr; upstream_status=accepted; general=upstream commit ID: d79af7242bb2, tag: v5.0-rc5;
