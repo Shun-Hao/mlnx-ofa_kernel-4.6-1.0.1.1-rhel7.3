@@ -424,8 +424,14 @@ static void mlx5e_sqs2vport_stop(struct mlx5_eswitch *esw,
 	struct mlx5e_rep_sq *rep_sq, *tmp;
 	struct mlx5e_rep_priv *rpriv;
 
+#ifndef CONFIG_BF_DEVICE_EMULATION
 	if (esw->mode != SRIOV_OFFLOADS)
 		return;
+#else
+	if (esw->mode != SRIOV_OFFLOADS ||
+	    mlx5_core_is_dev_emulation_manager(esw->dev))
+		return;
+#endif
 
 	rpriv = mlx5e_rep_to_rep_priv(rep);
 	list_for_each_entry_safe(rep_sq, tmp, &rpriv->vport_sqs_list, list) {
@@ -445,8 +451,14 @@ static int mlx5e_sqs2vport_start(struct mlx5_eswitch *esw,
 	int err;
 	int i;
 
+#ifndef CONFIG_BF_DEVICE_EMULATION
 	if (esw->mode != SRIOV_OFFLOADS)
 		return 0;
+#else
+	if (esw->mode != SRIOV_OFFLOADS ||
+	    mlx5_core_is_dev_emulation_manager(esw->dev))
+		return 0;
+#endif
 
 	rpriv = mlx5e_rep_to_rep_priv(rep);
 	for (i = 0; i < sqns_num; i++) {
@@ -1326,6 +1338,11 @@ static int mlx5e_init_rep_rx(struct mlx5e_priv *priv)
 	struct mlx5_core_dev *mdev = priv->mdev;
 	int err;
 
+#ifdef CONFIG_BF_DEVICE_EMULATION
+	if (mlx5_core_is_dev_emulation_manager(mdev))
+		return 0;
+#endif
+
 	mlx5e_init_l2_addr(priv);
 
 	err = mlx5e_open_drop_rq(priv, &priv->drop_rq);
@@ -1378,6 +1395,11 @@ err_close_drop_rq:
 static void mlx5e_cleanup_rep_rx(struct mlx5e_priv *priv)
 {
 	struct mlx5e_rep_priv *rpriv = priv->ppriv;
+
+#ifdef CONFIG_BF_DEVICE_EMULATION
+	if (mlx5_core_is_dev_emulation_manager(priv->mdev))
+		return;
+#endif
 
 	mlx5_del_flow_rules(rpriv->vport_rx_rule);
 	mlx5e_destroy_ttc_table(priv, &priv->fs.ttc);
