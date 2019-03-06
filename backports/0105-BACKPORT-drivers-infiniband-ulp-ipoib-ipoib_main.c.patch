@@ -1,10 +1,10 @@
-From: Talat Batheesh <talatb@mellanox.com>
+From: Feras Daoud <ferasda@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/infiniband/ulp/ipoib/ipoib_main.c
 
-Change-Id: Id165f226db24c89181738c0b3b15f52484fb7aa9
+Change-Id: I9e88cce534b39322f5434230816c77bad446337f
 ---
- drivers/infiniband/ulp/ipoib/ipoib_main.c | 319 +++++++++++++++++++++++++++---
- 1 file changed, 293 insertions(+), 26 deletions(-)
+ drivers/infiniband/ulp/ipoib/ipoib_main.c | 314 +++++++++++++++++++++++++++---
+ 1 file changed, 290 insertions(+), 24 deletions(-)
 
 diff --git a/drivers/infiniband/ulp/ipoib/ipoib_main.c b/drivers/infiniband/ulp/ipoib/ipoib_main.c
 index xxxxxxx..xxxxxxx 100644
@@ -552,19 +552,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static void ipoib_build_priv(struct net_device *dev)
-@@ -2252,8 +2492,9 @@ static struct net_device *ipoib_alloc_netdev(struct ib_device *hca, u8 port,
- 	if (!IS_ERR(dev) || PTR_ERR(dev) != -EOPNOTSUPP)
- 		return dev;
- 
--	dev = alloc_netdev(sizeof(struct rdma_netdev), name, NET_NAME_UNKNOWN,
--			   ipoib_setup_common);
-+	dev = alloc_netdev_mqs((int)sizeof(struct rdma_netdev),
-+			       name,
-+			       NET_NAME_UNKNOWN, ipoib_setup_common, 1, 1);
- 	if (!dev)
- 		return ERR_PTR(-ENOMEM);
- 	return dev;
-@@ -2303,9 +2544,10 @@ int ipoib_intf_init(struct ib_device *hca, u8 port, const char *name,
+@@ -2306,9 +2546,10 @@ int ipoib_intf_init(struct ib_device *hca, u8 port, const char *name,
  	 * being set, so we force it to NULL here and handle manually until it
  	 * is safe to turn on.
  	 */
@@ -576,7 +564,7 @@ index xxxxxxx..xxxxxxx 100644
  	ipoib_build_priv(dev);
  
  	return 0;
-@@ -2350,7 +2592,7 @@ void ipoib_intf_free(struct net_device *dev)
+@@ -2353,7 +2594,7 @@ void ipoib_intf_free(struct net_device *dev)
  {
  	struct ipoib_dev_priv *priv = ipoib_priv(dev);
  	struct rdma_netdev *rn = netdev_priv(dev);
@@ -585,7 +573,7 @@ index xxxxxxx..xxxxxxx 100644
  	dev->priv_destructor = priv->next_priv_destructor;
  	if (dev->priv_destructor)
  		dev->priv_destructor(dev);
-@@ -2360,7 +2602,7 @@ void ipoib_intf_free(struct net_device *dev)
+@@ -2363,7 +2604,7 @@ void ipoib_intf_free(struct net_device *dev)
  	 * attempt to call priv_destructor twice, prevent that from happening.
  	 */
  	dev->priv_destructor = NULL;
@@ -594,7 +582,7 @@ index xxxxxxx..xxxxxxx 100644
  	/* unregister/destroy is very complicated. Make bugs more obvious. */
  	rn->clnt_priv = NULL;
  
-@@ -2438,6 +2680,7 @@ static void set_base_guid(struct ipoib_dev_priv *priv, union ib_gid *gid)
+@@ -2441,6 +2682,7 @@ static void set_base_guid(struct ipoib_dev_priv *priv, union ib_gid *gid)
  	}
  }
  
@@ -602,7 +590,7 @@ index xxxxxxx..xxxxxxx 100644
  static int ipoib_check_lladdr(struct net_device *dev,
  			      struct sockaddr_storage *ss)
  {
-@@ -2463,9 +2706,13 @@ static int ipoib_set_mac(struct net_device *dev, void *addr)
+@@ -2466,9 +2708,13 @@ static int ipoib_set_mac(struct net_device *dev, void *addr)
  {
  	struct ipoib_dev_priv *priv = ipoib_priv(dev);
  	struct sockaddr_storage *ss = addr;
@@ -617,7 +605,7 @@ index xxxxxxx..xxxxxxx 100644
  		return -EBUSY;
  
  	ret = ipoib_check_lladdr(dev, ss);
-@@ -2478,6 +2725,7 @@ static int ipoib_set_mac(struct net_device *dev, void *addr)
+@@ -2481,6 +2727,7 @@ static int ipoib_set_mac(struct net_device *dev, void *addr)
  
  	return 0;
  }
@@ -625,7 +613,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static ssize_t ipoib_set_mac_using_sysfs(struct device *dev,
  					 struct device_attribute *attr,
-@@ -2579,8 +2827,13 @@ static ssize_t dev_id_show(struct device *dev,
+@@ -2582,8 +2829,13 @@ static ssize_t dev_id_show(struct device *dev,
  			   struct device_attribute *attr, char *buf)
  {
  	struct net_device *ndev = to_net_dev(dev);
@@ -640,7 +628,7 @@ index xxxxxxx..xxxxxxx 100644
  		netdev_info_once(ndev,
  			"\"%s\" wants to know my dev_id. Should it look at dev_port instead? See Documentation/ABI/testing/sysfs-class-net for more info.\n",
  			current->comm);
-@@ -2639,14 +2892,22 @@ static struct net_device *ipoib_add_port(const char *format,
+@@ -2642,14 +2894,22 @@ static struct net_device *ipoib_add_port(const char *format,
  		if (!rc && ops->priv_size < params.sizeof_priv)
  			ops->priv_size = params.sizeof_priv;
  	}
@@ -664,7 +652,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (ipoib_intercept_dev_id_attr(ndev))
  		goto sysfs_failed;
  	if (ipoib_cm_add_mode_attr(ndev))
-@@ -2724,10 +2985,16 @@ static void ipoib_remove_one(struct ib_device *device, void *client_data)
+@@ -2727,10 +2987,16 @@ static void ipoib_remove_one(struct ib_device *device, void *client_data)
  
  		list_for_each_entry_safe(cpriv, tcpriv, &priv->child_intfs,
  					 list)

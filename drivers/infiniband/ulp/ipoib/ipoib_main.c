@@ -2252,8 +2252,11 @@ static struct net_device *ipoib_alloc_netdev(struct ib_device *hca, u8 port,
 	if (!IS_ERR(dev) || PTR_ERR(dev) != -EOPNOTSUPP)
 		return dev;
 
-	dev = alloc_netdev(sizeof(struct rdma_netdev), name, NET_NAME_UNKNOWN,
-			   ipoib_setup_common);
+	dev = alloc_netdev_mqs((int)sizeof(struct rdma_netdev),
+			       name,
+			       NET_NAME_UNKNOWN, ipoib_setup_common,
+			       priv->max_tx_queues,
+			       priv->max_rx_queues);
 	if (!dev)
 		return ERR_PTR(-ENOMEM);
 	return dev;

@@ -48,3 +48,4 @@ Change-Id=Ie84a5ce71ebeb83af5d98b14b43616bfc2d53941; subject=IB/uverbs: Fix OOPs
 Change-Id=Id69792c9f27483495a0e825b7ebbcf8dc92b6886; subject=IB/uverbs: Fix OOPs in uverbs_user_mmap_disassociate; feature=ib_core_bugs; upstream_status=accepted; general=upstream commit ID: 7b21b69ab203, tag: v5.0-rc5;
 Change-Id=I42ed7eae3700e9f212b30554caf93920ed4ba45d; subject=net/mlx5e: IPoIB, Fix RX checksum statistics update; feature=ipoib_bugs; upstream_status=accepted; general=;
 Change-Id=Ic30e585ac8dd2b537d9ab87cf3ebfbb41153e706; subject=BACKPORTS: Fix en_rx backport; feature=backports; upstream_status=ignore; general=;
+Change-Id=I222e60a3155917a156e4eec701c0d8398a764c26; subject=IB/ipoib: Fix IPoIB RSS queue num; feature=ipoib_rss_tss; upstream_status=NA; general=;
