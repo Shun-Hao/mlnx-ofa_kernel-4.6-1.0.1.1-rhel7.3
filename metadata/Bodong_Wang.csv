@@ -47,3 +47,5 @@ Change-Id=I7e2ac1adb677ab49276acf801e796186e2a88f6e; subject=net/sched: Fix HAVE
 Change-Id=I21d484debea33863c5832e8440c404d92a45996d; subject=net/mlx5e: Flower related operation should pass with offload flags; feature=net_sched; upstream_status=ignore; general=;
 Change-Id=Ia16f57bce9e5a06748c42e3f3655e2b3cb6efaca; subject=mlx5/core: E-Switch, Handle table prio 0 properly; feature=net_sched; upstream_status=ignore; general=;
 Change-Id=Id2bf022e3330285ca8d77c975f0171c816671c65; subject=Backports: Fix mlx5 backports; feature=backports; upstream_status=ignore; general=;
+Change-Id=I551f8b98edc94828c6bb7114a4990dd874afa727; subject=compat: Fix idr for RH 7.5 4.14 kernel; feature=backports; upstream_status=ignore; general=;
+Change-Id=Ie9b97f708eb4ccd7a0171fb7a8536dab2e83cc4d; subject=Backports: Fix en_rep backports for RH7.5 of 4.14 kernel; feature=backports; upstream_status=ignore; general=;
