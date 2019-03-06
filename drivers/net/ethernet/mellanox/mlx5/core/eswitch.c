@@ -2189,8 +2189,16 @@ int mlx5_eswitch_enable_sriov(struct mlx5_eswitch *esw, int nvfs, int mode)
 		if (err)
 			goto abort;
 	} else {
+#ifndef CONFIG_BF_DEVICE_EMULATION
 		mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_ETH);
 		mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_IB);
+#else
+		/* No need to reload interfaces on emulation manager */
+		if (!mlx5_core_is_dev_emulation_manager(esw->dev)) {
+			mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_ETH);
+			mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_IB);
+		}
+#endif
 		err = esw_offloads_init(esw, vf_nvports, total_nvports);
 	}
 
@@ -2229,8 +2237,16 @@ abort:
 	esw->mode = SRIOV_NONE;
 
 	if (mode == SRIOV_OFFLOADS) {
+#ifndef CONFIG_BF_DEVICE_EMULATION
 		mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_IB);
 		mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_ETH);
+#else
+		/* No need to reload interfaces on emulation manager */
+		if (!mlx5_core_is_dev_emulation_manager(esw->dev)) {
+			mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_IB);
+			mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_ETH);
+		}
+#endif
 	}
 
 	return err;
@@ -2270,8 +2286,16 @@ void mlx5_eswitch_disable_sriov(struct mlx5_eswitch *esw)
 	mlx5_lag_update(esw->dev);
 
 	if (old_mode == SRIOV_OFFLOADS) {
+#ifndef CONFIG_BF_DEVICE_EMULATION
 		mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_IB);
 		mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_ETH);
+#else
+		/* No need to reload interfaces on emulation manager */
+		if (!mlx5_core_is_dev_emulation_manager(esw->dev)) {
+			mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_IB);
+			mlx5_reload_interface(esw->dev, MLX5_INTERFACE_PROTOCOL_ETH);
+		}
+#endif
 	}
 }
 
