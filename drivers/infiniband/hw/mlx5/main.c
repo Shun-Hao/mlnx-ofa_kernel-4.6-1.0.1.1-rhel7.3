@@ -7067,11 +7067,20 @@ static void *mlx5_ib_add(struct mlx5_core_dev *mdev)
 
 	printk_once(KERN_INFO "%s", mlx5_version);
 
+#ifndef CONFIG_BF_DEVICE_EMULATION
 	if (MLX5_ESWITCH_MANAGER(mdev) &&
 	    mlx5_ib_eswitch_mode(mdev->priv.eswitch) == SRIOV_OFFLOADS) {
 		mlx5_ib_register_vport_reps(mdev);
 		return mdev;
 	}
+#else
+	if (MLX5_ESWITCH_MANAGER(mdev) &&
+	    mlx5_ib_eswitch_mode(mdev->priv.eswitch) == SRIOV_OFFLOADS &&
+	    !mlx5_core_is_dev_emulation_manager(mdev)) {
+		mlx5_ib_register_vport_reps(mdev);
+		return mdev;
+	}
+#endif
 
 	port_type_cap = MLX5_CAP_GEN(mdev, port_type);
 	ll = mlx5_port_type_cap_to_rdma_ll(port_type_cap);
