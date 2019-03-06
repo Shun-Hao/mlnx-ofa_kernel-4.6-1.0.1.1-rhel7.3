@@ -97,6 +97,7 @@ again:
 	return ret;
 }
 EXPORT_SYMBOL(ida_simple_get);
+#endif /* HAVE_IDA_SIMPLE_GET */
 
 #ifndef HAVE_IDR_GET_NEXT_UL_EXPORTED
 
@@ -142,7 +143,6 @@ int idr_alloc_u32(struct idr *idr, void *ptr, u32 *nextid,
 	return 0;
 }
 EXPORT_SYMBOL_GPL(idr_alloc_u32);
-#endif
+#endif /* HAVE_IDR_RT */
 
-#endif
-#endif
+#endif /* HAVE_IDR_GET_NEXT_UL_EXPORTED */

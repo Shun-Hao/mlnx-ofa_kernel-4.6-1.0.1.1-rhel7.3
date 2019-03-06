@@ -6094,6 +6094,7 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		struct radix_tree_root tmp_radix;
 
 		tmp_idr.idr_rt = tmp_radix;
+		tmp_idr.idr_base = 0;
 
 		return 0;
 	],[
