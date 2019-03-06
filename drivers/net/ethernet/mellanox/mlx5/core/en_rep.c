@@ -1563,6 +1563,9 @@ mlx5e_vport_rep_load(struct mlx5_core_dev *dev, struct mlx5_eswitch_rep *rep)
 		goto err_egdev_cleanup;
 	}
 
+	if (rep->vport == MLX5_VPORT_UPLINK)
+		mlx5_eswitch_compat_sysfs_init(netdev);
+
 	return 0;
 
 err_egdev_cleanup:
@@ -1594,6 +1597,9 @@ mlx5e_vport_rep_unload(struct mlx5_eswitch_rep *rep)
 	struct mlx5e_rep_priv *uplink_rpriv;
 	void *ppriv = priv->ppriv;
 	struct mlx5e_priv *upriv;
+
+	if (rep->vport == MLX5_VPORT_UPLINK)
+		mlx5_eswitch_compat_sysfs_cleanup(netdev);
 
 	unregister_netdev(netdev);
 	uplink_rpriv = mlx5_eswitch_get_uplink_priv(priv->mdev->priv.eswitch,

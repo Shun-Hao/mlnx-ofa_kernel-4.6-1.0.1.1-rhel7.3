@@ -1298,7 +1298,18 @@ out:
 static int esw_offloads_start(struct mlx5_eswitch *esw,
 			      struct netlink_ext_ack *extack)
 {
+	esw->handler.extack = extack;
+	return schedule_work(&esw->handler.start_handler);
+}
+
+void esw_offloads_start_handler(struct work_struct *work)
+{
+	struct mlx5_esw_handler *handler =
+	       container_of(work, struct mlx5_esw_handler, start_handler);
+	struct mlx5_eswitch *esw =
+	       container_of(handler, struct mlx5_eswitch, handler);
 	int err, err1, num_vfs = esw->dev->priv.sriov.num_vfs;
+	struct netlink_ext_ack *extack = handler->extack;
 
 	if (esw->mode != SRIOV_LEGACY &&
 	    !mlx5_core_is_ecpf_esw_manager(esw->dev)) {
@@ -1670,7 +1681,18 @@ err_reps:
 static int esw_offloads_stop(struct mlx5_eswitch *esw,
 			     struct netlink_ext_ack *extack)
 {
+	esw->handler.extack = extack;
+	return schedule_work(&esw->handler.stop_handler);
+}
+
+void esw_offloads_stop_handler(struct work_struct *work)
+{
+	struct mlx5_esw_handler *handler =
+	       container_of(work, struct mlx5_esw_handler, stop_handler);
+	struct mlx5_eswitch *esw =
+	       container_of(handler, struct mlx5_eswitch, handler);
 	int err, err1, num_vfs = esw->dev->priv.sriov.num_vfs;
+	struct netlink_ext_ack *extack = handler->extack;
 
 	mlx5_eswitch_disable_sriov(esw);
 	err = mlx5_eswitch_enable_sriov(esw, num_vfs, SRIOV_LEGACY);

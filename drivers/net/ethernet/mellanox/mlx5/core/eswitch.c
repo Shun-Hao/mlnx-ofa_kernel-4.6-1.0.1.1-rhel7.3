@@ -2133,6 +2133,8 @@ int mlx5_eswitch_init(struct mlx5_core_dev *dev)
 		esw->offloads.encap = DEVLINK_ESWITCH_ENCAP_MODE_NONE;
 
 	dev->priv.eswitch = esw;
+	INIT_WORK(&esw->handler.start_handler, esw_offloads_start_handler);
+	INIT_WORK(&esw->handler.stop_handler, esw_offloads_stop_handler);
 	return 0;
 abort:
 	if (esw->work_queue)

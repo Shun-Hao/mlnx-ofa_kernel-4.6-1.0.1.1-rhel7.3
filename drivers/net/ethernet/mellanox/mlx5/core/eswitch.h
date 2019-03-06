@@ -215,6 +215,12 @@ struct mlx5_host_info {
 	u16			num_vfs;
 };
 
+struct mlx5_esw_handler {
+	struct work_struct      start_handler;
+	struct work_struct      stop_handler;
+	struct netlink_ext_ack	*extack;
+};
+
 struct mlx5_eswitch {
 	struct mlx5_core_dev    *dev;
 	struct mlx5_eswitch_fdb fdb_table;
@@ -239,6 +245,7 @@ struct mlx5_eswitch {
 	int                     nvports;
 	u16                     manager_vport;
 	struct mlx5_host_info	host_info;
+	struct mlx5_esw_handler	handler;
 };
 
 void esw_offloads_cleanup(struct mlx5_eswitch *esw);
@@ -461,6 +468,9 @@ static inline int mlx5_eswitch_index_to_vport_num(struct mlx5_eswitch *esw,
 
 	return index;
 }
+
+void esw_offloads_start_handler(struct work_struct *work);
+void esw_offloads_stop_handler(struct work_struct *work);
 
 #else  /* CONFIG_MLX5_ESWITCH */
 /* eswitch API stubs */
