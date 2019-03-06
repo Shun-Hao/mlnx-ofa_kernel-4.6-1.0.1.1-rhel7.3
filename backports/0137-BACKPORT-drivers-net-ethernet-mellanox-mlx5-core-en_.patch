@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en_rx.c
 
 Change-Id: Iac87d0f6bc1116dd2254d1fa6dd50f0d43c52716
 ---
- .../net/ethernet/mellanox/mlx5/core/en_rx.c   | 275 ++++++++++++++++++
- 1 file changed, 275 insertions(+)
+ drivers/net/ethernet/mellanox/mlx5/core/en_rx.c | 277 +++++++++++++++++++++++-
+ 1 file changed, 276 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en_rx.c b/drivers/net/ethernet/mellanox/mlx5/core/en_rx.c
 index xxxxxxx..xxxxxxx 100644
@@ -194,7 +194,7 @@ index xxxxxxx..xxxxxxx 100644
  			stats->csum_unnecessary_inner++;
  			return;
  		}
-@@ -942,6 +995,10 @@ static inline void mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
+@@ -942,10 +995,14 @@ static inline void mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
  	u8 lro_num_seg = be32_to_cpu(cqe->srqn) >> 24;
  	struct mlx5e_rq_stats *stats = rq->stats;
  	struct net_device *netdev = rq->netdev;
@@ -204,6 +204,11 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  
  	skb->mac_len = ETH_HLEN;
+ 
+-#ifdef CONFIG_MLX5_EN_TLS
++#if defined(CONFIG_MLX5_EN_TLS) && defined(HAVE_TLS_OFFLOAD_RX_RSYNC_REQUEST)
+ 	mlx5e_tls_handle_rx_skb(netdev, skb, &cqe_bcnt);
+ #endif
  
 @@ -958,6 +1015,16 @@ static inline void mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
  		stats->packets += lro_num_seg - 1;

@@ -789,6 +789,23 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if struct tlsdev_ops has tls_dev_resync_rx])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/netdevice.h>
+	],[
+		struct tlsdev_ops dev;
+
+		dev.tls_dev_resync_rx = NULL;
+		
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_TLSDEV_OPS_HAS_TLS_DEV_RESYNC_RX, 1,
+			  [struct tlsdev_ops has tls_dev_resync_rx])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if cleanup_srcu_struct_quiesced exists])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/srcu.h>
@@ -1568,6 +1585,22 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 	])
 	;;
 	esac
+
+	AC_MSG_CHECKING([if struct sk_buff has decrypted])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/skbuff.h>
+	],[
+		struct sk_buff *skb;
+		skb->decrypted = 0;
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_SK_BUFF_DECRYPTED, 1,
+			  [decrypted is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
 
 	AC_MSG_CHECKING([if struct sk_buff has encapsulation])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
@@ -4254,6 +4287,21 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_NDO_GSO_CHECK, 1,
 			  [ndo_gso_check is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if netdev_features.h has NETIF_F_HW_TLS_RX])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/netdev_features.h>
+	],[
+		netdev_features_t tls_rx = NETIF_F_HW_TLS_RX;
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_NETIF_F_HW_TLS_RX, 1,
+			[NETIF_F_HW_TLS_RX is defined in netdev_features.h])
 	],[
 		AC_MSG_RESULT(no)
 	])
@@ -11072,6 +11120,48 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_UAPI_LINUX_TLS_H, 1,
 			  [uapi/linux/tls.h exists])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if net/tls.h has tls_offload_context_tx])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <net/tls.h>
+	],[
+                struct tls_offload_context_tx tmp;
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_TLS_OFFLOAD_CONTEXT_TX_STRUCT, 1,
+			  [net/tls.h has tls_offload_context_tx])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if net/tls.h has tls_offload_context_rx])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <net/tls.h>
+	],[
+                struct tls_offload_context_rx tmp;
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_TLS_OFFLOAD_CONTEXT_RX_STRUCT, 1,
+			  [net/tls.h has tls_offload_context_rx])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if net/tls.h has tls_offload_rx_resync_request])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <net/tls.h>
+	],[
+                tls_offload_rx_resync_request(NULL,0);
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_TLS_OFFLOAD_RX_RESYNC_REQUEST, 1,
+			  [net/tls.h has tls_offload_rx_resync_request])
 	],[
 		AC_MSG_RESULT(no)
 	])

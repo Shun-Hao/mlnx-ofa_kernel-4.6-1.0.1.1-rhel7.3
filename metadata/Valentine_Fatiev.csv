@@ -22,3 +22,4 @@ Change-Id=I2ba1d2eaefce89e6374943155c93fa468bc04ded; subject=BACKPORTS: Fix SLES
 Change-Id=I5e5d5d26a0ab60a3ec17c91bca828d701ff0819d; subject=BACKPORTS: Add RHEL 8.0 support - Part1; feature=backports; upstream_status=ignore; general=;
 Change-Id=I9daffe3e13684ca9bbc2f85d0f59831af819620d; subject=BACKPORTS: rdma.m4: Remove unused defines; feature=backports; upstream_status=ignore; general=;
 Change-Id=If0ed9088b21e2af6428235a0d419762f3d8deed9; subject=BACKPORTS: Add RHEL 8.0 support - Part2; feature=backports; upstream_status=ignore; general=;
+Change-Id=I3fab018352e9735fd0829ace1e31fd4ecc2b9a9c; subject=BACKPORTS: Add RHEL 8.0 support - Part3; feature=backports; upstream_status=ignore; general=;
