@@ -2,3 +2,6 @@ sep=;
 Change-Id=Ic5864bd01f392ed7ee838006a6dff52fa645f826; subject=net/mlx5e: Don't match on vlan non-existence if ethertype is wildcarded; feature=mlx5_asap; upstream_status=in_progress; general=;
 Change-Id=Id4c0a605abb01d31f7c03b8186aa427a466eb7e6; subject=IB/mlx5: Fix kernel panic when changing switchdev mode to legacy; feature=mlx5_ib_bugs; upstream_status=NA; general=;
 Change-Id=I4888455e4decd004382c3cb00902b4df713b9234; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=Id2fa7e0fe04395e8b803761cbaae809f97b8b4b3; subject=compat: Free devlink compat using delayed work; feature=mlx5_asap; upstream_status=NA; general=;
+Change-Id=I1f38dde266efde8e2c1a530d764d1e9f1cebaf2e; subject=BACKPORTS: compat: Free devlink compat using delayed work; feature=backports; upstream_status=ignore; general=;
+Change-Id=Ia3ac9e4c17355e20f65048a10e15874306930cc8; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
