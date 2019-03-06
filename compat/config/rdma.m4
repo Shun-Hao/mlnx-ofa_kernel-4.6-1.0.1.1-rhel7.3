@@ -5219,7 +5219,7 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
                 struct fib_notifier_info info;
 
                 /* also checking family attr in fib_notifier_info */
-                info->family = AF_INET;
+                info.family = AF_INET;
 
                 return 0;
         ],[
