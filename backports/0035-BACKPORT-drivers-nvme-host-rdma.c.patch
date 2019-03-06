@@ -3,7 +3,7 @@ Subject: [PATCH] BACKPORT: drivers/nvme/host/rdma.c
 
 Change-Id: I2d26aedcdc44d668f4dd931ab7d7511c4bad6e7d
 ---
- drivers/nvme/host/rdma.c | 163 +++++++++++++++++++++++++++++++++++++++++++++++
+ drivers/nvme/host/rdma.c | 163 +++++++++++++++++++++++++++++++++++++++
  1 file changed, 163 insertions(+)
 
 diff --git a/drivers/nvme/host/rdma.c b/drivers/nvme/host/rdma.c
@@ -14,7 +14,7 @@ index xxxxxxx..xxxxxxx 100644
  #include <linux/string.h>
  #include <linux/atomic.h>
  #include <linux/blk-mq.h>
-+#ifdef HAVE_BLK_MQ_MAP_QUEUES
++#if defined(HAVE_BLK_MQ_MAP_QUEUES) && defined(HAVE_BLK_MQ_TAG_SET_HAS_MQ_MAP)
  #include <linux/blk-mq-rdma.h>
 +#endif
  #include <linux/types.h>
@@ -337,7 +337,7 @@ index xxxxxxx..xxxxxxx 100644
  	nvme_complete_rq(rq);
  }
  
-+#ifdef HAVE_BLK_MQ_MAP_QUEUES
++#if defined(HAVE_BLK_MQ_MAP_QUEUES) && defined(HAVE_BLK_MQ_TAG_SET_HAS_MQ_MAP)
  static int nvme_rdma_map_queues(struct blk_mq_tag_set *set)
  {
 +#if 0
@@ -357,7 +357,7 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  	.queue_rq	= nvme_rdma_queue_rq,
  	.complete	= nvme_rdma_complete_rq,
-+#ifdef HAVE_BLK_MQ_OPS_MAP_QUEUE
++#ifdef  HAVE_BLK_MQ_OPS_MAP_QUEUE
 +	.map_queue      = blk_mq_map_queue,
 +#endif
  	.init_request	= nvme_rdma_init_request,
@@ -367,7 +367,7 @@ index xxxxxxx..xxxxxxx 100644
  	.poll		= nvme_rdma_poll,
 +#endif
  	.timeout	= nvme_rdma_timeout,
-+#ifdef HAVE_BLK_MQ_MAP_QUEUES
++#if defined(HAVE_BLK_MQ_MAP_QUEUES) && defined(HAVE_BLK_MQ_TAG_SET_HAS_MQ_MAP)
  	.map_queues	= nvme_rdma_map_queues,
 +#endif
  };

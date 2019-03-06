@@ -8822,7 +8822,24 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
-	AC_MSG_CHECKING([if linux/blk-mq.h blk_mq_tag_set member ops is const])
+	AC_MSG_CHECKING([if linux/blk-mq.h blk_mq_tag_set has member mq_map])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/blk-mq.h>
+	],[
+		struct blk_mq_tag_set x = {
+			.mq_map = NULL,
+		};
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_BLK_MQ_TAG_SET_HAS_MQ_MAP, 1,
+			  [ blk_mq_tag_set member mq_map])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if linux/blk-mq.h blk_mq_tag_set has member ops is const])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/blk-mq.h>
 		static const struct blk_mq_ops xmq = {0};
