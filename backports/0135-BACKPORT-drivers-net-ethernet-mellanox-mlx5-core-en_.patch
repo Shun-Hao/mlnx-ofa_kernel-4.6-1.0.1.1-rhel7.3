@@ -969,7 +969,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	err = register_netdev(netdev);
  	if (err) {
-@@ -1566,10 +2000,17 @@ mlx5e_vport_rep_load(struct mlx5_core_dev *dev, struct mlx5_eswitch_rep *rep)
+@@ -1569,10 +2003,17 @@ mlx5e_vport_rep_load(struct mlx5_core_dev *dev, struct mlx5_eswitch_rep *rep)
  	return 0;
  
  err_egdev_cleanup:
@@ -987,7 +987,7 @@ index xxxxxxx..xxxxxxx 100644
  	mlx5e_rep_neigh_cleanup(rpriv);
  
  err_detach_netdev:
-@@ -1591,16 +2032,24 @@ mlx5e_vport_rep_unload(struct mlx5_eswitch_rep *rep)
+@@ -1594,19 +2035,27 @@ mlx5e_vport_rep_unload(struct mlx5_eswitch_rep *rep)
  	struct mlx5e_rep_priv *rpriv = mlx5e_rep_to_rep_priv(rep);
  	struct net_device *netdev = rpriv->netdev;
  	struct mlx5e_priv *priv = netdev_priv(netdev);
@@ -998,6 +998,9 @@ index xxxxxxx..xxxxxxx 100644
 +#ifdef HAVE_TC_BLOCK_OFFLOAD
  	struct mlx5e_priv *upriv;
 +#endif
+ 
+ 	if (rep->vport == MLX5_VPORT_UPLINK)
+ 		mlx5_eswitch_compat_sysfs_cleanup(netdev);
  
  	unregister_netdev(netdev);
 +#ifdef HAVE_TC_SETUP_CB_EGDEV_REGISTER

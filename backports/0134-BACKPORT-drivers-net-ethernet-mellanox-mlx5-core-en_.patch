@@ -3,7 +3,7 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en_main.c
 
 Change-Id: Idb17f80f925bb6c464d229127239e559914394e2
 ---
- .../net/ethernet/mellanox/mlx5/core/en_main.c | 827 +++++++++++++++++-
+ drivers/net/ethernet/mellanox/mlx5/core/en_main.c | 827 +++++++++++++++++++++-
  1 file changed, 810 insertions(+), 17 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en_main.c b/drivers/net/ethernet/mellanox/mlx5/core/en_main.c
@@ -1808,8 +1808,8 @@ index xxxxxxx..xxxxxxx 100644
  #ifdef CONFIG_MLX5_CORE_EN_DCB
  	if (MLX5_CAP_GEN(mdev, vport_group_manager) && MLX5_CAP_GEN(mdev, qos))
  		netdev->dcbnl_ops = &mlx5e_dcbnl_ops;
-+#endif
  #endif
++#endif
  
  	netdev->watchdog_timeo    = 15 * HZ;
  
@@ -1981,7 +1981,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	mlx5e_set_netdev_dev_addr(netdev);
  	mlx5e_ipsec_build_netdev(priv);
-@@ -5248,9 +6008,10 @@ static int mlx5e_init_nic_tx(struct mlx5e_priv *priv)
+@@ -5248,10 +6008,11 @@ static int mlx5e_init_nic_tx(struct mlx5e_priv *priv)
  		mlx5_core_warn(priv->mdev, "create tises failed, %d\n", err);
  		return err;
  	}
@@ -1989,10 +1989,11 @@ index xxxxxxx..xxxxxxx 100644
 +#ifdef HAVE_IEEE_DCBNL_ETS
  #ifdef CONFIG_MLX5_CORE_EN_DCB
  	mlx5e_dcbnl_initialize(priv);
-+#endif
  #endif
++#endif
  	return 0;
  }
+ 
 @@ -5259,7 +6020,9 @@ static void mlx5e_nic_enable(struct mlx5e_priv *priv)
  {
  	struct net_device *netdev = priv->netdev;
@@ -2003,7 +2004,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	mlx5e_init_l2_addr(priv);
  
-@@ -5267,20 +6030,31 @@ static void mlx5e_nic_enable(struct mlx5e_priv *priv)
+@@ -5267,21 +6030,32 @@ static void mlx5e_nic_enable(struct mlx5e_priv *priv)
  	if (!netif_running(netdev))
  		mlx5_set_port_admin_status(mdev, MLX5_PORT_DOWN);
  
@@ -2031,11 +2032,12 @@ index xxxxxxx..xxxxxxx 100644
 +#ifdef HAVE_IEEE_DCBNL_ETS
  #ifdef CONFIG_MLX5_CORE_EN_DCB
  	mlx5e_dcbnl_init_app(priv);
-+#endif
  #endif
++#endif
  
  	queue_work(priv->wq, &priv->set_rx_mode_work);
-@@ -5298,9 +6072,11 @@ static void mlx5e_nic_disable(struct mlx5e_priv *priv)
+ 
+@@ -5298,10 +6072,12 @@ static void mlx5e_nic_disable(struct mlx5e_priv *priv)
  {
  	struct mlx5_core_dev *mdev = priv->mdev;
  
@@ -2043,21 +2045,23 @@ index xxxxxxx..xxxxxxx 100644
  #ifdef CONFIG_MLX5_CORE_EN_DCB
  	if (priv->netdev->reg_state == NETREG_REGISTERED)
  		mlx5e_dcbnl_delete_app(priv);
-+#endif
  #endif
++#endif
  
  	rtnl_lock();
-@@ -5365,8 +6141,10 @@ int mlx5e_netdev_init(struct net_device *netdev,
+ 	if (netif_running(priv->netdev))
+@@ -5365,9 +6141,11 @@ int mlx5e_netdev_init(struct net_device *netdev,
  	/* netdev init */
  	netif_carrier_off(netdev);
  
 +#ifdef HAVE_NETDEV_RX_CPU_RMAP
  #ifdef CONFIG_MLX5_EN_ARFS
  	netdev->rx_cpu_rmap = mdev->rmap;
-+#endif
  #endif
++#endif
  
  	return 0;
+ }
 @@ -5391,7 +6169,15 @@ struct net_device *mlx5e_create_netdev(struct mlx5_core_dev *mdev,
  		mdev->mlx5e_res.max_rl_queues = MLX5E_MAX_RL_QUEUES;
  
@@ -2074,17 +2078,18 @@ index xxxxxxx..xxxxxxx 100644
  	if (!netdev) {
  		mlx5_core_err(mdev, "alloc_etherdev_mqs() failed\n");
  		return NULL;
-@@ -5555,8 +6341,10 @@ static void *mlx5e_add(struct mlx5_core_dev *mdev)
+@@ -5555,9 +6341,11 @@ static void *mlx5e_add(struct mlx5_core_dev *mdev)
  	if (err)
  		goto err_unregister_netdev;
  
 +#ifdef HAVE_IEEE_DCBNL_ETS
  #ifdef CONFIG_MLX5_CORE_EN_DCB
  	mlx5e_dcbnl_init_app(priv);
-+#endif
  #endif
++#endif
  	return priv;
  
+ err_unregister_netdev:
 @@ -5581,9 +6369,12 @@ static void mlx5e_remove(struct mlx5_core_dev *mdev, void *vpriv)
  	}
  #endif

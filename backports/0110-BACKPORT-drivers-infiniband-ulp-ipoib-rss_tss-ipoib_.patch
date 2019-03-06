@@ -12,7 +12,7 @@ index xxxxxxx..xxxxxxx 100644
 --- a/drivers/infiniband/ulp/ipoib/rss_tss/ipoib_ethtool_rss.c
 +++ b/drivers/infiniband/ulp/ipoib/rss_tss/ipoib_ethtool_rss.c
 @@ -59,7 +59,6 @@ static int ipoib_set_coalesce_rss(struct net_device *dev,
-
+ 
  	return 0;
  }
 -

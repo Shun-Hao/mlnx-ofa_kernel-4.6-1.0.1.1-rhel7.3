@@ -27,7 +27,7 @@ index xxxxxxx..xxxxxxx 100644
  static const struct ipoib_stats ipoib_gstrings_stats[] = {
  	IPOIB_NETDEV_STAT(rx_packets),
 @@ -211,6 +217,37 @@ static int ipoib_set_coalesce(struct net_device *dev,
-
+ 
  	return 0;
  }
 +#ifdef HAVE_ETHTOOL_GET_SET_SETTINGS
