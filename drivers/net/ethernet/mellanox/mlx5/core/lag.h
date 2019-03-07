@@ -47,12 +47,6 @@ mlx5_lag_dev_get(struct mlx5_core_dev *dev)
 }
 
 static inline bool
-mlx5_lag_is_bonded(struct mlx5_lag *ldev)
-{
-	return !!(ldev->flags & MLX5_LAG_FLAG_BONDED);
-}
-
-static inline bool
 __mlx5_lag_is_active(struct mlx5_lag *ldev)
 {
 	return !!(ldev->flags & MLX5_LAG_MODE_FLAGS);
