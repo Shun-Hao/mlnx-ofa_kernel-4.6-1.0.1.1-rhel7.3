@@ -1119,6 +1119,158 @@ static void esw_destroy_offloads_fdb_tables(struct mlx5_eswitch *esw)
 	esw_destroy_offloads_fast_fdb_tables(esw);
 }
 
+#ifdef CONFIG_BF_DEVICE_EMULATION
+static int esw_default_rule_add(struct mlx5_eswitch *esw,
+			        bool add_mac_match, int mac_port,
+			        int src_port, int dst_port,
+			        struct mlx5_flow_handle **res)
+{
+	struct mlx5_flow_act flow_act = {0};
+	struct mlx5_flow_handle *flow_rule;
+	struct mlx5_flow_destination dest = {};
+	struct mlx5_flow_spec *spec;
+	struct mlx5_flow_table *fast_fdb;
+	off_t dmac_off = MLX5_BYTE_OFF(fte_match_param,
+				       outer_headers.dmac_47_16);
+	u8 *mac_v, *mac_c, mac[6];
+	void *misc;
+	int err = 0;
+
+	spec = kvzalloc(sizeof(*spec), GFP_KERNEL);
+	if (!spec)
+		return -ENOMEM;
+
+	if (add_mac_match) {
+		err = mlx5_query_nic_vport_mac_address_emulation(esw->dev,
+								 mac_port,
+								 mac);
+		if (err) {
+			mlx5_core_warn(esw->dev,
+				       "failed to get MAC address port %x\n",
+				       mac_port);
+			goto out_free;
+		}
+
+		spec->match_criteria_enable = MLX5_MATCH_OUTER_HEADERS;
+		mac_v = (u8 *)spec->match_value + dmac_off;
+		mac_c = (u8 *)spec->match_criteria + dmac_off;
+		eth_broadcast_addr(mac_c);
+		ether_addr_copy(mac_v, mac);
+	}
+
+	spec->match_criteria_enable |= MLX5_MATCH_MISC_PARAMETERS;
+	misc = MLX5_ADDR_OF(fte_match_param, spec->match_value,
+			    misc_parameters);
+	MLX5_SET(fte_match_set_misc, misc, source_port, src_port);
+	misc = MLX5_ADDR_OF(fte_match_param, spec->match_criteria,
+			    misc_parameters);
+	MLX5_SET_TO_ONES(fte_match_set_misc, misc, source_port);
+
+	dest.type = MLX5_FLOW_DESTINATION_TYPE_VPORT;
+	dest.vport.num = dst_port;
+
+	flow_act.action = MLX5_FLOW_CONTEXT_ACTION_FWD_DEST;
+
+	/* Default rules must have priority lower than the QP steering
+	 * rules set via devx. See _get_flow_table().
+	 * Use chain:0, priority:3
+	 */
+	fast_fdb = esw_get_prio_table(esw, 0, 3, 0);
+	if (IS_ERR(fast_fdb)) {
+		err = PTR_ERR(fast_fdb);
+		goto out_free;
+	}
+
+	flow_rule = mlx5_add_flow_rules(fast_fdb, spec, &flow_act, &dest, 1);
+	if (IS_ERR(flow_rule)) {
+		mlx5_core_warn(esw->dev, "failed to add rule for port %x\n",
+			       mac_port);
+		err = PTR_ERR(flow_rule);
+		esw_put_prio_table(esw, 0, 3, 0);
+		goto out_free;
+	} else {
+		*res = flow_rule;
+	}
+
+	if (add_mac_match)
+		mlx5_core_info(esw->dev, "match: src port 0x%x and "
+				"dst mac %pM (of port 0x%x) -> port 0x%x\n",
+				src_port, mac, mac_port, dst_port);
+	else
+		mlx5_core_info(esw->dev, "match: src port 0x%x -> port 0x%x\n",
+			       src_port, dst_port);
+
+out_free:
+	kfree(spec);
+	return err;
+}
+
+static void esw_offloads_default_fdb_rules_del(struct mlx5_eswitch *esw)
+{
+	if (esw->ingress_pf_rule) {
+		mlx5_del_flow_rules(esw->ingress_pf_rule);
+		esw_put_prio_table(esw, 0, 3, 0);
+		esw->ingress_pf_rule = NULL;
+	}
+	if (esw->ingress_ecpf_rule) {
+		mlx5_del_flow_rules(esw->ingress_ecpf_rule);
+		esw_put_prio_table(esw, 0, 3, 0);
+		esw->ingress_ecpf_rule = NULL;
+	}
+	if (esw->egress_pf_rule) {
+		mlx5_del_flow_rules(esw->egress_pf_rule);
+		esw_put_prio_table(esw, 0, 3, 0);
+		esw->egress_pf_rule = NULL;
+	}
+	if (esw->egress_ecpf_rule) {
+		mlx5_del_flow_rules(esw->egress_ecpf_rule);
+		esw_put_prio_table(esw, 0, 3, 0);
+		esw->egress_ecpf_rule = NULL;
+	}
+}
+
+static int esw_offloads_default_fdb_rules_add(struct mlx5_eswitch *esw)
+{
+	int err;
+
+	if (esw->mode != SRIOV_OFFLOADS) {
+		esw_warn(esw->dev,
+			 "can't set deafult fdb rule when not SWITCHDEV\n");
+		return -EPERM;
+	}
+
+	err = esw_default_rule_add(esw, 1, MLX5_VPORT_ECPF,
+				   0, MLX5_VPORT_ECPF,
+				   &esw->ingress_ecpf_rule);
+	if (err)
+		goto err;
+
+	err = esw_default_rule_add(esw, 0, 0,
+				   0, MLX5_VPORT_UPLINK,
+				   &esw->egress_pf_rule);
+	if (err)
+		goto err;
+
+	err = esw_default_rule_add(esw, 1, 0,
+				   MLX5_VPORT_ECPF, 0,
+				   &esw->ingress_pf_rule);
+	if (err)
+		goto err;
+
+	err = esw_default_rule_add(esw, 0, 0,
+				   MLX5_VPORT_ECPF, MLX5_VPORT_UPLINK,
+				   &esw->egress_ecpf_rule);
+	if (err)
+		goto err;
+
+	return 0;
+
+err:
+	esw_offloads_default_fdb_rules_del(esw);
+	return err;
+}
+#endif /* CONFIG_BF_DEVICE_EMULATION */
+
 static int esw_create_offloads_table(struct mlx5_eswitch *esw, int nvports)
 {
 	struct mlx5_flow_table_attr ft_attr = {};
@@ -1882,6 +2034,19 @@ int esw_offloads_init(struct mlx5_eswitch *esw, int vf_nvports,
 		esw->host_info.num_vfs = vf_nvports;
 
 	esw_offloads_devcom_init(esw);
+
+#ifdef CONFIG_BF_DEVICE_EMULATION
+	if (mlx5_core_is_dev_emulation_manager(esw->dev)) {
+		err = esw_offloads_default_fdb_rules_add(esw);
+		if (err) {
+			esw_warn(esw->dev, "default fdb rules failed\n");
+			esw_offloads_devcom_cleanup(esw);
+			esw_offloads_unload_all_reps(esw, vf_nvports);
+			goto err_reps;
+		}
+	}
+#endif
+
 	return 0;
 
 err_reps:
@@ -1924,6 +2089,12 @@ void esw_offloads_cleanup(struct mlx5_eswitch *esw)
 	u16 num_vfs;
 
 	esw_offloads_devcom_cleanup(esw);
+
+#ifdef CONFIG_BF_DEVICE_EMULATION
+	if (mlx5_core_is_dev_emulation_manager(esw->dev))
+		esw_offloads_default_fdb_rules_del(esw);
+#endif
+
 	if (mlx5_core_is_ecpf_esw_manager(esw->dev)) {
 		flush_workqueue(esw->work_queue);
 		num_vfs = esw->host_info.num_vfs;

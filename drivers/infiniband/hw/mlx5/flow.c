@@ -75,6 +75,9 @@ static int UVERBS_HANDLER(MLX5_IB_METHOD_CREATE_FLOW)(
 	void *cmd_in;
 	int inlen;
 	bool dest_devx, dest_qp;
+#ifdef CONFIG_BF_DEVICE_EMULATION
+	bool dest_vport;
+#endif
 	struct ib_qp *qp = NULL;
 	struct ib_uobject *uobj =
 		uverbs_attr_get_uobject(attrs, MLX5_IB_ATTR_CREATE_FLOW_HANDLE);
@@ -89,12 +92,29 @@ static int UVERBS_HANDLER(MLX5_IB_METHOD_CREATE_FLOW)(
 		uverbs_attr_is_valid(attrs, MLX5_IB_ATTR_CREATE_FLOW_DEST_DEVX);
 	dest_qp = uverbs_attr_is_valid(attrs,
 				       MLX5_IB_ATTR_CREATE_FLOW_DEST_QP);
-
+#ifdef CONFIG_BF_DEVICE_EMULATION
+	dest_vport = uverbs_attr_is_valid(attrs,
+			MLX5_IB_ATTR_CREATE_FLOW_DEST_VPORT);
+#endif
 	fs_matcher = uverbs_attr_get_obj(attrs,
 					 MLX5_IB_ATTR_CREATE_FLOW_MATCHER);
+
+#ifndef CONFIG_BF_DEVICE_EMULATION
 	if (fs_matcher->ns_type == MLX5_FLOW_NAMESPACE_BYPASS &&
 	    ((dest_devx && dest_qp) || (!dest_devx && !dest_qp)))
 		return -EINVAL;
+#else
+	if (mlx5_core_is_dev_emulation_manager(dev->mdev)) {
+		if (fs_matcher->ns_type == MLX5_FLOW_NAMESPACE_BYPASS &&
+		    dest_devx + dest_qp + dest_vport != 1)
+			return -EINVAL;
+	} else {
+		if (fs_matcher->ns_type == MLX5_FLOW_NAMESPACE_BYPASS &&
+		    ((dest_devx && dest_qp) || (!dest_devx && !dest_qp)))
+			return -EINVAL;
+
+	}
+#endif
 
 	/* Allow only DEVX object as dest when inserting to FDB */
 	if (fs_matcher->ns_type == MLX5_FLOW_NAMESPACE_FDB && !dest_devx)
@@ -132,6 +152,15 @@ static int UVERBS_HANDLER(MLX5_IB_METHOD_CREATE_FLOW)(
 		else
 			dest_id = mqp->raw_packet_qp.rq.tirn;
 		dest_type = MLX5_FLOW_DESTINATION_TYPE_TIR;
+#ifdef CONFIG_BF_DEVICE_EMULATION
+	} else if (dest_vport) {
+		ret = uverbs_copy_from(&dest_id, attrs,
+				MLX5_IB_ATTR_CREATE_FLOW_DEST_VPORT);
+		if (ret)
+			return -EINVAL;
+		dest_type = MLX5_FLOW_DESTINATION_TYPE_VPORT;
+		fs_matcher->ns_type = MLX5_FLOW_NAMESPACE_FDB;
+#endif
 	} else {
 		dest_type = MLX5_FLOW_DESTINATION_TYPE_PORT;
 	}
@@ -575,6 +604,11 @@ DECLARE_UVERBS_NAMED_METHOD(
 	UVERBS_ATTR_IDR(MLX5_IB_ATTR_CREATE_FLOW_DEST_DEVX,
 			MLX5_IB_OBJECT_DEVX_OBJ,
 			UVERBS_ACCESS_READ),
+#ifdef CONFIG_BF_DEVICE_EMULATION
+	UVERBS_ATTR_PTR_IN(MLX5_IB_ATTR_CREATE_FLOW_DEST_VPORT,
+			UVERBS_ATTR_TYPE(u32),
+			UVERBS_ACCESS_READ),
+#endif
 	UVERBS_ATTR_IDRS_ARR(MLX5_IB_ATTR_CREATE_FLOW_ARR_FLOW_ACTIONS,
 			     UVERBS_OBJECT_FLOW_ACTION,
 			     UVERBS_ACCESS_READ, 1,

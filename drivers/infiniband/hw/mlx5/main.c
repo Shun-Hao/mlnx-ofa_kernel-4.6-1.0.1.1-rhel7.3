@@ -4058,6 +4058,21 @@ _get_flow_table(struct mlx5_ib_dev *dev,
 	else
 		priority = ib_prio_to_core_prio(fs_matcher->priority, false);
 
+#ifdef CONFIG_BF_DEVICE_EMULATION
+	if (fs_matcher->ns_type == MLX5_FLOW_NAMESPACE_FDB) {
+		/* These rules must have higher priority then our
+		 * default steering rules. See esw_default_rule_add()
+		 * Use chain 0, prio 1
+		 */
+		prio = &dev->flow_db->devx_fdb;
+		if (prio->flow_table)
+			return prio;
+		ns = mlx5_get_fdb_sub_ns(dev->mdev, 0);
+		if (!ns)
+			return ERR_PTR(-ENOTSUPP);
+		return _get_prio(ns, prio, 1, MLX5_FS_MAX_ENTRIES, 1, flags);
+	}
+#endif
 	if (fs_matcher->ns_type == MLX5_FLOW_NAMESPACE_BYPASS) {
 		max_table_size = BIT(MLX5_CAP_FLOWTABLE_NIC_RX(dev->mdev,
 					log_max_ft_size));
@@ -4230,6 +4245,12 @@ mlx5_ib_raw_fs_rule_add(struct mlx5_ib_dev *dev,
 		dst[dst_num].type = MLX5_FLOW_DESTINATION_TYPE_FLOW_TABLE_NUM;
 		dst[dst_num].ft_num = dest_id;
 		flow_act->action |= MLX5_FLOW_CONTEXT_ACTION_FWD_DEST;
+#ifdef CONFIG_BF_DEVICE_EMULATION
+	} else if (dest_type == MLX5_FLOW_DESTINATION_TYPE_VPORT) {
+		dst[dst_num].type = MLX5_FLOW_DESTINATION_TYPE_VPORT;
+		dst[dst_num].vport.num = dest_id;
+		flow_act->action |= MLX5_FLOW_CONTEXT_ACTION_FWD_DEST;
+#endif
 	} else {
 		dst[dst_num].type = MLX5_FLOW_DESTINATION_TYPE_PORT;
 		flow_act->action |= MLX5_FLOW_CONTEXT_ACTION_ALLOW;

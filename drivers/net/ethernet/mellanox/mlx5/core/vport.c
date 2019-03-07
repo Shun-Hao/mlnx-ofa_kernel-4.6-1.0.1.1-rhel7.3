@@ -93,6 +93,38 @@ static int mlx5_query_nic_vport_context(struct mlx5_core_dev *mdev, u16 vport,
 	return mlx5_cmd_exec(mdev, in, sizeof(in), out, outlen);
 }
 
+#ifdef CONFIG_BF_DEVICE_EMULATION
+/*
+ * use this function to correctly encode the 'vport' and 'other_vport' fields
+ * in commands that utilzie these fields
+ */
+static int get_other_vport(struct mlx5_core_dev *mdev, u16 *vport)
+{
+	if (mlx5_core_is_ecpf(mdev)) {
+		if (*vport == MLX5_VPORT_ECPF) {
+			*vport = 0;
+			return 0;
+		}
+		return 1;
+	}
+	return !!*vport;
+}
+
+static int mlx5_query_nic_vport_context_emulation(struct mlx5_core_dev *mdev, u16 vport,
+						  u32 *out, int outlen)
+{
+	u32 in[MLX5_ST_SZ_DW(query_nic_vport_context_in)] = {0};
+
+	MLX5_SET(query_nic_vport_context_in, in, opcode,
+		 MLX5_CMD_OP_QUERY_NIC_VPORT_CONTEXT);
+	MLX5_SET(query_nic_vport_context_in, in, other_vport,
+		 get_other_vport(mdev, &vport));
+	MLX5_SET(query_nic_vport_context_in, in, vport_number, vport);
+
+	return mlx5_cmd_exec(mdev, in, sizeof(in), out, outlen);
+}
+#endif
+
 static int mlx5_modify_nic_vport_context(struct mlx5_core_dev *mdev, void *in,
 					 int inlen)
 {
@@ -177,6 +209,33 @@ int mlx5_query_nic_vport_mac_address(struct mlx5_core_dev *mdev,
 	return err;
 }
 EXPORT_SYMBOL_GPL(mlx5_query_nic_vport_mac_address);
+
+#ifdef CONFIG_BF_DEVICE_EMULATION
+int mlx5_query_nic_vport_mac_address_emulation(struct mlx5_core_dev *mdev,
+					       u16 vport, u8 *addr)
+{
+	u32 *out;
+	int outlen = MLX5_ST_SZ_BYTES(query_nic_vport_context_out);
+	u8 *out_addr;
+	int err;
+
+	out = kvzalloc(outlen, GFP_KERNEL);
+	if (!out)
+		return -ENOMEM;
+
+	out_addr = MLX5_ADDR_OF(query_nic_vport_context_out, out,
+				nic_vport_context.permanent_address);
+
+	err = mlx5_query_nic_vport_context_emulation(mdev, vport, out, outlen);
+	if (!err)
+		ether_addr_copy(addr, &out_addr[2]);
+
+	kvfree(out);
+	return err;
+}
+EXPORT_SYMBOL_GPL(mlx5_query_nic_vport_mac_address_emulation);
+#endif
+
 
 int mlx5_modify_nic_vport_mac_address(struct mlx5_core_dev *mdev,
 				      u16 vport, u8 *addr)

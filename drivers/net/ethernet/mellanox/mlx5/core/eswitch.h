@@ -269,6 +269,15 @@ struct mlx5_eswitch {
 	struct mlx5_host_info	host_info;
 	struct roce_steering	roce_steering;
 	struct mlx5_esw_handler	handler;
+
+#ifdef CONFIG_BF_DEVICE_EMULATION
+	/* rules for device emulation ecpf + pf */
+	struct mlx5_flow_handle *ingress_ecpf_rule;
+	struct mlx5_flow_handle *ingress_pf_rule;
+	struct mlx5_flow_handle *egress_ecpf_rule;
+	struct mlx5_flow_handle *egress_pf_rule;
+#endif
+
 };
 
 void esw_offloads_cleanup(struct mlx5_eswitch *esw);

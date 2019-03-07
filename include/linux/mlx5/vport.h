@@ -144,5 +144,10 @@ int mlx5_nic_vport_affiliate_multiport(struct mlx5_core_dev *master_mdev,
 				       struct mlx5_core_dev *port_mdev);
 int mlx5_nic_vport_unaffiliate_multiport(struct mlx5_core_dev *port_mdev);
 
+#ifdef CONFIG_BF_DEVICE_EMULATION
+int mlx5_query_nic_vport_mac_address_emulation(struct mlx5_core_dev *mdev,
+					       u16 vport, u8 *addr);
+#endif
+
 u64 mlx5_query_nic_system_image_guid(struct mlx5_core_dev *mdev);
 #endif /* __MLX5_VPORT_H__ */
