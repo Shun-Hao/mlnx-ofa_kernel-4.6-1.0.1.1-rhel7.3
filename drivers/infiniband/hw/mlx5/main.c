@@ -6390,7 +6390,7 @@ static int mlx5_ib_stage_non_default_cb(struct mlx5_ib_dev *dev)
 	return 0;
 }
 
-int mlx5_ib_stage_rep_non_default_cb(struct mlx5_ib_dev *dev)
+int mlx5_ib_stage_ib_non_default_cb(struct mlx5_ib_dev *dev)
 {
 	dev->ib_dev.get_port_immutable  = mlx5_port_rep_immutable;
 	dev->ib_dev.query_port		= mlx5_ib_rep_query_port;
@@ -6442,7 +6442,7 @@ static void mlx5_ib_stage_common_roce_cleanup(struct mlx5_ib_dev *dev)
 	mlx5_remove_netdev_notifier(dev, port_num);
 }
 
-int mlx5_ib_stage_rep_roce_init(struct mlx5_ib_dev *dev)
+int mlx5_ib_stage_ib_roce_init(struct mlx5_ib_dev *dev)
 {
 	struct mlx5_core_dev *mdev = dev->mdev;
 	enum rdma_link_layer ll;
@@ -6458,7 +6458,7 @@ int mlx5_ib_stage_rep_roce_init(struct mlx5_ib_dev *dev)
 	return err;
 }
 
-void mlx5_ib_stage_rep_roce_cleanup(struct mlx5_ib_dev *dev)
+void mlx5_ib_stage_ib_roce_cleanup(struct mlx5_ib_dev *dev)
 {
 	mlx5_ib_stage_common_roce_cleanup(dev);
 }
@@ -6895,7 +6895,7 @@ static const struct mlx5_ib_profile pf_profile = {
 		     mlx5_ib_stage_steering_sysfs_cleanup),
 };
 
-const struct mlx5_ib_profile uplink_rep_profile = {
+const struct mlx5_ib_profile ib_profile = {
 	STAGE_CREATE(MLX5_IB_STAGE_INIT,
 		     mlx5_ib_stage_init_init,
 		     mlx5_ib_stage_init_cleanup),
@@ -6906,11 +6906,11 @@ const struct mlx5_ib_profile uplink_rep_profile = {
 		     mlx5_ib_stage_caps_init,
 		     NULL),
 	STAGE_CREATE(MLX5_IB_STAGE_NON_DEFAULT_CB,
-		     mlx5_ib_stage_rep_non_default_cb,
+		     mlx5_ib_stage_ib_non_default_cb,
 		     NULL),
 	STAGE_CREATE(MLX5_IB_STAGE_ROCE,
-		     mlx5_ib_stage_rep_roce_init,
-		     mlx5_ib_stage_rep_roce_cleanup),
+		     mlx5_ib_stage_ib_roce_init,
+		     mlx5_ib_stage_ib_roce_cleanup),
 	STAGE_CREATE(MLX5_IB_STAGE_DEVICE_RESOURCES,
 		     mlx5_ib_stage_dev_res_init,
 		     mlx5_ib_stage_dev_res_cleanup),
