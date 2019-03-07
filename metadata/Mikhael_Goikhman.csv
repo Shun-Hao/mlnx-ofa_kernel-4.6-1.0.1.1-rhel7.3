@@ -18,3 +18,4 @@ Change-Id=Icdcaab9b080531a2816b21e894fa634dda770d16; subject=BACKPORTS: Fix back
 Change-Id=I8542d658e65532cd55ebd4ed460f1b2293e0a056; subject=compat: Introduce include/linux/page_ref.h; feature=backports; upstream_status=ignore; general=;
 Change-Id=If1b2810b5755edd5db6d9b493818093161fbb09d; subject=net/mlx5e: RX, Implement page biased-refcount optimization; feature=mlx5e_perf_improvements; upstream_status=in_progress; general=;
 Change-Id=If2378186a23f2f5e361c7e755f042934cb0101ab; subject=BACKPORTS: Fix backports after mlx5e-rx-page-optimization; feature=backports; upstream_status=ignore; general=;
+Change-Id=I739f20d192025ef88bb68723210969d516ba3240; subject=BACKPORTS: net/mlx5e: Fix kernel panic on systems like RHEL 6.x; feature=backports; upstream_status=ignore; general=;
