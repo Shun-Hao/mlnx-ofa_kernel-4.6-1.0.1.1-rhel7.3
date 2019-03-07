@@ -1,11 +1,11 @@
-From: Talat Batheesh <talatb@mellanox.com>
+From: Feras Daoud <ferasda@mellanox.com>
 Subject: [PATCH] BACKPORT:
  drivers/infiniband/ulp/ipoib/rss_tss/ipoib_ethtool_rss.c
 
-Change-Id: I03723e46262e7b56da9ecc0de4e049062d4e00fa
+Change-Id: I0d626f4dd1ac354f07368ab686ce63aea3898b52
 ---
- .../ulp/ipoib/rss_tss/ipoib_ethtool_rss.c          | 43 +++++++++++++++++++++-
- 1 file changed, 41 insertions(+), 2 deletions(-)
+ .../ulp/ipoib/rss_tss/ipoib_ethtool_rss.c          | 45 +++++++++++++++++++++-
+ 1 file changed, 43 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/infiniband/ulp/ipoib/rss_tss/ipoib_ethtool_rss.c b/drivers/infiniband/ulp/ipoib/rss_tss/ipoib_ethtool_rss.c
 index xxxxxxx..xxxxxxx 100644
@@ -28,13 +28,16 @@ index xxxxxxx..xxxxxxx 100644
  static void ipoib_get_channels(struct net_device *dev,
  			       struct ethtool_channels *channel)
  {
-@@ -205,22 +204,62 @@ static int ipoib_set_channels(struct net_device *dev,
+@@ -205,23 +204,65 @@ static int ipoib_set_channels(struct net_device *dev,
  
  	return ipoib_reinit_rss(dev, channel->rx_count, channel->tx_count);
  }
 +#endif
  
  static const struct ethtool_ops ipoib_ethtool_ops_rss = {
++#ifdef HAVE_GET_SET_LINK_KSETTINGS
+ 	.get_link_ksettings	= ipoib_get_link_ksettings,
++#endif
  	.get_drvinfo		= ipoib_get_drvinfo,
  	.get_coalesce		= ipoib_get_coalesce,
  	.set_coalesce		= ipoib_set_coalesce_rss,
@@ -70,8 +73,8 @@ index xxxxxxx..xxxxxxx 100644
 +	.get_rx_csum		= ipoib_get_rx_csum,
 +#endif
 +#endif
-+};
-+
+ };
+ 
 +#ifdef HAVE_ETHTOOL_OPS_EXT
 +const struct ethtool_ops_ext ipoib_ethtool_ops_rss_ext = {
 +	.size		   = sizeof(struct ethtool_ops_ext),
@@ -79,9 +82,9 @@ index xxxxxxx..xxxxxxx 100644
 +	.get_channels	   = ipoib_get_channels,
 +	.set_channels	   = ipoib_set_channels,
 +#endif
- };
++ };
 +#endif /* HAVE_ETHTOOL_OPS_EXT */
- 
++
  void ipoib_set_ethtool_ops_rss(struct net_device *dev)
  {
 +#ifdef HAVE_ETHTOOL_OPS_EXT
