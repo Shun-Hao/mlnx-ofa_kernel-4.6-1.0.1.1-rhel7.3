@@ -137,7 +137,7 @@ index xxxxxxx..xxxxxxx 100644
  	MLX5E_SQ_STATE_REDIRECT,
 +#endif
  };
-
+ 
  struct mlx5e_sq_wqe_info {
  	u8  opcode;
  };
@@ -172,7 +172,7 @@ index xxxxxxx..xxxxxxx 100644
 +#ifdef HAVE_XDP_REDIRECT
  	bool                       redirect_flush;
 +#endif
-
+ 
  	/* dirtied @xmit */
  	u16                        pc ____cacheline_aligned_in_smp;
 @@ -496,7 +526,7 @@ struct mlx5e_xdpsq {
@@ -285,7 +285,7 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
 +#endif
  } ____cacheline_aligned_in_smp;
-
+ 
  enum {
 @@ -799,10 +873,10 @@ struct mlx5e_priv {
  	struct mlx5e_txqsq *txq2sq[MLX5E_MAX_NUM_CHANNELS * MLX5E_MAX_NUM_TC +

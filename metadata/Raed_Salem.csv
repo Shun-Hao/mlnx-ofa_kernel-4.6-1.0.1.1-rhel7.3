@@ -1,2 +1,13 @@
 sep=;
 Change-Id=I414b70e12be330738bd73abb54be7532abc5face; subject=net/mlx5: IPSec, Fix the SA context hash key; feature=rebase; upstream_status=accepted; general=upstream commit ID: f2b18732ee98, tag: v4.20-rc4;
+Change-Id=I717ac0e341e4a7488728d87b821e32df19805445; subject=net/mlx5: Allow use of 8 TCs of QoS in switchdev mode; feature=mlx5_asap; upstream_status=ignore; general=;
+Change-Id=I3b554a12d09ddd39eefadc85a137b386111a2a90; subject=net/mlx5: Introduce inter-device communication mechanism; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: fadd59fc50d0, tag: v5.0;
+Change-Id=Iebdd9d5d64f48863413a14e59a4aacafc7231b35; subject=net/mlx5e: E-Switch, change to use devcom to add peer miss rules; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: ac004b832128, tag: v5.0;
+Change-Id=I0415f813a84fde11a323f43e7ee5153676a954c0; subject=net/mlx5e: Use devcom for infrastructure for duplicated offloading of TC flows; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: 04de7dda7394, tag: v5.0;
+Change-Id=I132dc5d18a611f999207a353ceb37a8614d31fc9; subject=net/mlx5: Fix query_nic_sys_image_guid() error during init; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: 0a5b589111c3, tag: v5.0;
+Change-Id=I2056b6618deccd5ded6a5b7e2e0e3ba4ae4b4eaf; subject=net/mlx5e: use devcom to duplicate offloaded TC eswitch rules under uplink LAG; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: 1418ddd96afd, tag: v5.0;
+Change-Id=I989cb713f14d69826b51b9d3718c2259dbcb1b6b; subject=net/mlx5: Rename mlx5_lag_is_bonded() to __mlx5_lag_is_active(); feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: 292612d68c4e, tag: v5.0;
+Change-Id=Ibe36c38c62c16c81ecfd29d4e7a4d64cff403c74; subject=net/mlx5: Make RoCE and SR-IOV LAG modes explicit; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: 7c34ec19e10c, tag: v5.0;
+Change-Id=Ib0c056750bfede08022eb7b3906c96b53b203502; subject=net/mlx5: Handle LAG FW commands failure gracefully; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: 958246664043, tag: v5.0;
+Change-Id=I8b1c8688aaf2355284ffde96bda1068d857637b9; subject=net/mlx5: Fix LAG requirement when CONFIG_MLX5_ESWITCH is off; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: a64917446eaf, tag: v5.0;
+Change-Id=Id174e338dc3bd91dbb723fc4eb081a6d057f49c2; subject=BACKPORTS: VF LAG sync + Metadata update; feature=mlx5_asap; upstream_status=ignore; general=;

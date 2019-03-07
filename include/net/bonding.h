@@ -108,16 +108,18 @@ static void mlx_lag_compat_rtnl_data_ready(struct sock *sk, int bytes)
 	} else if (netif_is_bond_master(ndev)) {
 		struct net_device *ndev_tmp;
 
-		rcu_read_lock();
-#ifdef for_each_netdev_in_bond_rcu
-		for_each_netdev_in_bond_rcu(ndev, ndev_tmp) {
-#else
-		for_each_netdev_in_bond(ndev, ndev_tmp) {
-#endif
+		for_each_netdev(&init_net, ndev_tmp) {
+			rcu_read_lock();
+			if (netdev_master_upper_dev_get_rcu(ndev_tmp) != ndev) {
+				rcu_read_unlock();
+				continue;
+			}
+
 			slave = bond_slave_get_rcu(ndev_tmp);
+			rcu_read_unlock();
+
 			mlx_lag_compat_changelowerstate_event(slave);
 		}
-		rcu_read_unlock();
 	} else if (netif_is_bond_slave(ndev)) {
 		rcu_read_lock();
 		slave = bond_slave_get_rcu(ndev);

@@ -171,7 +171,7 @@ index xxxxxxx..xxxxxxx 100644
 +	case SWITCHDEV_ATTR_PORT_PARENT_ID:
 +#endif
  		attr->u.ppid.id_len = ETH_ALEN;
- 		if (uplink_upper && mlx5_lag_is_active(uplink_priv->mdev)) {
+ 		if (uplink_upper && mlx5_lag_is_sriov(uplink_priv->mdev)) {
  			ether_addr_copy(attr->u.ppid.id, uplink_upper->dev_addr);
 @@ -416,6 +456,7 @@ static int mlx5e_attr_get(struct net_device *dev, struct switchdev_attr *attr)
  

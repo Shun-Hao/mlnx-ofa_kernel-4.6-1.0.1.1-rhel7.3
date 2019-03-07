@@ -124,7 +124,7 @@ index xxxxxxx..xxxxxxx 100644
  		s->tx_xdp_err     += xdpsq_red_stats->err;
  		s->tx_xdp_cqes    += xdpsq_red_stats->cqes;
 +#endif
-
+ 
  		for (j = 0; j < priv->max_opened_tc; j++) {
  			struct mlx5e_sq_stats *sq_stats = &channel_stats->sq[j];
 @@ -206,7 +248,7 @@ void mlx5e_grp_sw_update_stats(struct mlx5e_priv *priv)
@@ -176,7 +176,7 @@ index xxxxxxx..xxxxxxx 100644
  	{ MLX5E_DECLARE_RQ_XDPSQ_STAT(struct mlx5e_xdpsq_stats, cqes) },
  };
 +#endif
-
+ 
 +#ifdef HAVE_XDP_REDIRECT
  static const struct counter_desc xdpsq_stats_desc[] = {
  	{ MLX5E_DECLARE_XDPSQ_STAT(struct mlx5e_xdpsq_stats, xmit) },
@@ -185,11 +185,11 @@ index xxxxxxx..xxxxxxx 100644
  	{ MLX5E_DECLARE_XDPSQ_STAT(struct mlx5e_xdpsq_stats, cqes) },
  };
 +#endif
-
+ 
  static const struct counter_desc ch_stats_desc[] = {
  	{ MLX5E_DECLARE_CH_STAT(struct mlx5e_ch_stats, events) },
 @@ -1251,8 +1305,12 @@ static const struct counter_desc ch_stats_desc[] = {
-
+ 
  #define NUM_RQ_STATS			ARRAY_SIZE(rq_stats_desc)
  #define NUM_SQ_STATS			ARRAY_SIZE(sq_stats_desc)
 -#define NUM_XDPSQ_STATS			ARRAY_SIZE(xdpsq_stats_desc)
@@ -204,7 +204,7 @@ index xxxxxxx..xxxxxxx 100644
  #define MLX5E_GET_PFLAG_PER_CH_STATS(priv) \
  	(MLX5E_GET_PFLAG(&(priv)->channels.params, MLX5E_PFLAG_PER_CH_STATS))
 @@ -1266,8 +1324,16 @@ static int mlx5e_grp_channels_get_num_stats(struct mlx5e_priv *priv)
-
+ 
  	return (NUM_RQ_STATS * max_nch) +
  	       (NUM_CH_STATS * max_nch) +
 -	       (NUM_RQ_XDPSQ_STATS * max_nch) +
@@ -232,7 +232,7 @@ index xxxxxxx..xxxxxxx 100644
  				rq_xdpsq_stats_desc[j].format, i);
 +#endif
  	}
-
+ 
  	for (tc = 0; tc < priv->max_opened_tc; tc++)
 @@ -1305,11 +1373,12 @@ static int mlx5e_grp_channels_fill_strings(struct mlx5e_priv *priv, u8 *data,
  				sprintf(data + (idx++) * ETH_GSTRING_LEN,
@@ -245,7 +245,7 @@ index xxxxxxx..xxxxxxx 100644
  			sprintf(data + (idx++) * ETH_GSTRING_LEN,
  				xdpsq_stats_desc[j].format, i);
 +#endif
-
+ 
  #ifdef CONFIG_MLX5_EN_SPECIAL_SQ
  	/* Special TX queue counters */
 @@ -1344,10 +1413,12 @@ static int mlx5e_grp_channels_fill_stats(struct mlx5e_priv *priv, u64 *data,
@@ -259,7 +259,7 @@ index xxxxxxx..xxxxxxx 100644
  						     rq_xdpsq_stats_desc, j);
 +#endif
  	}
-
+ 
  	for (tc = 0; tc < priv->max_opened_tc; tc++)
 @@ -1356,12 +1427,13 @@ static int mlx5e_grp_channels_fill_stats(struct mlx5e_priv *priv, u64 *data,
  				data[idx++] =
@@ -273,6 +273,6 @@ index xxxxxxx..xxxxxxx 100644
  				MLX5E_READ_CTR64_CPU(&priv->channel_stats[i].xdpsq,
  						     xdpsq_stats_desc, j);
 +#endif
-
+ 
  #ifdef CONFIG_MLX5_EN_SPECIAL_SQ
  	/* Special TX queue counters */

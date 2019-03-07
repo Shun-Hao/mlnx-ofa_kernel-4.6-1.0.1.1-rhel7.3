@@ -358,14 +358,14 @@ index xxxxxxx..xxxxxxx 100644
 +	sq->stats     =
 +#endif
  		&c->priv->channel_stats[c->ix].rq_xdpsq;
-
+ 
  	param->wq.db_numa_node = cpu_to_node(c->cpu);
 @@ -1189,6 +1327,7 @@ static void mlx5e_free_xdpsq(struct mlx5e_xdpsq *sq)
  	mlx5e_free_xdpsq_db(sq);
  	mlx5_wq_destroy(&sq->wq_ctrl);
  }
 +#endif
-
+ 
  static void mlx5e_free_icosq_db(struct mlx5e_icosq *sq)
  {
 @@ -1297,8 +1436,10 @@ static int mlx5e_alloc_txqsq(struct mlx5e_channel *c,
@@ -399,7 +399,7 @@ index xxxxxxx..xxxxxxx 100644
 @@ -1706,7 +1852,11 @@ static int mlx5e_open_xdpsq(struct mlx5e_channel *c,
  	int err;
  	int i;
-
+ 
 +#ifdef HAVE_XDP_REDIRECT
  	err = mlx5e_alloc_xdpsq(c, params, param, sq, is_redirect);
 +#else
@@ -407,7 +407,7 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  	if (err)
  		return err;
-
+ 
 @@ -1715,8 +1865,10 @@ static int mlx5e_open_xdpsq(struct mlx5e_channel *c,
  	csp.cqn             = sq->cq.mcq.cqn;
  	csp.wq_ctrl         = &sq->wq_ctrl;
@@ -568,7 +568,7 @@ index xxxxxxx..xxxxxxx 100644
  err_close_tx_cqs:
 +#endif
  	mlx5e_close_tx_cqs(c);
-
+ 
  err_close_icosq_cq:
 @@ -2322,17 +2505,25 @@ static void mlx5e_deactivate_channel(struct mlx5e_channel *c)
  
@@ -955,7 +955,7 @@ index xxxxxxx..xxxxxxx 100644
 +
 +	if (TC_H_MAJ(handle) != TC_H_MAJ(TC_H_INGRESS))
 +		goto mqprio;
-
+ 
 -void
 -mlx5e_get_stats(struct net_device *dev, struct rtnl_link_stats64 *stats)
 +#ifdef HAVE_NDO_SETUP_TC_TAKES_CHAIN_INDEX
@@ -1401,7 +1401,7 @@ index xxxxxxx..xxxxxxx 100644
 +	min_tx_rate = esw->vports[vport].info.min_rate;
 +	mutex_unlock(&esw->state_lock);
 +#endif
-
+ 
 +#if 1
 +	/* MLNX OFED only -
 +	 * Allow to set eswitch min rate for the PF.
@@ -2056,7 +2056,7 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  	return 0;
  }
-
+ 
 @@ -5257,7 +6038,9 @@ static void mlx5e_nic_enable(struct mlx5e_priv *priv)
  {
  	struct net_device *netdev = priv->netdev;
@@ -2099,7 +2099,7 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  
  	queue_work(priv->wq, &priv->set_rx_mode_work);
-
+ 
 @@ -5296,10 +6090,12 @@ static void mlx5e_nic_disable(struct mlx5e_priv *priv)
  {
  	struct mlx5_core_dev *mdev = priv->mdev;

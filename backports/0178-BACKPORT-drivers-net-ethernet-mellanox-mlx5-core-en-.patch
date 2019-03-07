@@ -13,7 +13,7 @@ index xxxxxxx..xxxxxxx 100644
 @@ -30,6 +30,7 @@
   * SOFTWARE.
   */
-
+ 
 +#ifdef HAVE_XDP_BUFF
  #include <linux/bpf_trace.h>
  #include "en/xdp.h"
@@ -84,16 +84,16 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  	u16 sqcc;
  	int i;
-
+ 
 @@ -186,7 +203,9 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
  	if (!cqe)
  		return false;
-
+ 
 +#ifdef HAVE_XDP_REDIRECT
  	is_redirect = test_bit(MLX5E_SQ_STATE_REDIRECT, &sq->state);
 +#endif
  	rq = container_of(sq, struct mlx5e_rq, xdpsq);
-
+ 
  	/* sq->cc must be updated only after mlx5_cqwq_update_db_record(),
 @@ -210,11 +229,20 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
  			last_wqe = (sqcc == wqe_counter);
@@ -130,13 +130,13 @@ index xxxxxxx..xxxxxxx 100644
 +#else
 +	rq = container_of(sq, struct mlx5e_rq, xdpsq);
 +#endif
-
+ 
  	while (sq->cc != sq->pc) {
  		u16 ci = mlx5_wq_cyc_ctr2ix(&sq->wq, sq->cc);
 @@ -246,17 +280,28 @@ void mlx5e_free_xdpsq_descs(struct mlx5e_xdpsq *sq)
-
+ 
  		sq->cc++;
-
+ 
 +#ifdef HAVE_XDP_REDIRECT
  		if (is_redirect) {
 +#ifdef HAVE_XDP_FRAME
@@ -156,7 +156,7 @@ index xxxxxxx..xxxxxxx 100644
  		}
  	}
  }
-
+ 
 +#ifdef HAVE_NDO_XDP_XMIT
 +#ifndef HAVE_NDO_XDP_FLUSH
  int mlx5e_xdp_xmit(struct net_device *dev, int n, struct xdp_frame **frames,
@@ -164,7 +164,7 @@ index xxxxxxx..xxxxxxx 100644
  {
 @@ -297,9 +342,14 @@ int mlx5e_xdp_xmit(struct net_device *dev, int n, struct xdp_frame **frames,
  		xdpi.xdpf = xdpf;
-
+ 
  		if (unlikely(!mlx5e_xmit_xdp_frame(sq, &xdpi))) {
 +#ifdef HAVE_XDP_FRAME
  			dma_unmap_single(sq->pdev, xdpi.dma_addr,

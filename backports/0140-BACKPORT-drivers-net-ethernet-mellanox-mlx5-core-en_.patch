@@ -79,7 +79,7 @@ index xxxxxxx..xxxxxxx 100644
 @@ -237,6 +252,7 @@ struct mlx5e_sq_stats {
  	u64 cqe_err;
  };
-
+ 
 +#ifdef HAVE_XDP_BUFF
  struct mlx5e_xdpsq_stats {
  	u64 xmit;
@@ -89,7 +89,7 @@ index xxxxxxx..xxxxxxx 100644
  	u64 cqes ____cacheline_aligned_in_smp;
  };
 +#endif
-
+ 
  struct mlx5e_ch_stats {
  	u64 events;
 @@ -259,7 +276,11 @@ struct mlx5e_stats {
