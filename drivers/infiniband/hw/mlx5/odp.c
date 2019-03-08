@@ -39,6 +39,7 @@
 #include "mlx5_ib.h"
 #include "cmd.h"
 #include "odp_exp.h"
+#include "ib_rep.h"
 
 #define MAX_PREFETCH_LEN (4*1024*1024U)
 
@@ -1482,6 +1483,10 @@ void mlx5_ib_pfault(struct mlx5_core_dev *mdev, void *context,
 	u8 event_subtype = pfault->event_subtype;
 	unsigned int duration;
 	int index;
+
+	if (MLX5_ESWITCH_MANAGER(mdev) &&
+	    mlx5_eswitch_mode(mdev->priv.eswitch) == SRIOV_OFFLOADS)
+		dev = mlx5_ib_get_uplink_ibdev(mdev->priv.eswitch);
 
 	duration = jiffies_to_msecs(jiffies - pfault->start);
 	index =	convert_duration_to_hist(duration);

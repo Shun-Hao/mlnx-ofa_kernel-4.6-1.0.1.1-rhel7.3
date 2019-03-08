@@ -4612,6 +4612,10 @@ static void mlx5_ib_event(struct mlx5_core_dev *dev, void *context,
 {
 	struct mlx5_ib_event_work *work;
 
+	if (MLX5_ESWITCH_MANAGER(dev) &&
+	    mlx5_eswitch_mode(dev->priv.eswitch) == SRIOV_OFFLOADS)
+		context = mlx5_ib_get_uplink_ibdev(dev->priv.eswitch);
+
 	work = kmalloc(sizeof(*work), GFP_ATOMIC);
 	if (!work)
 		return;

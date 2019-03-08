@@ -49,3 +49,4 @@ Change-Id=Ia16f57bce9e5a06748c42e3f3655e2b3cb6efaca; subject=mlx5/core: E-Switch
 Change-Id=Id2bf022e3330285ca8d77c975f0171c816671c65; subject=Backports: Fix mlx5 backports; feature=backports; upstream_status=ignore; general=;
 Change-Id=I551f8b98edc94828c6bb7114a4990dd874afa727; subject=compat: Fix idr for RH 7.5 4.14 kernel; feature=backports; upstream_status=ignore; general=;
 Change-Id=Ie9b97f708eb4ccd7a0171fb7a8536dab2e83cc4d; subject=Backports: Fix en_rep backports for RH7.5 of 4.14 kernel; feature=backports; upstream_status=ignore; general=;
+Change-Id=I7cc65d7b1fcfc2423a16d198ba9c966cf4000c0a; subject=mlx5/IB: Handle mlx5 interface properly in switchdev mode; feature=mlx5_bf; upstream_status=in_progress; general=;
