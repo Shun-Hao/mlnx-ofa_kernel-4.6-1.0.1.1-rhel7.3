@@ -1,2 +1,2 @@
 sep=;
-Change-Id=Iee500f1c7067d179240e9c9ffb07db923d0a46ed; subject=nvmet-rdma: fix null dereference under heavy load; feature=nvmf_bugs; upstream_status=accepted; general=;
+Change-Id=Iee500f1c7067d179240e9c9ffb07db923d0a46ed; subject=nvmet-rdma: fix null dereference under heavy load; feature=nvmf_bugs; upstream_status=accepted; general=upstream commit ID: 5cbab6303b47, tag: v5.0-rc4;
