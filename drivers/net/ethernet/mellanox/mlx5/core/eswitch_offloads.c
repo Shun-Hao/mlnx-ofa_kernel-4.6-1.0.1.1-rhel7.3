@@ -1299,7 +1299,7 @@ static int esw_offloads_start(struct mlx5_eswitch *esw,
 			      struct netlink_ext_ack *extack)
 {
 	esw->handler.extack = extack;
-	return schedule_work(&esw->handler.start_handler);
+	return schedule_work(&esw->handler.start_handler) != true;
 }
 
 void esw_offloads_start_handler(struct work_struct *work)
@@ -1682,7 +1682,7 @@ static int esw_offloads_stop(struct mlx5_eswitch *esw,
 			     struct netlink_ext_ack *extack)
 {
 	esw->handler.extack = extack;
-	return schedule_work(&esw->handler.stop_handler);
+	return schedule_work(&esw->handler.stop_handler) != true;
 }
 
 void esw_offloads_stop_handler(struct work_struct *work)

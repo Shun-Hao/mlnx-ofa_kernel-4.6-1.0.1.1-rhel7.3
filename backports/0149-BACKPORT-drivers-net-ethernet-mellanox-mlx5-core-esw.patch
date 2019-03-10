@@ -1,10 +1,10 @@
-From: Alaa Hleihel <alaa@mellanox.com>
+From: Eli Cohen <eli@mellanox.com>
 Subject: [PATCH] BACKPORT:
  drivers/net/ethernet/mellanox/mlx5/core/eswitch_offloads.c
 
-Change-Id: Ifd1d505a3179ae2cadcef63bc98a6d7e028e3396
+Change-Id: Ide97d36815ec9844b813ce6b2241379d3cfe2478
 ---
- .../ethernet/mellanox/mlx5/core/eswitch_offloads.c | 144 ++++++++++++++++++---
+ .../mellanox/mlx5/core/eswitch_offloads.c     | 144 +++++++++++++++---
  1 file changed, 125 insertions(+), 19 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/eswitch_offloads.c b/drivers/net/ethernet/mellanox/mlx5/core/eswitch_offloads.c
@@ -49,7 +49,7 @@ index xxxxxxx..xxxxxxx 100644
 +#ifdef HAVE_DEVLINK_ESWITCH_MODE_SET_EXTACK
  	esw->handler.extack = extack;
 +#endif
- 	return schedule_work(&esw->handler.start_handler);
+ 	return schedule_work(&esw->handler.start_handler) != true;
  }
  
 @@ -1309,24 +1320,39 @@ void esw_offloads_start_handler(struct work_struct *work)
@@ -125,7 +125,7 @@ index xxxxxxx..xxxxxxx 100644
 +#ifdef HAVE_DEVLINK_ESWITCH_MODE_SET_EXTACK
  	esw->handler.extack = extack;
 +#endif
- 	return schedule_work(&esw->handler.stop_handler);
+ 	return schedule_work(&esw->handler.stop_handler) != true;
  }
  
 @@ -1692,20 +1727,30 @@ void esw_offloads_stop_handler(struct work_struct *work)

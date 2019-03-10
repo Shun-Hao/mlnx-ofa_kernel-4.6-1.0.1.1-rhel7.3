@@ -12,3 +12,4 @@ Change-Id=If752ae0c57560d948297225734ebbf02bbae5468; subject=mlx5: CAPI implemen
 Change-Id=I1824d834f3c0c4c42401404260c3570797207d47; subject=mlx5_core: Support capi invalidation; feature=mlx5_capi_v2; upstream_status=NA; general=;
 Change-Id=Ie345cc567bde46eab5836bf2dc58b4e2a0dd7693; subject=IB/mlx5: Control TLBi globalization; feature=mlx5_capi_v2; upstream_status=NA; general=;
 Change-Id=Ic6c46469d910eef73d9d36ea631af7c6cfa6dd5c; subject=IB/mlx5: Add support for sync steering command; feature=devx; upstream_status=in_progress; general=;
+Change-Id=I4e6fe9573a3b96e82a507153c2defbad3252e4eb; subject=net/mlx5_core: Fix call to schedule_work; feature=mlx5_asap; upstream_status=NA; general=;
