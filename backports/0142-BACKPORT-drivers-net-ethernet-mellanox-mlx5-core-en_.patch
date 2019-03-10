@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en_tc.c
 
 Change-Id: I409d0c273d880163a0df891152c9dd8cf93e1c8e
 ---
- drivers/net/ethernet/mellanox/mlx5/core/en_tc.c | 754 +++++++++++++++++++++---
- 1 file changed, 681 insertions(+), 73 deletions(-)
+ drivers/net/ethernet/mellanox/mlx5/core/en_tc.c | 756 +++++++++++++++++++++---
+ 1 file changed, 683 insertions(+), 73 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en_tc.c b/drivers/net/ethernet/mellanox/mlx5/core/en_tc.c
 index xxxxxxx..xxxxxxx 100644
@@ -1572,8 +1572,8 @@ index xxxxxxx..xxxxxxx 100644
 +			continue;
 +		}
 +#endif /* HAVE_TCF_TUNNEL_INFO */
-+
  
++
 +#ifdef HAVE_TCF_TUNNEL_INFO
 +#ifdef HAVE_IS_TCF_VLAN
  		if (is_tcf_vlan(a)) {
@@ -1676,7 +1676,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5e_tc_flow_parse_attr *parse_attr;
  	struct mlx5e_tc_flow *flow;
  	int attr_size, err;
-@@ -3167,10 +3681,19 @@ __mlx5e_add_fdb_flow(struct mlx5e_priv *priv,
+@@ -3167,10 +3681,21 @@ __mlx5e_add_fdb_flow(struct mlx5e_priv *priv,
  			       &parse_attr, &flow);
  	if (err)
  		goto out;
@@ -1684,6 +1684,8 @@ index xxxxxxx..xxxxxxx 100644
 +#if defined(HAVE_TC_CLS_FLOWER_OFFLOAD_COMMON) && defined (HAVE_IS_TCF_GACT_GOTO_CHAIN)
  	flow->esw_attr->chain = f->common.chain_index;
  	flow->esw_attr->prio = TC_H_MAJ(f->common.prio) >> 16;
++#else
++	flow->esw_attr->prio = 1;
 +#endif
 +#ifdef HAVE_TCF_TUNNEL_INFO
 +#ifdef HAVE_TC_CLS_OFFLOAD_EXTACK
@@ -1697,7 +1699,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (err)
  		goto err_free;
  
-@@ -3183,7 +3706,11 @@ __mlx5e_add_fdb_flow(struct mlx5e_priv *priv,
+@@ -3183,7 +3708,11 @@ __mlx5e_add_fdb_flow(struct mlx5e_priv *priv,
  	else
  		flow->esw_attr->counter_dev = priv->mdev;
  
@@ -1709,7 +1711,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (err) {
  		if (!(err == -ENETUNREACH && mlx5_lag_is_multipath(in_mdev)))
  			goto err_free;
-@@ -3266,15 +3793,20 @@ mlx5e_add_nic_flow(struct mlx5e_priv *priv,
+@@ -3266,15 +3795,20 @@ mlx5e_add_nic_flow(struct mlx5e_priv *priv,
  		   u16 flow_flags,
  		   struct mlx5e_tc_flow **__flow)
  {
@@ -1731,7 +1733,7 @@ index xxxxxxx..xxxxxxx 100644
  	flow_flags |= MLX5E_TC_FLOW_NIC;
  	attr_size  = sizeof(struct mlx5_nic_flow_attr);
  	err = mlx5e_alloc_flow(priv, attr_size, f, flow_flags,
-@@ -3282,11 +3814,19 @@ mlx5e_add_nic_flow(struct mlx5e_priv *priv,
+@@ -3282,11 +3816,19 @@ mlx5e_add_nic_flow(struct mlx5e_priv *priv,
  	if (err)
  		goto out;
  
@@ -1751,7 +1753,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (err)
  		goto err_free;
  
-@@ -3315,9 +3855,10 @@ mlx5e_tc_add_flow(struct mlx5e_priv *priv,
+@@ -3315,9 +3857,10 @@ mlx5e_tc_add_flow(struct mlx5e_priv *priv,
  
  	get_flags(flags, &flow_flags);
  
@@ -1763,7 +1765,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (esw && esw->mode == SRIOV_OFFLOADS)
  		err = mlx5e_add_fdb_flow(priv, f, flow_flags, flow);
  	else
-@@ -3329,15 +3870,19 @@ mlx5e_tc_add_flow(struct mlx5e_priv *priv,
+@@ -3329,15 +3872,19 @@ mlx5e_tc_add_flow(struct mlx5e_priv *priv,
  int mlx5e_configure_flower(struct mlx5e_priv *priv,
  			   struct tc_cls_flower_offload *f, int flags)
  {
@@ -1783,7 +1785,7 @@ index xxxxxxx..xxxxxxx 100644
  		netdev_warn_once(priv->netdev,
  				 "flow cookie %lx already exists, ignoring\n",
  				 f->cookie);
-@@ -3360,16 +3905,23 @@ err_free:
+@@ -3360,16 +3907,23 @@ err_free:
  out:
  	return err;
  }
@@ -1807,7 +1809,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  int mlx5e_delete_flower(struct mlx5e_priv *priv,
-@@ -3390,13 +3942,21 @@ int mlx5e_delete_flower(struct mlx5e_priv *priv,
+@@ -3390,13 +3944,21 @@ int mlx5e_delete_flower(struct mlx5e_priv *priv,
  
  	return 0;
  }
@@ -1829,7 +1831,7 @@ index xxxxxxx..xxxxxxx 100644
  	u64 lastuse = 0;
  	u64 packets = 0;
  	u64 bytes = 0;
-@@ -3434,10 +3994,39 @@ int mlx5e_stats_flower(struct mlx5e_priv *priv,
+@@ -3434,10 +3996,39 @@ int mlx5e_stats_flower(struct mlx5e_priv *priv,
  
  no_peer_counter:
  
@@ -1869,7 +1871,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static void mlx5e_tc_hairpin_update_dead_peer(struct mlx5e_priv *priv,
  					      struct mlx5e_priv *peer_priv)
-@@ -3485,12 +4074,16 @@ static int mlx5e_tc_netdev_event(struct notifier_block *this,
+@@ -3485,12 +4076,16 @@ static int mlx5e_tc_netdev_event(struct notifier_block *this,
  	return NOTIFY_DONE;
  }
  
@@ -1886,7 +1888,7 @@ index xxxxxxx..xxxxxxx 100644
  	hash_init(tc->hairpin_tbl);
  
  	err = rhashtable_init(&tc->ht, &tc_ht_params);
-@@ -3504,8 +4097,12 @@ int mlx5e_tc_nic_init(struct mlx5e_priv *priv)
+@@ -3504,8 +4099,12 @@ int mlx5e_tc_nic_init(struct mlx5e_priv *priv)
  	}
  
  	return err;
@@ -1899,7 +1901,7 @@ index xxxxxxx..xxxxxxx 100644
  static void _mlx5e_tc_del_flow(void *ptr, void *arg)
  {
  	struct mlx5e_tc_flow *flow = ptr;
-@@ -3514,9 +4111,11 @@ static void _mlx5e_tc_del_flow(void *ptr, void *arg)
+@@ -3514,9 +4113,11 @@ static void _mlx5e_tc_del_flow(void *ptr, void *arg)
  	mlx5e_tc_del_flow(priv, flow);
  	kfree(flow);
  }
@@ -1911,7 +1913,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5e_tc_table *tc = &priv->fs.tc;
  
  	if (tc->netdevice_nb.notifier_call)
-@@ -3528,21 +4127,30 @@ void mlx5e_tc_nic_cleanup(struct mlx5e_priv *priv)
+@@ -3528,21 +4129,30 @@ void mlx5e_tc_nic_cleanup(struct mlx5e_priv *priv)
  		mlx5_destroy_flow_table(tc->t);
  		tc->t = NULL;
  	}
