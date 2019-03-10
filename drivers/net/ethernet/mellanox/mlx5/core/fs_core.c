@@ -2194,6 +2194,10 @@ struct mlx5_flow_namespace *mlx5_get_flow_namespace(struct mlx5_core_dev *dev,
 		if (steering->sniffer_tx_root_ns)
 			return &steering->sniffer_tx_root_ns->ns;
 		return NULL;
+	case MLX5_FLOW_NAMESPACE_RDMA_RX:
+		if (steering->rdma_rx_root_ns)
+			return &steering->rdma_rx_root_ns->ns;
+		return NULL;
 	default:
 		break;
 	}
@@ -2600,6 +2604,7 @@ void mlx5_cleanup_fs(struct mlx5_core_dev *dev)
 	steering->fdb_sub_ns = NULL;
 	cleanup_root_ns(steering->sniffer_rx_root_ns);
 	cleanup_root_ns(steering->sniffer_tx_root_ns);
+	cleanup_root_ns(steering->rdma_rx_root_ns);
 	cleanup_root_ns(steering->egress_root_ns);
 	mlx5_cleanup_fc_stats(dev);
 	fs_debugfs_cleanup(dev);
@@ -2646,6 +2651,27 @@ static int init_sniffer_rx_root_ns(struct mlx5_flow_steering *steering)
 	return 0;
 }
 
+static int init_rdma_rx_root_ns(struct mlx5_flow_steering *steering)
+{
+	struct fs_prio *prio;
+
+	steering->rdma_rx_root_ns = create_root_ns(steering, FS_FT_RDMA_RX,
+						   "rdma_rx_ns");
+	if (!steering->rdma_rx_root_ns)
+		return -ENOMEM;
+
+	steering->rdma_rx_root_ns->def_miss_action =
+		MLX5_FLOW_TABLE_MISS_ACTION_SWITCH_DOMAIN;
+
+	/* Create single prio */
+	prio = fs_create_prio(&steering->rdma_rx_root_ns->ns, 0, 1,
+			      "rdma_rx_prio");
+	if (IS_ERR(prio)) {
+		cleanup_root_ns(steering->rdma_rx_root_ns);
+		return PTR_ERR(prio);
+	}
+	return 0;
+}
 static int init_fdb_root_ns(struct mlx5_flow_steering *steering)
 {
 	struct mlx5_flow_namespace *ns;
@@ -2910,6 +2936,13 @@ int mlx5_init_fs(struct mlx5_core_dev *dev)
 
 	if (MLX5_CAP_FLOWTABLE_SNIFFER_TX(dev, ft_support)) {
 		err = init_sniffer_tx_root_ns(steering);
+		if (err)
+			goto err;
+	}
+
+	if (MLX5_CAP_FLOWTABLE_RDMA_RX(dev, ft_support) &&
+	    MLX5_CAP_FLOWTABLE_RDMA_RX(dev, table_miss_action_domain)) {
+		err = init_rdma_rx_root_ns(steering);
 		if (err)
 			goto err;
 	}

@@ -386,7 +386,9 @@ struct mlx5_ifc_flow_table_prop_layout_bits {
 	u8	   reformat_l3_tunnel_to_l2[0x1];
 	u8	   reformat_l2_to_l3_tunnel[0x1];
 	u8	   reformat_and_modify_action[0x1];
-	u8         reserved_at_14[0xb];
+	u8         reserved_at_15[0x2];
+	u8	   table_miss_action_domain[0x1];
+	u8         reserved_at_18[0x8];
 	u8         reserved_at_20[0x2];
 	u8         log_max_ft_size[0x6];
 	u8         log_max_modify_header_context[0x8];
@@ -630,13 +632,13 @@ struct mlx5_ifc_flow_table_nic_cap_bits {
 
 	struct mlx5_ifc_flow_table_prop_layout_bits flow_table_properties_nic_receive;
 
-	u8         reserved_at_400[0x200];
+	struct mlx5_ifc_flow_table_prop_layout_bits flow_table_properties_nic_receive_rdma;
 
 	struct mlx5_ifc_flow_table_prop_layout_bits flow_table_properties_nic_receive_sniffer;
 
 	struct mlx5_ifc_flow_table_prop_layout_bits flow_table_properties_nic_transmit;
 
-	u8         reserved_at_a00[0x200];
+	struct mlx5_ifc_flow_table_prop_layout_bits flow_table_properties_nic_transmit_rdma;
 
 	struct mlx5_ifc_flow_table_prop_layout_bits flow_table_properties_nic_transmit_sniffer;
 
@@ -1398,6 +1400,12 @@ enum mlx5_flow_destination_type {
 	MLX5_FLOW_DESTINATION_TYPE_PORT         = 0x99,
 	MLX5_FLOW_DESTINATION_TYPE_COUNTER      = 0x100,
 	MLX5_FLOW_DESTINATION_TYPE_FLOW_TABLE_NUM = 0x101,
+};
+
+enum mlx5_flow_table_miss_action {
+	MLX5_FLOW_TABLE_MISS_ACTION_DEF,
+	MLX5_FLOW_TABLE_MISS_ACTION_FWD,
+	MLX5_FLOW_TABLE_MISS_ACTION_SWITCH_DOMAIN,
 };
 
 struct mlx5_ifc_dest_format_struct_bits {
