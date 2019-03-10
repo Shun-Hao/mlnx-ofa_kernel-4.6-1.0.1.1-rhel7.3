@@ -236,6 +236,13 @@ struct mlx5_vgroup {
 	struct		     list_head list;
 };
 
+struct roce_steering {
+	struct mlx5_flow_table *ft;
+	struct mlx5_flow_group *fg;
+	struct mlx5_flow_handle *allow_rule;
+	u8			roce_enable;
+};
+
 struct mlx5_eswitch {
 	struct mlx5_core_dev    *dev;
 	struct mlx5_eswitch_fdb fdb_table;
@@ -262,6 +269,7 @@ struct mlx5_eswitch {
 	int                     nvports;
 	u16                     manager_vport;
 	struct mlx5_host_info	host_info;
+	struct roce_steering	roce_steering;
 	struct mlx5_esw_handler	handler;
 };
 

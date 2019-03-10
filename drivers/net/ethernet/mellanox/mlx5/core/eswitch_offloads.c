@@ -35,6 +35,8 @@
 #include <linux/mlx5/mlx5_ifc.h>
 #include <linux/mlx5/vport.h>
 #include <linux/mlx5/fs.h>
+#include <rdma/ib_verbs.h>
+#include <net/addrconf.h>
 #include "mlx5_core.h"
 #include "eswitch.h"
 #include "en.h"
@@ -91,6 +93,8 @@ static struct mlx5_flow_table *
 esw_get_prio_table(struct mlx5_eswitch *esw, u32 chain, u16 prio, int level);
 static void
 esw_put_prio_table(struct mlx5_eswitch *esw, u32 chain, u16 prio, int level);
+
+static void mlx5_del_roce_addr(struct mlx5_eswitch *esw);
 
 bool mlx5_eswitch_prios_supported(struct mlx5_eswitch *esw)
 {
@@ -1229,6 +1233,174 @@ out:
 	return flow_rule;
 }
 
+static void mlx5_disable_roce(struct mlx5_eswitch *esw)
+{
+	if (!esw->roce_steering.roce_enable)
+		return;
+
+	mlx5_del_roce_addr(esw);
+	mlx5_nic_vport_disable_roce(esw->dev);
+	mlx5_del_flow_rules(esw->roce_steering.allow_rule);
+	mlx5_destroy_flow_group(esw->roce_steering.fg);
+	mlx5_destroy_flow_table(esw->roce_steering.ft);
+	esw->roce_steering.roce_enable = false;
+}
+
+static int mlx5_enable_roce_steering(struct mlx5_eswitch *esw)
+{
+	int inlen = MLX5_ST_SZ_BYTES(create_flow_group_in);
+	struct mlx5_flow_table_attr ft_attr = {};
+	struct mlx5_flow_handle *flow_rule = NULL;
+	struct mlx5_flow_namespace *ns = NULL;
+	struct mlx5_core_dev *dev = esw->dev;
+	struct mlx5_flow_act flow_act = {0};
+	struct mlx5_flow_spec *spec;
+	struct mlx5_flow_table *ft;
+	struct mlx5_flow_group *fg;
+	void *match_criteria;
+	u32 *flow_group_in;
+	void *misc;
+	int err;
+
+	flow_group_in = kvzalloc(inlen, GFP_KERNEL);
+	if (!flow_group_in)
+		return -ENOMEM;
+	spec = kvzalloc(sizeof(*spec), GFP_KERNEL);
+	if (!spec) {
+		kvfree(flow_group_in);
+		return -ENOMEM;
+	}
+
+	ns = mlx5_get_flow_namespace(dev, MLX5_FLOW_NAMESPACE_RDMA_RX);
+	if (!ns) {
+		esw_debug(dev, "Failed to get RDMA RX namespace");
+		err = -EOPNOTSUPP;
+		goto free;
+	}
+
+	ft_attr.max_fte = 1;
+	ft = mlx5_create_flow_table(ns, &ft_attr);
+	if (IS_ERR(ft)) {
+		esw_debug(dev, "Failed to create RDMA RX flow table");
+		err = PTR_ERR(ft);
+		goto free;
+	}
+
+	MLX5_SET(create_flow_group_in, flow_group_in, match_criteria_enable,
+		 MLX5_MATCH_MISC_PARAMETERS);
+	match_criteria = MLX5_ADDR_OF(create_flow_group_in, flow_group_in,
+				      match_criteria);
+	MLX5_SET_TO_ONES(fte_match_param, match_criteria,
+			 misc_parameters.source_port);
+
+	fg = mlx5_create_flow_group(ft, flow_group_in);
+	if (IS_ERR(fg)) {
+		err = PTR_ERR(fg);
+		esw_debug(dev, "Failed to create RDMA RX flow group err(%d)\n", err);
+		goto destroy_flow_table;
+	}
+
+	spec->match_criteria_enable = MLX5_MATCH_MISC_PARAMETERS;
+	misc = MLX5_ADDR_OF(fte_match_param, spec->match_value,
+			    misc_parameters);
+	MLX5_SET(fte_match_set_misc, misc, source_port, 0);
+	misc = MLX5_ADDR_OF(fte_match_param, spec->match_criteria,
+			    misc_parameters);
+	MLX5_SET_TO_ONES(fte_match_set_misc, misc, source_port);
+
+	flow_act.action = MLX5_FLOW_CONTEXT_ACTION_ALLOW;
+	flow_rule = mlx5_add_flow_rules(ft, spec, &flow_act, NULL, 0);
+	if (IS_ERR(flow_rule)) {
+		err = PTR_ERR(flow_rule);
+		esw_debug(dev, "Failed to add RoCE allow rule, err=%d\n",
+			  err);
+		goto destroy_flow_group;
+	}
+
+	kvfree(spec);
+	kvfree(flow_group_in);
+	esw->roce_steering.ft = ft;
+	esw->roce_steering.fg = fg;
+	esw->roce_steering.allow_rule = flow_rule;
+
+	return 0;
+
+destroy_flow_table:
+	mlx5_destroy_flow_table(ft);
+destroy_flow_group:
+	mlx5_destroy_flow_group(fg);
+free:
+	kvfree(spec);
+	kvfree(flow_group_in);
+	return err;
+}
+
+static void make_default_gid(struct mlx5_eswitch *esw, union ib_gid *gid)
+{
+	u8 hw_id[ETH_ALEN];
+
+	mlx5_query_nic_vport_mac_address(esw->dev, 0, hw_id);
+	gid->global.subnet_prefix = cpu_to_be64(0xfe80000000000000LL);
+	addrconf_addr_eui48(&gid->raw[8], hw_id);
+}
+
+static void mlx5_del_roce_addr(struct mlx5_eswitch *esw)
+{
+	mlx5_core_roce_gid_set(esw->dev, 0, 0, 0,
+			       NULL, NULL, false, 0, 0);
+}
+
+static int mlx5_add_roce_addr(struct mlx5_eswitch *esw)
+{
+	union ib_gid gid;
+	u8 mac[ETH_ALEN];
+
+	make_default_gid(esw, &gid);
+	return mlx5_core_roce_gid_set(esw->dev, 0,
+				      MLX5_ROCE_VERSION_2,
+				      MLX5_ROCE_L3_TYPE_IPV6,
+				      gid.raw, mac,
+				      false, 0, 1);
+}
+
+static int mlx5_enable_roce(struct mlx5_eswitch *esw)
+{
+	struct mlx5_core_dev *dev = esw->dev;
+	int err;
+
+	if (!(MLX5_CAP_FLOWTABLE_RDMA_RX(dev, ft_support) &&
+	      MLX5_CAP_FLOWTABLE_RDMA_RX(dev, table_miss_action_domain)))
+		return -EOPNOTSUPP;
+
+	err = mlx5_nic_vport_enable_roce(dev);
+	if (err) {
+		esw_debug(dev, "Failed to enable RoCE: %d\n", err);
+		return err;
+	}
+
+	err = mlx5_add_roce_addr(esw);
+	if (err) {
+		esw_debug(dev, "Failed to add RoCE address: %d\n", err);
+		goto disable_roce;
+	}
+
+	err = mlx5_enable_roce_steering(esw);
+	if (err) {
+		esw_debug(dev, "Failed to enable RoCE steering: %d\n", err);
+		goto del_roce_addr;
+	}
+
+	esw->roce_steering.roce_enable = true;
+	return 0;
+
+del_roce_addr:
+	mlx5_del_roce_addr(esw);
+disable_roce:
+	mlx5_nic_vport_disable_roce(dev);
+
+	return err;
+}
+
 static int esw_offloads_start(struct mlx5_eswitch *esw,
 			      struct netlink_ext_ack *extack)
 {
@@ -1522,6 +1694,13 @@ static int esw_offloads_steering_init(struct mlx5_eswitch *esw, int nvports)
 	if (err)
 		goto create_fg_err;
 
+	err = mlx5_enable_roce(esw);
+	if (err) {
+		esw_debug(esw->dev, "Failed to enable RoCE, err: %d\n",
+			  err);
+		err = 0;
+	}
+
 	return 0;
 
 create_fg_err:
@@ -1751,6 +1930,7 @@ void esw_offloads_cleanup(struct mlx5_eswitch *esw)
 		num_vfs = esw->dev->priv.sriov.num_vfs;
 	}
 
+	mlx5_disable_roce(esw);
 	esw_offloads_unload_all_reps(esw, num_vfs);
 	esw_offloads_steering_cleanup(esw);
 }
