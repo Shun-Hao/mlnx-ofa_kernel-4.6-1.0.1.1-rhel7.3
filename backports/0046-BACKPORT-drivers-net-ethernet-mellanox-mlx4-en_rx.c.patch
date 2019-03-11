@@ -3,7 +3,7 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx4/en_rx.c
 
 Change-Id: I7d60befae8122160d9c75ea0d98a61849e9e71cc
 ---
- drivers/net/ethernet/mellanox/mlx4/en_rx.c | 331 ++++++++++++++++++++-
+ drivers/net/ethernet/mellanox/mlx4/en_rx.c | 331 ++++++++++++++++++++++++++++-
  1 file changed, 324 insertions(+), 7 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx4/en_rx.c b/drivers/net/ethernet/mellanox/mlx4/en_rx.c
@@ -256,7 +256,7 @@ index xxxxxxx..xxxxxxx 100644
   	return 0;
   }
  
-@@ -708,11 +820,17 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
+@@ -721,11 +833,17 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
  	struct mlx4_en_priv *priv = netdev_priv(dev);
  	int factor = priv->cqe_factor;
  	struct mlx4_en_rx_ring *ring;
@@ -274,7 +274,7 @@ index xxxxxxx..xxxxxxx 100644
  	int polled = 0;
  	int index;
  
-@@ -721,11 +839,15 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
+@@ -734,11 +852,15 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
  
  	ring = priv->rx_ring[cq_ring];
  
@@ -290,7 +290,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	/* We assume a 1:1 mapping between CQEs and Rx descriptors, so Rx
  	 * descriptor offset can be deduced from the CQE index instead of
-@@ -737,7 +859,9 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
+@@ -750,7 +872,9 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
  	while (XNOR(cqe->owner_sr_opcode & MLX4_CQE_OWNER_MASK,
  		    cq->mcq.cons_index & cq->size)) {
  		struct mlx4_en_rx_alloc *frags;
@@ -300,7 +300,7 @@ index xxxxxxx..xxxxxxx 100644
  		struct sk_buff *skb;
  		unsigned int length;
  		int ip_summed;
-@@ -750,7 +874,11 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
+@@ -763,7 +887,11 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
  		/*
  		 * make sure we read the CQE after we read the ownership bit
  		 */
@@ -312,7 +312,7 @@ index xxxxxxx..xxxxxxx 100644
  
  		/* Drop packet on bad receive or bad checksum */
  		if (unlikely((cqe->owner_sr_opcode & MLX4_CQE_OPCODE_MASK) ==
-@@ -777,6 +905,7 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
+@@ -790,6 +918,7 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
  		if (priv->flags & MLX4_EN_FLAG_RX_FILTER_NEEDED) {
  			const struct ethhdr *ethh = va;
  			dma_addr_t dma;
@@ -320,7 +320,7 @@ index xxxxxxx..xxxxxxx 100644
  			/* Get pointer to first fragment since we haven't
  			 * skb yet and cast it to ethhdr struct
  			 */
-@@ -792,7 +921,7 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
+@@ -805,7 +934,7 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
  				/* Drop the packet, since HW loopback-ed it */
  				mac_hash = ethh->h_source[MLX4_EN_MAC_HASH_IDX];
  				bucket = &priv->mac_hash[mac_hash];
@@ -329,7 +329,7 @@ index xxxxxxx..xxxxxxx 100644
  					if (ether_addr_equal_64bits(entry->mac,
  								    ethh->h_source))
  						goto next;
-@@ -811,10 +940,13 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
+@@ -824,10 +953,13 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
  		/* A bpf program gets first chance to drop the packet. It may
  		 * read bytes but not past the end of the frag.
  		 */
@@ -343,7 +343,7 @@ index xxxxxxx..xxxxxxx 100644
  			u32 act;
  
  			dma = frags[0].dma + frags[0].page_offset;
-@@ -822,20 +954,29 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
+@@ -835,20 +967,29 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
  						priv->frag_info[0].frag_size,
  						DMA_FROM_DEVICE);
  
@@ -373,7 +373,7 @@ index xxxxxxx..xxxxxxx 100644
  
  			switch (act) {
  			case XDP_PASS:
-@@ -845,7 +986,11 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
+@@ -858,7 +999,11 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
  				npage = NULL;
  				if (!ring->page_cache.index) {
  					npage = mlx4_alloc_page(priv, ring,
@@ -385,7 +385,7 @@ index xxxxxxx..xxxxxxx 100644
  								GFP_ATOMIC | __GFP_MEMALLOC);
  					if (!npage) {
  						ring->xdp_drop++;
-@@ -867,20 +1012,25 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
+@@ -880,20 +1025,25 @@ int mlx4_en_process_rx_cq(struct net_device *dev, struct mlx4_en_cq *cq, int bud
  					frags[0].page_offset = XDP_PACKET_HEADROOM;
  					goto next;
  				}
@@ -411,7 +411,7 @@ index xxxxxxx..xxxxxxx 100644
  
  		ring->bytes += length;
  		ring->packets++;
-@@ -902,15 +1052,53 @@ xdp_drop_no_cnt:
+@@ -920,15 +1070,53 @@ xdp_drop_no_cnt:
  						       MLX4_CQE_STATUS_UDP)) &&
  			    (cqe->status & cpu_to_be16(MLX4_CQE_STATUS_IPOK)) &&
  			    cqe->checksum == cpu_to_be16(0xffff)) {
@@ -465,7 +465,7 @@ index xxxxxxx..xxxxxxx 100644
  			} else {
  				if (!(priv->flags & MLX4_EN_FLAG_RX_CSUM_NON_TCP_UDP &&
  				      (cqe->status & cpu_to_be16(MLX4_CQE_STATUS_IP_ANY))))
-@@ -918,34 +1106,90 @@ xdp_drop_no_cnt:
+@@ -936,34 +1124,90 @@ xdp_drop_no_cnt:
  				if (check_csum(cqe, skb, va, dev->features))
  					goto csum_none;
  				ip_summed = CHECKSUM_COMPLETE;
@@ -557,7 +557,7 @@ index xxxxxxx..xxxxxxx 100644
  			skb->len = length;
  			skb->data_len = length;
  			napi_gro_frags(&cq->napi);
-@@ -961,19 +1205,27 @@ next:
+@@ -979,19 +1223,27 @@ next:
  			break;
  	}
  
@@ -585,7 +585,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	mlx4_en_remap_rx_buffers(priv, ring);
  
-@@ -1012,22 +1264,39 @@ int mlx4_en_poll_rx_cq(struct napi_struct *napi, int budget)
+@@ -1030,22 +1282,39 @@ int mlx4_en_poll_rx_cq(struct napi_struct *napi, int budget)
  		}
  	}
  
@@ -625,7 +625,7 @@ index xxxxxxx..xxxxxxx 100644
  
  		if (likely(cpumask_test_cpu(cpu_curr, aff)))
  			return budget;
-@@ -1040,10 +1309,30 @@ int mlx4_en_poll_rx_cq(struct napi_struct *napi, int budget)
+@@ -1058,10 +1327,30 @@ int mlx4_en_poll_rx_cq(struct napi_struct *napi, int budget)
  		 */
  		if (done)
  			done--;
@@ -656,7 +656,7 @@ index xxxxxxx..xxxxxxx 100644
  	return done;
  }
  
-@@ -1053,6 +1342,7 @@ void mlx4_en_calc_rx_buf(struct net_device *dev)
+@@ -1071,6 +1360,7 @@ void mlx4_en_calc_rx_buf(struct net_device *dev)
  	int eff_mtu = MLX4_EN_EFF_MTU(dev->mtu);
  	int i = 0;
  
@@ -664,7 +664,7 @@ index xxxxxxx..xxxxxxx 100644
  	/* bpf requires buffers to be set up as 1 packet per page.
  	 * This only works when num_frags == 1.
  	 */
-@@ -1066,7 +1356,9 @@ void mlx4_en_calc_rx_buf(struct net_device *dev)
+@@ -1084,7 +1374,9 @@ void mlx4_en_calc_rx_buf(struct net_device *dev)
  		priv->dma_dir = PCI_DMA_BIDIRECTIONAL;
  		priv->rx_headroom = XDP_PACKET_HEADROOM;
  		i = 1;
@@ -675,7 +675,7 @@ index xxxxxxx..xxxxxxx 100644
  		int frag_size_max = 2048, buf_size = 0;
  
  		/* should not happen, right ? */
-@@ -1129,7 +1421,11 @@ static int mlx4_en_config_rss_qp(struct mlx4_en_priv *priv, int qpn,
+@@ -1147,7 +1439,11 @@ static int mlx4_en_config_rss_qp(struct mlx4_en_priv *priv, int qpn,
  	if (!context)
  		return -ENOMEM;
  
@@ -687,7 +687,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (err) {
  		en_err(priv, "Failed to allocate qp #%x\n", qpn);
  		goto out;
-@@ -1144,7 +1440,11 @@ static int mlx4_en_config_rss_qp(struct mlx4_en_priv *priv, int qpn,
+@@ -1162,7 +1458,11 @@ static int mlx4_en_config_rss_qp(struct mlx4_en_priv *priv, int qpn,
  	/* Cancel FCS removal if FW allows */
  	if (mdev->dev->caps.flags & MLX4_DEV_CAP_FLAG_FCS_KEEP) {
  		context->param3 |= cpu_to_be32(1 << 29);
@@ -699,7 +699,7 @@ index xxxxxxx..xxxxxxx 100644
  			ring->fcs_del = 0;
  		else
  			ring->fcs_del = ETH_FCS_LEN;
-@@ -1174,7 +1474,11 @@ int mlx4_en_create_drop_qp(struct mlx4_en_priv *priv)
+@@ -1192,7 +1492,11 @@ int mlx4_en_create_drop_qp(struct mlx4_en_priv *priv)
  		en_err(priv, "Failed reserving drop qpn\n");
  		return err;
  	}
@@ -711,7 +711,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (err) {
  		en_err(priv, "Failed allocating drop qp\n");
  		mlx4_qp_release_range(priv->mdev->dev, qpn, 1);
-@@ -1247,7 +1551,12 @@ int mlx4_en_config_rss_steer(struct mlx4_en_priv *priv)
+@@ -1265,7 +1569,12 @@ int mlx4_en_config_rss_steer(struct mlx4_en_priv *priv)
  	}
  
  	/* Configure RSS indirection qp */
@@ -724,7 +724,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (err) {
  		en_err(priv, "Failed to allocate RSS indirection QP\n");
  		goto rss_err;
-@@ -1280,9 +1589,17 @@ int mlx4_en_config_rss_steer(struct mlx4_en_priv *priv)
+@@ -1298,9 +1607,17 @@ int mlx4_en_config_rss_steer(struct mlx4_en_priv *priv)
  
  	rss_context->flags = rss_mask;
  	rss_context->hash_fn = MLX4_RSS_HASH_TOP;

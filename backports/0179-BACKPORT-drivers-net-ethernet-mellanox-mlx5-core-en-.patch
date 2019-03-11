@@ -3,40 +3,38 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h
 
 Change-Id: Ia9bc140c27362c6a74c02e83542116d9f0edff70
 ---
- drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h | 12 +++++++++++-
- 1 file changed, 11 insertions(+), 1 deletion(-)
+ drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h b/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h
 +++ b/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h
-@@ -40,15 +40,24 @@
- #define MLX5E_XDP_TX_DS_COUNT \
- 	((sizeof(struct mlx5e_tx_wqe) / MLX5_SEND_WQE_DS) + 1 /* SG DS */)
+@@ -32,6 +32,7 @@
+ #ifndef __MLX5_EN_XDP_H__
+ #define __MLX5_EN_XDP_H__
  
-+#ifdef HAVE_XDP_ENABLE
-+#ifdef HAVE_XDP_BUFF_DATA_HARD_START
- bool mlx5e_xdp_handle(struct mlx5e_rq *rq, struct mlx5e_dma_info *di,
- 		      void *va, u16 *rx_headroom, u32 *len);
-+#else
-+static inline bool mlx5e_xdp_handle(struct mlx5e_rq *rq,
-+				    const struct bpf_prog *prog,
-+				    struct mlx5e_dma_info *di,
-+				    void *data, u16 len);
-+#endif
-+#endif
-+#ifdef HAVE_XDP_ENABLE
- bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq);
++#ifdef HAVE_XDP_BUFF
+ #include "en.h"
+
+ #define MLX5E_XDP_MAX_MTU ((int)(PAGE_SIZE - \
+@@ -46,8 +47,15 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq);
  void mlx5e_free_xdpsq_descs(struct mlx5e_xdpsq *sq);
  
  bool mlx5e_xmit_xdp_frame(struct mlx5e_xdpsq *sq, struct mlx5e_xdp_info *xdpi);
++#ifdef HAVE_NDO_XDP_XMIT
++#ifndef HAVE_NDO_XDP_FLUSH
  int mlx5e_xdp_xmit(struct net_device *dev, int n, struct xdp_frame **frames,
  		   u32 flags);
--
++#else
++int mlx5e_xdp_xmit(struct net_device *dev, struct xdp_buff *xdp);
++void mlx5e_xdp_flush(struct net_device *dev);
++#endif
++#endif
+
  static inline void mlx5e_xmit_xdp_doorbell(struct mlx5e_xdpsq *sq)
  {
- 	struct mlx5_wq_cyc *wq = &sq->wq;
-@@ -61,3 +70,4 @@ static inline void mlx5e_xmit_xdp_doorbell(struct mlx5e_xdpsq *sq)
+@@ -61,3 +69,4 @@ static inline void mlx5e_xmit_xdp_doorbell(struct mlx5e_xdpsq *sq)
  }
  
  #endif
