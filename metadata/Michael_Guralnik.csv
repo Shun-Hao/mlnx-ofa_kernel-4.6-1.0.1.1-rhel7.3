@@ -12,3 +12,5 @@ Change-Id=Ib062ab14edb634dc6306c9e4e8e4c3107fa181c9; subject=IB/mlx5: Report PCI
 Change-Id=Ia0bc3f4c70b379f7cb67d162e011bfc2afc9610a; subject=IB/uverbs: Add experimental PCI atomic capabilities; feature=exp_pci_atomics; upstream_status=NA; general=;
 Change-Id=Ibca2695c260efe987b211733fbef6cbe31e81e35; subject=IB/mlx5 : Fix clearing of end_padding bit in rq creation; feature=mlx5_ib_bugs; upstream_status=NA; general=;
 Change-Id=I68a6790f21aa4c3eb8f20e3b72986dce2d95a71a; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I09f67ffb0effd1f6d5801d9596e691822b9fdaa6; subject=IB/core: Move query_port to ioctl; feature=hdr_100; upstream_status=accepted; general=;
+Change-Id=I1f45f607060ea02e8ae8f22b712d31bbc974d95f; subject=metadata: Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
