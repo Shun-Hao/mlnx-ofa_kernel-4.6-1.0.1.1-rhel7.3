@@ -39,7 +39,7 @@ index xxxxxxx..xxxxxxx 100644
 -		return -ENOMEM;
 +#ifdef HAVE_PCI_IRQ_API
 +       if (!priv->irq_info)
-+       	return -ENOMEM;
++		return -ENOMEM;
 +#else
 +	priv->msix_arr = kcalloc(nvec, sizeof(*priv->msix_arr), GFP_KERNEL);
 +	if (!priv->msix_arr || !priv->irq_info) {
@@ -50,7 +50,7 @@ index xxxxxxx..xxxxxxx 100644
 +	for (i = 0; i < nvec; i++)
 +		 priv->msix_arr[i].entry = i;
 +#endif
-+ 
++
 +#ifdef HAVE_PCI_IRQ_API
  	nvec = pci_alloc_irq_vectors(dev->pdev,
  			MLX5_EQ_VEC_COMP_BASE + 1, nvec,
@@ -272,9 +272,9 @@ index xxxxxxx..xxxxxxx 100644
  static void mlx5_as_notify_cleanup(struct mlx5_core_dev *dev) { }
 +#endif
  
- #define MLX5_IB_MOD "mlx5_ib"
- static int init_one(struct pci_dev *pdev,
-@@ -2154,15 +2248,12 @@ static int init_one(struct pci_dev *pdev,
+ static ssize_t mlx5_roce_enable_show_enabled(struct device *device,
+ 					     struct device_attribute *attr,
+@@ -2194,15 +2320,12 @@ static int init_one(struct pci_dev *pdev,
  	}
  
  	request_module_nowait(MLX5_IB_MOD);
