@@ -2066,6 +2066,48 @@ static void mlx5_as_notify_init(struct mlx5_core_dev *dev)
 
 static void mlx5_as_notify_cleanup(struct mlx5_core_dev *dev) { }
 
+static ssize_t mlx5_roce_enable_show_enabled(struct device *device,
+					     struct device_attribute *attr,
+					     char *buf)
+{
+	struct pci_dev *pdev = container_of(device, struct pci_dev, dev);
+	struct mlx5_core_dev *dev = pci_get_drvdata(pdev);
+	int ret;
+
+	mutex_lock(&dev->roce.state_lock);
+	ret = dev->roce.enabled;
+	mutex_unlock(&dev->roce.state_lock);
+
+	return sprintf(buf, "%d\n", ret);
+}
+
+static ssize_t mlx5_roce_enable_set_enabled(struct device *device,
+					    struct device_attribute *attr,
+					    const char *buf, size_t count)
+{
+	struct pci_dev *pdev = container_of(device, struct pci_dev, dev);
+	struct mlx5_core_dev *dev = pci_get_drvdata(pdev);
+	int ret;
+	bool val;
+
+	ret = kstrtobool(buf, &val);
+	if (ret)
+		return -EINVAL;
+
+	mutex_lock(&dev->roce.state_lock);
+	dev->roce.enabled = val;
+	mlx5_reload_interface(dev, MLX5_INTERFACE_PROTOCOL_IB);
+	mutex_unlock(&dev->roce.state_lock);
+
+	return count;
+}
+
+static DEVICE_ATTR(roce_enable, 0644, mlx5_roce_enable_show_enabled,
+		   mlx5_roce_enable_set_enabled);
+
+static struct device_attribute *mlx5_roce_enable_dev_attrs =
+	&dev_attr_roce_enable;
+
 #define MLX5_IB_MOD "mlx5_ib"
 static int init_one(struct pci_dev *pdev,
 		    const struct pci_device_id *id)
@@ -2080,6 +2122,10 @@ static int init_one(struct pci_dev *pdev,
 		dev_err(&pdev->dev, "kzalloc failed\n");
 		return -ENOMEM;
 	}
+
+	err = device_create_file(&pdev->dev, mlx5_roce_enable_dev_attrs);
+	if (err)
+		return 0;
 
 	dev = devlink_priv(devlink);
 	priv = &dev->priv;
@@ -2118,6 +2164,7 @@ static int init_one(struct pci_dev *pdev,
 	INIT_LIST_HEAD(&priv->bfregs.reg_head.list);
 	INIT_LIST_HEAD(&priv->bfregs.wc_head.list);
 	dev->roce.enabled = true;
+	mutex_init(&dev->roce.state_lock);
 
 	err = mlx5_pci_init(dev, priv);
 	if (err) {
@@ -2202,6 +2249,7 @@ static void remove_one(struct pci_dev *pdev)
 	if (pdev->is_virtfn && !priv->sriov.probe_vf)
 		goto out;
 
+	device_remove_file(&pdev->dev, mlx5_roce_enable_dev_attrs);
 	devlink_unregister(devlink);
 	mlx5_unregister_device(dev);
 

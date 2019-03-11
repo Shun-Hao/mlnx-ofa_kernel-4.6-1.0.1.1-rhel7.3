@@ -1022,6 +1022,7 @@ struct mlx5_core_dev {
 		struct mlx5_rsvd_gids	reserved_gids;
 		u32			roce_en;
 		bool			enabled;
+		struct mutex		state_lock;
 	} roce;
 #ifdef CONFIG_MLX5_FPGA
 	struct mlx5_fpga_device *fpga;
