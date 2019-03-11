@@ -3424,6 +3424,37 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+       AC_MSG_CHECKING([if ethtool supports 50G-pre-lane link modes])
+       MLNX_BG_LB_LINUX_TRY_COMPILE([
+              #include <uapi/linux/ethtool.h>
+       ],[
+              const enum ethtool_link_mode_bit_indices speeds[] = {
+		ETHTOOL_LINK_MODE_50000baseKR_Full_BIT,
+		ETHTOOL_LINK_MODE_50000baseSR_Full_BIT,
+		ETHTOOL_LINK_MODE_50000baseCR_Full_BIT,
+		ETHTOOL_LINK_MODE_50000baseLR_ER_FR_Full_BIT,
+		ETHTOOL_LINK_MODE_50000baseDR_Full_BIT,
+		ETHTOOL_LINK_MODE_100000baseKR2_Full_BIT,
+		ETHTOOL_LINK_MODE_100000baseSR2_Full_BIT,
+		ETHTOOL_LINK_MODE_100000baseCR2_Full_BIT,
+		ETHTOOL_LINK_MODE_100000baseLR2_ER2_FR2_Full_BIT,
+		ETHTOOL_LINK_MODE_100000baseDR2_Full_BIT,
+		ETHTOOL_LINK_MODE_200000baseKR4_Full_BIT,
+		ETHTOOL_LINK_MODE_200000baseSR4_Full_BIT,
+		ETHTOOL_LINK_MODE_200000baseLR4_ER4_FR4_Full_BIT,
+		ETHTOOL_LINK_MODE_200000baseDR4_Full_BIT,
+		ETHTOOL_LINK_MODE_200000baseCR4_Full_BIT,
+		};
+
+              return 0;
+       ],[
+              AC_MSG_RESULT(yes)
+              MLNX_AC_DEFINE(HAVE_ETHTOOL_50G_PER_LANE_LINK_MODES, 1,
+                        [ethtool supprts 50G-pre-lane link modes])
+       ],[
+              AC_MSG_RESULT(no)
+       ])
+
 	AC_MSG_CHECKING([if struct ethtool_ops has get/set_settings])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/ethtool.h>
