@@ -551,7 +551,7 @@ index xxxxxxx..xxxxxxx 100644
 -		tbl = &nd_tbl;
 +#if defined(__IPV6_SUPPORT__) && IS_ENABLED(CONFIG_IPV6)
 +	else if (m_neigh->family == AF_INET6) {
-+		if (!ipv6_stub)
++		if (!ipv6_stub || !ipv6_stub->nd_tbl)
 +			return;
 +		tbl = ipv6_stub->nd_tbl;
 +	}
