@@ -21,3 +21,4 @@ Change-Id=I588d71e2004cf237af68ea97037c83b60ec8d715; subject=compat/rdma.m4: Add
 Change-Id=I01730f281ae891355759763c824a2447ae3c166a; subject=metadata: update; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=Ibb9b1d5cd7e1820161ca4b09f7e87076c83274b5; subject=ofed_scripts: Update vf-net-link-name.sh; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=Ib46d332ff33f3b529effe33bf4d53f7868c30a98; subject=compat/rdma.m4: Fix fib_nh_notifier_info test; feature=backports; upstream_status=ignore; general=;
+Change-Id=I35377d54bf8ef137579e6ed55b26fe872a20b77e; subject=ofed_scripts: Update vf-net-link-name.sh; feature=ofed_scripts; upstream_status=ignore; general=;

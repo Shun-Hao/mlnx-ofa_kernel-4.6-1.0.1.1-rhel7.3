@@ -8,10 +8,13 @@ PORT_UPLINK0="p0"
 PORT_UPLINK1="p1"
 
 if [ "$PORT" = "$PORT_UPLINK0" ] || [ "$PORT" = "$PORT_UPLINK1" ]; then
-    # old systemd (i.e. systemd-219-62 rhel 7.6) doesn't export ID_NET_NAME
-    # but has ID_NET_NAME_PATH
-    if [ -z "$ID_NET_NAME" ] && [ -n "$ID_NET_NAME_PATH" ]; then
-        ID_NET_NAME=$ID_NET_NAME_PATH
+    # sometimes we don't have ID_NET_NAME but have SLOT (rhel 7.2) or PATH (rhel 7.6).
+    if [ -z "$ID_NET_NAME" ]; then
+	if [ -n "$ID_NET_NAME_SLOT" ]; then
+	    ID_NET_NAME=$ID_NET_NAME_SLOT
+	elif [ -n "$ID_NET_NAME_PATH" ]; then
+            ID_NET_NAME=$ID_NET_NAME_PATH
+	fi
     fi
     if [ -n "$ID_NET_NAME" ]; then
         n=${ID_NET_NAME##*n}
