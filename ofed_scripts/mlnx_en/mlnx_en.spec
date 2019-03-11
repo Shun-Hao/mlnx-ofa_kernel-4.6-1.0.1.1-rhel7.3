@@ -77,6 +77,14 @@
 %{!?_release: %global _release @RELEASE@}
 %global _kmp_rel %{_release}%{?_kmp_build_num}%{?_dist}
 
+%if %{RHEL8}
+%global mlnx_python_env    export MLNX_PYTHON_EXECUTABLE=python3
+%global mlnx_python        python3
+%else
+%global mlnx_python_env    :
+%global mlnx_python        python
+%endif
+
 Name: %{_name}
 Group: System Environment
 Version: %{_version}
@@ -220,11 +228,15 @@ The driver sources are located at: http://www.mellanox.com/downloads/Drivers/mln
 set -- *
 mkdir source
 mv "$@" source/
+%if %{RHEL8}
+sed -s -i -e '1s|python\>|python3|' `grep -rl '^#!.*python' source/ofed_scripts`
+%endif
 mkdir obj
 
 %build
 rm -rf %{buildroot}
 export EXTRA_CFLAGS='-DVERSION=\"%version\"'
+%{mlnx_python_env}
 for flavor in %{flavors_to_build}; do
 	rm -rf obj/$flavor
 	cp -r source obj/$flavor
@@ -252,15 +264,13 @@ done
 gzip -c source/scripts/mlx4_en.7 > mlx4_en.7.gz
 
 cd source/ofed_scripts/utils
-python setup.py build
+%{mlnx_python} setup.py build
 cd -
 
 %install
 export INSTALL_MOD_PATH=%{buildroot}
 export INSTALL_MOD_DIR=%{install_mod_dir}
-%if "%{RHEL8}" == "1"
-export MLNX_PYTHON_EXECUTABLE=python3
-%endif
+%{mlnx_python_env}
 for flavor in %{flavors_to_build}; do
 	cd $PWD/obj/$flavor
 	export KSRC=%{kernel_source $flavor}
@@ -307,7 +317,7 @@ cp -r source %{buildroot}/%{_prefix}/src/%{name}-%{version}
 
 touch ofed-files
 cd source/ofed_scripts/utils
-python setup.py install -O1 --root=%{buildroot} --record ../../../ofed-files
+%{mlnx_python} setup.py install -O1 --root=%{buildroot} --record ../../../ofed-files
 cd -
 
 if [[ "$(ls %{buildroot}/%{_bindir}/tc_wrap.py* 2>/dev/null)" != "" ]]; then

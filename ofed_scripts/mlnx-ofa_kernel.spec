@@ -73,6 +73,12 @@
 %global devel_pname %{_name}-devel
 %global non_kmp_pname %{_name}-modules
 
+%if %{RHEL8}
+%global mlnx_python_env    export MLNX_PYTHON_EXECUTABLE=python3
+%else
+%global mlnx_python_env    :
+%endif
+
 Summary: Infiniband HCA Driver
 Name: %{_name}
 Version: %{_version}
@@ -267,12 +273,16 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
 set -- *
 mkdir source
 mv "$@" source/
+%if %{RHEL8}
+sed -s -i -e '1s|python\>|python3|' `grep -rl '^#!.*python' source/ofed_scripts`
+%endif
 mkdir obj
 
 %build
 export EXTRA_CFLAGS='-DVERSION=\"%version\"'
 export INSTALL_MOD_DIR=%{install_mod_dir}
 export CONF_OPTIONS="%{configure_options}"
+%{mlnx_python_env}
 for flavor in %flavors_to_build; do
 	export KSRC=%{kernel_source $flavor}
 	export KVERSION=%{kernel_release $KSRC}
@@ -295,9 +305,7 @@ export INSTALL_MOD_DIR=%{install_mod_dir}
 export NAME=%{name}
 export VERSION=%{version}
 export PREFIX=%{_prefix}
-%if "%{RHEL8}" == "1"
-export MLNX_PYTHON_EXECUTABLE=python3
-%endif
+%{mlnx_python_env}
 for flavor in %flavors_to_build; do 
 	export KSRC=%{kernel_source $flavor}
 	export KVERSION=%{kernel_release $KSRC}

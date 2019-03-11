@@ -20,3 +20,4 @@ Change-Id=Id4b23ad43814dface526d60957cffafb97f7059f; subject=ipoibd: is_ucast_et
 Change-Id=I8030266cf11285e8146a17eed4f0d25ed65ecb86; subject=ipoibd: replace libxml2 with ElementTree; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=I879238d522cba46dd214f1e035289cd465bdfa5a; subject=deb packaging: remove python-libxml2 dependency; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=I5769845aee7d49c5ec7b9b635026fca8bb32948e; subject=Update metadata for remove_python_libxml2; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I7a281d9eb1c55a4ea05ae8560e694c4a8609d178; subject=specs: some more RHEL8 python3 fixes; feature=ofed_scripts; upstream_status=ignore; general=;

@@ -307,10 +307,6 @@ else
 	install -m 0755 ofed_scripts/mlnx-ofed-kernel-utils.openibd.init $(INSTALL_MOD_PATH)/etc/init.d/openibd
 endif
 
-ifneq (,$(MLNX_PYTHON_EXECUTABLE))
-	sed -s -i -e '1s|python\>|$(MLNX_PYTHON_EXECUTABLE)|' \
-		`grep -rl '^#!.*python' $(INSTALL_MOD_PATH)`
-endif
 	@echo "Running install helper script"
 	ofed_scripts/install_helper $(INSTALL_MOD_PATH)
 
