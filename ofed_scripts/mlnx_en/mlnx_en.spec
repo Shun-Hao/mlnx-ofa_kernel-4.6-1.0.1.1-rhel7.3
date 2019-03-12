@@ -86,12 +86,11 @@
 %endif
 
 Name: %{_name}
-Group: System Environment
+Group: System Environment/Kernel
 Version: %{_version}
 Release: %{_release}%{?_dist}
 License: GPLv2
 Url: http://www.mellanox.com
-Group: System Environment/Kernel
 Vendor: Mellanox Technologies
 Source0: %{_name}-%{_version}.tgz
 Source1: mlx4.files

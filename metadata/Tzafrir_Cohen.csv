@@ -21,3 +21,4 @@ Change-Id=I8030266cf11285e8146a17eed4f0d25ed65ecb86; subject=ipoibd: replace lib
 Change-Id=I879238d522cba46dd214f1e035289cd465bdfa5a; subject=deb packaging: remove python-libxml2 dependency; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=I5769845aee7d49c5ec7b9b635026fca8bb32948e; subject=Update metadata for remove_python_libxml2; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=I7a281d9eb1c55a4ea05ae8560e694c4a8609d178; subject=specs: some more RHEL8 python3 fixes; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=Id19e679dc5950859eb2c19dfe2255dd0055f5470; subject=mlnx_en: spec: Only a single group; feature=ofed_scripts; upstream_status=ignore; general=;
