@@ -400,6 +400,7 @@ index xxxxxxx..xxxxxxx 100644
  	}
 -
 +#else
++	}
 +	if (mad_agent) { 
 +		if (mad_agent->agent.recv_handler)
 +			atomic_inc(&mad_agent->refcount);
@@ -409,7 +410,6 @@ index xxxxxxx..xxxxxxx 100644
 +			           &mad_agent->agent, port_priv->port_num);
 +				mad_agent = NULL;
 +		}
-+	}
 +	}
 +out:
 +	spin_unlock_irqrestore(&port_priv->reg_lock, flags);
