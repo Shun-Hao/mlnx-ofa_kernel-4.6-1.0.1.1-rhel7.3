@@ -14,3 +14,8 @@ Change-Id=Ibca2695c260efe987b211733fbef6cbe31e81e35; subject=IB/mlx5 : Fix clear
 Change-Id=I68a6790f21aa4c3eb8f20e3b72986dce2d95a71a; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=I09f67ffb0effd1f6d5801d9596e691822b9fdaa6; subject=IB/core: Move query_port to ioctl; feature=hdr_100; upstream_status=accepted; general=;
 Change-Id=I1f45f607060ea02e8ae8f22b712d31bbc974d95f; subject=metadata: Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I5576854091f9c629eba07bc05786c45b5636879a; subject=IB/mlx5: Renaming profile and init methods; feature=disable_roce; upstream_status=in_progress; general=;
+Change-Id=Ieb2d2ac926df5e60b1a0e73997dc0b7b7f046c40; subject=mlx5: Add a state of RoCE enablement; feature=disable_roce; upstream_status=in_progress; general=;
+Change-Id=I548347f18a9df326d985612703acf86f25282f9c; subject=net/mlx5: Add sysfs API to control RoCE enablement; feature=disable_roce; upstream_status=NA; general=;
+Change-Id=I4372d36a9ff7356b6bbb77c0457cea36fbf77249; subject=Backports: Update backports after adding disable_roce sysfs; feature=backports; upstream_status=ignore; general=;
+Change-Id=I3bbfc6a573591188d39c89058fe73d84753d6075; subject=metadata: update metadata; feature=ofed_scripts; upstream_status=ignore; general=;

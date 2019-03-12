@@ -304,3 +304,4 @@ name=mlx5e_xdp_redirect; type=feature; upstream_status=accepted;
 name=mlx5_vepa; type=feature; upstream_status=in_progress;
 name=mlx5e_general_perf_improvements; type=feature; upstream_status=in_progress;
 name=mlx5_add_50Gbps_per_lane; type=feature; upstream_status=accepted;
+name=disable_roce; type=feature; upstream_status=in_progress;
