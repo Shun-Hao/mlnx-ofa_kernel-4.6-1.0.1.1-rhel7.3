@@ -2605,24 +2605,14 @@ static int mlx5e_create_encap_header_ipv4(struct mlx5e_priv *priv,
 					  struct mlx5e_encap_entry *e)
 {
 	int max_encap_size = MLX5_CAP_ESW(priv->mdev, max_encap_header_size);
-	int ipv4_encap_size = ETH_HLEN + sizeof(struct iphdr) + VXLAN_HLEN;
 	struct ip_tunnel_key *tun_key = &e->tun_info.key;
 	struct net_device *out_dev;
 	struct neighbour *n = NULL;
 	struct flowi4 fl4 = {};
 	u8 nud_state, tos, ttl;
+	int ipv4_encap_size;
 	char *encap_header;
 	int err;
-
-	if (max_encap_size < ipv4_encap_size) {
-		mlx5_core_warn(priv->mdev, "encap size %d too big, max supported is %d\n",
-			       ipv4_encap_size, max_encap_size);
-		return -EOPNOTSUPP;
-	}
-
-	encap_header = kzalloc(ipv4_encap_size, GFP_KERNEL);
-	if (!encap_header)
-		return -ENOMEM;
 
 	switch (e->tunnel_type) {
 	case MLX5_REFORMAT_TYPE_L2_TO_VXLAN:
@@ -2644,7 +2634,19 @@ static int mlx5e_create_encap_header_ipv4(struct mlx5e_priv *priv,
 	err = mlx5e_route_lookup_ipv4(priv, mirred_dev, &out_dev,
 				      &fl4, &n, &ttl);
 	if (err)
-		goto free_encap;
+		return err;
+
+	ipv4_encap_size = ETH_HLEN + sizeof(struct iphdr) + VXLAN_HLEN;
+
+	if (max_encap_size < ipv4_encap_size) {
+		mlx5_core_warn(priv->mdev, "encap size %d too big, max supported is %d\n",
+			       ipv4_encap_size, max_encap_size);
+		return -EOPNOTSUPP;
+	}
+
+	encap_header = kzalloc(ipv4_encap_size, GFP_KERNEL);
+	if (!encap_header)
+		return -ENOMEM;
 
 	/* used by mlx5e_detach_encap to lookup a neigh hash table
 	 * entry in the neigh hash table when a user deletes a rule
@@ -2716,24 +2718,14 @@ static int mlx5e_create_encap_header_ipv6(struct mlx5e_priv *priv,
 					  struct mlx5e_encap_entry *e)
 {
 	int max_encap_size = MLX5_CAP_ESW(priv->mdev, max_encap_header_size);
-	int ipv6_encap_size = ETH_HLEN + sizeof(struct ipv6hdr) + VXLAN_HLEN;
 	struct ip_tunnel_key *tun_key = &e->tun_info.key;
 	struct net_device *out_dev;
 	struct neighbour *n = NULL;
 	struct flowi6 fl6 = {};
 	u8 nud_state, tos, ttl;
+	int ipv6_encap_size;
 	char *encap_header;
 	int err;
-
-	if (max_encap_size < ipv6_encap_size) {
-		mlx5_core_warn(priv->mdev, "encap size %d too big, max supported is %d\n",
-			       ipv6_encap_size, max_encap_size);
-		return -EOPNOTSUPP;
-	}
-
-	encap_header = kzalloc(ipv6_encap_size, GFP_KERNEL);
-	if (!encap_header)
-		return -ENOMEM;
 
 	switch (e->tunnel_type) {
 	case MLX5_REFORMAT_TYPE_L2_TO_VXLAN:
@@ -2755,7 +2747,19 @@ static int mlx5e_create_encap_header_ipv6(struct mlx5e_priv *priv,
 	err = mlx5e_route_lookup_ipv6(priv, mirred_dev, &out_dev,
 				      &fl6, &n, &ttl);
 	if (err)
-		goto free_encap;
+		return err;
+
+	ipv6_encap_size = ETH_HLEN + sizeof(struct ipv6hdr) + VXLAN_HLEN;
+
+	if (max_encap_size < ipv6_encap_size) {
+		mlx5_core_warn(priv->mdev, "encap size %d too big, max supported is %d\n",
+			       ipv6_encap_size, max_encap_size);
+		return -EOPNOTSUPP;
+	}
+
+	encap_header = kzalloc(ipv6_encap_size, GFP_KERNEL);
+	if (!encap_header)
+		return -ENOMEM;
 
 	/* used by mlx5e_detach_encap to lookup a neigh hash table
 	 * entry in the neigh hash table when a user deletes a rule
