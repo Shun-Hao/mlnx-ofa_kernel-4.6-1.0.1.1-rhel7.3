@@ -2398,10 +2398,6 @@ static int get_route_and_out_devs(struct mlx5e_priv *priv,
 	struct mlx5e_rep_priv *uplink_rpriv;
 	bool dst_is_lag_dev;
 
-	/* we currently don't offload vlan on underlay */
-	if (is_vlan_dev(dev))
-		return -EOPNOTSUPP;
-
 	uplink_rpriv = mlx5_eswitch_get_uplink_priv(esw, REP_ETH);
 	uplink_dev = uplink_rpriv->netdev;
 	uplink_upper_lag_dev = mlx5_upper_lag_dev_get(uplink_dev);
@@ -2412,12 +2408,18 @@ static int get_route_and_out_devs(struct mlx5e_priv *priv,
 	 * it's a LAG device, use the uplink
 	 */
 	if (!switchdev_port_same_parent_id(priv->netdev, dev) ||
-	    dst_is_lag_dev)
-		*out_dev = uplink_dev;
-	else if (!mlx5e_eswitch_rep(dev))
-		return -EOPNOTSUPP;
-	else
-		*out_dev = dev;
+	    dst_is_lag_dev) {
+		*route_dev = uplink_dev;
+		*out_dev = *route_dev;
+	} else {
+		*route_dev = dev;
+		if (is_vlan_dev(*route_dev))
+			*out_dev = uplink_dev;
+		else if (mlx5e_eswitch_rep(dev))
+			*out_dev = *route_dev;
+		else
+			return -EOPNOTSUPP;
+	}
 
 	return 0;
 }
@@ -2425,6 +2427,7 @@ static int get_route_and_out_devs(struct mlx5e_priv *priv,
 static int mlx5e_route_lookup_ipv4(struct mlx5e_priv *priv,
 				   struct net_device *mirred_dev,
 				   struct net_device **out_dev,
+				   struct net_device **route_dev,
 				   struct flowi4 *fl4,
 				   struct neighbour **out_n,
 				   u8 *out_ttl)
@@ -2455,7 +2458,7 @@ static int mlx5e_route_lookup_ipv4(struct mlx5e_priv *priv,
 	return -EOPNOTSUPP;
 #endif
 
-	ret = get_route_and_out_devs(priv, rt->dst.dev, NULL, out_dev);
+	ret = get_route_and_out_devs(priv, rt->dst.dev, route_dev, out_dev);
 	if (ret < 0)
 		return ret;
 
@@ -2486,6 +2489,7 @@ static bool is_merged_eswitch_dev(struct mlx5e_priv *priv,
 static int mlx5e_route_lookup_ipv6(struct mlx5e_priv *priv,
 				   struct net_device *mirred_dev,
 				   struct net_device **out_dev,
+				   struct net_device **route_dev,
 				   struct flowi6 *fl6,
 				   struct neighbour **out_n,
 				   u8 *out_ttl)
@@ -2508,7 +2512,7 @@ static int mlx5e_route_lookup_ipv6(struct mlx5e_priv *priv,
 	return -EOPNOTSUPP;
 #endif
 
-	ret = get_route_and_out_devs(priv, rt->dst.dev, NULL, out_dev);
+	ret = get_route_and_out_devs(priv, rt->dst.dev, route_dev, out_dev);
 	if (ret < 0)
 		return ret;
 
@@ -2617,7 +2621,7 @@ static int mlx5e_create_encap_header_ipv4(struct mlx5e_priv *priv,
 {
 	int max_encap_size = MLX5_CAP_ESW(priv->mdev, max_encap_header_size);
 	struct ip_tunnel_key *tun_key = &e->tun_info.key;
-	struct net_device *out_dev;
+	struct net_device *out_dev, *route_dev;
 	struct neighbour *n = NULL;
 	struct flowi4 fl4 = {};
 	u8 nud_state, tos, ttl;
@@ -2642,12 +2646,15 @@ static int mlx5e_create_encap_header_ipv4(struct mlx5e_priv *priv,
 	fl4.daddr = tun_key->u.ipv4.dst;
 	fl4.saddr = tun_key->u.ipv4.src;
 
-	err = mlx5e_route_lookup_ipv4(priv, mirred_dev, &out_dev,
+	err = mlx5e_route_lookup_ipv4(priv, mirred_dev, &out_dev, &route_dev,
 				      &fl4, &n, &ttl);
 	if (err)
 		return err;
 
-	ipv4_encap_size = ETH_HLEN + sizeof(struct iphdr) + VXLAN_HLEN;
+	ipv4_encap_size =
+		(is_vlan_dev(route_dev) ? VLAN_ETH_HLEN : ETH_HLEN) +
+		sizeof(struct iphdr) +
+		VXLAN_HLEN;
 
 	if (max_encap_size < ipv4_encap_size) {
 		mlx5_core_warn(priv->mdev, "encap size %d too big, max supported is %d\n",
@@ -2683,7 +2690,7 @@ static int mlx5e_create_encap_header_ipv4(struct mlx5e_priv *priv,
 
 	switch (e->tunnel_type) {
 	case MLX5_REFORMAT_TYPE_L2_TO_VXLAN:
-		gen_vxlan_header_ipv4(out_dev, encap_header,
+		gen_vxlan_header_ipv4(route_dev, encap_header,
 				      ipv4_encap_size, e->h_dest, tos, ttl,
 				      fl4.daddr,
 				      fl4.saddr, tun_key->tp_dst,
@@ -2730,7 +2737,7 @@ static int mlx5e_create_encap_header_ipv6(struct mlx5e_priv *priv,
 {
 	int max_encap_size = MLX5_CAP_ESW(priv->mdev, max_encap_header_size);
 	struct ip_tunnel_key *tun_key = &e->tun_info.key;
-	struct net_device *out_dev;
+	struct net_device *out_dev, *route_dev;
 	struct neighbour *n = NULL;
 	struct flowi6 fl6 = {};
 	u8 nud_state, tos, ttl;
@@ -2755,12 +2762,14 @@ static int mlx5e_create_encap_header_ipv6(struct mlx5e_priv *priv,
 	fl6.daddr = tun_key->u.ipv6.dst;
 	fl6.saddr = tun_key->u.ipv6.src;
 
-	err = mlx5e_route_lookup_ipv6(priv, mirred_dev, &out_dev,
+	err = mlx5e_route_lookup_ipv6(priv, mirred_dev, &out_dev, &route_dev,
 				      &fl6, &n, &ttl);
 	if (err)
 		return err;
 
-	ipv6_encap_size = ETH_HLEN + sizeof(struct ipv6hdr) + VXLAN_HLEN;
+	ipv6_encap_size = (is_vlan_dev(route_dev) ? VLAN_ETH_HLEN : ETH_HLEN) +
+		+ sizeof(struct ipv6hdr) +
+		VXLAN_HLEN;
 
 	if (max_encap_size < ipv6_encap_size) {
 		mlx5_core_warn(priv->mdev, "encap size %d too big, max supported is %d\n",
@@ -2796,7 +2805,7 @@ static int mlx5e_create_encap_header_ipv6(struct mlx5e_priv *priv,
 
 	switch (e->tunnel_type) {
 	case MLX5_REFORMAT_TYPE_L2_TO_VXLAN:
-		gen_vxlan_header_ipv6(out_dev, encap_header,
+		gen_vxlan_header_ipv6(route_dev, encap_header,
 				      ipv6_encap_size, e->h_dest, tos, ttl,
 				      &fl6.daddr,
 				      &fl6.saddr, tun_key->tp_dst,
