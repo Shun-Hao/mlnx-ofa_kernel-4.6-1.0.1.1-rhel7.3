@@ -7,6 +7,14 @@ PORT_UPLINK="65534"
 PORT_UPLINK0="p0"
 PORT_UPLINK1="p1"
 
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+is_bf=`lspci -s 00:00.0 2> /dev/null | grep -wq "PCI bridge: Mellanox Technologies" && echo 1 || echo 0`
+if [ $is_bf -eq 1 ]; then
+	echo NAME=${2/vf-1/hpf}
+	exit 0
+fi
+
 if [ "$PORT" = "$PORT_UPLINK0" ] || [ "$PORT" = "$PORT_UPLINK1" ]; then
     # sometimes we don't have ID_NET_NAME but have SLOT (rhel 7.2) or PATH (rhel 7.6).
     if [ -z "$ID_NET_NAME" ]; then
