@@ -660,6 +660,7 @@ fi
 /etc/systemd/system/mlnx_interface_mgr@.service
 %endif
 /sbin/sysctl_perf_tuning
+/sbin/mlnx_eswitch_set
 /usr/sbin/mlnx_tune
 /usr/sbin/show_gids
 /usr/sbin/compat_gid_gen
@@ -671,6 +672,7 @@ fi
 %dir %{_defaultdocdir}/ib2ib
 %{_defaultdocdir}/ib2ib/*
 %config(noreplace) /etc/modprobe.d/mlnx.conf
+%config(noreplace) /etc/modprobe.d/mlnx-eswitch.conf
 %{_sbindir}/*
 %config(noreplace) /etc/udev/rules.d/90-ib.rules
 %config(noreplace) /etc/udev/rules.d/82-net-setup-link.rules
