@@ -2388,6 +2388,34 @@ static inline int hash_encap_info(struct ip_tunnel_key *key)
 	return jhash(key, sizeof(*key), 0);
 }
 
+static int get_route_and_out_devs(struct mlx5e_priv *priv,
+				  struct net_device *dev,
+				  struct net_device **route_dev,
+				  struct net_device **out_dev)
+{
+	struct net_device *uplink_dev, *uplink_upper_lag_dev;
+	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
+	struct mlx5e_rep_priv *uplink_rpriv;
+	bool dst_is_lag_dev;
+
+	uplink_rpriv = mlx5_eswitch_get_uplink_priv(esw, REP_ETH);
+	uplink_dev = uplink_rpriv->netdev;
+	uplink_upper_lag_dev = mlx5_upper_lag_dev_get(uplink_dev);
+	dst_is_lag_dev = (dev == uplink_upper_lag_dev &&
+			  mlx5_lag_is_active(priv->mdev));
+
+	/* if the egress device isn't on the same HW e-switch or
+	 * it's a LAG device, use the uplink
+	 */
+	if (!switchdev_port_same_parent_id(priv->netdev, dev) ||
+	    dst_is_lag_dev)
+		*out_dev = uplink_dev;
+	else
+		*out_dev = dev;
+
+	return 0;
+}
+
 static int mlx5e_route_lookup_ipv4(struct mlx5e_priv *priv,
 				   struct net_device *mirred_dev,
 				   struct net_device **out_dev,
@@ -2395,18 +2423,17 @@ static int mlx5e_route_lookup_ipv4(struct mlx5e_priv *priv,
 				   struct neighbour **out_n,
 				   u8 *out_ttl)
 {
-	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
-	struct mlx5e_rep_priv *uplink_rpriv;
-	struct net_device *uplink_dev, *uplink_upper_lag_dev;
  	struct neighbour *n = NULL;
-	bool dst_is_lag_dev;
 	struct rtable *rt;
 
 #if IS_ENABLED(CONFIG_INET)
 	struct mlx5_core_dev *mdev = priv->mdev;
+	struct net_device *uplink_dev;
 	int ret;
 
 	if (mlx5_lag_is_multipath(mdev)) {
+		struct mlx5_eswitch *esw = mdev->priv.eswitch;
+
 		uplink_dev = mlx5_eswitch_uplink_get_proto_dev(esw, REP_ETH);
 		fl4->flowi4_oif = uplink_dev->ifindex;
 	}
@@ -2421,20 +2448,10 @@ static int mlx5e_route_lookup_ipv4(struct mlx5e_priv *priv,
 #else
 	return -EOPNOTSUPP;
 #endif
-	uplink_rpriv = mlx5_eswitch_get_uplink_priv(esw, REP_ETH);
-	uplink_dev = uplink_rpriv->netdev; 
-	uplink_upper_lag_dev = mlx5_upper_lag_dev_get(uplink_dev);
-	dst_is_lag_dev = (rt->dst.dev == uplink_upper_lag_dev &&
-			  mlx5_lag_is_active(priv->mdev));
 
-	/* if the egress device isn't on the same HW e-switch or
-	 * * it's a LAG device, use the uplink
-	 * */
-	if (!switchdev_port_same_parent_id(priv->netdev, rt->dst.dev) ||
-	    dst_is_lag_dev)
-		*out_dev = uplink_dev;
-	else
-		*out_dev = rt->dst.dev;
+	ret = get_route_and_out_devs(priv, rt->dst.dev, NULL, out_dev);
+	if (ret < 0)
+		return ret;
 
 	if (!(*out_ttl))
 		*out_ttl = ip4_dst_hoplimit(&rt->dst);
@@ -2471,10 +2488,6 @@ static int mlx5e_route_lookup_ipv6(struct mlx5e_priv *priv,
 	struct dst_entry *dst;
 
 #if IS_ENABLED(CONFIG_INET) && IS_ENABLED(CONFIG_IPV6)
-	struct mlx5e_rep_priv *uplink_rpriv;
-	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
-	struct net_device *uplink_dev, *uplink_upper_lag_dev;
-	bool dst_is_lag_dev;
 	int ret;
 
 	ret = ipv6_stub->ipv6_dst_lookup(dev_net(mirred_dev), NULL, &dst,
@@ -2485,24 +2498,13 @@ static int mlx5e_route_lookup_ipv6(struct mlx5e_priv *priv,
 	if (!(*out_ttl))
 		*out_ttl = ip6_dst_hoplimit(dst);
 
-	uplink_rpriv = mlx5_eswitch_get_uplink_priv(esw, REP_ETH);
-	/* if the egress device isn't on the same HW e-switch, we use the uplink */
-	uplink_dev = uplink_rpriv->netdev;
-	uplink_upper_lag_dev = mlx5_upper_lag_dev_get(uplink_dev);
-	dst_is_lag_dev = (dst->dev == uplink_upper_lag_dev &&
-			  mlx5_lag_is_active(priv->mdev));
-
-	/* if the egress device isn't on the same HW e-switch or
-	* it's a LAG device, use the uplink
-	*/
-	if (!switchdev_port_same_parent_id(priv->netdev, dst->dev) ||
-	    dst_is_lag_dev)
-		*out_dev = uplink_dev;
-	else
-		*out_dev = dst->dev;
 #else
 	return -EOPNOTSUPP;
 #endif
+
+	ret = get_route_and_out_devs(priv, rt->dst.dev, NULL, out_dev);
+	if (ret < 0)
+		return ret;
 
 	n = dst_neigh_lookup(dst, &fl6->daddr);
 	dst_release(dst);
