@@ -2398,6 +2398,10 @@ static int get_route_and_out_devs(struct mlx5e_priv *priv,
 	struct mlx5e_rep_priv *uplink_rpriv;
 	bool dst_is_lag_dev;
 
+	/* we currently don't offload vlan on underlay */
+	if (is_vlan_dev(dev))
+		return -EOPNOTSUPP;
+
 	uplink_rpriv = mlx5_eswitch_get_uplink_priv(esw, REP_ETH);
 	uplink_dev = uplink_rpriv->netdev;
 	uplink_upper_lag_dev = mlx5_upper_lag_dev_get(uplink_dev);
@@ -2410,6 +2414,8 @@ static int get_route_and_out_devs(struct mlx5e_priv *priv,
 	if (!switchdev_port_same_parent_id(priv->netdev, dev) ||
 	    dst_is_lag_dev)
 		*out_dev = uplink_dev;
+	else if (!mlx5e_eswitch_rep(dev))
+		return -EOPNOTSUPP;
 	else
 		*out_dev = dev;
 
