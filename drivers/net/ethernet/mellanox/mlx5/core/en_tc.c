@@ -2521,6 +2521,19 @@ static int mlx5e_route_lookup_ipv6(struct mlx5e_priv *priv,
 	return 0;
 }
 
+static char *gen_eth_tnl_hdr(char *buf, struct net_device *dev,
+			     unsigned char h_dest[ETH_ALEN],
+			     u16 proto)
+{
+	struct ethhdr *eth = (struct ethhdr *)buf;
+
+	ether_addr_copy(eth->h_dest, h_dest);
+	ether_addr_copy(eth->h_source, dev->dev_addr);
+	eth->h_proto = htons(proto);
+
+	return (char *)eth + ETH_HLEN;
+}
+
 static void gen_vxlan_header_ipv4(struct net_device *out_dev,
 				  char buf[], int encap_size,
 				  unsigned char h_dest[ETH_ALEN],
@@ -2530,17 +2543,14 @@ static void gen_vxlan_header_ipv4(struct net_device *out_dev,
 				  __be16 udp_dst_port,
 				  __be32 vx_vni)
 {
-	struct ethhdr *eth = (struct ethhdr *)buf;
-	struct iphdr  *ip = (struct iphdr *)((char *)eth + sizeof(struct ethhdr));
-	struct udphdr *udp = (struct udphdr *)((char *)ip + sizeof(struct iphdr));
-	struct vxlanhdr *vxh = (struct vxlanhdr *)((char *)udp + sizeof(struct udphdr));
+	struct iphdr  *ip;
+	struct udphdr *udp;
+	struct vxlanhdr *vxh;
 
 	memset(buf, 0, encap_size);
 
-	ether_addr_copy(eth->h_dest, h_dest);
-	ether_addr_copy(eth->h_source, out_dev->dev_addr);
-	eth->h_proto = htons(ETH_P_IP);
-
+	ip = (struct iphdr *)gen_eth_tnl_hdr(buf, out_dev, h_dest,
+					     ETH_P_IP);
 	ip->daddr = daddr;
 	ip->saddr = saddr;
 
@@ -2550,7 +2560,10 @@ static void gen_vxlan_header_ipv4(struct net_device *out_dev,
 	ip->version = 0x4;
 	ip->ihl = 0x5;
 
+	udp = (struct udphdr *)((char *)ip + sizeof(struct iphdr));
 	udp->dest = udp_dst_port;
+
+	vxh = (struct vxlanhdr *)((char *)udp + sizeof(struct udphdr));
 	vxh->vx_flags = VXLAN_HF_VNI;
 	vxh->vx_vni = vxlan_vni_field(vx_vni);
 }
@@ -2564,17 +2577,14 @@ static void gen_vxlan_header_ipv6(struct net_device *out_dev,
 				  __be16 udp_dst_port,
 				  __be32 vx_vni)
 {
-	struct ethhdr *eth = (struct ethhdr *)buf;
-	struct ipv6hdr *ip6h = (struct ipv6hdr *)((char *)eth + sizeof(struct ethhdr));
-	struct udphdr *udp = (struct udphdr *)((char *)ip6h + sizeof(struct ipv6hdr));
-	struct vxlanhdr *vxh = (struct vxlanhdr *)((char *)udp + sizeof(struct udphdr));
+	struct ipv6hdr *ip6h;
+	struct udphdr *udp;
+	struct vxlanhdr *vxh;
 
 	memset(buf, 0, encap_size);
 
-	ether_addr_copy(eth->h_dest, h_dest);
-	ether_addr_copy(eth->h_source, out_dev->dev_addr);
-	eth->h_proto = htons(ETH_P_IPV6);
-
+	ip6h = (struct ipv6hdr *)gen_eth_tnl_hdr(buf, out_dev, h_dest,
+						 ETH_P_IPV6);
 	ip6_flow_hdr(ip6h, tos, 0);
 	/* the HW fills up ipv6 payload len */
 	ip6h->nexthdr     = IPPROTO_UDP;
@@ -2582,7 +2592,10 @@ static void gen_vxlan_header_ipv6(struct net_device *out_dev,
 	ip6h->daddr	  = *daddr;
 	ip6h->saddr	  = *saddr;
 
+	udp = (struct udphdr *)((char *)ip6h + sizeof(struct ipv6hdr));
 	udp->dest = udp_dst_port;
+
+	vxh = (struct vxlanhdr *)((char *)udp + sizeof(struct udphdr));
 	vxh->vx_flags = VXLAN_HF_VNI;
 	vxh->vx_vni = vxlan_vni_field(vx_vni);
 }
