@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/eswitch.h
 
 Change-Id: I43769e6f7e68e3306c12c8fed1184b276454de7c
 ---
- drivers/net/ethernet/mellanox/mlx5/core/eswitch.h | 34 +++++++++++++++++++----
- 1 file changed, 28 insertions(+), 6 deletions(-)
+ drivers/net/ethernet/mellanox/mlx5/core/eswitch.h | 36 +++++++++++++++++++----
+ 1 file changed, 30 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/eswitch.h b/drivers/net/ethernet/mellanox/mlx5/core/eswitch.h
 index xxxxxxx..xxxxxxx 100644
@@ -18,7 +18,7 @@ index xxxxxxx..xxxxxxx 100644
  #include <net/devlink.h>
  #include <linux/mlx5/device.h>
  #include <linux/mlx5/eswitch.h>
-@@ -189,8 +190,12 @@ struct mlx5_esw_offload {
+@@ -194,8 +195,12 @@ struct mlx5_esw_offload {
  	struct mlx5_eswitch_rep *vport_reps;
  	struct list_head peer_flows;
  	struct mutex peer_mutex;
@@ -31,7 +31,7 @@ index xxxxxxx..xxxxxxx 100644
  	u8 inline_mode;
  	u64 num_flows;
  	u8 encap;
-@@ -215,7 +220,9 @@ struct mlx5_host_info {
+@@ -220,7 +225,9 @@ struct mlx5_host_info {
  struct mlx5_esw_handler {
  	struct work_struct      start_handler;
  	struct work_struct      stop_handler;
@@ -41,10 +41,10 @@ index xxxxxxx..xxxxxxx 100644
  };
  
  struct mlx5_eswitch {
-@@ -270,8 +277,10 @@ int mlx5_eswitch_set_vport_trust(struct mlx5_eswitch *esw,
- 				 int vport_num, bool setting);
- int mlx5_eswitch_set_vport_rate(struct mlx5_eswitch *esw, int vport,
+@@ -277,11 +284,14 @@ int mlx5_eswitch_set_vport_rate(struct mlx5_eswitch *esw, int vport,
  				u32 max_rate, u32 min_rate);
+ int mlx5_eswitch_set_vport_vepa(struct mlx5_eswitch *esw,
+ 				int vport_num, u8 setting);
 +#ifdef HAVE_IFLA_VF_INFO
  int mlx5_eswitch_get_vport_config(struct mlx5_eswitch *esw,
  				  int vport, struct ifla_vf_info *ivi);
@@ -52,7 +52,19 @@ index xxxxxxx..xxxxxxx 100644
  int mlx5_eswitch_get_vport_stats(struct mlx5_eswitch *esw,
  				 int vport,
  				 struct ifla_vf_stats *vf_stats);
-@@ -365,24 +374,37 @@ struct mlx5_esw_flow_attr {
++#ifndef HAVE_STRUCT_IFLA_VF_STATS_TX_BROADCAST
+ struct ifla_vf_stats_backport {
+ 	__u64 tx_broadcast;
+ 	__u64 tx_multicast;
+@@ -289,6 +299,7 @@ struct ifla_vf_stats_backport {
+ int mlx5_eswitch_get_vport_stats_backport(struct mlx5_eswitch *esw,
+ 					  int vport,
+ 					  struct ifla_vf_stats_backport *vf_stats_backport);
++#endif
+ void mlx5_eswitch_del_send_to_vport_rule(struct mlx5_flow_handle *rule);
+ int mlx5_eswitch_query_vport_drop_stats(struct mlx5_core_dev *dev,
+ 					int vport_idx,
+@@ -369,24 +380,37 @@ struct mlx5_esw_flow_attr {
  	u32	chain;
  	u16	prio;
  	u32	dest_chain;

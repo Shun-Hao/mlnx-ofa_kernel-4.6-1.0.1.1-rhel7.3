@@ -741,7 +741,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static void mlx5e_build_rep_params(struct net_device *netdev)
 @@ -1202,8 +1521,10 @@ static void mlx5e_build_rep_params(struct net_device *netdev)
- 
+ 	params->tunneled_stateless_offload = false;
  	mlx5_query_min_inline(mdev, &params->tx_min_inline_mode);
  
 +#ifdef HAVE_ETH_SS_RSS_HASH_FUNCS

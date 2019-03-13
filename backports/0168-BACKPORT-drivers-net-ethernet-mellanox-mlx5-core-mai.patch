@@ -3,14 +3,14 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/main.c
 
 Change-Id: Idda58f581655a7a02d2781d4ccafef984276daee
 ---
- drivers/net/ethernet/mellanox/mlx5/core/main.c | 102 ++++++++++++++++++++++++-
- 1 file changed, 99 insertions(+), 3 deletions(-)
+ drivers/net/ethernet/mellanox/mlx5/core/main.c | 111 +++++++++++++++++++++++--
+ 1 file changed, 104 insertions(+), 7 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/main.c b/drivers/net/ethernet/mellanox/mlx5/core/main.c
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/net/ethernet/mellanox/mlx5/core/main.c
 +++ b/drivers/net/ethernet/mellanox/mlx5/core/main.c
-@@ -260,8 +260,10 @@ static struct mlx5_profile profile[] = {
+@@ -262,8 +262,10 @@ static struct mlx5_profile profile[] = {
  #define FW_PRE_INIT_TIMEOUT_MILI	120000
  #define FW_INIT_WARN_MESSAGE_INTERVAL	20000
  
@@ -21,7 +21,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static int wait_fw_init(struct mlx5_core_dev *dev, u32 max_wait_mili,
  			u32 warn_time_mili)
-@@ -412,6 +414,9 @@ static int mlx5_alloc_irq_vectors(struct mlx5_core_dev *dev)
+@@ -414,6 +416,9 @@ static int mlx5_alloc_irq_vectors(struct mlx5_core_dev *dev)
  	int num_eqs;
  	int nvec;
  	int err;
@@ -31,29 +31,31 @@ index xxxxxxx..xxxxxxx 100644
  
  	if (max_num_eq) {
  		num_eqs = max_num_eq;
-@@ -429,9 +434,21 @@ static int mlx5_alloc_irq_vectors(struct mlx5_core_dev *dev)
+@@ -431,9 +436,21 @@ static int mlx5_alloc_irq_vectors(struct mlx5_core_dev *dev)
  		return -ENOMEM;
  
  	priv->irq_info = kcalloc(nvec, sizeof(*priv->irq_info), GFP_KERNEL);
+-	if (!priv->irq_info)
+-		return -ENOMEM;
 +#ifdef HAVE_PCI_IRQ_API
- 	if (!priv->irq_info)
- 		return -ENOMEM;
++       if (!priv->irq_info)
++       	return -ENOMEM;
 +#else
 +	priv->msix_arr = kcalloc(nvec, sizeof(*priv->msix_arr), GFP_KERNEL);
 +	if (!priv->msix_arr || !priv->irq_info) {
 +		err = -ENOMEM;
 +		goto err_free_irq_info;
 +	}
-+
+ 
 +	for (i = 0; i < nvec; i++)
 +		 priv->msix_arr[i].entry = i;
 +#endif
- 
++ 
 +#ifdef HAVE_PCI_IRQ_API
  	nvec = pci_alloc_irq_vectors(dev->pdev,
  			MLX5_EQ_VEC_COMP_BASE + 1, nvec,
  			PCI_IRQ_MSIX);
-@@ -441,11 +458,39 @@ static int mlx5_alloc_irq_vectors(struct mlx5_core_dev *dev)
+@@ -443,11 +460,39 @@ static int mlx5_alloc_irq_vectors(struct mlx5_core_dev *dev)
  	}
  
  	table->num_comp_vectors = nvec - MLX5_EQ_VEC_COMP_BASE;
@@ -93,7 +95,7 @@ index xxxxxxx..xxxxxxx 100644
  	return err;
  }
  
-@@ -453,7 +498,12 @@ static void mlx5_free_irq_vectors(struct mlx5_core_dev *dev)
+@@ -455,7 +500,12 @@ static void mlx5_free_irq_vectors(struct mlx5_core_dev *dev)
  {
  	struct mlx5_priv *priv = &dev->priv;
  
@@ -106,13 +108,14 @@ index xxxxxxx..xxxxxxx 100644
  	kfree(priv->irq_info);
  }
  
-@@ -857,7 +907,14 @@ u64 mlx5_read_internal_timer(struct mlx5_core_dev *dev)
+@@ -863,7 +913,14 @@ u64 mlx5_read_internal_timer(struct mlx5_core_dev *dev)
  static int mlx5_irq_set_affinity_hint(struct mlx5_core_dev *mdev, int i)
  {
  	struct mlx5_priv *priv  = &mdev->priv;
+-	int irq = pci_irq_vector(mdev->pdev, MLX5_EQ_VEC_COMP_BASE + i);
 +#ifdef HAVE_IRQ_SET_AFFINITY_HINT
 +#ifdef HAVE_PCI_IRQ_API
- 	int irq = pci_irq_vector(mdev->pdev, MLX5_EQ_VEC_COMP_BASE + i);
++       int irq = pci_irq_vector(mdev->pdev, MLX5_EQ_VEC_COMP_BASE + i);
 +#else
 +	struct msix_entry *msix = priv->msix_arr;
 +	int irq                 = msix[i + MLX5_EQ_VEC_COMP_BASE].vector;
@@ -121,7 +124,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	if (!zalloc_cpumask_var(&priv->irq_info[i].mask, GFP_KERNEL)) {
  		mlx5_core_warn(mdev, "zalloc_cpumask_var failed");
-@@ -867,9 +924,11 @@ static int mlx5_irq_set_affinity_hint(struct mlx5_core_dev *mdev, int i)
+@@ -873,9 +930,11 @@ static int mlx5_irq_set_affinity_hint(struct mlx5_core_dev *mdev, int i)
  	cpumask_set_cpu(cpumask_local_spread(i, priv->numa_node),
  			priv->irq_info[i].mask);
  
@@ -133,13 +136,14 @@ index xxxxxxx..xxxxxxx 100644
  
  	return 0;
  }
-@@ -877,9 +936,18 @@ static int mlx5_irq_set_affinity_hint(struct mlx5_core_dev *mdev, int i)
+@@ -883,9 +942,18 @@ static int mlx5_irq_set_affinity_hint(struct mlx5_core_dev *mdev, int i)
  static void mlx5_irq_clear_affinity_hint(struct mlx5_core_dev *mdev, int i)
  {
  	struct mlx5_priv *priv  = &mdev->priv;
+-	int irq = pci_irq_vector(mdev->pdev, MLX5_EQ_VEC_COMP_BASE + i);
 +#ifdef HAVE_IRQ_SET_AFFINITY_HINT
 +#ifdef HAVE_PCI_IRQ_API
- 	int irq = pci_irq_vector(mdev->pdev, MLX5_EQ_VEC_COMP_BASE + i);
++       int irq = pci_irq_vector(mdev->pdev, MLX5_EQ_VEC_COMP_BASE + i);
 +#else
 +	struct msix_entry *msix = priv->msix_arr;
 +	int irq                 = msix[i + MLX5_EQ_VEC_COMP_BASE].vector;
@@ -152,7 +156,7 @@ index xxxxxxx..xxxxxxx 100644
  	free_cpumask_var(priv->irq_info[i].mask);
  }
  
-@@ -1048,8 +1116,13 @@ static int alloc_comp_eqs(struct mlx5_core_dev *dev)
+@@ -1054,9 +1122,15 @@ static int alloc_comp_eqs(struct mlx5_core_dev *dev)
  		}
  
  #ifdef CONFIG_RFS_ACCEL
@@ -164,9 +168,11 @@ index xxxxxxx..xxxxxxx 100644
 +				 dev->priv.msix_arr[i + MLX5_EQ_VEC_COMP_BASE].vector);
 +#endif
  #endif
++
  		snprintf(name, MLX5_MAX_IRQ_NAME,
  			 MLX5_DEFAULT_COMP_IRQ_NAME, i);
-@@ -1438,8 +1511,10 @@ static int mlx5_load_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
+ 		err = mlx5_create_map_eq(dev, eq,
+@@ -1452,8 +1526,10 @@ static int mlx5_load_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
  		goto reclaim_boot_pages;
  	}
  
@@ -177,7 +183,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	err = mlx5_pagealloc_start(dev);
  	if (err) {
-@@ -1520,11 +1595,13 @@ static int mlx5_load_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
+@@ -1534,11 +1610,13 @@ static int mlx5_load_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
  		goto err_ipsec_start;
  	}
  
@@ -191,7 +197,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	err = mlx5_init_fs(dev);
  	if (err) {
-@@ -1570,9 +1647,11 @@ err_sriov:
+@@ -1595,9 +1673,11 @@ err_sriov:
  	mlx5_cleanup_fs(dev);
  
  err_fs:
@@ -203,7 +209,7 @@ index xxxxxxx..xxxxxxx 100644
  	mlx5_accel_ipsec_cleanup(dev);
  
  err_ipsec_start:
-@@ -1608,7 +1687,9 @@ err_stop_poll:
+@@ -1633,7 +1713,9 @@ err_stop_poll:
  	}
  
  err_pagealloc_stop:
@@ -213,7 +219,7 @@ index xxxxxxx..xxxxxxx 100644
  	mlx5_pagealloc_stop(dev);
  
  reclaim_boot_pages:
-@@ -1653,7 +1734,9 @@ static int mlx5_unload_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
+@@ -1679,7 +1761,9 @@ static int mlx5_unload_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
  	mlx5_sriov_detach(dev);
  	mlx5_cleanup_fs(dev);
  	mlx5_accel_ipsec_cleanup(dev);
@@ -223,7 +229,7 @@ index xxxxxxx..xxxxxxx 100644
  	mlx5_fpga_device_stop(dev);
  	mlx5_irq_clear_affinity_hints(dev);
  	free_comp_eqs(dev);
-@@ -1669,7 +1752,9 @@ static int mlx5_unload_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
+@@ -1695,7 +1779,9 @@ static int mlx5_unload_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
  		dev_err(&dev->pdev->dev, "tear_down_hca failed, skip cleanup\n");
  		goto out;
  	}
@@ -233,7 +239,7 @@ index xxxxxxx..xxxxxxx 100644
  	mlx5_pagealloc_stop(dev);
  	mlx5_reclaim_startup_pages(dev);
  	mlx5_core_disable_hca(dev, 0);
-@@ -1688,12 +1773,18 @@ struct mlx5_core_event_handler {
+@@ -1715,12 +1801,18 @@ struct mlx5_core_event_handler {
  
  static const struct devlink_ops mlx5_devlink_ops = {
  #ifdef CONFIG_MLX5_ESWITCH
@@ -252,7 +258,7 @@ index xxxxxxx..xxxxxxx 100644
  #endif
  };
  
-@@ -1996,6 +2087,7 @@ static void capi_cleanup(struct mlx5_core_dev *dev)
+@@ -2023,6 +2115,7 @@ static void capi_cleanup(struct mlx5_core_dev *dev)
  }
  #endif
  
@@ -260,7 +266,7 @@ index xxxxxxx..xxxxxxx 100644
  static void mlx5_as_notify_init(struct mlx5_core_dev *dev)
  {
  #ifdef HAVE_PNV_PCI_AS_NOTIFY
-@@ -2038,6 +2130,7 @@ static void mlx5_as_notify_init(struct mlx5_core_dev *dev)
+@@ -2065,6 +2158,7 @@ static void mlx5_as_notify_init(struct mlx5_core_dev *dev)
  }
  
  static void mlx5_as_notify_cleanup(struct mlx5_core_dev *dev) { }
@@ -268,7 +274,7 @@ index xxxxxxx..xxxxxxx 100644
  
  #define MLX5_IB_MOD "mlx5_ib"
  static int init_one(struct pci_dev *pdev,
-@@ -2127,15 +2220,12 @@ static int init_one(struct pci_dev *pdev,
+@@ -2154,15 +2248,12 @@ static int init_one(struct pci_dev *pdev,
  	}
  
  	request_module_nowait(MLX5_IB_MOD);
@@ -284,7 +290,7 @@ index xxxxxxx..xxxxxxx 100644
  clean_load:
  	mlx5_unload_one(dev, priv, true);
  clean_crdump:
-@@ -2378,7 +2468,11 @@ static void mlx5_pci_resume(struct pci_dev *pdev)
+@@ -2405,7 +2496,11 @@ static void mlx5_pci_resume(struct pci_dev *pdev)
  		dev_info(&pdev->dev, "%s: device recovered\n", __func__);
  }
  
@@ -296,7 +302,7 @@ index xxxxxxx..xxxxxxx 100644
  	.error_detected = mlx5_pci_err_detected,
  	.slot_reset	= mlx5_pci_slot_reset,
  	.resume		= mlx5_pci_resume
-@@ -2492,7 +2586,9 @@ static struct pci_driver mlx5_core_driver = {
+@@ -2521,7 +2616,9 @@ static struct pci_driver mlx5_core_driver = {
  	.remove         = remove_one,
  	.shutdown	= shutdown,
  	.err_handler	= &mlx5_err_handler,
