@@ -178,6 +178,9 @@ Usage:  `basename $0` [options]
 
     --block-request-module     Prevent drivers from using request_module function [no]
 
+    --with-bf-device-emulation    make CONFIG_BF_DEVICE_EMULATION=y [no]
+    --without-bf-device-emulation    [yes]
+
     --help - print out options
 
 
@@ -334,6 +337,8 @@ CONFIG_INFINIBAND_WQE_FORMAT=${CONFIG_INFINIBAND_WQE_FORMAT:-''}
 CONFIG_INFINIBAND_PA_MR=${CONFIG_INFINIBAND_PA_MR:-''}
 
 CONFIG_MLNX_BLOCK_REQUEST_MODULE=${CONFIG_MLNX_BLOCK_REQUEST_MODULE:-''}
+
+CONFIG_BF_DEVICE_EMULATION=${CONFIG_BF_DEVICE_EMULATION:-''}
 
 main()
 {
@@ -973,6 +978,12 @@ main()
                         --block-request-module)
                         CONFIG_MLNX_BLOCK_REQUEST_MODULE="y"
                         ;;
+                        --with-bf-device-emulation)
+                        CONFIG_BF_DEVICE_EMULATION="y"
+                        ;;
+                        --without-bf-device-emulation)
+                        CONFIG_BF_DEVICE_EMULATION=
+                        ;;
 
                         -h | --help)
                                 usage
@@ -1399,6 +1410,8 @@ CONFIG_INFINIBAND_PA_MR=${CONFIG_INFINIBAND_PA_MR}
 
 CONFIG_MLNX_BLOCK_REQUEST_MODULE=${CONFIG_MLNX_BLOCK_REQUEST_MODULE}
 
+CONFIG_BF_DEVICE_EMULATION=${CONFIG_BF_DEVICE_EMULATION}
+
 EOFCONFIG
         echo "Created ${CONFIG}:"
         cat ${CWD}/${CONFIG}
@@ -1821,6 +1834,11 @@ else
         DEFINE_CONFIG_MLNX_BLOCK_REQUEST_MODULE="#undef CONFIG_MLNX_BLOCK_REQUEST_MODULE"
 fi
 
+if [ "X${CONFIG_BF_DEVICE_EMULATION}" == "Xy" ]; then
+        DEFINE_CONFIG_BF_DEVICE_EMULATION="#undef CONFIG_BF_DEVICE_EMULATION\n#define CONFIG_BF_DEVICE_EMULATION 1"
+else
+        DEFINE_CONFIG_BF_DEVICE_EMULATION="#undef CONFIG_BF_DEVICE_EMULATION"
+fi
 
 cat > ${AUTOCONF_H} << EOFAUTOCONF
 #ifndef __OFED_BUILD__
@@ -1907,6 +1925,7 @@ $(echo -e "${DEFINE_INFINIBAND_ON_DEMAND_PAGING}" | grep -v undef)
 $(echo -e "${DEFINE_INFINIBAND_ON_WQE_FORMAT}" | grep -v undef)
 $(echo -e "${DEFINE_INFINIBAND_PA_MR}" | grep -v undef)
 $(echo -e "${DEFINE_CONFIG_MLNX_BLOCK_REQUEST_MODULE}" | grep -v undef)
+$(echo -e "${DEFINE_CONFIG_BF_DEVICE_EMULATION}" | grep -v undef)
 
 #else
 #undef CONFIG_COMPAT_VERSION
@@ -1996,6 +2015,8 @@ $(echo -e "${DEFINE_CONFIG_MLNX_BLOCK_REQUEST_MODULE}" | grep -v undef)
 #undef CONFIG_MLX4_IB_DEBUG_FS
 #undef CONFIG_E_IPOIB
 
+#undef CONFIG_BF_DEVICE_EMULATION
+
 $(echo -e "${DEFINE_INFINIBAND}")
 $(echo -e "${DEFINE_INFINIBAND_CORE_DUMMY}")
 $(echo -e "${DEFINE_INFINIBAND_IPOIB}")
@@ -2084,6 +2105,7 @@ $(echo -e "${DEFINE_INFINIBAND_ON_DEMAND_PAGING}")
 $(echo -e "${DEFINE_INFINIBAND_ON_WQE_FORMAT}")
 $(echo -e "${DEFINE_INFINIBAND_PA_MR}")
 $(echo -e "${DEFINE_CONFIG_MLNX_BLOCK_REQUEST_MODULE}")
+$(echo -e "${DEFINE_CONFIG_BF_DEVICE_EMULATION}")
 #endif
 
 EOFAUTOCONF
