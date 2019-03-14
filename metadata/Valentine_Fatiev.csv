@@ -24,3 +24,5 @@ Change-Id=I9daffe3e13684ca9bbc2f85d0f59831af819620d; subject=BACKPORTS: rdma.m4:
 Change-Id=If0ed9088b21e2af6428235a0d419762f3d8deed9; subject=BACKPORTS: Add RHEL 8.0 support - Part2; feature=backports; upstream_status=ignore; general=;
 Change-Id=I3fab018352e9735fd0829ace1e31fd4ecc2b9a9c; subject=BACKPORTS: Add RHEL 8.0 support - Part3; feature=backports; upstream_status=ignore; general=;
 Change-Id=I7a0b9501a1c7b11cd9ea1db3af592bf5d99d7f6d; subject=BACKPORTS: XDP from 4.5.2 to 4.6; feature=backports; upstream_status=ignore; general=;
+Change-Id=Ia5b2ee8758a52afd6fcd608a6c50b708430be279; subject=BACKPORTS: 4_5_2 allign backports; feature=backports; upstream_status=ignore; general=;
+Change-Id=If341b150e6501017e28833373b9a7b025a5cc52d; subject=metadata: Update metada for merge 4_5_2 to 4_6; feature=ofed_scripts; upstream_status=ignore; general=;

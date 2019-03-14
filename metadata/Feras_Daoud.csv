@@ -50,3 +50,5 @@ Change-Id=I42ed7eae3700e9f212b30554caf93920ed4ba45d; subject=net/mlx5e: IPoIB, F
 Change-Id=Ic30e585ac8dd2b537d9ab87cf3ebfbb41153e706; subject=BACKPORTS: Fix en_rx backport; feature=backports; upstream_status=ignore; general=;
 Change-Id=I222e60a3155917a156e4eec701c0d8398a764c26; subject=IB/ipoib: Fix IPoIB RSS queue num; feature=ipoib_rss_tss; upstream_status=NA; general=;
 Change-Id=Id660047769fc08d7c6e3d5d94f77bd51437c48e9; subject=IB/ipoib: Add get_link_ksettings to IPoIB RSS; feature=ipoib_rss_tss; upstream_status=NA; general=;
+Change-Id=I2f8cfe0823e9c446d954d774f4013f4a8d0733b7; subject=compat: Include compat_fix earlier; feature=backports; upstream_status=ignore; general=;
+Change-Id=Ib4adae85516149fbd17ea1324e5be4da331d74af; subject=mlx5/core: Check FW page bitmask before reclaiming it; feature=mlx5_core_bugs; upstream_status=NA; general=;

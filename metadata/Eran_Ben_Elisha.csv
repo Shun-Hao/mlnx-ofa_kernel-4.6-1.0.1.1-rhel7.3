@@ -19,3 +19,4 @@ Change-Id=I96a839780d63ef1b1f9f790b0d8606aab4d75b48; subject=net/mlx5e: Don't us
 Change-Id=Iad26d9b294627f6e2c50ee9e4e0e4e37d92d4879; subject=net/mlx5e: Skip special SQ allocation if not needed; feature=mlx5_en_bugs; upstream_status=NA; general=;
 Change-Id=I790b4a415d2870a06f4e594363590bbf6c600d48; subject=net/mlx5e: Enlarge TX inline header size in case of IP mode to include IPv4/IPv6 header; feature=mlx5_en_bugs; upstream_status=NA; general=;
 Change-Id=Icb72ae4d0e816cd35d2ff485e171ad5dbc9cb0e6; subject=net/mlx5e/mlx4_en: Fix min MTU validation; feature=mlx5_en_bugs; upstream_status=NA; general=;
+Change-Id=I348bc188af6b3a8dd27413636298a5a90d8fa931; subject=net/mlx4_core: Adapt sink counter error flow to handle EDQUOT; feature=mlx4_en_bugs; upstream_status=NA; general=;
