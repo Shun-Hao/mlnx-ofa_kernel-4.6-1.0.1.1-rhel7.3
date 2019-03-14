@@ -6080,7 +6080,7 @@ static struct ib_counters *mlx5_ib_create_counters(struct ib_device *device,
 	return &mcounters->ibcntrs;
 }
 
-void mlx5_ib_stage_init_cleanup(struct mlx5_ib_dev *dev)
+static void mlx5_ib_stage_init_cleanup(struct mlx5_ib_dev *dev)
 {
 	struct mlx5_core_dev *mdev = dev->mdev;
 
@@ -6108,7 +6108,7 @@ void mlx5_ib_stage_init_cleanup(struct mlx5_ib_dev *dev)
 	kfree(dev->dm.header_modify_sw_icm_alloc_blocks);
 }
 
-int mlx5_ib_stage_init_init(struct mlx5_ib_dev *dev)
+static int mlx5_ib_stage_init_init(struct mlx5_ib_dev *dev)
 {
 	struct mlx5_core_dev *mdev = dev->mdev;
 	u64 header_modify_icm_blocks = 0;
@@ -6208,26 +6208,12 @@ static int mlx5_ib_stage_flow_db_init(struct mlx5_ib_dev *dev)
 	return 0;
 }
 
-int mlx5_ib_stage_rep_flow_db_init(struct mlx5_ib_dev *dev)
-{
-	struct mlx5_ib_dev *nic_dev;
-
-	nic_dev = mlx5_ib_get_uplink_ibdev(dev->mdev->priv.eswitch);
-
-	if (!nic_dev)
-		return -EINVAL;
-
-	dev->flow_db = nic_dev->flow_db;
-
-	return 0;
-}
-
 static void mlx5_ib_stage_flow_db_cleanup(struct mlx5_ib_dev *dev)
 {
 	kfree(dev->flow_db);
 }
 
-int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
+static int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 {
 	struct mlx5_core_dev *mdev = dev->mdev;
 	int err;
@@ -6560,12 +6546,12 @@ static void mlx5_ib_stage_roce_cleanup(struct mlx5_ib_dev *dev)
 	}
 }
 
-int mlx5_ib_stage_dev_res_init(struct mlx5_ib_dev *dev)
+static int mlx5_ib_stage_dev_res_init(struct mlx5_ib_dev *dev)
 {
 	return create_dev_resources(&dev->devr);
 }
 
-void mlx5_ib_stage_dev_res_cleanup(struct mlx5_ib_dev *dev)
+static void mlx5_ib_stage_dev_res_cleanup(struct mlx5_ib_dev *dev)
 {
 	destroy_dev_resources(&dev->devr);
 }
@@ -6577,7 +6563,7 @@ static int mlx5_ib_stage_odp_init(struct mlx5_ib_dev *dev)
 	return mlx5_ib_odp_init_one(dev);
 }
 
-int mlx5_ib_stage_counters_init(struct mlx5_ib_dev *dev)
+static int mlx5_ib_stage_counters_init(struct mlx5_ib_dev *dev)
 {
 	if (MLX5_CAP_GEN(dev->mdev, max_qp_cnt)) {
 		dev->ib_dev.get_hw_stats	= mlx5_ib_get_hw_stats;
@@ -6589,7 +6575,7 @@ int mlx5_ib_stage_counters_init(struct mlx5_ib_dev *dev)
 	return 0;
 }
 
-void mlx5_ib_stage_counters_cleanup(struct mlx5_ib_dev *dev)
+static void mlx5_ib_stage_counters_cleanup(struct mlx5_ib_dev *dev)
 {
 	if (MLX5_CAP_GEN(dev->mdev, max_qp_cnt))
 		mlx5_ib_dealloc_counters(dev);
@@ -6618,7 +6604,7 @@ static void mlx5_ib_stage_uar_cleanup(struct mlx5_ib_dev *dev)
 	mlx5_put_uars_page(dev->mdev, dev->mdev->priv.uar);
 }
 
-int mlx5_ib_stage_bfrag_init(struct mlx5_ib_dev *dev)
+static int mlx5_ib_stage_bfrag_init(struct mlx5_ib_dev *dev)
 {
 	int err;
 
@@ -6633,7 +6619,7 @@ int mlx5_ib_stage_bfrag_init(struct mlx5_ib_dev *dev)
 	return err;
 }
 
-void mlx5_ib_stage_bfrag_cleanup(struct mlx5_ib_dev *dev)
+static void mlx5_ib_stage_bfrag_cleanup(struct mlx5_ib_dev *dev)
 {
 	mlx5_free_bfreg(dev->mdev, &dev->fp_bfreg);
 	mlx5_free_bfreg(dev->mdev, &dev->bfreg);
@@ -6644,7 +6630,7 @@ static int mlx5_ib_stage_populate_specs(struct mlx5_ib_dev *dev)
 	return populate_specs_root(dev);
 }
 
-int mlx5_ib_stage_ib_reg_init(struct mlx5_ib_dev *dev)
+static int mlx5_ib_stage_ib_reg_init(struct mlx5_ib_dev *dev)
 {
 	const char *name;
 
@@ -6656,17 +6642,17 @@ int mlx5_ib_stage_ib_reg_init(struct mlx5_ib_dev *dev)
 	return ib_register_device(&dev->ib_dev, name, NULL);
 }
 
-void mlx5_ib_stage_pre_ib_reg_umr_cleanup(struct mlx5_ib_dev *dev)
+static void mlx5_ib_stage_pre_ib_reg_umr_cleanup(struct mlx5_ib_dev *dev)
 {
 	destroy_umrc_res(dev);
 }
 
-void mlx5_ib_stage_ib_reg_cleanup(struct mlx5_ib_dev *dev)
+static void mlx5_ib_stage_ib_reg_cleanup(struct mlx5_ib_dev *dev)
 {
 	ib_unregister_device(&dev->ib_dev);
 }
 
-int mlx5_ib_stage_post_ib_reg_umr_init(struct mlx5_ib_dev *dev)
+static int mlx5_ib_stage_post_ib_reg_umr_init(struct mlx5_ib_dev *dev)
 {
 	return create_umr_res(dev);
 }
