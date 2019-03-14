@@ -14,3 +14,5 @@ Change-Id=I2af53300705611e811c3620e91d8e70473b509e4; subject=net/mlx5e: Support 
 Change-Id=I01ebaa99dc4b191eaa449dea33d6026e359fa441; subject=net/mlx5e: Support tunnel encap over tagged Ethernet; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: e32ee6c78efa, tag: v5.0-rc1;
 Change-Id=Iadb234e907711356c8a112f1aa5768dfd14d55cf; subject=BACKPORTS: net/mlx5e: Support tunnel encap over tagged Ethernet; feature=backports; upstream_status=ignore; general=;
 Change-Id=Ib4ec7eb8b27dacd3ef8d42eae8ae58331c806392; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I743218ac1c34aa0062b605a4ea87550173ccd861; subject=net/mlx5: E-Switch, fix peer miss rule NULL pointer panic; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: ac004b832128, tag: v5.0-rc4;
+Change-Id=I98d3952c87e508c925f3ef8fe55137f63fa071b5; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
