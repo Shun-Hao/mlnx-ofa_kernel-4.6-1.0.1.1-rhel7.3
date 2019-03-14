@@ -5,3 +5,12 @@ Change-Id=I4888455e4decd004382c3cb00902b4df713b9234; subject=Update metadata; fe
 Change-Id=Id2fa7e0fe04395e8b803761cbaae809f97b8b4b3; subject=compat: Free devlink compat using delayed work; feature=mlx5_asap; upstream_status=NA; general=;
 Change-Id=I1f38dde266efde8e2c1a530d764d1e9f1cebaf2e; subject=BACKPORTS: compat: Free devlink compat using delayed work; feature=backports; upstream_status=ignore; general=;
 Change-Id=Ia3ac9e4c17355e20f65048a10e15874306930cc8; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I35e93767a796c9f80fb26fa99259a53e72b23ce0; subject=net/mlx5e: Fail attempt to offload e-switch TC flows with egress upper devices; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: a0646c88ed3a, tag: v5.0-rc1;
+Change-Id=I522a5a0a543c7707f8eaeb763fd1abfb5811a9fc; subject=net/mlx5e: Tunnel routing output devs helper function; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: 442e1228cbac, tag: v5.0-rc1;
+Change-Id=I95d3f4bf552731a5210a9241dbfec756487d5455; subject=net/mlx5e: Fail attempt to offload e-switch TC encap flows with vlan on underlay; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: b168cff0b9b2, tag: v5.0-rc1;
+Change-Id=I7789da6e0a9a86527d09ce879112db63ff051495; subject=net/mlx5e: Tunnel encap ETH header helper function; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: 05ada1adb65a, tag: v5.0-rc1;
+Change-Id=If3296c809ce713234be57fa3d711f0d8cf565224; subject=net/mlx5e: Re-order route and encap header memory allocation; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: c7bcb277bda4, tag: v5.0-rc1;
+Change-Id=I2af53300705611e811c3620e91d8e70473b509e4; subject=net/mlx5e: Support VLAN encap ETH header generation; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: aa331450b81f, tag: v5.0-rc1;
+Change-Id=I01ebaa99dc4b191eaa449dea33d6026e359fa441; subject=net/mlx5e: Support tunnel encap over tagged Ethernet; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: e32ee6c78efa, tag: v5.0-rc1;
+Change-Id=Iadb234e907711356c8a112f1aa5768dfd14d55cf; subject=BACKPORTS: net/mlx5e: Support tunnel encap over tagged Ethernet; feature=backports; upstream_status=ignore; general=;
+Change-Id=Ib4ec7eb8b27dacd3ef8d42eae8ae58331c806392; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
