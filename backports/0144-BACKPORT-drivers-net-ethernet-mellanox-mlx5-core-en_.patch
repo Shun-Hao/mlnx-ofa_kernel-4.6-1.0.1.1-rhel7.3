@@ -34,7 +34,7 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  
 -#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-+#if defined(CONFIG_MLX5_EN_SPECIAL_SQ) && defined(HAVE_NDO_SET_TX_MAXRATE)
++#if defined(CONFIG_MLX5_EN_SPECIAL_SQ) && (defined(HAVE_NDO_SET_TX_MAXRATE) || defined(HAVE_NDO_SET_TX_MAXRATE_EXTENDED))
  static u16 mlx5e_select_queue_assigned(struct mlx5e_priv *priv,
  				       struct sk_buff *skb)
  {
@@ -64,7 +64,7 @@ index xxxxxxx..xxxxxxx 100644
  	int up;
  
 -#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-+#if defined(CONFIG_MLX5_EN_SPECIAL_SQ) && defined(HAVE_NDO_SET_TX_MAXRATE)
++#if defined(CONFIG_MLX5_EN_SPECIAL_SQ) && (defined(HAVE_NDO_SET_TX_MAXRATE) || defined(HAVE_NDO_SET_TX_MAXRATE_EXTENDED))
  	if (priv->channels.params.num_rl_txqs) {
  		u16 ix = mlx5e_select_queue_assigned(priv, skb);
  

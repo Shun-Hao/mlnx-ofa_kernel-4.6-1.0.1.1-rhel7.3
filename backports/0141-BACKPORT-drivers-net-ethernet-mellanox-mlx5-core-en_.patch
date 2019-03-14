@@ -169,7 +169,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
 -#ifdef CONFIG_MLX5_EN_SPECIAL_SQ
-+#if defined(CONFIG_MLX5_EN_SPECIAL_SQ) && defined(HAVE_NDO_SET_TX_MAXRATE)
++#if defined(CONFIG_MLX5_EN_SPECIAL_SQ) && (defined(HAVE_NDO_SET_TX_MAXRATE) || defined(HAVE_NDO_SET_TX_MAXRATE_EXTENDED))
  enum {
  	ATTR_DST_IP,
  	ATTR_DST_PORT,
