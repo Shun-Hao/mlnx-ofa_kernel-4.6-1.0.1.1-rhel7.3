@@ -3,3 +3,4 @@ Change-Id=I3ff71e74a7d68e68cda45b7332cf384f7f832c30; subject=net/mlx5e: Calc vla
 Change-Id=I9358db5c6804cb47c8ca3fc8c6aea66b2bb8a5bb; subject=net/mlx4_en: Fix build break when CONFIG_INET is off; feature=rebase; upstream_status=accepted; general=upstream commit ID: 1b603f9e4313, tag: v4.20-rc6;
 Change-Id=Id08d0bce0032186b12c4b8a7bacd3d8cf8895a7a; subject=net/mlx5: EQ, Use the right place to store/read IRQ affinity hint; feature=rebase; upstream_status=ignore; general=;
 Change-Id=I41ff47380974f1d2338caec1993c07e6c6aaaab5; subject=net/mlx5e: XDP, fix redirect resources availability check; feature=rebase; upstream_status=ignore; general=;
+Change-Id=I393aea6dd82f699b3eecc1e0222e159666dc1a34; subject=net/mlx5e: Fix priv flag of reporting of checksum unnecessary; feature=mlx5_en_bugs; upstream_status=accepted; general=;
