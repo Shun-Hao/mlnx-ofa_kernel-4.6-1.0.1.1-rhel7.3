@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/infiniband/ulp/ipoib/ipoib_vlan.c
 
 Change-Id: Iaa3778210a8919cf697c2c3881a1e470409b79f8
 ---
- drivers/infiniband/ulp/ipoib/ipoib_vlan.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ drivers/infiniband/ulp/ipoib/ipoib_vlan.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/infiniband/ulp/ipoib/ipoib_vlan.c b/drivers/infiniband/ulp/ipoib/ipoib_vlan.c
 index xxxxxxx..xxxxxxx 100644
@@ -21,7 +21,18 @@ index xxxxxxx..xxxxxxx 100644
  	/*
  	 * Racing with unregister of the parent must be prevented by the
  	 * caller.
-@@ -156,8 +157,10 @@ sysfs_failed:
+@@ -114,6 +115,10 @@ int __ipoib_vlan_add(struct ipoib_dev_priv *ppriv, struct ipoib_dev_priv *priv,
+ 	priv->pkey = pkey;
+ 	priv->child_type = type;
+ 
++#ifndef HAVE_NDO_GET_IFLINK
++	priv->dev->iflink = ppriv->dev->ifindex;
++#endif
++
+ 	if (!is_child_unique(ppriv, priv)) {
+ 		result = -ENOTUNIQ;
+ 		goto out_early;
+@@ -156,8 +161,10 @@ sysfs_failed:
  	return -ENOMEM;
  
  out_early:
