@@ -1539,8 +1539,6 @@ create_ft_err:
 
 static void esw_offloads_steering_cleanup(struct mlx5_eswitch *esw)
 {
-	esw_del_fdb_peer_miss_rules(esw);
-	mlx5_destroy_flow_group(esw->fdb_table.offloads.peer_miss_grp);
 	esw_destroy_vport_rx_group(esw);
 	esw_destroy_offloads_table(esw);
 	esw_destroy_offloads_fdb_tables(esw);
