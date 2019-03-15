@@ -2378,6 +2378,8 @@ void mlx5_eswitch_cleanup(struct mlx5_eswitch *esw)
 	esw_info(esw->dev, "cleanup\n");
 
 	esw->dev->priv.eswitch = NULL;
+	flush_work(&esw->handler.start_handler);
+	flush_work(&esw->handler.stop_handler);
 	destroy_workqueue(esw->work_queue);
 	esw_offloads_cleanup_reps(esw);
 	kfree(esw->vports);

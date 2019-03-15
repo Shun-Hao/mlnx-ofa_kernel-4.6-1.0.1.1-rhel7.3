@@ -220,6 +220,7 @@ struct mlx5_host_info {
 };
 
 struct mlx5_esw_handler {
+	atomic_t		in_progress;
 	struct work_struct      start_handler;
 	struct work_struct      stop_handler;
 	struct netlink_ext_ack	*extack;

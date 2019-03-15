@@ -1249,7 +1249,8 @@ void esw_offloads_start_handler(struct work_struct *work)
 	    !mlx5_core_is_ecpf_esw_manager(esw->dev)) {
 		NL_SET_ERR_MSG_MOD(extack,
 				   "Can't set offloads mode, SRIOV legacy not enabled");
-		return -EINVAL;
+		atomic_set(&esw->handler.in_progress, 0);
+		return;
 	}
 
 	mlx5_eswitch_disable_sriov(esw);
@@ -1272,7 +1273,7 @@ void esw_offloads_start_handler(struct work_struct *work)
 					   "Inline mode is different between vports");
 		}
 	}
-	return err;
+	atomic_set(&esw->handler.in_progress, 0);
 }
 
 void esw_offloads_cleanup_reps(struct mlx5_eswitch *esw)
@@ -1735,7 +1736,7 @@ void esw_offloads_stop_handler(struct work_struct *work)
 		}
 	}
 
-	return err;
+	atomic_set(&esw->handler.in_progress, 0);
 }
 
 void esw_offloads_cleanup(struct mlx5_eswitch *esw)
@@ -1851,6 +1852,7 @@ int mlx5_devlink_eswitch_mode_set(struct devlink *devlink, u16 mode,
 				  struct netlink_ext_ack *extack)
 {
 	struct mlx5_core_dev *dev = devlink_priv(devlink);
+	struct mlx5_eswitch *esw = dev->priv.eswitch;
 	u16 cur_mlx5_mode, mlx5_mode = 0;
 	int err;
 
@@ -1858,7 +1860,7 @@ int mlx5_devlink_eswitch_mode_set(struct devlink *devlink, u16 mode,
 	if (err)
 		return err;
 
-	cur_mlx5_mode = dev->priv.eswitch->mode;
+	cur_mlx5_mode = esw->mode;
 
 	if (esw_mode_from_devlink(mode, &mlx5_mode))
 		return -EINVAL;
@@ -1866,12 +1868,16 @@ int mlx5_devlink_eswitch_mode_set(struct devlink *devlink, u16 mode,
 	if (cur_mlx5_mode == mlx5_mode)
 		return 0;
 
+	if (atomic_inc_return(&esw->handler.in_progress) > 1)
+		return -EBUSY;
+
 	if (mode == DEVLINK_ESWITCH_MODE_SWITCHDEV)
-		return esw_offloads_start(dev->priv.eswitch, extack);
+		return esw_offloads_start(esw, extack);
 	else if (mode == DEVLINK_ESWITCH_MODE_LEGACY)
-		return esw_offloads_stop(dev->priv.eswitch, extack);
-	else
-		return -EINVAL;
+		return esw_offloads_stop(esw, extack);
+
+	atomic_dec(&esw->handler.in_progress);
+	return -EINVAL;
 }
 
 int mlx5_devlink_eswitch_mode_get(struct devlink *devlink, u16 *mode)
