@@ -32,9 +32,9 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
 +#endif
  
- static inline void mlx5e_xmit_xdp_doorbell(struct mlx5e_xdpsq *sq)
+ static inline void mlx5e_xdp_tx_enable(struct mlx5e_priv *priv)
  {
-@@ -61,3 +69,4 @@ static inline void mlx5e_xmit_xdp_doorbell(struct mlx5e_xdpsq *sq)
+@@ -78,3 +86,4 @@ static inline void mlx5e_xmit_xdp_doorbell(struct mlx5e_xdpsq *sq)
  }
  
  #endif

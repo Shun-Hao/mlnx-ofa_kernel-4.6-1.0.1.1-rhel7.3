@@ -3,7 +3,7 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/lib/clock.c
 
 Change-Id: I076fa772f9a4c5da26b498e257a0a285e19b70f9
 ---
- .../ethernet/mellanox/mlx5/core/lib/clock.c   | 97 +++++++++++++++++++
+ .../net/ethernet/mellanox/mlx5/core/lib/clock.c    | 97 ++++++++++++++++++++++
  1 file changed, 97 insertions(+)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/lib/clock.c b/drivers/net/ethernet/mellanox/mlx5/core/lib/clock.c
@@ -262,7 +262,7 @@ index xxxxxxx..xxxxxxx 100644
  	dev_freq = MLX5_CAP_GEN(mdev, device_frequency_khz);
 @@ -520,8 +599,12 @@ void mlx5_init_clock(struct mlx5_core_dev *mdev)
  	overflow_cycles = div64_u64(~0ULL >> 1, clock->cycles.mult);
- 	overflow_cycles = min(overflow_cycles, clock->cycles.mask >> 1);
+ 	overflow_cycles = min(overflow_cycles, div_u64(clock->cycles.mask, 3));
  
 +#ifdef HAVE_CYCLECOUNTER_CYC2NS_4_PARAMS
  	ns = cyclecounter_cyc2ns(&clock->cycles, overflow_cycles,
