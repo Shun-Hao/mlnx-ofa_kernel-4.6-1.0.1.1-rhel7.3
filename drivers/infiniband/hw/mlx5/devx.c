@@ -468,7 +468,12 @@ static void devx_set_umem_valid(const void *in)
 
 	switch (opcode) {
 	case MLX5_CMD_OP_CREATE_MKEY:
+#ifndef CONFIG_BF_DEVICE_EMULATION
 		MLX5_SET(create_mkey_in, in, mkey_umem_valid, 1);
+#else
+		if (!MLX5_GET(create_mkey_in,  in, cmd_on_behalf))
+			MLX5_SET(create_mkey_in, in, mkey_umem_valid, 1);
+#endif
 		break;
 	case MLX5_CMD_OP_CREATE_CQ:
 	{
@@ -481,11 +486,20 @@ static void devx_set_umem_valid(const void *in)
 	}
 	case MLX5_CMD_OP_CREATE_QP:
 	{
+#ifndef CONFIG_BF_DEVICE_EMULATION
 		void *qpc;
 
 		qpc = MLX5_ADDR_OF(create_qp_in, in, qpc);
 		MLX5_SET(qpc, qpc, dbr_umem_valid, 1);
 		MLX5_SET(create_qp_in, in, wq_umem_valid, 1);
+#else
+		if (!MLX5_GET(create_qp_in,  in, cmd_on_behalf)) {
+			void *qpc;
+			qpc = MLX5_ADDR_OF(create_qp_in, in, qpc);
+			MLX5_SET(qpc, qpc, dbr_umem_valid, 1);
+			MLX5_SET(create_qp_in, in, wq_umem_valid, 1);
+		}
+#endif
 		break;
 	}
 
@@ -1136,7 +1150,12 @@ static int devx_handle_mkey_create(struct mlx5_ib_dev *dev,
 		return 0;
 	}
 
+#ifndef CONFIG_BF_DEVICE_EMULATION
 	MLX5_SET(create_mkey_in, in, mkey_umem_valid, 1);
+#else
+	if (!MLX5_GET(create_mkey_in,  in, cmd_on_behalf))
+		MLX5_SET(create_mkey_in, in, mkey_umem_valid, 1);
+#endif
 	return 0;
 }
 
