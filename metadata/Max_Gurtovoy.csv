@@ -95,3 +95,13 @@ Change-Id=I5558637510410f050393818805741ee563981f75; subject=net/mlx5: Add query
 Change-Id=I07b1347a1b6ebc1c9f9bcf5fe39fa3855ff0301e; subject=nvmet-rdma: Add error flow for post_recv failures on XRQ; feature=nvmf_offload; upstream_status=in_progress; general=;
 Change-Id=I6195f979ec06f1a421991520df875d5aad2ac803; subject=nvmet-rdma: fix offload ctrl creation condition; feature=nvmf_offload; upstream_status=in_progress; general=;
 Change-Id=Ia3b06abc377113ad0d242e358c67ba5df4b67ba0; subject=IB/mlx5: Introduce device_emulation_manager HCA cap; feature=mlx5_bf; upstream_status=ignore; general=;
+Change-Id=I7ff7cef09dbbd08c5d7a4750a56fcfc5f4e7182c; subject=configure: Add CONFIG_BF_DEVICE_EMULATION; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I12b4734794461d267f45e33c9fb684d075f8b8ad; subject=IB/mlx5: Add CREATE_PSV/DESTROY_PSV for devx interface; feature=mlx5_bf; upstream_status=ignore; general=;
+Change-Id=I5142930d962e1042e6efafc59c9ec2e7d5c5f0e1; subject=IB/mlx5: Added support for create/destroy devx psv on_behalf; feature=mlx5_bf; upstream_status=ignore; general=;
+Change-Id=Ied15fc3770efbb53a182291f831999743df908a1; subject=IB/mlx5: Add DEVX commands for device emulation; feature=mlx5_bf; upstream_status=ignore; general=;
+Change-Id=Ib2df867c5acad5b4e3b2693814a84d4de43f302a; subject=IB/mlx5: don't enable ib representors on device emulation; feature=mlx5_bf; upstream_status=ignore; general=;
+Change-Id=Iddc4bc5140b85d2f2dd0942455d5a2a3676ec1a3; subject=net/mlx5: E-Switch, Don't reload different profiles on emulation manager; feature=mlx5_bf; upstream_status=ignore; general=;
+Change-Id=I44b4ac38dc04e8f07affee5e083889eb96c39072; subject=net/mlx5: Disable rep FDB rules and NIC RX rules for emulation manager; feature=mlx5_bf; upstream_status=ignore; general=;
+Change-Id=I5f867d0f5dcc8b62a1cb5a68b2cc50faa9e881ed; subject=RDMA/mlx5: Add default eswitch rules for device emulation; feature=mlx5_bf; upstream_status=ignore; general=;
+Change-Id=I3be4fc972b74cdfa2f6448ea8c85bdcdaef1b115; subject=IB/mlx5: disable umem checks for DEVX on_behalf commands; feature=mlx5_bf; upstream_status=ignore; general=;
+Change-Id=I0c90092108213b4f4c07b10f993f2590f0df253f; subject=IB/mlx5: disable uid for DEVX on_behalf commands; feature=mlx5_bf; upstream_status=ignore; general=;

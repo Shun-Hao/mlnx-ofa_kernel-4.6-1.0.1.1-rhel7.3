@@ -717,6 +717,40 @@ static bool devx_is_whitelist_cmd(void *in)
 
 static int devx_get_uid(struct mlx5_ib_ucontext *c, void *cmd_in)
 {
+#ifdef CONFIG_BF_DEVICE_EMULATION
+	struct mlx5_ib_dev *mdev = to_mdev(c->ibucontext.device);
+	u16 opcode;
+
+	opcode = MLX5_GET(general_obj_in_cmd_hdr, cmd_in, opcode);
+
+	/* check on behalf bit and switch uid to the privileged */
+	switch (opcode) {
+		case MLX5_CMD_OP_RST2INIT_QP:
+		case MLX5_CMD_OP_INIT2RTR_QP:
+		case MLX5_CMD_OP_RTR2RTS_QP:
+		case MLX5_CMD_OP_RTS2RTS_QP:
+			/* all these commands have on behalf bit in the same place */
+			if (MLX5_GET(rst2init_qp_in, cmd_in, cmd_on_behalf))
+				return 0;
+			break;
+		case MLX5_CMD_OP_CREATE_QP:
+			if (MLX5_GET(create_qp_in, cmd_in, cmd_on_behalf))
+				return 0;
+			break;
+		case MLX5_CMD_OP_CREATE_MKEY:
+			if (MLX5_GET(create_mkey_in, cmd_in, cmd_on_behalf))
+				return 0;
+			break;
+		case MLX5_CMD_OP_CREATE_PSV:
+			if (MLX5_GET(create_psv_in, cmd_in, cmd_on_behalf))
+				return 0;
+			break;
+		case MLX5_CMD_OP_QUERY_NIC_VPORT_CONTEXT:
+			if (mlx5_core_is_dev_emulation_manager(mdev->mdev))
+				return 0;
+			break;
+	}
+#endif
 	if (devx_is_whitelist_cmd(cmd_in)) {
 		struct mlx5_ib_dev *dev;
 
