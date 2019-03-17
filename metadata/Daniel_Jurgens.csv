@@ -14,4 +14,4 @@ Change-Id=I12cbd31d408a96bb535412d17bb39a1a66d86c46; subject=net/mlx5: Don't cre
 Change-Id=I134ec637080ef38be0a6e5e3cadc956b36f16ea1; subject=net/mlx5: Enable vfs sysfs when not eswitch_manager; feature=mlx5_core_bugs; upstream_status=NA; general=;
 Change-Id=I11f01ce3f8d818a63815b95d45b1fc6864984515; subject=net/mlx5: Implement get/show settings ethtool ops for reps; feature=mlx5_core_bugs; upstream_status=in_progress; general=;
 Change-Id=Icc0f2c7900840b5bf3b9fb614b5bb8bb3d25d7c4; subject=net/mlx5: When fetching CQEs return a CQE pointer instead of void; feature=cqe_padding; upstream_status=accepted; general=;
-Change-Id=I70cd0ad4ad66e2582b86f92a42b2552f36a6e113; subject=net/mlx5e: Use CQE padding for Ethernet CQs; feature=cqe_padding; upstream_status=accepted; general=;
+Change-Id=I70cd0ad4ad66e2582b86f92a42b2552f36a6e113; subject=net/mlx5e: Use CQE padding for Ethernet CQs; feature=cqe_padding; upstream_status=accepted; general=upstream commit ID: 939de57d3034, tag: v5.0-rc1;

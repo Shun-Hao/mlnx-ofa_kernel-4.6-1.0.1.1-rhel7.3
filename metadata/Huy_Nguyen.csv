@@ -45,7 +45,7 @@ Change-Id=I8f1f73085ab5745fd3950e12d14f17806865eff4; subject=IB/mlx5: Ensure ato
 Change-Id=I436f7f0eff509be6f373482d20d20636f0256678; subject=IB/mlx5: Fix kernel crash invalid address access; feature=mlx5_ib_bugs; upstream_status=NA; general=;
 Change-Id=I0b4b909dd7987786a47b0af62f30b44691222f38; subject=IB/mlx5: Remove SW invalidation range in CAPI mode; feature=mlx5_ib_bugs; upstream_status=NA; general=;
 Change-Id=Ie94ba0df2fad82ae4fba4ca670118b3048bc5a0a; subject=net/mlx5: Fix incorrect page count when in internal error on powerpc; feature=mlx5_core_bugs; upstream_status=in_progress; general=;
-Change-Id=I5f7986ca6349c1d0e4febb456103de8d10a4b976; subject=IB/mlx5: Fix long EEH recover time with NVMe offloads; feature=mlx5_ib_bugs; upstream_status=in_progress; general=;
+Change-Id=I5f7986ca6349c1d0e4febb456103de8d10a4b976; subject=IB/mlx5: Fix long EEH recover time with NVMe offloads; feature=mlx5_ib_bugs; upstream_status=accepted; general=upstream commit ID: bb7e22a8ab00, tag: v5.0-rc1;
 Change-Id=Ia9d0ac7b8924a96a0c9bf6c8f9997306eb93f924; subject=net/mlx5e: Fix out of memory when setting jumbo frames; feature=mlx5_core_bugs; upstream_status=NA; general=;
 Change-Id=I3f4eb8c2bac82fe1905d0b6717be96614d45fc0b; subject=IB/mlx5: Fix ODP_ASYNC_PREFETCH stage; feature=mlx5_core_bugs; upstream_status=in_progress; general=;
 Change-Id=I6a76a3ed3733a23605b428432ee8beda829a82cc; subject=net/mlx5: E-Switch, Add support for VEPA in legacy mode.; feature=mlx5_vepa; upstream_status=in_progress; general=;
