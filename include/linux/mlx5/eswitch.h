@@ -60,4 +60,11 @@ u8 mlx5_eswitch_mode(struct mlx5_eswitch *esw);
 struct mlx5_flow_handle *
 mlx5_eswitch_add_send_to_vport_rule(struct mlx5_eswitch *esw,
 				    int vport, u32 sqn);
+
+#ifdef CONFIG_MLX5_ESWITCH
+u16 mlx5_eswitch_get_encap_mode(struct mlx5_eswitch *esw);
+#else  /* CONFIG_MLX5_ESWITCH */
+static inline u16 mlx5_eswitch_get_encap_mode(struct mlx5_eswitch *esw) { return 0; }
+#endif /* CONFIG_MLX5_ESWITCH */
+
 #endif

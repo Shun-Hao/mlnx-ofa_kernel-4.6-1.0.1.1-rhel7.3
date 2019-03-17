@@ -3327,6 +3327,12 @@ u8 mlx5_eswitch_mode(struct mlx5_eswitch *esw)
 }
 EXPORT_SYMBOL_GPL(mlx5_eswitch_mode);
 
+u16 mlx5_eswitch_get_encap_mode(struct mlx5_eswitch *esw)
+{
+	return esw->offloads.encap;
+}
+EXPORT_SYMBOL_GPL(mlx5_eswitch_get_encap_mode);
+
 bool mlx5_esw_multipath_prereq(struct mlx5_core_dev *dev0,
 			       struct mlx5_core_dev *dev1)
 {
