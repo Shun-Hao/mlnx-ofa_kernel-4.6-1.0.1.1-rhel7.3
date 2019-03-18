@@ -2947,6 +2947,42 @@ out_err:
 	return err;
 }
 
+static int add_vlan_rewrite_action(struct mlx5e_priv *priv,
+				   const struct tc_action *a,
+				   struct mlx5_esw_flow_attr *attr,
+				   struct mlx5e_tc_flow_parse_attr *parse_attr,
+				   u32 *action, struct netlink_ext_ack *extack)
+{
+	int err;
+	struct tcf_pedit_key_ex pedit_key_ex = {
+		.htype = TCA_PEDIT_KEY_EX_HDR_TYPE_ETH,
+		.cmd = TCA_PEDIT_KEY_EX_CMD_SET,
+	};
+	u16 mask16 = VLAN_VID_MASK;
+	u16 val16 = tcf_vlan_push_vid(a) & VLAN_VID_MASK;
+	struct tc_pedit_key pedit_key = {
+		.mask = ~(u32)be16_to_cpu(*(__be16 *)&mask16),
+		.val = (u32)be16_to_cpu(*(__be16 *)&val16),
+		.off = offsetof(struct vlan_ethhdr, h_vlan_TCI),
+	};
+	const struct tcf_pedit pedit_act = {
+		.tcfp_nkeys = 1,
+		.tcfp_keys = &pedit_key,
+		.tcfp_keys_ex = &pedit_key_ex,
+	};
+
+	if (tcf_vlan_push_prio(a)) {
+		NL_SET_ERR_MSG_MOD(extack, "Setting VLAN prio is not supported");
+		return -EOPNOTSUPP;
+	}
+
+	err = parse_tc_pedit_action(priv, (const struct tc_action *)&pedit_act,
+				    MLX5_FLOW_NAMESPACE_FDB, parse_attr, NULL);
+	*action |= MLX5_FLOW_CONTEXT_ACTION_MOD_HDR;
+	attr->mirror_count = attr->out_count;
+	return err;
+}
+
 static int parse_tc_vlan_action(struct mlx5e_priv *priv,
 				const struct tc_action *a,
 				struct mlx5_esw_flow_attr *attr,
@@ -2991,7 +3027,8 @@ static int parse_tc_vlan_action(struct mlx5e_priv *priv,
 			*action |= MLX5_FLOW_CONTEXT_ACTION_VLAN_PUSH;
 		}
 	} else { /* action is TCA_VLAN_ACT_MODIFY */
-		return -EOPNOTSUPP;
+		return add_vlan_rewrite_action(priv, a, attr, parse_attr,
+					       action, extack);
 	}
 
 	attr->total_vlan = vlan_idx + 1;
