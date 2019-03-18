@@ -53,3 +53,5 @@ Change-Id=I7cc65d7b1fcfc2423a16d198ba9c966cf4000c0a; subject=mlx5/IB: Handle mlx
 Change-Id=I55849cb1afa1b55bb58d10d55b10b149b78854d1; subject=Backports: Fix mlx5 backports for packet pacing; feature=backports; upstream_status=ignore; general=;
 Change-Id=Ic36a1707289a9a7c24d38faa1711a3ba89e79843; subject=Revert "net/mlx5e: E-Switch, Initialize eswitch only if eswitch manager"; feature=rebase; upstream_status=ignore; general=;
 Change-Id=I60fcbafdebf2ff3bbbe40de5810f07241c10da3e; subject=IB/mlx5: Fix packet pacing burst control cap; feature=mlx5_exp_packet_pacing; upstream_status=ignore; general=;
+Change-Id=I58b146064347f0564df3bdbe6e13386a2f6f839d; subject=net/mlx5: Devcom register should not return error for VF; feature=mlx5_core_bugs; upstream_status=NA; general=;
+Change-Id=I90af64b73c74a2277dac5d29056a9a2338296a6d; subject=net/mlx5: E-Switch, Remove redundant mutex init of fdb_prio_lock; feature=mlx5_bf; upstream_status=accepted; general=;

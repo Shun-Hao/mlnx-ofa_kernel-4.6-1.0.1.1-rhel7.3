@@ -279,7 +279,6 @@ name=disable_local_lb; type=feature; upstream_status=NA;
 name=udp_sport; type=feature; upstream_status=in_progress;
 name=signature_pipeline; type=feature; upstream_status=NA;
 name=mlx5_pme_updates; type=feature; upstream_status=in_progress;
-<<<<<<< HEAD
 name=grh_required; type=feature; upstream_status=accepted;
 name=rdma_res_tracker; type=feature; upstream_status=accepted;
 name=mpls_decap_offload; type=feature; upstream_status=accepted;
@@ -298,7 +297,6 @@ name=mlx5_bf; type=feature; upstream_status=accepted;
 name=net_sched; type=feature; upstream_status=NA;
 name=mlx5_advise_mr; type=feature; upstream_status=accepted;
 name=mlx5e_perf_improvements; type=feature; upstream_status=in_progress;
-<<<<<<< HEAD
 name=mlx5e_decapsulated_tunnel_hw_offloads; type=feature; upstream_status=in_progress;
 name=shared_msix; type=feature; upstream_status=in_progress;
 name=mlx5_roce_lag_ecmp; type=feature; upstream_status=in_progress;
