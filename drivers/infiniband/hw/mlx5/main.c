@@ -7036,6 +7036,8 @@ static void mlx5_ib_remove(struct mlx5_core_dev *mdev, void *context)
 		return;
 	}
 
+	flush_workqueue(mlx5_ib_event_wq);
+
 	if (mlx5_core_is_mp_slave(mdev)) {
 		mpi = context;
 		mutex_lock(&mlx5_ib_multiport_mutex);
