@@ -456,6 +456,10 @@ int mlx5_ib_exp_query_device(struct ib_device *ibdev,
 			MLX5_CAP_QOS(dev->mdev, packet_pacing_min_rate);
 		props->packet_pacing_caps.supported_qpts |=
 			1 << IB_QPT_RAW_PACKET;
+		if (MLX5_CAP_QOS(dev->mdev, packet_pacing_burst_bound) &&
+		    MLX5_CAP_QOS(dev->mdev, packet_pacing_typical_size))
+			props->packet_pacing_caps.cap_flags |=
+				IB_EXP_QP_SUPPORT_BURST;
 		props->exp_comp_mask |= IB_EXP_DEVICE_ATTR_PACKET_PACING_CAPS;
 	}
 

@@ -52,3 +52,4 @@ Change-Id=Ie9b97f708eb4ccd7a0171fb7a8536dab2e83cc4d; subject=Backports: Fix en_r
 Change-Id=I7cc65d7b1fcfc2423a16d198ba9c966cf4000c0a; subject=mlx5/IB: Handle mlx5 interface properly in switchdev mode; feature=mlx5_bf; upstream_status=in_progress; general=;
 Change-Id=I55849cb1afa1b55bb58d10d55b10b149b78854d1; subject=Backports: Fix mlx5 backports for packet pacing; feature=backports; upstream_status=ignore; general=;
 Change-Id=Ic36a1707289a9a7c24d38faa1711a3ba89e79843; subject=Revert "net/mlx5e: E-Switch, Initialize eswitch only if eswitch manager"; feature=rebase; upstream_status=ignore; general=;
+Change-Id=I60fcbafdebf2ff3bbbe40de5810f07241c10da3e; subject=IB/mlx5: Fix packet pacing burst control cap; feature=mlx5_exp_packet_pacing; upstream_status=ignore; general=;
