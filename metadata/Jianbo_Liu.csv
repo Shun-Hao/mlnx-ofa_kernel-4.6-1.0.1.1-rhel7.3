@@ -4,3 +4,8 @@ Change-Id=I71158093aeeffd42a6402a8337c8ad429697dfdf; subject=net/sched: Fix inco
 Change-Id=I2d006c38040a302309631a47fc37cba05799961c; subject=net/mlx5: Fix the data structure for eswitch capabilities; feature=mlx5_asap; upstream_status=NA; general=;
 Change-Id=I410faa88b3b5f5d95f2327da6becb2c0f1c161ed; subject=BACKPORTS: Add more checking for nd_tbl in ipv6_stub; feature=mlx5_asap; upstream_status=NA; general=;
 Change-Id=I57e50f6bd7f68f45fdb6940a91d9a65eaf9419a4; subject=compat/rehashtable.c: check for compat rhltable; feature=backports; upstream_status=NA; general=;
+Change-Id=Ib4fa8dbf4f68357b85aa9e609ceac982b90f1614; subject=net/sched: Add support pedit action for centos 7.2; feature=mlx5_asap; upstream_status=NA; general=;
+Change-Id=Ibc67a2f0eea5029be6fbc4944f8e218b685220b6; subject=net/sched: Add pedit munged flag for centos 7.2 default kernel; feature=mlx5_asap; upstream_status=NA; general=;
+Change-Id=Ia4917834be56bb7408b52efee4029455e8e3d142; subject=net/sched: Add support csum action for centos 7.2; feature=mlx5_asap; upstream_status=NA; general=;
+Change-Id=I05332c934233333718644b14f37e7410e01dde68; subject=BACKPORTS: Fix compile error for old kernels after act_csum enabled; feature=mlx5_asap; upstream_status=ignore; general=;
+Change-Id=I4b37c9a852a996e60c20892f9727f0db1dd4053b; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
