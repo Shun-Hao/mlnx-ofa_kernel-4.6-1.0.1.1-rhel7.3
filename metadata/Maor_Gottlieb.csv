@@ -86,3 +86,6 @@ Change-Id=I546cef3f0ea7bdee9d6125c0da0a919dd22d7983; subject=net/mlx5: Create fl
 Change-Id=I5c295896b7f580baf9c6ec436d910d1a2a3f4a32; subject=IB/core: Fix IB_RX_HASH_INNER to be unsigned; feature=mlx5_tunnel_offloads; upstream_status=NA; general=;
 Change-Id=I583db38e7b9e4948b5c087edaddbe5f95c2abd89; subject=IB/mlx5: Report missing RSS inner capability; feature=mlx5_tunnel_offloads; upstream_status=NA; general=;
 Change-Id=Iab7d25cfa9390e79ea49f76f9b42c02975a5e0d5; subject=IB/mlx5: Add ingress_log_flow_table_size sysfs; feature=50k_rules; upstream_status=NA; general=;
+Change-Id=I742f792b3ae6a6ce6e56fc42cedd62b89135f34f; subject=RDMA/mlx5: Add query e-switch vport context to devx white list; feature=devx; upstream_status=in_progress; general=;
+Change-Id=Ia01a0ec9c661eab7eb064e37203b5bcc799e1d1d; subject=BACKPORTS: Fix mlx5_ib; feature=backports; upstream_status=ignore; general=;
+Change-Id=I80ff995616c60d698469e33727fa2543e5729c5d; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
