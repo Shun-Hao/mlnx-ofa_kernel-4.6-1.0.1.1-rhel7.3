@@ -16,3 +16,9 @@ Change-Id=Iadb234e907711356c8a112f1aa5768dfd14d55cf; subject=BACKPORTS: net/mlx5
 Change-Id=Ib4ec7eb8b27dacd3ef8d42eae8ae58331c806392; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=I743218ac1c34aa0062b605a4ea87550173ccd861; subject=net/mlx5: E-Switch, fix peer miss rule NULL pointer panic; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: ac004b832128, tag: v5.0-rc4;
 Change-Id=I98d3952c87e508c925f3ef8fe55137f63fa071b5; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I053727b22ab4a35f5b8081c9d9bc129ed9484bbd; subject=net/mlx5e: Add VLAN ID rewrite fields; feature=mlx5_asap; upstream_status=in_progress; general=;
+Change-Id=Ib87157c5995a165e988df94fe6962927324e835b; subject=net/mlx5e: Add arguments for vlan parsing function; feature=mlx5_asap; upstream_status=in_progress; general=;
+Change-Id=I58a73afb4b881c7a7ff2cb86fc96f4c43b284c6b; subject=net/mlx5e: Support VLAN modify action; feature=mlx5_asap; upstream_status=in_progress; general=;
+Change-Id=Icb2071d7cd129839fef5200672df0d5c0a09cfb7; subject=net/mlx5e: Replace TC VLAN pop and push actions with VLAN modify; feature=mlx5_asap; upstream_status=in_progress; general=;
+Change-Id=I244983119b8bfdfa7216b0fff7531a8951a01174; subject=BACKPORTS: net/mlx5e: Support VLAN modify action; feature=backports; upstream_status=ignore; general=;
+Change-Id=Ib22e388fd59a6ce31935fa352fe4aac569f95186; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
