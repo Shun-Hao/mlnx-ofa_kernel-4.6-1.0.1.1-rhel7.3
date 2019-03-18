@@ -2950,7 +2950,9 @@ out_err:
 static int parse_tc_vlan_action(struct mlx5e_priv *priv,
 				const struct tc_action *a,
 				struct mlx5_esw_flow_attr *attr,
-				u32 *action)
+				u32 *action,
+				struct mlx5e_tc_flow_parse_attr *parse_attr,
+				struct netlink_ext_ack *extack)
 {
 	u8 vlan_idx = attr->total_vlan;
 
@@ -3108,7 +3110,8 @@ static int parse_tc_fdb_actions(struct mlx5e_priv *priv, struct tcf_exts *exts,
 		}
 
 		if (is_tcf_vlan(a)) {
-			err = parse_tc_vlan_action(priv, a, attr, &action);
+			err = parse_tc_vlan_action(priv, a, attr, &action,
+						   parse_attr, extack);
 
 			if (err)
 				return err;
