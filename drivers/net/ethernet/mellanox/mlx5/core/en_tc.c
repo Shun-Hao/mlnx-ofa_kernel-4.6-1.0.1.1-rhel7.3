@@ -3006,6 +3006,12 @@ static int parse_tc_vlan_action(struct mlx5e_priv *priv,
 			*action |= MLX5_FLOW_CONTEXT_ACTION_VLAN_POP;
 		}
 	} else if (tcf_vlan_action(a) == TCA_VLAN_ACT_PUSH) {
+		if ((*action) & MLX5_FLOW_CONTEXT_ACTION_VLAN_POP) {
+			/* Replace vlan pop+push with vlan modify */
+			*action &= ~MLX5_FLOW_CONTEXT_ACTION_VLAN_POP;
+			return add_vlan_rewrite_action(priv, a, attr, parse_attr,
+					       action, extack);
+		}
 		attr->vlan_vid[vlan_idx] = tcf_vlan_push_vid(a);
 		attr->vlan_prio[vlan_idx] = tcf_vlan_push_prio(a);
 		attr->vlan_proto[vlan_idx] = tcf_vlan_push_proto(a);
