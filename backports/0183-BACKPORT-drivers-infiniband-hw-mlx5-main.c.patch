@@ -20,7 +20,7 @@ index xxxxxxx..xxxxxxx 100644
  #include <linux/mlx5/fs.h>
  #include <linux/list.h>
  #include <rdma/ib_smi.h>
-@@ -192,13 +194,17 @@ static int mlx5_netdev_event(struct notifier_block *this,
+@@ -217,13 +219,17 @@ static int mlx5_netdev_event(struct notifier_block *this,
  	case NETDEV_CHANGE:
  	case NETDEV_UP:
  	case NETDEV_DOWN: {
@@ -36,9 +36,9 @@ index xxxxxxx..xxxxxxx 100644
  		}
 +#endif
  
- 		if ((upper == ndev || (!upper && ndev == roce->netdev))
- 		    && ibdev->ib_active) {
-@@ -512,10 +518,12 @@ static int set_roce_addr(struct mlx5_ib_dev *dev, u8 port_num,
+ 		if (ibdev->is_rep)
+ 			roce = mlx5_get_rep_roce(ibdev, ndev, &port_num);
+@@ -612,10 +618,12 @@ static int set_roce_addr(struct mlx5_ib_dev *dev, u8 port_num,
  			 * device is vlan device, consider vlan id of
  			 * the lower vlan device for this gid entry.
  			 */
@@ -51,7 +51,7 @@ index xxxxxxx..xxxxxxx 100644
  		}
  	}
  
-@@ -916,8 +924,10 @@ int mlx5_ib_query_device(struct ib_device *ibdev,
+@@ -1016,8 +1024,10 @@ int mlx5_ib_query_device(struct ib_device *ibdev,
  	if (MLX5_CAP_GEN(mdev, cd))
  		props->device_cap_flags |= IB_DEVICE_CROSS_CHANNEL;
  
@@ -62,7 +62,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	if (mlx5_ib_port_link_layer(ibdev, 1) ==
  	    IB_LINK_LAYER_ETHERNET && raw_support) {
-@@ -1732,7 +1742,9 @@ static int alloc_capi_context(struct mlx5_ib_dev *dev, struct mlx5_capi_context
+@@ -1834,7 +1844,9 @@ static int alloc_capi_context(struct mlx5_ib_dev *dev, struct mlx5_capi_context
  		goto out_mm;
  	}
  
@@ -72,7 +72,7 @@ index xxxxxxx..xxxxxxx 100644
  	return 0;
  
  out_mm:
-@@ -1750,7 +1762,9 @@ static int free_capi_context(struct mlx5_ib_dev *dev, struct mlx5_capi_context *
+@@ -1852,7 +1864,9 @@ static int free_capi_context(struct mlx5_ib_dev *dev, struct mlx5_capi_context *
  	err = mlx5_core_destroy_pec(dev->mdev, cctx->pasid);
  	if (err)
  		mlx5_ib_warn(dev, "destroy pec failed\n");
@@ -82,7 +82,7 @@ index xxxxxxx..xxxxxxx 100644
  	mmdrop(cctx->mm);
  	return err;
  }
-@@ -2067,9 +2081,11 @@ static int get_extended_index(unsigned long offset)
+@@ -2169,9 +2183,11 @@ static int get_extended_index(unsigned long offset)
  }
  
  
@@ -94,7 +94,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static inline char *mmap_cmd2str(enum mlx5_ib_mmap_cmd cmd)
  {
-@@ -2124,6 +2140,9 @@ static int uar_mmap(struct mlx5_ib_dev *dev, enum mlx5_ib_mmap_cmd cmd,
+@@ -2226,6 +2242,9 @@ static int uar_mmap(struct mlx5_ib_dev *dev, enum mlx5_ib_mmap_cmd cmd,
  	int dyn_uar = (cmd == MLX5_IB_MMAP_ALLOC_WC);
  	int max_valid_idx = dyn_uar ? bfregi->num_sys_pages :
  				bfregi->num_static_sys_pages;
@@ -104,7 +104,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	if (vma->vm_end - vma->vm_start != PAGE_SIZE)
  		return -EINVAL;
-@@ -2144,7 +2163,11 @@ static int uar_mmap(struct mlx5_ib_dev *dev, enum mlx5_ib_mmap_cmd cmd,
+@@ -2246,7 +2265,11 @@ static int uar_mmap(struct mlx5_ib_dev *dev, enum mlx5_ib_mmap_cmd cmd,
  	case MLX5_IB_MMAP_ALLOC_WC:
  /* Some architectures don't support WC memory */
  #if defined(CONFIG_X86)
@@ -116,7 +116,7 @@ index xxxxxxx..xxxxxxx 100644
  			return -EPERM;
  #elif !(defined(CONFIG_PPC) || ((defined(CONFIG_ARM) || defined(CONFIG_ARM64)) && defined(CONFIG_MMU)))
  			return -EPERM;
-@@ -6202,6 +6225,9 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
+@@ -6315,6 +6338,9 @@ static int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
  	dev->ib_dev.exp_query_device	= mlx5_ib_exp_query_device;
  	dev->ib_dev.exp_query_mkey      = mlx5_ib_exp_query_mkey;
  	dev->ib_dev.exp_create_qp	= mlx5_ib_exp_create_qp;
@@ -126,7 +126,7 @@ index xxxxxxx..xxxxxxx 100644
  	dev->ib_dev.resize_cq		= mlx5_ib_resize_cq;
  	dev->ib_dev.destroy_cq		= mlx5_ib_destroy_cq;
  	dev->ib_dev.poll_cq		= mlx5_ib_poll_cq;
-@@ -6224,14 +6250,20 @@ int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
+@@ -6337,14 +6363,20 @@ static int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
  		dev->ib_dev.rdma_netdev_get_params = mlx5_ib_rn_get_params;
  
  	if (mlx5_core_is_pf(mdev)) {
