@@ -326,6 +326,8 @@ static int mlx5_internal_err_ret_value(struct mlx5_core_dev *dev, u16 op,
 	case MLX5_CMD_OP_SET_DIAGNOSTIC_PARAMS:
 	case MLX5_CMD_OP_QUERY_DIAGNOSTIC_COUNTERS:
 	case MLX5_CMD_OP_QUERY_HOST_PARAMS:
+	case MLX5_CMD_OP_QUERY_HCA_VPORT_PKEY:
+	case MLX5_CMD_OP_ACCESS_REG:
 		return MLX5_CMD_STAT_OK;
 
 	case MLX5_CMD_OP_QUERY_HCA_CAP:
@@ -380,7 +382,6 @@ static int mlx5_internal_err_ret_value(struct mlx5_core_dev *dev, u16 op,
 	case MLX5_CMD_OP_QUERY_HCA_VPORT_CONTEXT:
 	case MLX5_CMD_OP_MODIFY_HCA_VPORT_CONTEXT:
 	case MLX5_CMD_OP_QUERY_HCA_VPORT_GID:
-	case MLX5_CMD_OP_QUERY_HCA_VPORT_PKEY:
 	case MLX5_CMD_OP_QUERY_VNIC_ENV:
 	case MLX5_CMD_OP_QUERY_VPORT_COUNTER:
 	case MLX5_CMD_OP_ALLOC_Q_COUNTER:
@@ -394,7 +395,6 @@ static int mlx5_internal_err_ret_value(struct mlx5_core_dev *dev, u16 op,
 	case MLX5_CMD_OP_ALLOC_PD:
 	case MLX5_CMD_OP_ALLOC_UAR:
 	case MLX5_CMD_OP_CONFIG_INT_MODERATION:
-	case MLX5_CMD_OP_ACCESS_REG:
 	case MLX5_CMD_OP_ATTACH_TO_MCG:
 	case MLX5_CMD_OP_GET_DROPPED_PACKET_LOG:
 	case MLX5_CMD_OP_MAD_IFC:
