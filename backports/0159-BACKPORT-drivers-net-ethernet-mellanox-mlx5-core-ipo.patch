@@ -82,7 +82,7 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  		     netdev->num_tx_queues);
  }
-
+ 
 @@ -125,6 +166,7 @@ int mlx5i_init(struct mlx5_core_dev *mdev,
  	mlx5e_timestamp_init(priv);
  
