@@ -1,0 +1,2 @@
+sep=;
+Change-Id=I6940c094c64815e396d9a14c7219b43e0e40c0ce; subject=RDMA/srp: Rework SCSI device reset handling; feature=rebase; upstream_status=ignore; general=;

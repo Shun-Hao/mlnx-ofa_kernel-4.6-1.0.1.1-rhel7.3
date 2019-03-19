@@ -36,3 +36,4 @@ Change-Id=Id2233cad0fe0f3d33b7ed9558c5c3c7ff7903b54; subject=net/mlx5: Fix compi
 Change-Id=Ic3a73152e4b972b0bc1a17f4e30810c76efd7d26; subject=mlx5/IB: set default value for gid_type; feature=ib_core_bugs; upstream_status=NA; general=;
 Change-Id=Iaba35c7346a9c02f0e1e2633daf2c2115df9ce2c; subject=BACKPORTS IPOIB HAVE_NDO_GET_IFLINK; feature=backports; upstream_status=ignore; general=;
 Change-Id=I00ab285a0591afe0a083bb9774465046ed3205d8; subject=BACKPORTS - ADDING ETH PATCHES FROM STABLE; feature=rebase; upstream_status=ignore; general=;
+Change-Id=I7a676084420e4b745dbf777b56ea049bcbe96e99; subject=Update metadata for IB patches from stable; feature=ofed_scripts; upstream_status=ignore; general=;
