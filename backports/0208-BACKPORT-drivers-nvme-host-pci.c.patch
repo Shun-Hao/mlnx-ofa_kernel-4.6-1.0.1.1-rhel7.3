@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/nvme/host/pci.c
 
 Change-Id: I126cff9b8793bd2de2ee0cce424f41fcebe7fb78
 ---
- drivers/nvme/host/pci.c | 384 +++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 381 insertions(+), 3 deletions(-)
+ drivers/nvme/host/pci.c | 385 +++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 382 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/nvme/host/pci.c b/drivers/nvme/host/pci.c
 index xxxxxxx..xxxxxxx 100644
@@ -251,11 +251,12 @@ index xxxxxxx..xxxxxxx 100644
  	return BLK_STS_IOERR;
  }
  
-@@ -877,8 +999,12 @@ static blk_status_t nvme_map_data(struct nvme_dev *dev, struct request *req,
+@@ -877,8 +999,13 @@ static blk_status_t nvme_map_data(struct nvme_dev *dev, struct request *req,
  		nr_mapped = pci_p2pdma_map_sg(dev->dev, iod->sg, iod->nents,
  					  dma_dir);
  	else
-+#ifdef HAVE_DMA_ATTR_NO_WARN
++#if defined(HAVE_DMA_ATTR_NO_WARN) && \
++	defined(HAVE_DMA_SET_ATTR_TAKES_UNSIGNED_LONG_ATTRS)
  		nr_mapped = dma_map_sg_attrs(dev->dev, iod->sg, iod->nents,
  					     dma_dir,  DMA_ATTR_NO_WARN);
 +#else
@@ -264,7 +265,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (!nr_mapped)
  		goto out;
  
-@@ -1108,12 +1234,23 @@ static int __nvme_poll(struct nvme_queue *nvmeq, unsigned int tag)
+@@ -1108,12 +1235,23 @@ static int __nvme_poll(struct nvme_queue *nvmeq, unsigned int tag)
  	return found;
  }
  
@@ -288,7 +289,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static void nvme_pci_submit_async_event(struct nvme_ctrl *ctrl)
  {
-@@ -1280,7 +1417,11 @@ static enum blk_eh_timer_return nvme_timeout(struct request *req, bool reserved)
+@@ -1280,7 +1418,11 @@ static enum blk_eh_timer_return nvme_timeout(struct request *req, bool reserved)
  		nvme_warn_reset(dev, csts);
  		nvme_dev_disable(dev, false);
  		nvme_reset_ctrl(&dev->ctrl);
@@ -300,7 +301,7 @@ index xxxxxxx..xxxxxxx 100644
  	}
  
  	/*
-@@ -1290,7 +1431,11 @@ static enum blk_eh_timer_return nvme_timeout(struct request *req, bool reserved)
+@@ -1290,7 +1432,11 @@ static enum blk_eh_timer_return nvme_timeout(struct request *req, bool reserved)
  		dev_warn(dev->ctrl.device,
  			 "I/O %d QID %d timeout, completion polled\n",
  			 req->tag, nvmeq->qid);
@@ -312,7 +313,7 @@ index xxxxxxx..xxxxxxx 100644
  	}
  
  	/*
-@@ -1307,7 +1452,11 @@ static enum blk_eh_timer_return nvme_timeout(struct request *req, bool reserved)
+@@ -1307,7 +1453,11 @@ static enum blk_eh_timer_return nvme_timeout(struct request *req, bool reserved)
  			 req->tag, nvmeq->qid);
  		nvme_dev_disable(dev, false);
  		nvme_req(req)->flags |= NVME_REQ_CANCELLED;
@@ -324,7 +325,7 @@ index xxxxxxx..xxxxxxx 100644
  	default:
  		break;
  	}
-@@ -1325,7 +1474,11 @@ static enum blk_eh_timer_return nvme_timeout(struct request *req, bool reserved)
+@@ -1325,7 +1475,11 @@ static enum blk_eh_timer_return nvme_timeout(struct request *req, bool reserved)
  		nvme_reset_ctrl(&dev->ctrl);
  
  		nvme_req(req)->flags |= NVME_REQ_CANCELLED;
@@ -336,7 +337,7 @@ index xxxxxxx..xxxxxxx 100644
  	}
  
  	if (atomic_dec_return(&dev->ctrl.abort_limit) < 0) {
-@@ -1343,8 +1496,13 @@ static enum blk_eh_timer_return nvme_timeout(struct request *req, bool reserved)
+@@ -1343,8 +1497,13 @@ static enum blk_eh_timer_return nvme_timeout(struct request *req, bool reserved)
  		"I/O %d QID %d timeout, aborting\n",
  		 req->tag, nvmeq->qid);
  
@@ -350,7 +351,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (IS_ERR(abort_req)) {
  		atomic_inc(&dev->ctrl.abort_limit);
  		return BLK_EH_RESET_TIMER;
-@@ -1404,7 +1562,11 @@ static int nvme_suspend_queue(struct nvme_queue *nvmeq)
+@@ -1404,7 +1563,11 @@ static int nvme_suspend_queue(struct nvme_queue *nvmeq)
  		return 1;
  	}
  	if (!nvmeq->p2p)
@@ -362,7 +363,7 @@ index xxxxxxx..xxxxxxx 100644
  	else {
  		mutex_lock(&nvmeq->resource.lock);
  		if (nvmeq->resource.in_use && nvmeq->resource.stop_master_peer) {
-@@ -1425,10 +1587,18 @@ static int nvme_suspend_queue(struct nvme_queue *nvmeq)
+@@ -1425,10 +1588,18 @@ static int nvme_suspend_queue(struct nvme_queue *nvmeq)
  	mb();
  
  	if (!nvmeq->qid && nvmeq->dev->ctrl.admin_q)
@@ -381,7 +382,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	return 0;
  }
-@@ -1514,6 +1684,10 @@ static int nvme_alloc_queue(struct nvme_dev *dev, int qid, int depth)
+@@ -1514,6 +1685,10 @@ static int nvme_alloc_queue(struct nvme_dev *dev, int qid, int depth)
  
  	nvmeq->q_dmadev = dev->dev;
  	nvmeq->dev = dev;
@@ -392,7 +393,7 @@ index xxxxxxx..xxxxxxx 100644
  	spin_lock_init(&nvmeq->sq_lock);
  	spin_lock_init(&nvmeq->cq_lock);
  	nvmeq->cq_head = 0;
-@@ -1538,6 +1712,7 @@ static int nvme_alloc_queue(struct nvme_dev *dev, int qid, int depth)
+@@ -1538,6 +1713,7 @@ static int nvme_alloc_queue(struct nvme_dev *dev, int qid, int depth)
  
  static int queue_request_irq(struct nvme_queue *nvmeq)
  {
@@ -400,7 +401,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct pci_dev *pdev = to_pci_dev(nvmeq->dev->dev);
  	int nr = nvmeq->dev->ctrl.instance;
  
-@@ -1548,6 +1723,14 @@ static int queue_request_irq(struct nvme_queue *nvmeq)
+@@ -1548,6 +1724,14 @@ static int queue_request_irq(struct nvme_queue *nvmeq)
  		return pci_request_irq(pdev, nvmeq->cq_vector, nvme_irq,
  				NULL, nvmeq, "nvme%dq%d", nr, nvmeq->qid);
  	}
@@ -415,7 +416,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static void nvme_init_queue(struct nvme_queue *nvmeq, u16 qid)
-@@ -1575,7 +1758,11 @@ static int nvme_create_queue(struct nvme_queue *nvmeq, int qid)
+@@ -1575,7 +1759,11 @@ static int nvme_create_queue(struct nvme_queue *nvmeq, int qid)
  	 * A queue's vector matches the queue identifier unless the controller
  	 * has only one vector available.
  	 */
@@ -427,7 +428,7 @@ index xxxxxxx..xxxxxxx 100644
  	result = adapter_alloc_cq(dev, qid, nvmeq, vector);
  	if (result)
  		return result;
-@@ -1610,23 +1797,47 @@ release_cq:
+@@ -1610,23 +1798,47 @@ release_cq:
  	return result;
  }
  
@@ -475,7 +476,7 @@ index xxxxxxx..xxxxxxx 100644
  };
  
  static void nvme_dev_remove_admin(struct nvme_dev *dev)
-@@ -1637,7 +1848,11 @@ static void nvme_dev_remove_admin(struct nvme_dev *dev)
+@@ -1637,7 +1849,11 @@ static void nvme_dev_remove_admin(struct nvme_dev *dev)
  		 * user requests may be waiting on a stopped queue. Start the
  		 * queue to flush these to completion.
  		 */
@@ -487,7 +488,7 @@ index xxxxxxx..xxxxxxx 100644
  		blk_cleanup_queue(dev->ctrl.admin_q);
  		blk_mq_free_tag_set(&dev->admin_tagset);
  	}
-@@ -1653,7 +1868,9 @@ static int nvme_alloc_admin_tags(struct nvme_dev *dev)
+@@ -1653,7 +1869,9 @@ static int nvme_alloc_admin_tags(struct nvme_dev *dev)
  		dev->admin_tagset.timeout = ADMIN_TIMEOUT;
  		dev->admin_tagset.numa_node = dev_to_node(dev->dev);
  		dev->admin_tagset.cmd_size = nvme_pci_cmd_size(dev, false);
@@ -497,7 +498,7 @@ index xxxxxxx..xxxxxxx 100644
  		dev->admin_tagset.driver_data = dev;
  
  		if (blk_mq_alloc_tag_set(&dev->admin_tagset))
-@@ -1671,7 +1888,11 @@ static int nvme_alloc_admin_tags(struct nvme_dev *dev)
+@@ -1671,7 +1889,11 @@ static int nvme_alloc_admin_tags(struct nvme_dev *dev)
  			return -ENODEV;
  		}
  	} else
@@ -509,7 +510,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	return 0;
  }
-@@ -1946,10 +2167,26 @@ static int __nvme_alloc_host_mem(struct nvme_dev *dev, u64 preferred,
+@@ -1946,10 +2168,26 @@ static int __nvme_alloc_host_mem(struct nvme_dev *dev, u64 preferred,
  
  	for (size = 0; size < preferred && i < max_entries; size += len) {
  		dma_addr_t dma_addr;
@@ -536,7 +537,7 @@ index xxxxxxx..xxxxxxx 100644
  		if (!bufs[i])
  			break;
  
-@@ -2052,12 +2289,18 @@ static int nvme_setup_io_queues(struct nvme_dev *dev)
+@@ -2052,12 +2290,18 @@ static int nvme_setup_io_queues(struct nvme_dev *dev)
  {
  	struct nvme_queue *adminq = &dev->queues[0];
  	struct pci_dev *pdev = to_pci_dev(dev->dev);
@@ -555,7 +556,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	nr_io_queues = num_present_cpus() + dev->num_p2p_queues;
  	result = nvme_set_queue_count(&dev->ctrl, &nr_io_queues);
-@@ -2098,20 +2341,55 @@ static int nvme_setup_io_queues(struct nvme_dev *dev)
+@@ -2098,20 +2342,55 @@ static int nvme_setup_io_queues(struct nvme_dev *dev)
  	adminq->q_db = dev->dbs;
  
  	/* Deregister the admin queue's interrupt */
@@ -612,7 +613,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	/*
  	 * Should investigate if there's a performance win from allocating
-@@ -2164,7 +2442,11 @@ static int nvme_delete_queue(struct nvme_queue *nvmeq, u8 opcode)
+@@ -2164,7 +2443,11 @@ static int nvme_delete_queue(struct nvme_queue *nvmeq, u8 opcode)
  	cmd.delete_queue.opcode = opcode;
  	cmd.delete_queue.qid = cpu_to_le16(nvmeq->qid);
  
@@ -624,7 +625,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (IS_ERR(req))
  		return PTR_ERR(req);
  
-@@ -2238,7 +2520,9 @@ static int nvme_dev_add(struct nvme_dev *dev)
+@@ -2238,7 +2521,9 @@ static int nvme_dev_add(struct nvme_dev *dev)
  
  		nvme_dbbuf_set(dev);
  	} else {
@@ -634,7 +635,7 @@ index xxxxxxx..xxxxxxx 100644
  
  		/* Free previously allocated queues that are no longer usable */
  		nvme_free_queues(dev, dev->online_queues);
-@@ -2271,9 +2555,21 @@ static int nvme_pci_enable(struct nvme_dev *dev)
+@@ -2271,9 +2556,21 @@ static int nvme_pci_enable(struct nvme_dev *dev)
  	 * interrupts. Pre-enable a single MSIX or MSI vec for setup. We'll
  	 * adjust this later.
  	 */
@@ -656,7 +657,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	dev->ctrl.cap = lo_hi_readq(dev->bar + NVME_REG_CAP);
  
-@@ -2321,7 +2617,14 @@ static void nvme_pci_disable(struct nvme_dev *dev)
+@@ -2321,7 +2618,14 @@ static void nvme_pci_disable(struct nvme_dev *dev)
  {
  	struct pci_dev *pdev = to_pci_dev(dev->dev);
  
@@ -671,7 +672,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	if (pci_is_enabled(pdev)) {
  		pci_disable_pcie_error_reporting(pdev);
-@@ -2413,7 +2716,12 @@ static void nvme_pci_free_ctrl(struct nvme_ctrl *ctrl)
+@@ -2413,7 +2717,12 @@ static void nvme_pci_free_ctrl(struct nvme_ctrl *ctrl)
  	if (dev->ctrl.admin_q)
  		blk_put_queue(dev->ctrl.admin_q);
  	kfree(dev->queues);
@@ -684,7 +685,7 @@ index xxxxxxx..xxxxxxx 100644
  	mempool_destroy(dev->iod_mempool);
  	kfree(dev);
  }
-@@ -2433,7 +2741,9 @@ static void nvme_reset_work(struct work_struct *work)
+@@ -2433,7 +2742,9 @@ static void nvme_reset_work(struct work_struct *work)
  {
  	struct nvme_dev *dev =
  		container_of(work, struct nvme_dev, ctrl.reset_work);
@@ -694,7 +695,7 @@ index xxxxxxx..xxxxxxx 100644
  	int result = -ENODEV;
  	enum nvme_ctrl_state new_state = NVME_CTRL_LIVE;
  
-@@ -2480,6 +2790,7 @@ static void nvme_reset_work(struct work_struct *work)
+@@ -2480,6 +2791,7 @@ static void nvme_reset_work(struct work_struct *work)
  	if (result)
  		goto out;
  
@@ -702,7 +703,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (dev->ctrl.oacs & NVME_CTRL_OACS_SEC_SUPP) {
  		if (!dev->ctrl.opal_dev)
  			dev->ctrl.opal_dev =
-@@ -2490,6 +2801,7 @@ static void nvme_reset_work(struct work_struct *work)
+@@ -2490,6 +2802,7 @@ static void nvme_reset_work(struct work_struct *work)
  		free_opal_dev(dev->ctrl.opal_dev);
  		dev->ctrl.opal_dev = NULL;
  	}
@@ -710,7 +711,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	if (dev->ctrl.oacs & NVME_CTRL_OACS_DBBUF_SUPP) {
  		result = nvme_dbbuf_dma_alloc(dev);
-@@ -2684,6 +2996,13 @@ static int nvme_probe(struct pci_dev *pdev, const struct pci_device_id *id)
+@@ -2684,6 +2997,13 @@ static int nvme_probe(struct pci_dev *pdev, const struct pci_device_id *id)
  	if (!dev)
  		return -ENOMEM;
  
@@ -724,7 +725,7 @@ index xxxxxxx..xxxxxxx 100644
          dev->queues = kcalloc_node(num_possible_cpus() + 1 + num_p2p_queues,
  			sizeof(struct nvme_queue), GFP_KERNEL, node);
  
-@@ -2759,10 +3078,24 @@ static int nvme_probe(struct pci_dev *pdev, const struct pci_device_id *id)
+@@ -2759,10 +3079,24 @@ static int nvme_probe(struct pci_dev *pdev, const struct pci_device_id *id)
  	put_device(dev->dev);
   free:
  	kfree(dev->queues);
@@ -749,7 +750,7 @@ index xxxxxxx..xxxxxxx 100644
  static void nvme_reset_prepare(struct pci_dev *pdev)
  {
  	struct nvme_dev *dev = pci_get_drvdata(pdev);
-@@ -2774,6 +3107,7 @@ static void nvme_reset_done(struct pci_dev *pdev)
+@@ -2774,6 +3108,7 @@ static void nvme_reset_done(struct pci_dev *pdev)
  	struct nvme_dev *dev = pci_get_drvdata(pdev);
  	nvme_reset_ctrl_sync(&dev->ctrl);
  }
@@ -757,7 +758,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static void nvme_shutdown(struct pci_dev *pdev)
  {
-@@ -2882,11 +3216,20 @@ static const struct pci_error_handlers nvme_err_handler = {
+@@ -2882,11 +3217,20 @@ static const struct pci_error_handlers nvme_err_handler = {
  	.error_detected	= nvme_error_detected,
  	.slot_reset	= nvme_slot_reset,
  	.resume		= nvme_error_resume,
@@ -780,7 +781,7 @@ index xxxxxxx..xxxxxxx 100644
  	{ PCI_VDEVICE(INTEL, 0x0953),
  		.driver_data = NVME_QUIRK_STRIPE_SIZE |
  				NVME_QUIRK_DEALLOCATE_ZEROES, },
-@@ -2899,6 +3242,17 @@ static const struct pci_device_id nvme_id_table[] = {
+@@ -2899,6 +3243,17 @@ static const struct pci_device_id nvme_id_table[] = {
  	{ PCI_VDEVICE(INTEL, 0x0a55),
  		.driver_data = NVME_QUIRK_STRIPE_SIZE |
  				NVME_QUIRK_DEALLOCATE_ZEROES, },
@@ -798,7 +799,7 @@ index xxxxxxx..xxxxxxx 100644
  	{ PCI_VDEVICE(INTEL, 0xf1a5),	/* Intel 600P/P3100 */
  		.driver_data = NVME_QUIRK_NO_DEEPEST_PS |
  				NVME_QUIRK_MEDIUM_PRIO_SQ },
-@@ -2929,6 +3283,26 @@ static const struct pci_device_id nvme_id_table[] = {
+@@ -2929,6 +3284,26 @@ static const struct pci_device_id nvme_id_table[] = {
  };
  MODULE_DEVICE_TABLE(pci, nvme_id_table);
  
@@ -825,7 +826,7 @@ index xxxxxxx..xxxxxxx 100644
  static struct pci_driver nvme_driver = {
  	.name		= "nvme",
  	.id_table	= nvme_id_table,
-@@ -2938,7 +3312,11 @@ static struct pci_driver nvme_driver = {
+@@ -2938,7 +3313,11 @@ static struct pci_driver nvme_driver = {
  	.driver		= {
  		.pm	= &nvme_dev_pm_ops,
  	},
