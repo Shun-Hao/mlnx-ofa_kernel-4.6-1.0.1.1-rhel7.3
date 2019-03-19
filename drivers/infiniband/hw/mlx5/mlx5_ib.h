@@ -130,8 +130,8 @@ struct mlx5_capi_context {
 	struct mm_struct       *mm;
 };
 
-#define MLX5_LOG_SW_ICM_BLOCK_SIZE ((14 < PAGE_SHIFT) ? (PAGE_SHIFT) : (14))
-#define MLX5_SW_ICM_BLOCK_SIZE (1 << MLX5_LOG_SW_ICM_BLOCK_SIZE)
+#define MLX5_LOG_SW_ICM_BLOCK_SIZE(dev) (MLX5_CAP_DEV_MEM(dev, log_sw_icm_alloc_granularity))
+#define MLX5_SW_ICM_BLOCK_SIZE(dev) (1 << MLX5_LOG_SW_ICM_BLOCK_SIZE(dev))
 
 struct mlx5_ib_ucontext {
 	struct ib_ucontext	ibucontext;
@@ -913,9 +913,9 @@ struct mlx5_ib_flow_action {
 	};
 };
 
-struct mlx5_dm_mgr {
+struct mlx5_dm {
 	struct mlx5_core_dev *dev;
-	spinlock_t		dm_lock;
+	spinlock_t	lock;
 	DECLARE_BITMAP(memic_alloc_pages, MLX5_MAX_MEMIC_PAGES);
 	unsigned long *steering_sw_icm_alloc_blocks;
 	unsigned long *header_modify_sw_icm_alloc_blocks;
@@ -1074,7 +1074,7 @@ struct mlx5_ib_dev {
 	u8			umr_fence;
 	struct list_head	ib_dev_list;
 	u64			sys_image_guid;
-	struct mlx5_dm_mgr	dm_mgr;
+	struct mlx5_dm		dm;
 	u16			devx_whitelist_uid;
 	struct kobject          mr_cache;
 
