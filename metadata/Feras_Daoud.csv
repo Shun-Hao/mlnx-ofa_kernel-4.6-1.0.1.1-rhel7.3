@@ -38,15 +38,15 @@ Change-Id=I13ff9dc497fb9a05b1ff56222697f2d841c7e885; subject=BACKPORTS: handle u
 Change-Id=Ie7bfd503c6ca8b022f197ac5e6b35b77080aa515; subject=Backports/m4: Fix the check for the extend busy polling feature; feature=backports; upstream_status=ignore; general=;
 Change-Id=If651431a7e4ee2b9aad01cd9e4f3907b94b0c2a9; subject=BACKPORTS: Fix dcbx backport issue in Ubuntu18.04 ARM build; feature=backports; upstream_status=ignore; general=;
 Change-Id=I4dc304c23c49a1c90edfb88145a28f2ae6760360; subject=BACKPORTS: Fix mlx4 core memory leak; feature=backports; upstream_status=ignore; general=;
-Change-Id=I1a9c717119acbdf0d0629d6a59076a6fc3dde41b; subject=RDMA: Clear PD objects during their allocation; feature=mlx5_ib_bugs; upstream_status=accepted; general=;
+Change-Id=I1a9c717119acbdf0d0629d6a59076a6fc3dde41b; subject=RDMA: Clear PD objects during their allocation; feature=mlx5_ib_bugs; upstream_status=accepted; general=upstream commit ID: 8cbfaac3d097, tag: v5.1-rc1;
 Change-Id=Idfead72bea25e1ba6721c9657584a0cbe1179957; subject=RDMA: Clear CQ objects during their allocatio; feature=mlx4_ib_bugs; upstream_status=accepted; general=;
 Change-Id=Ibf9bdf9b171abe4bd7fa550d4e53a475113590cd; subject=Revert "BACKPORTS: Fix backports after restore-periodic-stats-work"; feature=rebase; upstream_status=ignore; general=;
 Change-Id=Ie0e07eabdbbe87c090121bfb7a35822aee0b3424; subject=Revert "net/mlx5e: Revert the HW stat reporting from lagged to periodic (part 2)"; feature=rebase; upstream_status=ignore; general=;
 Change-Id=Ic0643cce51d339a54703b8675bdea0147430103e; subject=Revert "net/mlx5e: Revert the HW stat reporting from lagged to periodic (part 1)"; feature=rebase; upstream_status=ignore; general=;
-Change-Id=Ia0fd400e66313c604636309d89ea2050d24155a9; subject=net/mlx5e: Declare mlx5e_tx_reporter_recover_from_ctx as static; feature=mlx5_core_bugs; upstream_status=accepted; general=;
+Change-Id=Ia0fd400e66313c604636309d89ea2050d24155a9; subject=net/mlx5e: Declare mlx5e_tx_reporter_recover_from_ctx as static; feature=mlx5_core_bugs; upstream_status=accepted; general=upstream commit ID: 6bdbc1cb6cf0, tag: v5.1-rc1;
 Change-Id=Ie84a5ce71ebeb83af5d98b14b43616bfc2d53941; subject=IB/uverbs: Fix OOPs upon device disassociation; feature=ib_core_bugs; upstream_status=accepted; general=upstream commit ID: 425784aa5b02, tag: v5.0-rc5;
 Change-Id=Id69792c9f27483495a0e825b7ebbcf8dc92b6886; subject=IB/uverbs: Fix OOPs in uverbs_user_mmap_disassociate; feature=ib_core_bugs; upstream_status=accepted; general=upstream commit ID: 7b21b69ab203, tag: v5.0-rc5;
-Change-Id=I42ed7eae3700e9f212b30554caf93920ed4ba45d; subject=net/mlx5e: IPoIB, Fix RX checksum statistics update; feature=ipoib_bugs; upstream_status=accepted; general=;
+Change-Id=I42ed7eae3700e9f212b30554caf93920ed4ba45d; subject=net/mlx5e: IPoIB, Fix RX checksum statistics update; feature=ipoib_bugs; upstream_status=accepted; general=upstream commit ID: 3d6f3cdf9bfe, tag: v5.1-rc1;
 Change-Id=Ic30e585ac8dd2b537d9ab87cf3ebfbb41153e706; subject=BACKPORTS: Fix en_rx backport; feature=backports; upstream_status=ignore; general=;
 Change-Id=I222e60a3155917a156e4eec701c0d8398a764c26; subject=IB/ipoib: Fix IPoIB RSS queue num; feature=ipoib_rss_tss; upstream_status=NA; general=;
 Change-Id=Id660047769fc08d7c6e3d5d94f77bd51437c48e9; subject=IB/ipoib: Add get_link_ksettings to IPoIB RSS; feature=ipoib_rss_tss; upstream_status=NA; general=;

@@ -65,7 +65,7 @@ Change-Id=Id916bd9352e3814c903b394accced52ef84970d8; subject=IB/umem: Add debug 
 Change-Id=Iad612104bf8196f235265dcc85cc395ad2dbea93; subject=net/mlx5: Add new profile without dct enable; feature=mlx5_fast_driver_unload; upstream_status=NA; general=;
 Change-Id=I4158b58ab57888aeb39c371c217d0b415fdaf624; subject=IB/core: Add experimental delay drop capability; feature=mlx5_dropless_rq; upstream_status=NA; general=;
 Change-Id=I191b11e7ab5a573ea7cc41d81c0b4f78b1eeaf9e; subject=IB/mlx5: Add support to EXP dropless RQ; feature=mlx5_dropless_rq; upstream_status=NA; general=;
-Change-Id=I3a220cb160541d7291847df7bb5cea1cb28d3f34; subject=IB/mlx5: Don't override existing ip_protocol; feature=mlx5_ib_bugs; upstream_status=in_progress; general=;
+Change-Id=I3a220cb160541d7291847df7bb5cea1cb28d3f34; subject=IB/mlx5: Don't override existing ip_protocol; feature=mlx5_ib_bugs; upstream_status=accepted; general=upstream commit ID: 6113cc44015b, tag: v5.1-rc1;
 Change-Id=I141f1093478600575e2f1a6692d2edb88911bda8; subject=net/mlx5: Return success on disable DC cnak trace in internal error; feature=DC_tracer; upstream_status=NA; general=;
 Change-Id=I27b72b29dd15c158adf69df56877009ed9f86a1e; subject=IB/mlx5: Report that EXP RAW ETH QP supports in MP RQ; feature=mp_rq; upstream_status=NA; general=;
 Change-Id=I7baa803e38bc66bc3aab942843261aa5dd3528e1; subject=net/mlx5: Add hold/put rules refcount API; feature=roce_sniffer; upstream_status=NA; general=;

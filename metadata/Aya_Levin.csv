@@ -1,11 +1,11 @@
 sep=;
 Change-Id=Ib6580b4be72a31020f5fe6c72bfbd62b90db1dc0; subject=net/mlx4: Fix UBSAN warning of signed integer overflow; feature=rebase; upstream_status=accepted; general=upstream commit ID: a463146e67c8, tag: v4.20-rc4;
 Change-Id=Idd099557212bad38e9a540bf9fdfa4dc9b5d6e8f; subject=net/mlx4_en: Update counters under one call of stats lock; feature=mlx4_en_bugs; upstream_status=NA; general=;
-Change-Id=Ia9153f8605c6c6042f62cd21d4f29e349b6c1159; subject=net/mlx5: Refactor queries to speed fields in Port Type and Speed register; feature=mlx5_add_50Gbps_per_lane; upstream_status=accepted; general=;
-Change-Id=I4ca8385b3f26855193d177c45dbd80c42c188f64; subject=net/mlx5: Add new fields to Port Type and Speed register; feature=mlx5_add_50Gbps_per_lane; upstream_status=accepted; general=;
+Change-Id=Ia9153f8605c6c6042f62cd21d4f29e349b6c1159; subject=net/mlx5: Refactor queries to speed fields in Port Type and Speed register; feature=mlx5_add_50Gbps_per_lane; upstream_status=accepted; general=upstream commit ID: bc4e12ffefdd, tag: v5.1-rc1;
+Change-Id=I4ca8385b3f26855193d177c45dbd80c42c188f64; subject=net/mlx5: Add new fields to Port Type and Speed register; feature=mlx5_add_50Gbps_per_lane; upstream_status=accepted; general=upstream commit ID: a0a899895692, tag: v5.1-rc1;
 Change-Id=Ib83dba654c98930c2a1af186fb561933cad25c52; subject=net/mlx5: Add support to ext_* fields introduced in Port Type and Speed register; feature=mlx5_add_50Gbps_per_lane; upstream_status=accepted; general=;
-Change-Id=I6363e4cabad31f0bb763ce6a0a5f526d22a30863; subject=IB/mlx5: Add support for 50Gbps per lane link modes; feature=mlx5_add_50Gbps_per_lane; upstream_status=accepted; general=;
-Change-Id=Ifb13690ef66a57ec95d797ce478950f21d6d661e; subject=net/mlx5: ethtool, Add ethtool support for 50Gbps per lane link modes; feature=mlx5_add_50Gbps_per_lane; upstream_status=accepted; general=;
+Change-Id=I6363e4cabad31f0bb763ce6a0a5f526d22a30863; subject=IB/mlx5: Add support for 50Gbps per lane link modes; feature=mlx5_add_50Gbps_per_lane; upstream_status=accepted; general=upstream commit ID: 08e8676f1607, tag: v5.1-rc1;
+Change-Id=Ifb13690ef66a57ec95d797ce478950f21d6d661e; subject=net/mlx5: ethtool, Add ethtool support for 50Gbps per lane link modes; feature=mlx5_add_50Gbps_per_lane; upstream_status=accepted; general=upstream commit ID: 6a897372417e, tag: v5.1-rc1;
 Change-Id=I24bd7bfdba09f891b03fa416dea7be206d904599; subject=net/mlx5: ethtool, Fix type analysis of advertised link-mode; feature=mlx5_add_50Gbps_per_lane; upstream_status=accepted; general=;
 Change-Id=I4e3fd9b2452a09e4b8244a86017d6d7e88152104; subject=net/mlx5: ethtool, Allow legacy link-modes configuration via non-extended ptys; feature=mlx5_add_50Gbps_per_lane; upstream_status=accepted; general=;
 Change-Id=Ie2334cb2a1f550bf2d2bfb7a005c3bc085857663; subject=IB/mlx5: Fix mapping of link-mode to IB width and speed; feature=mlx5_add_50Gbps_per_lane; upstream_status=accepted; general=;
