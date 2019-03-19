@@ -22,3 +22,6 @@ Change-Id=I58a73afb4b881c7a7ff2cb86fc96f4c43b284c6b; subject=net/mlx5e: Support 
 Change-Id=Icb2071d7cd129839fef5200672df0d5c0a09cfb7; subject=net/mlx5e: Replace TC VLAN pop and push actions with VLAN modify; feature=mlx5_asap; upstream_status=in_progress; general=;
 Change-Id=I244983119b8bfdfa7216b0fff7531a8951a01174; subject=BACKPORTS: net/mlx5e: Support VLAN modify action; feature=backports; upstream_status=ignore; general=;
 Change-Id=Ib22e388fd59a6ce31935fa352fe4aac569f95186; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I755c899bf0346139d5de65178691d08fc44d8c12; subject=compat: Forbid changing E-Switch mode in parallel; feature=mlx5_asap; upstream_status=NA; general=;
+Change-Id=I2190d2f73f7f1457e23be14873c2388bc8bcda84; subject=BACKPORTS: compat: Forbid changing E-Switch mode in parallel; feature=backports; upstream_status=ignore; general=;
+Change-Id=I4ffd544e2f87f46f020b5a0170418ed62f897561; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
