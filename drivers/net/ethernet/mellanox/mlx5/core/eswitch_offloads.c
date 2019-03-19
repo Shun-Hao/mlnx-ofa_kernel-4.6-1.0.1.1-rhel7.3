@@ -80,6 +80,9 @@
 	for ((vport) = (nvfs);					\
 	     (vport) >= MLX5_VPORT_FIRST_VF; (vport)--)
 
+#define ESW_OFFLOADS_DEVCOM_PAIR        (0)
+#define ESW_OFFLOADS_DEVCOM_UNPAIR      (1)
+
 static struct mlx5_eswitch_rep *mlx5_eswitch_get_rep(struct mlx5_eswitch *esw,
 						     u16 vport_num)
 {
@@ -613,6 +616,7 @@ static int esw_add_fdb_peer_miss_rules(struct mlx5_eswitch *esw,
 	int nvports = esw->total_vports;
 	void *misc;
 	int err, i;
+	int num_vf;
 
 	spec = kvzalloc(sizeof(*spec), GFP_KERNEL);
 	if (!spec)
@@ -652,7 +656,12 @@ static int esw_add_fdb_peer_miss_rules(struct mlx5_eswitch *esw,
 		flows[mlx5_eswitch_ecpf_idx(esw)] = flow;
 	}
 
-	mlx5_esw_for_each_vf_vport(esw, i, mlx5_core_max_vfs(esw->dev)) {
+	if (mlx5_core_is_ecpf_esw_manager(esw->dev))
+		num_vf = esw->host_info.num_vfs;
+	else
+		num_vf = mlx5_core_max_vfs(esw->dev);
+
+	mlx5_esw_for_each_vf_vport(esw, i, num_vf) {
 		MLX5_SET(fte_match_set_misc, misc, source_port, i);
 		flow = mlx5_add_flow_rules(esw->fdb_table.offloads.slow_fdb,
 					   spec, &flow_act, &dest, 1);
@@ -689,11 +698,16 @@ alloc_flows_err:
 static void esw_del_fdb_peer_miss_rules(struct mlx5_eswitch *esw)
 {
 	struct mlx5_flow_handle **flows;
-	int i;
+	int i, num_vf;
 
 	flows = esw->fdb_table.offloads.peer_miss_rules;
 
-	mlx5_esw_for_each_vf_vport_reverse(esw, i, mlx5_core_max_vfs(esw->dev))
+	if (mlx5_core_is_ecpf_esw_manager(esw->dev))
+		num_vf = esw->host_info.num_vfs;
+	else
+		num_vf = mlx5_core_max_vfs(esw->dev);
+
+	mlx5_esw_for_each_vf_vport_reverse(esw, i, num_vf)
 		mlx5_del_flow_rules(flows[i]);
 
 	if (mlx5_ecpf_vport_exists(esw->dev))
@@ -1894,6 +1908,11 @@ static void esw_host_params_event_handler(struct work_struct *work)
 	if (err || num_vf == esw->host_info.num_vfs)
 		goto out;
 
+	if (MLX5_CAP_ESW(esw->dev, merged_eswitch))
+		mlx5_devcom_send_event(esw->dev->priv.devcom,
+				       MLX5_DEVCOM_ESW_OFFLOADS,
+				       ESW_OFFLOADS_DEVCOM_UNPAIR, esw);
+
 	/* Number of VFs can only change from "0 to x" or "x to 0". */
 	if (esw->host_info.num_vfs > 0) {
 		esw_offloads_unload_vf_reps(esw, esw->host_info.num_vfs);
@@ -1905,6 +1924,12 @@ static void esw_host_params_event_handler(struct work_struct *work)
 	}
 
 	esw->host_info.num_vfs = num_vf;
+
+	/* We still need to pair host PF even there is no VF. */
+	if (MLX5_CAP_ESW(esw->dev, merged_eswitch))
+		mlx5_devcom_send_event(esw->dev->priv.devcom,
+				       MLX5_DEVCOM_ESW_OFFLOADS,
+				       ESW_OFFLOADS_DEVCOM_PAIR, esw);
 
 out:
 	kfree(host_work);
@@ -1926,9 +1951,6 @@ void esw_host_params_event(struct mlx5_eswitch *esw)
 	INIT_WORK(&host_work->work, esw_host_params_event_handler);
 	queue_work(esw->work_queue, &host_work->work);
 }
-
-#define ESW_OFFLOADS_DEVCOM_PAIR        (0)
-#define ESW_OFFLOADS_DEVCOM_UNPAIR      (1)
 
 static int mlx5_esw_offloads_pair(struct mlx5_eswitch *esw,
 				  struct mlx5_eswitch *peer_esw)
