@@ -55,7 +55,7 @@ index xxxxxxx..xxxxxxx 100644
  	header->ifindex = dev_addr->bound_dev_if;
  	nla_put(skb, attrtype, size, daddr);
  
-@@ -248,9 +265,14 @@ rdma_find_ndev_for_src_ip_rcu(struct net *net, const struct sockaddr *src_in)
+@@ -248,17 +248,30 @@ rdma_find_ndev_for_src_ip_rcu(struct net *net, const struct sockaddr *src_in)
  
  	switch (src_in->sa_family) {
  	case AF_INET:
@@ -63,14 +63,18 @@ index xxxxxxx..xxxxxxx 100644
  		dev = __ip_dev_find(net,
  				    ((const struct sockaddr_in *)src_in)->sin_addr.s_addr,
  				    false);
+ 		if (dev)
+ 			ret = 0;
 +#else
 +		dev = ip_dev_find(net,
 +				   ((const struct sockaddr_in *)src_in)->sin_addr.s_addr);
++		if(dev) {
++			dev_put(dev);
++			ret = 0;
++		}
 +#endif
- 		if (dev)
- 			ret = 0;
  		break;
-@@ -258,7 +280,11 @@ rdma_find_ndev_for_src_ip_rcu(struct net *net, const struct sockaddr *src_in)
+ #if IS_ENABLED(CONFIG_IPV6)
  	case AF_INET6:
  		for_each_netdev_rcu(net, dev) {
  			if (ipv6_chk_addr(net,

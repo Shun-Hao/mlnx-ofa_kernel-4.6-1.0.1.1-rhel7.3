@@ -10,3 +10,4 @@ Change-Id=I38b042b24b171fc90f19fa5965add1356ab87c54; subject=net/mlx4_core: Pass
 Change-Id=I25b2e93c6f1ad9bd0d74a15b5e7fa62dbb8aa683; subject=net/mlx4_core: Zero out lkey field in SW2HW_MPT fw command; feature=rebase; upstream_status=accepted; general=upstream commit ID: bd85fbc2038a, tag: v4.20-rc4;
 Change-Id=If7050003eb0ab3b0968ede3f471266b672622c0e; subject=BACKPORTS: Fix agent refcount in core mad.c backport; feature=backports; upstream_status=ignore; general=;
 Change-Id=Ibe5ebbb7141de80409cf9a019a8dfe6fd2efb767; subject=RDMA/uverbs: Fix odp experimental sysfs interface; feature=exp_odp; upstream_status=NA; general=;
+Change-Id=I123d97ddcaf697fc09003a10afe74db76fbcad51; subject=BACKPORTS: ib_core: Add missing dev_put to addr.c backport; feature=backports; upstream_status=ignore; general=;
