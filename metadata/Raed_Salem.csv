@@ -12,3 +12,4 @@ Change-Id=Ib0c056750bfede08022eb7b3906c96b53b203502; subject=net/mlx5: Handle LA
 Change-Id=I8b1c8688aaf2355284ffde96bda1068d857637b9; subject=net/mlx5: Fix LAG requirement when CONFIG_MLX5_ESWITCH is off; feature=mlx5_asap; upstream_status=accepted; general=upstream commit ID: a64917446eaf, tag: v5.0;
 Change-Id=Id174e338dc3bd91dbb723fc4eb081a6d057f49c2; subject=BACKPORTS: VF LAG sync + Metadata update; feature=mlx5_asap; upstream_status=ignore; general=;
 Change-Id=I643b334d553e06db75acb1afc03c6e35d99b6ed0; subject=net/mlx5e: FPGA, fix Innova IPsec TX offload data path performance; feature=rebase; upstream_status=ignore; general=;
+Change-Id=Idd3f2642b1f33fb58e14c1ad0729be84e8538681; subject=net/mlx5: Avoid error message when devcom device is NULL; feature=mlx5_asap; upstream_status=in_progress; general=;
