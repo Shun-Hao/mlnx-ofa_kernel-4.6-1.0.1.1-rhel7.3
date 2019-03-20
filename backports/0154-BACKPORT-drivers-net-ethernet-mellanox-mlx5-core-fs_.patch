@@ -39,7 +39,7 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  
  	root = find_root(&ft->node);
- 	if (fg->node.active && root->cmds->destroy_flow_group(dev, ft, fg->id))
+ 	if (fg->node.active && root->cmds->destroy_flow_group(root, ft, fg))
 @@ -861,7 +867,7 @@ static int update_root_ft_create(struct mlx5_flow_table *ft, struct fs_prio
  	struct mlx5_flow_root_namespace *root = find_root(&prio->node);
  	struct mlx5_ft_underlay_qp *uqp;
@@ -49,7 +49,7 @@ index xxxxxxx..xxxxxxx 100644
  	u32 qpn;
  
  	if (root->root_ft)
-@@ -1177,7 +1183,9 @@ struct mlx5_flow_group *mlx5_create_flow_group(struct mlx5_flow_table *ft,
+@@ -1174,7 +1180,9 @@ struct mlx5_flow_group *mlx5_create_flow_group(struct mlx5_flow_table *ft,
  		tree_put_node(&fg->node);
  		return ERR_PTR(err);
  	}
@@ -59,8 +59,8 @@ index xxxxxxx..xxxxxxx 100644
  	fg->node.active = true;
  
  	return fg;
-@@ -1419,7 +1427,9 @@ static int create_auto_flow_group(struct mlx5_flow_table *ft,
- 	err = root->cmds->create_flow_group(dev, ft, in, &fg->id);
+@@ -1413,7 +1421,9 @@ static int create_auto_flow_group(struct mlx5_flow_table *ft,
+ 	err = root->cmds->create_flow_group(root, ft, in, fg);
  	if (!err) {
  		fg->node.active = true;
 +#ifndef MLX_DISABLE_TRACEPOINTS
@@ -69,7 +69,7 @@ index xxxxxxx..xxxxxxx 100644
  	}
  
  	kvfree(in);
-@@ -1606,14 +1616,18 @@ static struct mlx5_flow_handle *add_rule_fg(struct mlx5_flow_group *fg,
+@@ -1600,14 +1610,18 @@ static struct mlx5_flow_handle *add_rule_fg(struct mlx5_flow_group *fg,
  		fte->action.action = old_action;
  		return handle;
  	}
@@ -88,7 +88,7 @@ index xxxxxxx..xxxxxxx 100644
  			notify_add_rule(handle->rule[i]);
  		}
  	}
-@@ -2611,6 +2625,10 @@ void mlx5_cleanup_fs(struct mlx5_core_dev *dev)
+@@ -2610,6 +2624,10 @@ void mlx5_cleanup_fs(struct mlx5_core_dev *dev)
  	fs_debugfs_cleanup(dev);
  	kmem_cache_destroy(steering->ftes_cache);
  	kmem_cache_destroy(steering->fgs_cache);
@@ -99,7 +99,7 @@ index xxxxxxx..xxxxxxx 100644
  	kfree(steering);
  }
  
-@@ -2856,6 +2874,10 @@ int mlx5_init_fs(struct mlx5_core_dev *dev)
+@@ -2884,6 +2902,10 @@ int mlx5_init_fs(struct mlx5_core_dev *dev)
  	steering->dev = dev;
  	dev->priv.steering = steering;
  
@@ -110,7 +110,7 @@ index xxxxxxx..xxxxxxx 100644
  	snprintf(ftes_cache_name, CACHE_SIZE_NAME, "fs_ftes_%s", dev->priv.name);
  	snprintf(fgs_cache_name, CACHE_SIZE_NAME, "fs_fgs_%s", dev->priv.name);
  	steering->fgs_cache = kmem_cache_create(fgs_cache_name,
-@@ -2918,12 +2940,16 @@ int mlx5_init_fs(struct mlx5_core_dev *dev)
+@@ -2953,12 +2975,16 @@ int mlx5_init_fs(struct mlx5_core_dev *dev)
  			goto err;
  	}
  

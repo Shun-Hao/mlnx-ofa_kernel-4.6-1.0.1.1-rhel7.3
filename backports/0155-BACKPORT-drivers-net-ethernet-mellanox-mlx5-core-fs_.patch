@@ -10,9 +10,9 @@ diff --git a/drivers/net/ethernet/mellanox/mlx5/core/fs_core.h b/drivers/net/eth
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/net/ethernet/mellanox/mlx5/core/fs_core.h
 +++ b/drivers/net/ethernet/mellanox/mlx5/core/fs_core.h
-@@ -93,6 +93,10 @@ struct mlx5_flow_steering {
- 	struct mlx5_flow_root_namespace	*sniffer_tx_root_ns;
+@@ -95,6 +95,10 @@ struct mlx5_flow_steering {
  	struct mlx5_flow_root_namespace	*sniffer_rx_root_ns;
+ 	struct mlx5_flow_root_namespace	*rdma_rx_root_ns;
  	struct mlx5_flow_root_namespace	*egress_root_ns;
 +#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3,6,11))
 +	char *ftes_cache_name;
@@ -21,7 +21,7 @@ index xxxxxxx..xxxxxxx 100644
  };
  
  struct fs_node {
-@@ -261,11 +265,13 @@ struct mlx5_flow_root_namespace {
+@@ -264,11 +268,13 @@ struct mlx5_flow_root_namespace {
  
  int mlx5_init_fc_stats(struct mlx5_core_dev *dev);
  void mlx5_cleanup_fc_stats(struct mlx5_core_dev *dev);
