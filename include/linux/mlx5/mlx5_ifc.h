@@ -529,6 +529,25 @@ struct mlx5_ifc_fte_match_set_misc2_bits {
 	u8         reserved_at_1a0[0x60];
 };
 
+struct mlx5_ifc_fte_match_set_misc3_bits {
+	u8         inner_tcp_seq_num[0x20];
+	u8         outer_tcp_seq_num[0x20];
+	u8         inner_tcp_ack_num[0x20];
+	u8         outer_tcp_ack_num[0x20];
+	u8	   reserved_at_80[0x8];
+	u8         outer_vxlan_gpe_vni[0x18];
+	u8         outer_vxlan_gpe_next_protocol[0x8];
+	u8         outer_vxlan_gpe_flags[0x8];
+	u8	   reserved_at_b0[0x10];
+	u8	   icmp_header_data[0x20];
+	u8	   icmpv6_header_data[0x20];
+	u8	   icmp_type[0x8];
+	u8	   icmp_code[0x8];
+	u8	   icmpv6_type[0x8];
+	u8	   icmpv6_code[0x8];
+	u8	   reserved_at_120[0xe0];
+};
+
 struct mlx5_ifc_cmd_pas_bits {
 	u8         pa_h[0x20];
 
@@ -1410,7 +1429,9 @@ struct mlx5_ifc_fte_match_param_bits {
 
 	struct mlx5_ifc_fte_match_set_misc2_bits misc_parameters_2;
 
-	u8         reserved_at_800[0x800];
+	struct mlx5_ifc_fte_match_set_misc3_bits misc_parameters_3;
+
+	u8         reserved_at_a00[0x600];
 };
 
 enum {

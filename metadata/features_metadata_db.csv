@@ -307,3 +307,4 @@ name=mlx5_add_50Gbps_per_lane; type=feature; upstream_status=accepted;
 name=disable_roce; type=feature; upstream_status=in_progress;
 name=vf_group_rate_limit; type=feature; upstream_status=NA;
 name=fdb_bypass; type=feature; upstream_status=in_progress;
+name=sw_steering; type=feature; upstream_status=in_progress;
