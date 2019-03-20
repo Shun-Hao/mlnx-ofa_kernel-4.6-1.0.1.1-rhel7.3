@@ -5987,6 +5987,153 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if struct net_device_ops has *ndo_bridge_setlink])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/netdevice.h>
+
+		int bridge_setlink(struct net_device *dev, struct nlmsghdr *nlh,
+				   u16 flags)
+		{
+			return 0;
+		}
+	],[
+		struct net_device_ops netdev_ops;
+		netdev_ops.ndo_bridge_setlink = bridge_setlink;
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_NDO_BRIDGE_SETLINK, 1,
+			  [ndo_bridge_setlink is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if struct net_device_ops has *ndo_bridge_setlink])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/netdevice.h>
+
+		int bridge_setlink(struct net_device *dev, struct nlmsghdr *nlh,
+				   u16 flags, struct netlink_ext_ack *extack)
+		{
+			return 0;
+		}
+	],[
+		struct net_device_ops netdev_ops;
+		netdev_ops.ndo_bridge_setlink = bridge_setlink;
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_NDO_BRIDGE_SETLINK_EXTACK, 1,
+			  [ndo_bridge_setlink is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if struct net_device_ops has *ndo_bridge_getlink])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/netdevice.h>
+
+		int bridge_getlink(struct sk_buff *skb, u32 pid, u32 seq,
+				   struct net_device *dev, u32 filter_mask,
+				   int nlflags)
+		{
+			return 0;
+		}
+	],[
+		struct net_device_ops netdev_ops;
+		netdev_ops.ndo_bridge_getlink = bridge_getlink;
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_NDO_BRIDGE_GETLINK_NLFLAGS, 1,
+			  [ndo_bridge_getlink is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if struct net_device_ops has *ndo_bridge_getlink])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/netdevice.h>
+
+		int bridge_getlink(struct sk_buff *skb, u32 pid, u32 seq,
+				   struct net_device *dev, u32 filter_mask)
+		{
+			return 0;
+		}
+	],[
+		struct net_device_ops netdev_ops;
+		netdev_ops.ndo_bridge_getlink = bridge_getlink;
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_NDO_BRIDGE_GETLINK, 1,
+			  [ndo_bridge_getlink is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if include/linux/rtnetlink.h] has ndo_dflt_bridge_getlink)
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/rtnetlink.h>
+	],[
+		ndo_dflt_bridge_getlink(NULL, 0, 0, NULL, 0, 0, 0,
+					0, 0, NULL);
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_NDO_DFLT_BRIDGE_GETLINK_FLAG_MASK_NFLAGS_FILTER, 1,
+			  [ndo_dflt_bridge_getlink is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if include/linux/rtnetlink.h] has ndo_dflt_bridge_getlink)
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/rtnetlink.h>
+	],[
+		ndo_dflt_bridge_getlink(NULL, 0, 0, NULL, 0, 0, 0,
+					0);
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_NDO_DFLT_BRIDGE_GETLINK_FLAG_MASK_NFLAGS, 1,
+			  [ndo_dflt_bridge_getlink is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if include/linux/rtnetlink.h] has ndo_dflt_bridge_getlink)
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/rtnetlink.h>
+	],[
+		ndo_dflt_bridge_getlink(NULL, 0, 0, NULL, 0, 0, 0);
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_NDO_DFLT_BRIDGE_GETLINK_FLAG_MASK, 1,
+			  [ndo_dflt_bridge_getlink is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if include/linux/rtnetlink.h] has ndo_dflt_bridge_getlink)
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/rtnetlink.h>
+	],[
+		ndo_dflt_bridge_getlink(NULL, 0, 0, NULL, 0);
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_NDO_DFLT_BRIDGE_GETLINK, 1,
+			  [ndo_dflt_bridge_getlink is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if struct net_device_ops has *ndo_set_vf_mac])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/netdevice.h>
