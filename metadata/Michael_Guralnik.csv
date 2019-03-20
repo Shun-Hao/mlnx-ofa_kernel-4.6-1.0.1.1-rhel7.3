@@ -19,3 +19,4 @@ Change-Id=Ieb2d2ac926df5e60b1a0e73997dc0b7b7f046c40; subject=mlx5: Add a state o
 Change-Id=I548347f18a9df326d985612703acf86f25282f9c; subject=net/mlx5: Add sysfs API to control RoCE enablement; feature=disable_roce; upstream_status=NA; general=;
 Change-Id=I4372d36a9ff7356b6bbb77c0457cea36fbf77249; subject=Backports: Update backports after adding disable_roce sysfs; feature=backports; upstream_status=ignore; general=;
 Change-Id=I3bbfc6a573591188d39c89058fe73d84753d6075; subject=metadata: update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I992f3c938ac5b3f86bb28545c4ef06db61aa02a6; subject=IB/uvebrs: Use perform_destroy in exp_free_dm; feature=ib_core_bugs; upstream_status=NA; general=;

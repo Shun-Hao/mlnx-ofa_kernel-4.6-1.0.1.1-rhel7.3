@@ -1660,7 +1660,6 @@ int ib_uverbs_exp_free_dm(struct ib_uverbs_file *file,
 			  struct ib_udata *ucore, struct ib_udata *uhw)
 {
 	struct ib_uverbs_exp_free_dm  cmd;
-	struct ib_uobject	 *uobj;
 	int    ret;
 
 	if (ucore->inlen < sizeof(cmd))
@@ -1670,10 +1669,5 @@ int ib_uverbs_exp_free_dm(struct ib_uverbs_file *file,
 	if (ret)
 		return ret;
 
-	uobj = uobj_get_write(UVERBS_OBJECT_DM, cmd.dm_handle,
-		file);
-	if (IS_ERR(uobj))
-		return PTR_ERR(uobj);
-
-	return ret;
+	return uobj_perform_destroy(UVERBS_OBJECT_DM, cmd.dm_handle, file, 0);
 }
