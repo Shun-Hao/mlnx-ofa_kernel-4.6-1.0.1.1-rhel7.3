@@ -4,8 +4,8 @@ Subject: [PATCH] BACKPORT:
 
 Change-Id: I015948548f12923e4e3d40743dfdf972b944d5aa
 ---
- .../infiniband/ulp/ipoib/rss_tss/ipoib_main_rss.c  | 120 +++++++++++++++++----
- 1 file changed, 99 insertions(+), 21 deletions(-)
+ .../infiniband/ulp/ipoib/rss_tss/ipoib_main_rss.c  | 123 +++++++++++++++++----
+ 1 file changed, 102 insertions(+), 21 deletions(-)
 
 diff --git a/drivers/infiniband/ulp/ipoib/rss_tss/ipoib_main_rss.c b/drivers/infiniband/ulp/ipoib/rss_tss/ipoib_main_rss.c
 index xxxxxxx..xxxxxxx 100644
@@ -108,7 +108,17 @@ index xxxxxxx..xxxxxxx 100644
  		recv_ring++;
  		rx_allocated++;
  	}
-@@ -702,19 +751,40 @@ static const struct net_device_ops ipoib_netdev_ops_pf_sw_tss = {
+@@ -395,6 +444,9 @@ static void ipoib_ndo_uninit_rss(struct net_device *dev)
+ 
+ 		dev_put(priv->parent);
+ 	}
++#ifndef HAVE_NET_DEVICE_NEEDS_FREE_NETDEV
++		ipoib_intf_free(dev);
++#endif
+ }
+ 
+ int ipoib_set_fp_rss(struct ipoib_dev_priv *priv, struct ib_device *hca)
+@@ -702,19 +754,40 @@ static const struct net_device_ops ipoib_netdev_ops_pf_sw_tss = {
  	.ndo_uninit		 = ipoib_ndo_uninit_rss,
  	.ndo_open		 = ipoib_open,
  	.ndo_stop		 = ipoib_stop,
@@ -162,7 +172,7 @@ index xxxxxxx..xxxxxxx 100644
  };
  
  static const struct net_device_ops ipoib_netdev_ops_vf_sw_tss = {
-@@ -722,14 +792,22 @@ static const struct net_device_ops ipoib_netdev_ops_vf_sw_tss = {
+@@ -722,14 +795,22 @@ static const struct net_device_ops ipoib_netdev_ops_vf_sw_tss = {
  	.ndo_uninit		 = ipoib_ndo_uninit_rss,
  	.ndo_open		 = ipoib_open,
  	.ndo_stop		 = ipoib_stop,

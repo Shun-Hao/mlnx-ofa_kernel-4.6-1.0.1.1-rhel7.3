@@ -67,6 +67,7 @@
 #include <rdma/restrack.h>
 #include <uapi/rdma/rdma_user_ioctl.h>
 #include <uapi/rdma/ib_user_ioctl_verbs.h>
+#include "../../compat/config.h"
 
 #define IB_FW_VERSION_NAME_MAX	ETHTOOL_FWVERS_LEN
 
@@ -2338,6 +2339,9 @@ struct rdma_netdev_alloc_params {
 
 	int (*initialize_rdma_netdev)(struct ib_device *device, u8 port_num,
 				      struct net_device *netdev, void *param);
+#ifndef HAVE_NET_DEVICE_NEEDS_FREE_NETDEV
+	void (*uninitialize_rdma_netdev)(struct net_device *netdev);
+#endif
 };
 
 struct ib_port_pkey_list {
@@ -4527,6 +4531,11 @@ int rdma_init_netdev(struct ib_device *device, u8 port_num,
 		     void (*setup)(struct net_device *),
 		     struct net_device *netdev,
 		     int force_fail);
+
+#ifndef HAVE_NET_DEVICE_NEEDS_FREE_NETDEV
+int rdma_uninit_netdev(struct ib_device *device, struct net_device *netdev,
+		       u8 port_num, enum rdma_netdev_t type, int force_fail);
+#endif
 
 /**
  * rdma_set_device_sysfs_group - Set device attributes group to have
