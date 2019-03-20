@@ -1028,6 +1028,7 @@ enum {
 
 enum {
 	MLX5_UCTX_CAP_RAW_TX = 1UL << 0,
+	MLX5_UCTX_CAP_INTERNAL_DEV_RES = 1UL << 1,
 };
 
 struct mlx5_ifc_cmd_hca_cap_bits {

@@ -27,3 +27,5 @@ Change-Id=I4fdaec70e3c6396f671a7d8e638f1ddaf10ce2c6; subject=IB/mlx5: Resume sup
 Change-Id=I6aedd69fa99c4e080194de26718a3bf05ebf81b7; subject=IB/mlx5: Fix SW ICM bitmaps size calculation; feature=sw_icm; upstream_status=in_progress; general=;
 Change-Id=I26a44bdae6af27222b061917aea473269fea45ed; subject=net/mlx5: Prevent ALLOC_MEMIC command error prints; feature=mlx5_ib_bugs; upstream_status=in_progress; general=;
 Change-Id=I55abe373fc5bb2930e1145e7746e033d536efd83; subject=net/mlx5: Eswitch, Rate limiting per VF group; feature=vf_group_rate_limit; upstream_status=in_progress; general=;
+Change-Id=I501fb65cde2be01bd2356da26d36622534fb4a03; subject=IB/mlx5: Device memory code adjustments; feature=sw_icm; upstream_status=in_progress; general=;
+Change-Id=I74d3edfd1052273053b2ce020760132a4036227a; subject=IB/mlx5: Device resource control for privileged DEVX user; feature=sw_icm; upstream_status=in_progress; general=;
