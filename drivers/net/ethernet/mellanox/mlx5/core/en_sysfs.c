@@ -676,6 +676,56 @@ static void mlx5e_fill_attributes(struct mlx5e_priv *priv,
 }
 
 #ifdef CONFIG_MLX5_ESWITCH
+static ssize_t mlx5e_show_vepa(struct device *device,
+			       struct device_attribute *attr,
+			       char *buf)
+{
+	struct net_device *dev = to_net_dev(device);
+	struct mlx5e_priv *priv = netdev_priv(dev);
+	struct mlx5_core_dev *mdev = priv->mdev;
+	int len = 0;
+	u8 setting;
+	int err;
+
+	err = mlx5_eswitch_get_vepa(mdev->priv.eswitch, &setting);
+	if (err)
+		return err;
+
+	len += sprintf(buf, "%d\n", setting);
+
+	return len;
+}
+
+static ssize_t mlx5e_store_vepa(struct device *device,
+				struct device_attribute *attr,
+				const char *buf, size_t count)
+{
+	struct net_device *dev = to_net_dev(device);
+	struct mlx5e_priv *priv = netdev_priv(dev);
+	struct mlx5_core_dev *mdev = priv->mdev;
+	int udata, err;
+	u8 setting;
+
+	err = sscanf(buf, "%d", &udata);
+	if (err != 1)
+		return -EINVAL;
+
+	if (udata > 1 || udata < 0)
+		return -EINVAL;
+
+	setting = (u8)udata;
+
+	err = mlx5_eswitch_set_vepa(mdev->priv.eswitch, setting);
+	if (err)
+		return err;
+
+	return count;
+}
+
+static DEVICE_ATTR(vepa, S_IRUGO | S_IWUSR,
+		   mlx5e_show_vepa,
+		   mlx5e_store_vepa);
+
 static ssize_t mlx5e_show_vf_roce(struct device *device,
 				  struct device_attribute *attr,
 				  char *buf)
@@ -1046,6 +1096,10 @@ static int update_settings_sysfs(struct net_device *dev,
 	    MLX5_CAP_GEN(mdev, port_type) == MLX5_CAP_PORT_TYPE_ETH) {
 		err = sysfs_add_file_to_group(&dev->dev.kobj,
 					      &dev_attr_vf_roce.attr,
+					      "settings");
+
+		err = sysfs_add_file_to_group(&dev->dev.kobj,
+					      &dev_attr_vepa.attr,
 					      "settings");
 	}
 #endif
