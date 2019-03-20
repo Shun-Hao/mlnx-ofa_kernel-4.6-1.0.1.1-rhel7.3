@@ -3,3 +3,4 @@ Change-Id=I44a8c791319890e3b90a23de157c8ff4814a2672; subject=mlx4_core: Added ml
 Change-Id=I5d5b76da5e3b9f244ccb60e343ca62a889ef028a; subject=openibd: Enable persistent configuration of PF via ECPF; feature=ofed_scripts; upstream_status=NA; general=;
 Change-Id=If3ced92cedc35269426c11f8d68ec4b85c19c0ac; subject=Added support for persistent eswitch mode configuration; feature=ofed_scripts; upstream_status=NA; general=;
 Change-Id=I2e31cc6d52c05c96fa7526916830147543fbdd86; subject=vf-net-link-name.sh: Keep representor name consistent when switching from legacy to switchdev; feature=ofed_scripts; upstream_status=NA; general=;
+Change-Id=I1589ed42475c2525e95b45ea4731b701029c60a8; subject=mlnx_en.spec: Fix mlnx-en RPM build; feature=ofed_scripts; upstream_status=NA; general=;
