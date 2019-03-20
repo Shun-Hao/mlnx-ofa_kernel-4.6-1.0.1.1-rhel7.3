@@ -31,8 +31,8 @@ index xxxxxxx..xxxxxxx 100644
  	u8 inline_mode;
  	u64 num_flows;
  	u8 encap;
-@@ -222,7 +227,9 @@ struct mlx5_host_info {
- struct mlx5_esw_handler {
+@@ -223,7 +228,9 @@ struct mlx5_esw_handler {
+ 	atomic_t		in_progress;
  	struct work_struct      start_handler;
  	struct work_struct      stop_handler;
 +#ifdef HAVE_DEVLINK_ESWITCH_MODE_SET_EXTACK
@@ -41,7 +41,7 @@ index xxxxxxx..xxxxxxx 100644
  };
  
  struct mlx5_vgroup {
-@@ -291,8 +298,10 @@ int mlx5_eswitch_set_vport_rate(struct mlx5_eswitch *esw, int vport,
+@@ -292,8 +299,10 @@ int mlx5_eswitch_set_vport_rate(struct mlx5_eswitch *esw, int vport,
  				u32 max_rate, u32 min_rate);
  int mlx5_eswitch_set_vport_vepa(struct mlx5_eswitch *esw,
  				int vport_num, u8 setting);
@@ -52,7 +52,7 @@ index xxxxxxx..xxxxxxx 100644
  int mlx5_eswitch_get_vport_stats(struct mlx5_eswitch *esw,
  				 int vport,
  				 struct ifla_vf_stats *vf_stats);
-@@ -300,6 +309,7 @@ int mlx5_eswitch_vport_update_group(struct mlx5_eswitch *esw, int vport_num,
+@@ -301,6 +310,7 @@ int mlx5_eswitch_vport_update_group(struct mlx5_eswitch *esw, int vport_num,
  				    u32 group_id);
  int mlx5_eswitch_set_vgroup_rate(struct mlx5_eswitch *esw, int group_id,
  				 u32 max_rate);
@@ -60,7 +60,7 @@ index xxxxxxx..xxxxxxx 100644
  struct ifla_vf_stats_backport {
  	__u64 tx_broadcast;
  	__u64 tx_multicast;
-@@ -307,6 +317,7 @@ struct ifla_vf_stats_backport {
+@@ -308,6 +318,7 @@ struct ifla_vf_stats_backport {
  int mlx5_eswitch_get_vport_stats_backport(struct mlx5_eswitch *esw,
  					  int vport,
  					  struct ifla_vf_stats_backport *vf_stats_backport);
@@ -68,7 +68,7 @@ index xxxxxxx..xxxxxxx 100644
  void mlx5_eswitch_del_send_to_vport_rule(struct mlx5_flow_handle *rule);
  int mlx5_eswitch_query_vport_drop_stats(struct mlx5_core_dev *dev,
  					int vport_idx,
-@@ -387,24 +398,37 @@ struct mlx5_esw_flow_attr {
+@@ -388,24 +399,37 @@ struct mlx5_esw_flow_attr {
  	u32	chain;
  	u16	prio;
  	u32	dest_chain;

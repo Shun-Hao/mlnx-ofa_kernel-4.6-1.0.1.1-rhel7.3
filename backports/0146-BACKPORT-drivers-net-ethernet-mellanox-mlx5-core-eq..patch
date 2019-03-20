@@ -94,7 +94,7 @@ index xxxxxxx..xxxxxxx 100644
  int mlx5_eq_init(struct mlx5_core_dev *dev)
  {
  	int err;
-@@ -1108,5 +1133,7 @@ void mlx5_core_eq_free_irqs(struct mlx5_core_dev *dev)
+@@ -1108,7 +1133,9 @@ void mlx5_core_eq_free_irqs(struct mlx5_core_dev *dev)
  	if (MLX5_CAP_GEN(dev, pg))
  		free_irq(table->pfault_eq.irqn, &table->pfault_eq);
  #endif
@@ -102,3 +102,5 @@ index xxxxxxx..xxxxxxx 100644
  	pci_free_irq_vectors(dev->pdev);
 +#endif
  }
+ 
+ void mlx5_core_eq_disable_irqs(struct mlx5_core_dev *dev)
