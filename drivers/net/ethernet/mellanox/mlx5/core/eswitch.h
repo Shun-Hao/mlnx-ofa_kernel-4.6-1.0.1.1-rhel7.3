@@ -244,6 +244,17 @@ struct roce_steering {
 	u8			roce_enable;
 };
 
+struct mlx5_smart_nic_vport {
+	struct mlx5_eswitch    *esw;
+	struct kobject          kobj;
+	int                     vport;
+};
+
+struct mlx5_smart_nic_sysfs {
+	struct kobject              *kobj;
+	struct mlx5_smart_nic_vport *vport;
+};
+
 struct mlx5_eswitch {
 	struct mlx5_core_dev    *dev;
 	struct mlx5_eswitch_fdb fdb_table;
@@ -280,7 +291,7 @@ struct mlx5_eswitch {
 	struct mlx5_flow_handle *egress_ecpf_rule;
 	struct mlx5_flow_handle *egress_pf_rule;
 #endif
-
+	struct mlx5_smart_nic_sysfs smart_nic_sysfs;
 };
 
 void esw_offloads_cleanup(struct mlx5_eswitch *esw);
