@@ -654,14 +654,14 @@ index xxxxxxx..xxxxxxx 100644
  
  		list_for_each_entry_safe(cpriv, tcpriv, &priv->child_intfs,
  					 list)
-+#ifdef HAVE_UNREGISTER_NETDEVICE_QUEUE
++#ifdef HAVE_NET_DEVICE_HAS_CLOSE_LIST
  			unregister_netdevice_queue(cpriv->dev, &head);
  		unregister_netdevice_queue(priv->dev, &head);
 +#else
 +			unregister_netdevice(cpriv->dev);
 +		unregister_netdevice(priv->dev);
 +#endif
-+#ifdef HAVE_UNREGISTER_NETDEVICE_QUEUE
++#ifdef HAVE_NET_DEVICE_HAS_CLOSE_LIST
  		unregister_netdevice_many(&head);
 -
 +#endif

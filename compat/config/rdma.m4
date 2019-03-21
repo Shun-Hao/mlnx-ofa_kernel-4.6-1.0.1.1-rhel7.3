@@ -789,6 +789,24 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if struct net_device has close_list])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/netdevice.h>
+	],[
+		struct net_device *dev = NULL;
+		struct list_head xlist;
+
+		dev->close_list = xlist;
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_NET_DEVICE_HAS_CLOSE_LIST, 1,
+			  [net_device close_list is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if struct tlsdev_ops has tls_dev_resync_rx])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/netdevice.h>
@@ -2296,21 +2314,6 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 	AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_NETDEV_UPDATE_FEATURES, 1,
 		  [ is defined])
-	],[
-		AC_MSG_RESULT(no)
-	])
-
-	AC_MSG_CHECKING([if netdevice.h has unregister_netdevice_queue])
-	MLNX_BG_LB_LINUX_TRY_COMPILE([
-		#include <linux/netdevice.h>
-	],[
-		unregister_netdevice_queue(NULL, NULL);
-
-		return 0;
-	],[
-		AC_MSG_RESULT(yes)
-		MLNX_AC_DEFINE(HAVE_UNREGISTER_NETDEVICE_QUEUE, 1,
-			[unregister_netdevice_queue is defined])
 	],[
 		AC_MSG_RESULT(no)
 	])
