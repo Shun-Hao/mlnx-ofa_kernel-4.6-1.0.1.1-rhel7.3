@@ -9,3 +9,4 @@ Change-Id=Ibc67a2f0eea5029be6fbc4944f8e218b685220b6; subject=net/sched: Add pedi
 Change-Id=Ia4917834be56bb7408b52efee4029455e8e3d142; subject=net/sched: Add support csum action for centos 7.2; feature=mlx5_asap; upstream_status=NA; general=;
 Change-Id=I05332c934233333718644b14f37e7410e01dde68; subject=BACKPORTS: Fix compile error for old kernels after act_csum enabled; feature=mlx5_asap; upstream_status=ignore; general=;
 Change-Id=I4b37c9a852a996e60c20892f9727f0db1dd4053b; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I8ec39f2152ea339cf0bf043597fe832ca7aa9392; subject=gen-compat-config.sh: Fix pedit compile failure on KERNEL_4_11_ARM; feature=ofed_scripts; upstream_status=ignore; general=;

@@ -211,6 +211,9 @@ if [[ ${CONFIG_COMPAT_KERNEL_4_9} = "y" || ${CONFIG_COMPAT_KERNEL_4_11_ARM} = "y
 	set_config CONFIG_COMPAT_FLOW_DISSECTOR y
 	set_config CONFIG_COMPAT_CLS_FLOWER_MOD m
 	set_config CONFIG_COMPAT_TCF_TUNNEL_KEY_MOD m
+fi
+
+if [[ ${CONFIG_COMPAT_KERNEL_4_9} = "y" ]]; then
 	set_config CONFIG_COMPAT_TCF_PEDIT_MOD m
 fi
 
