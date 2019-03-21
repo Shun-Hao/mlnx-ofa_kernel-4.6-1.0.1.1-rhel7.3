@@ -4646,13 +4646,12 @@ static void mlx5_ib_handle_event(struct work_struct *_work)
 	bool fatal = false;
 	u8 port = (u8)work->param;
 
-	if (mlx5_core_is_mp_slave(work->dev)) {
+	if (mlx5_core_is_mp_slave(work->dev))
 		ibdev = mlx5_ib_get_ibdev_from_mpi(work->context);
-		if (!ibdev)
-			goto out;
-	} else {
+	else
 		ibdev = work->context;
-	}
+	if (!ibdev)
+		goto out;
 
 	switch (work->event) {
 	case MLX5_DEV_EVENT_SYS_ERROR:
