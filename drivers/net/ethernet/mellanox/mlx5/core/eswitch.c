@@ -2487,7 +2487,7 @@ int mlx5_eswitch_set_vport_mac(struct mlx5_eswitch *esw,
 			       "Set invalid MAC while spoofchk is on, vport(%d)\n",
 			       vport);
 
-	err = mlx5_modify_nic_vport_mac_address(esw->dev, vport, mac);
+	err = mlx5_modify_other_nic_vport_mac_address(esw->dev, vport, mac);
 	if (err) {
 		mlx5_core_warn(esw->dev,
 			       "Failed to mlx5_modify_nic_vport_mac vport(%d) err=(%d)\n",
@@ -2496,7 +2496,7 @@ int mlx5_eswitch_set_vport_mac(struct mlx5_eswitch *esw,
 	}
 
 	node_guid_gen_from_mac(&node_guid, mac);
-	err = mlx5_modify_nic_vport_node_guid(esw->dev, vport, node_guid);
+	err = mlx5_modify_other_nic_vport_node_guid(esw->dev, vport, node_guid);
 	if (err)
 		mlx5_core_warn(esw->dev,
 			       "Failed to set vport %d node guid, err = %d. RDMA_CM will not function properly for this VF.\n",
