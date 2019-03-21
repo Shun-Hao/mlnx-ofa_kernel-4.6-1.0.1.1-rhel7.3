@@ -108,16 +108,16 @@ index xxxxxxx..xxxxxxx 100644
  		recv_ring++;
  		rx_allocated++;
  	}
-@@ -395,6 +444,9 @@ static void ipoib_ndo_uninit_rss(struct net_device *dev)
+@@ -394,6 +443,9 @@ static void ipoib_ndo_uninit_rss(struct net_device *dev)
+ 		up_write(&ppriv->vlan_rwsem);
  
  		dev_put(priv->parent);
- 	}
 +#ifndef HAVE_NET_DEVICE_NEEDS_FREE_NETDEV
 +		ipoib_intf_free(dev);
 +#endif
+ 	}
  }
  
- int ipoib_set_fp_rss(struct ipoib_dev_priv *priv, struct ib_device *hca)
 @@ -702,19 +754,40 @@ static const struct net_device_ops ipoib_netdev_ops_pf_sw_tss = {
  	.ndo_uninit		 = ipoib_ndo_uninit_rss,
  	.ndo_open		 = ipoib_open,

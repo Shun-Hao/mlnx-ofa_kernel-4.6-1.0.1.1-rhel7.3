@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/infiniband/ulp/ipoib/ipoib_main.c
 
 Change-Id: I9e88cce534b39322f5434230816c77bad446337f
 ---
- drivers/infiniband/ulp/ipoib/ipoib_main.c | 316 +++++++++++++++++++++++++++---
- 1 file changed, 292 insertions(+), 24 deletions(-)
+ drivers/infiniband/ulp/ipoib/ipoib_main.c | 324 +++++++++++++++++++++++++++---
+ 1 file changed, 300 insertions(+), 24 deletions(-)
 
 diff --git a/drivers/infiniband/ulp/ipoib/ipoib_main.c b/drivers/infiniband/ulp/ipoib/ipoib_main.c
 index xxxxxxx..xxxxxxx 100644
@@ -390,15 +390,16 @@ index xxxxxxx..xxxxxxx 100644
  
  	/*
  	 * Set the full membership bit, so that we join the right
-@@ -2079,15 +2262,23 @@ static void ipoib_ndo_uninit(struct net_device *dev)
+@@ -2078,16 +2261,24 @@ static void ipoib_ndo_uninit(struct net_device *dev)
+ 		up_write(&ppriv->vlan_rwsem);
  
  		dev_put(priv->parent);
- 	}
 +#ifndef HAVE_NET_DEVICE_NEEDS_FREE_NETDEV
 +		rdma_uninit_netdev(priv->ca, dev, priv->port,
 +				   RDMA_NETDEV_IPOIB, !ipoib_enhanced_enabled);
 +		ipoib_intf_free(dev);
 +#endif
+ 	}
  }
  
 +#ifdef HAVE_NETDEV_OPS_NDO_SET_VF_LINK_STATE
@@ -649,7 +650,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (ipoib_intercept_dev_id_attr(ndev))
  		goto sysfs_failed;
  	if (ipoib_cm_add_mode_attr(ndev))
-@@ -2727,10 +2989,16 @@ static void ipoib_remove_one(struct ib_device *device, void *client_data)
+@@ -2727,11 +2989,25 @@ static void ipoib_remove_one(struct ib_device *device, void *client_data)
  
  		list_for_each_entry_safe(cpriv, tcpriv, &priv->child_intfs,
  					 list)
@@ -665,5 +666,14 @@ index xxxxxxx..xxxxxxx 100644
 -
 +#endif
  		rtnl_unlock();
++#ifndef HAVE_NET_DEVICE_NEEDS_FREE_NETDEV
++		/* Free parent resources after rtnl_unlock to
++		 * avoid ipoib_get_iflink panic.
++		 */
++		rdma_uninit_netdev(priv->ca, priv->dev, priv->port,
++				   RDMA_NETDEV_IPOIB, !ipoib_enhanced_enabled);
++		ipoib_intf_free(priv->dev);
++#endif
  	}
  
+ 	kfree(dev_list);
