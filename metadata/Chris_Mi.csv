@@ -25,3 +25,5 @@ Change-Id=Ib22e388fd59a6ce31935fa352fe4aac569f95186; subject=Update metadata; fe
 Change-Id=I755c899bf0346139d5de65178691d08fc44d8c12; subject=compat: Forbid changing E-Switch mode in parallel; feature=mlx5_asap; upstream_status=NA; general=;
 Change-Id=I2190d2f73f7f1457e23be14873c2388bc8bcda84; subject=BACKPORTS: compat: Forbid changing E-Switch mode in parallel; feature=backports; upstream_status=ignore; general=;
 Change-Id=I4ffd544e2f87f46f020b5a0170418ed62f897561; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I6abaa77ccb76d5abb3c1fa350a59570fe68da68d; subject=IB/mlx5: Fix a panic in mlx5_ib_handle_event; feature=mlx5_ib_bugs; upstream_status=NA; general=;
+Change-Id=I630e8448003614bd8095bfc920df2c10edc7e2ae; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
