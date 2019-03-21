@@ -27,3 +27,5 @@ Change-Id=I2190d2f73f7f1457e23be14873c2388bc8bcda84; subject=BACKPORTS: compat: 
 Change-Id=I4ffd544e2f87f46f020b5a0170418ed62f897561; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=I6abaa77ccb76d5abb3c1fa350a59570fe68da68d; subject=IB/mlx5: Fix a panic in mlx5_ib_handle_event; feature=mlx5_ib_bugs; upstream_status=NA; general=;
 Change-Id=I630e8448003614bd8095bfc920df2c10edc7e2ae; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I7e8dcd234fe88eaa5e2ad3b371f47ddcc8a33fb5; subject=BACKPORTS: fix xdp_rxq_info_reg_mem_model backport; feature=backports; upstream_status=ignore; general=;
+Change-Id=I1c780787c82b76f3d0f4b2a9ee780c5b7fab4824; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
