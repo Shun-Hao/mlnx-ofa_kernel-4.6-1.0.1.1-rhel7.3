@@ -6159,27 +6159,29 @@ static int mlx5_ib_stage_init_init(struct mlx5_ib_dev *dev)
 	spin_lock_init(&dev->reset_flow_resource_lock);
 
 	if (MLX5_CAP_GEN_64(mdev, general_obj_types) & MLX5_GENERAL_OBJ_TYPES_CAP_SW_ICM) {
-		if (MLX5_CAP64_DEV_MEM(mdev, steering_sw_icm_start_address))
+		if (MLX5_CAP64_DEV_MEM(mdev, steering_sw_icm_start_address)) {
 			steering_icm_blocks =
 				BIT(MLX5_CAP_DEV_MEM(mdev, log_steering_sw_icm_size) -
 						MLX5_LOG_SW_ICM_BLOCK_SIZE(mdev));
 
-		dev->dm.steering_sw_icm_alloc_blocks =
-			kcalloc(BITS_TO_LONGS(steering_icm_blocks),
-					sizeof(unsigned long), GFP_KERNEL);
-		if (!dev->dm.steering_sw_icm_alloc_blocks)
-			goto err_mp;
+			dev->dm.steering_sw_icm_alloc_blocks =
+				kcalloc(BITS_TO_LONGS(steering_icm_blocks),
+						sizeof(unsigned long), GFP_KERNEL);
+			if (!dev->dm.steering_sw_icm_alloc_blocks)
+				goto err_mp;
+		}
 
-		if (MLX5_CAP64_DEV_MEM(mdev, header_modify_sw_icm_start_address))
+		if (MLX5_CAP64_DEV_MEM(mdev, header_modify_sw_icm_start_address)) {
 			header_modify_icm_blocks =
 				BIT(MLX5_CAP_DEV_MEM(mdev, log_header_modify_sw_icm_size) -
 						MLX5_LOG_SW_ICM_BLOCK_SIZE(mdev));
 
-		dev->dm.header_modify_sw_icm_alloc_blocks =
-			kcalloc(BITS_TO_LONGS(header_modify_icm_blocks),
-					sizeof(unsigned long), GFP_KERNEL);
-		if (!dev->dm.header_modify_sw_icm_alloc_blocks)
-			goto err_dm;
+			dev->dm.header_modify_sw_icm_alloc_blocks =
+				kcalloc(BITS_TO_LONGS(header_modify_icm_blocks),
+						sizeof(unsigned long), GFP_KERNEL);
+			if (!dev->dm.header_modify_sw_icm_alloc_blocks)
+				goto err_dm;
+		}
 	}
 
 	spin_lock_init(&dev->dm.lock);
