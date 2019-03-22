@@ -2675,7 +2675,6 @@ int __mlx5_eswitch_set_vport_vlan(struct mlx5_eswitch *esw, int vport, u16 vlan,
 	if (proto == htons(ETH_P_8021AD) && (vst_mode != ESW_VST_MODE_STEERING))
 		return -EPROTONOSUPPORT;
 
-	mutex_lock(&esw->state_lock);
 	evport = mlx5_eswitch_get_vport(esw, vport);
 
 	if (bitmap_weight(evport->info.vlan_trunk_8021q_bitmap, VLAN_N_VID)) {
@@ -2683,14 +2682,14 @@ int __mlx5_eswitch_set_vport_vlan(struct mlx5_eswitch *esw, int vport, u16 vlan,
 		mlx5_core_warn(esw->dev,
 			       "VST is not allowed when operating in VGT+ mode vport(%d)\n",
 			       vport);
-		goto unlock;
+		return err;
 	}
 
 	if (vst_mode != ESW_VST_MODE_STEERING) {
 		err = modify_esw_vport_cvlan(esw->dev, vport, vlan, qos,
 					     set_flags, vst_mode);
 		if (err)
-			goto unlock;
+			return err;
 	}
 	evport->info.vlan = vlan;
 	evport->info.qos = qos;
@@ -2698,12 +2697,10 @@ int __mlx5_eswitch_set_vport_vlan(struct mlx5_eswitch *esw, int vport, u16 vlan,
 	if (evport->enabled && esw->mode == SRIOV_LEGACY) {
 		err = esw_vport_ingress_config(esw, evport);
 		if (err)
-			goto unlock;
+			return err;
 		err = esw_vport_egress_config(esw, evport);
 	}
 
-unlock:
-	mutex_unlock(&esw->state_lock);
 	return err;
 }
 
@@ -2711,12 +2708,17 @@ int mlx5_eswitch_set_vport_vlan(struct mlx5_eswitch *esw, int vport,
 				u16 vlan, u8 qos, __be16 vlan_proto)
 {
 	u8 set_flags = 0;
+	int err;
 
 	if (vlan || qos)
 		set_flags = SET_VLAN_STRIP | SET_VLAN_INSERT;
 
-	return __mlx5_eswitch_set_vport_vlan(esw, vport, vlan, qos,
-					     vlan_proto, set_flags);
+	mutex_lock(&esw->state_lock);
+	err = __mlx5_eswitch_set_vport_vlan(esw, vport, vlan, qos, vlan_proto,
+				      set_flags);
+	mutex_unlock(&esw->state_lock);
+
+	return err;
 }
 
 int mlx5_eswitch_set_vport_spoofchk(struct mlx5_eswitch *esw,
