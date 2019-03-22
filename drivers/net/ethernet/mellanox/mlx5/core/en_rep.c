@@ -1425,6 +1425,7 @@ static int mlx5e_init_rep_tx(struct mlx5e_priv *priv)
 		INIT_LIST_HEAD(&rpriv->unready_flows);
 
 		/* init shared tc flow table */
+		spin_lock_init(&rpriv->tc_ht_lock);
 		err = mlx5e_tc_esw_init(&rpriv->tc_ht);
 		if (err)
 			goto destroy_tises;
