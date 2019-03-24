@@ -1387,6 +1387,10 @@ out:
 
 static void mlx5_disable_roce(struct mlx5_eswitch *esw)
 {
+#ifdef CONFIG_BF_DEVICE_EMULATION
+	if (mlx5_core_is_dev_emulation_manager(esw->dev))
+		return;
+#endif
 	if (!esw->roce_steering.roce_enable)
 		return;
 
@@ -1520,6 +1524,10 @@ static int mlx5_enable_roce(struct mlx5_eswitch *esw)
 	struct mlx5_core_dev *dev = esw->dev;
 	int err;
 
+#ifdef CONFIG_BF_DEVICE_EMULATION
+	if (mlx5_core_is_dev_emulation_manager(dev))
+		return 0;
+#endif
 	if (!(MLX5_CAP_FLOWTABLE_RDMA_RX(dev, ft_support) &&
 	      MLX5_CAP_FLOWTABLE_RDMA_RX(dev, table_miss_action_domain)))
 		return -EOPNOTSUPP;
