@@ -1071,12 +1071,6 @@ enum {
 	MLX5_PTYS_EN = 1 << 2,
 };
 
-enum {
-	CQE_STRIDE_64 = 0,
-	CQE_STRIDE_128 = 1,
-	CQE_STRIDE_128_PAD = 2,
-};
-
 typedef void (*mlx5_cmd_cbk_t)(int status, void *context);
 
 enum {

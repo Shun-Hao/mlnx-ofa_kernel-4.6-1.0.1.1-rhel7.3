@@ -13,3 +13,4 @@ Change-Id=I6ebd2af4f8d5a1d099430159fe112be818a236e7; subject=BACKPORTS: Fix mlx5
 Change-Id=Iab269eff05d84f4aef266cf799d5f0337c820ba2; subject=BACKPORTS: ethtool, Add support for new link-modes (including 200Gbps); feature=mlx5_add_50Gbps_per_lane; upstream_status=ignore; general=;
 Change-Id=Iaf16150bbb051dc07577e3fae63f4b12bab30a34; subject=net/mlx4_core: Add masking for a few queries on HCA caps; feature=rebase; upstream_status=ignore; general=;
 Change-Id=I09231598a9f6a5077cfeb2c2b8a116a8c1e1de83; subject=net/mlx5e: Allow MAC invalidation while spoofchk is ON; feature=rebase; upstream_status=ignore; general=;
+Change-Id=I0e6c0cae5403cc3cd03d26f04e405ac38eafc206; subject=net/mlx5e: Specify advertise restriction to cx6 and on; feature=rebase; upstream_status=ignore; general=;
