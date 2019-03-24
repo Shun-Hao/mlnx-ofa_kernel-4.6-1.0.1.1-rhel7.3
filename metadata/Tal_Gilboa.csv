@@ -5,3 +5,6 @@ Change-Id=I282a935060af62a7370b0447ea479686861acadf; subject=net/mlx5e: Hold mea
 Change-Id=I91aa07d634e2260022d0f7babe29a1aaabea474a; subject=net/mlx5e: Remove RX ACKs count from net_dim measurements; feature=mlx5_adaptive_moderation; upstream_status=in_progress; general=;
 Change-Id=Iac97ed5e8ab06e96721be1b59ac3f98872615cf4; subject=net/dim: Update DIM start sample after each DIM iteration; feature=rebase; upstream_status=accepted; general=upstream commit ID: 0211dda68a4f, tag: v4.20-rc4;
 Change-Id=I57053ee7efb38eeaeb1bf1e8099244b268c0b27f; subject=net/mlx5e: Cancel DIM work on close SQ; feature=mlx5_adaptive_moderation; upstream_status=accepted; general=upstream commit ID: fa2bf86bab4b, tag: v4.20;
+Change-Id=I3b4e17b1949674c3b26d5742c66e0032ca632a2b; subject=ofed_scripts/mlnx_tune: Add RH7.6 support; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I87e79e7987029514f0071305a673796c56cb1cc6; subject=ofed_scripts/mlnx_tune: Add support for new NICs; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I6e1b37bb8965bbb0d145ccfac341998cf0efb492; subject=ofed_scripts/mlnx_tune: Remove ConnectX-4/Lx from HW LRO supporting device list; feature=ofed_scripts; upstream_status=ignore; general=;
