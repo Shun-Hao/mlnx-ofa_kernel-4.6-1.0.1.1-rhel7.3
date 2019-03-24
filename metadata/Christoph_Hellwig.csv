@@ -1,5 +1,5 @@
 sep=;
 Change-Id=I3219afa38b9171047c7291af97510f373b1b026d; subject=nvme: warn when finding multi-port subsystems without multipathing enabled; feature=rebase; upstream_status=accepted; general=upstream commit ID: 14a1336e6fff, tag: v4.20-rc5;
-Change-Id=Ia6f65706843b927037900b5f00296a1eabc28f4a; subject=block: remove the lock argument to blk_alloc_queue_node; feature=rebase; upstream_status=accepted; general=;
-Change-Id=Icbe437376f650d868a5966794699350bcf4fcaa2; subject=nvme-rdma: remove I/O polling support; feature=rebase; upstream_status=accepted; general=;
-Change-Id=I3ac312499a9d2e9a25cbe610d1058aa8a542e7d6; subject=nvme-mpath: remove I/O polling support; feature=rebase; upstream_status=accepted; general=;
+Change-Id=Ia6f65706843b927037900b5f00296a1eabc28f4a; subject=block: remove the lock argument to blk_alloc_queue_node; feature=rebase; upstream_status=accepted; general=upstream commit ID: 6d46964230d1, tag: v5.0-rc1;
+Change-Id=Icbe437376f650d868a5966794699350bcf4fcaa2; subject=nvme-rdma: remove I/O polling support; feature=rebase; upstream_status=accepted; general=upstream commit ID: f9801a484ad6, tag: v5.0-rc1;
+Change-Id=I3ac312499a9d2e9a25cbe610d1058aa8a542e7d6; subject=nvme-mpath: remove I/O polling support; feature=rebase; upstream_status=accepted; general=upstream commit ID: 9d6610b76fa3, tag: v5.0-rc1;

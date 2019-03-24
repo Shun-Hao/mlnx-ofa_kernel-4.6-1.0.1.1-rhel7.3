@@ -30,4 +30,4 @@ Change-Id=I002d547a538887ef7cda1c5c244d489f103037c4; subject=net/mlx5e: Unblock 
 Change-Id=If2b9297a75eb0a9faba8f36067c655ea4344c65b; subject=BACKPORTS: Update en_rep.c for more uplink rep changes; feature=backports; upstream_status=ignore; general=;
 Change-Id=I443d9b8dc74b5701548c067916a2292a0e25d16b; subject=BACKPORTS: Update lag.c for more uplink rep changes; feature=backports; upstream_status=ignore; general=;
 Change-Id=I44635632e02ec1970a5b00708309e52e35fd7586; subject=update meta-data for uplink rep series - phase II; feature=ofed_scripts; upstream_status=ignore; general=;
-Change-Id=I410cc7b7f95b7e6da1c7f95c2b6abf4e560caad7; subject=IB/mlx5: Simplify netdev unbinding; feature=mlx5_ib_reps; upstream_status=accepted; general=;
+Change-Id=I410cc7b7f95b7e6da1c7f95c2b6abf4e560caad7; subject=IB/mlx5: Simplify netdev unbinding; feature=mlx5_ib_reps; upstream_status=accepted; general=upstream commit ID: 842a9c837e20, tag: v5.0-rc1;
