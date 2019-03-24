@@ -266,6 +266,7 @@ static void ipoib_vlan_delete_task(struct work_struct *work)
 
 		ipoib_dbg(ppriv, "delete child vlan %s\n", dev->name);
 		unregister_netdevice(dev);
+		kfree(priv);
 	}
 
 	rtnl_unlock();

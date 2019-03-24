@@ -59,3 +59,4 @@ Change-Id=Ib235ff4fe51b199e31be5997ec5a85235a89164f; subject=mlx5/core: Return s
 Change-Id=Ia2815599a6cd1ab89cc4599bab43d280b651fae7; subject=BACKPORTS: Fix IPoIB free resources; feature=ipoib_bugs; upstream_status=NA; general=;
 Change-Id=I6706f63b5982f265ced72b89006dbc0159a61282; subject=BACKPORTS: Move parent netdevice resources to remove_one; feature=backports; upstream_status=ignore; general=;
 Change-Id=Ibf73a9cbdd8f16a3f9e121df7701673ebb14f772; subject=Revert "net/mlx5e: Use CQE padding for Ethernet CQs"; feature=mlx5_core_bugs; upstream_status=ignore; general=;
+Change-Id=I2c7d7601d9c1ee540f6776294f3eeef455dc8090; subject=IB/ipoib: Fix ipoib_get_iflink panic in child interfaces; feature=backports; upstream_status=ignore; general=;

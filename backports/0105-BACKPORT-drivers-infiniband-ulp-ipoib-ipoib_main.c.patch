@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/infiniband/ulp/ipoib/ipoib_main.c
 
 Change-Id: I9e88cce534b39322f5434230816c77bad446337f
 ---
- drivers/infiniband/ulp/ipoib/ipoib_main.c | 324 +++++++++++++++++++++++++++---
- 1 file changed, 300 insertions(+), 24 deletions(-)
+ drivers/infiniband/ulp/ipoib/ipoib_main.c | 319 +++++++++++++++++++++++++++---
+ 1 file changed, 295 insertions(+), 24 deletions(-)
 
 diff --git a/drivers/infiniband/ulp/ipoib/ipoib_main.c b/drivers/infiniband/ulp/ipoib/ipoib_main.c
 index xxxxxxx..xxxxxxx 100644
@@ -390,15 +390,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	/*
  	 * Set the full membership bit, so that we join the right
-@@ -2078,16 +2261,24 @@ static void ipoib_ndo_uninit(struct net_device *dev)
- 		up_write(&ppriv->vlan_rwsem);
- 
- 		dev_put(priv->parent);
-+#ifndef HAVE_NET_DEVICE_NEEDS_FREE_NETDEV
-+		rdma_uninit_netdev(priv->ca, dev, priv->port,
-+				   RDMA_NETDEV_IPOIB, !ipoib_enhanced_enabled);
-+		ipoib_intf_free(dev);
-+#endif
+@@ -2081,13 +2264,16 @@ static void ipoib_ndo_uninit(struct net_device *dev)
  	}
  }
  
@@ -415,7 +407,7 @@ index xxxxxxx..xxxxxxx 100644
  static int ipoib_get_vf_config(struct net_device *dev, int vf,
  			       struct ifla_vf_info *ivf)
  {
-@@ -2102,7 +2293,9 @@ static int ipoib_get_vf_config(struct net_device *dev, int vf,
+@@ -2102,7 +2288,9 @@ static int ipoib_get_vf_config(struct net_device *dev, int vf,
  
  	return 0;
  }
@@ -425,7 +417,7 @@ index xxxxxxx..xxxxxxx 100644
  static int ipoib_set_vf_guid(struct net_device *dev, int vf, u64 guid, int type)
  {
  	struct ipoib_dev_priv *priv = ipoib_priv(dev);
-@@ -2112,7 +2305,9 @@ static int ipoib_set_vf_guid(struct net_device *dev, int vf, u64 guid, int type)
+@@ -2112,7 +2300,9 @@ static int ipoib_set_vf_guid(struct net_device *dev, int vf, u64 guid, int type)
  
  	return ib_set_vf_guid(priv->ca, vf, priv->port, guid, type);
  }
@@ -435,7 +427,7 @@ index xxxxxxx..xxxxxxx 100644
  static int ipoib_get_vf_stats(struct net_device *dev, int vf,
  			      struct ifla_vf_stats *vf_stats)
  {
-@@ -2120,6 +2315,7 @@ static int ipoib_get_vf_stats(struct net_device *dev, int vf,
+@@ -2120,6 +2310,7 @@ static int ipoib_get_vf_stats(struct net_device *dev, int vf,
  
  	return ib_get_vf_stats(priv->ca, vf, priv->port, vf_stats);
  }
@@ -443,7 +435,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static int ipoib_set_vf_local_mac(struct net_device *dev, void *addr)
  {
-@@ -2145,19 +2341,44 @@ static const struct net_device_ops ipoib_netdev_ops_pf = {
+@@ -2145,19 +2336,44 @@ static const struct net_device_ops ipoib_netdev_ops_pf = {
  	.ndo_uninit		 = ipoib_ndo_uninit,
  	.ndo_open		 = ipoib_open,
  	.ndo_stop		 = ipoib_stop,
@@ -496,7 +488,7 @@ index xxxxxxx..xxxxxxx 100644
  };
  
  static const struct net_device_ops ipoib_netdev_ops_vf = {
-@@ -2165,15 +2386,30 @@ static const struct net_device_ops ipoib_netdev_ops_vf = {
+@@ -2165,15 +2381,30 @@ static const struct net_device_ops ipoib_netdev_ops_vf = {
  	.ndo_uninit		 = ipoib_ndo_uninit,
  	.ndo_open		 = ipoib_open,
  	.ndo_stop		 = ipoib_stop,
@@ -527,7 +519,7 @@ index xxxxxxx..xxxxxxx 100644
  };
  
  void ipoib_setup_common(struct net_device *dev)
-@@ -2192,7 +2428,11 @@ void ipoib_setup_common(struct net_device *dev)
+@@ -2192,7 +2423,11 @@ void ipoib_setup_common(struct net_device *dev)
  	dev->tx_queue_len	 = ipoib_sendq_size * 2;
  	dev->features		 = (NETIF_F_VLAN_CHALLENGED	|
  				    NETIF_F_HIGHDMA);
@@ -540,7 +532,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	memcpy(dev->broadcast, ipv4_bcast_addr, INFINIBAND_ALEN);
  
-@@ -2201,7 +2441,9 @@ void ipoib_setup_common(struct net_device *dev)
+@@ -2201,7 +2436,9 @@ void ipoib_setup_common(struct net_device *dev)
  	 * consistently to unify all the various unregister paths, including
  	 * those connected to rtnl_link_ops which require it.
  	 */
@@ -550,7 +542,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static void ipoib_build_priv(struct net_device *dev)
-@@ -2306,9 +2548,10 @@ int ipoib_intf_init(struct ib_device *hca, u8 port, const char *name,
+@@ -2306,9 +2543,10 @@ int ipoib_intf_init(struct ib_device *hca, u8 port, const char *name,
  	 * being set, so we force it to NULL here and handle manually until it
  	 * is safe to turn on.
  	 */
@@ -562,7 +554,7 @@ index xxxxxxx..xxxxxxx 100644
  	ipoib_build_priv(dev);
  
  	return 0;
-@@ -2353,7 +2596,7 @@ void ipoib_intf_free(struct net_device *dev)
+@@ -2353,7 +2591,7 @@ void ipoib_intf_free(struct net_device *dev)
  {
  	struct ipoib_dev_priv *priv = ipoib_priv(dev);
  	struct rdma_netdev *rn = netdev_priv(dev);
@@ -571,7 +563,7 @@ index xxxxxxx..xxxxxxx 100644
  	dev->priv_destructor = priv->next_priv_destructor;
  	if (dev->priv_destructor)
  		dev->priv_destructor(dev);
-@@ -2363,7 +2606,7 @@ void ipoib_intf_free(struct net_device *dev)
+@@ -2363,7 +2601,7 @@ void ipoib_intf_free(struct net_device *dev)
  	 * attempt to call priv_destructor twice, prevent that from happening.
  	 */
  	dev->priv_destructor = NULL;
@@ -580,7 +572,7 @@ index xxxxxxx..xxxxxxx 100644
  	/* unregister/destroy is very complicated. Make bugs more obvious. */
  	rn->clnt_priv = NULL;
  
-@@ -2441,6 +2684,7 @@ static void set_base_guid(struct ipoib_dev_priv *priv, union ib_gid *gid)
+@@ -2441,6 +2679,7 @@ static void set_base_guid(struct ipoib_dev_priv *priv, union ib_gid *gid)
  	}
  }
  
@@ -588,7 +580,7 @@ index xxxxxxx..xxxxxxx 100644
  static int ipoib_check_lladdr(struct net_device *dev,
  			      struct sockaddr_storage *ss)
  {
-@@ -2466,9 +2710,13 @@ static int ipoib_set_mac(struct net_device *dev, void *addr)
+@@ -2466,9 +2705,13 @@ static int ipoib_set_mac(struct net_device *dev, void *addr)
  {
  	struct ipoib_dev_priv *priv = ipoib_priv(dev);
  	struct sockaddr_storage *ss = addr;
@@ -603,7 +595,7 @@ index xxxxxxx..xxxxxxx 100644
  		return -EBUSY;
  
  	ret = ipoib_check_lladdr(dev, ss);
-@@ -2481,6 +2729,7 @@ static int ipoib_set_mac(struct net_device *dev, void *addr)
+@@ -2481,6 +2724,7 @@ static int ipoib_set_mac(struct net_device *dev, void *addr)
  
  	return 0;
  }
@@ -611,7 +603,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static ssize_t ipoib_set_mac_using_sysfs(struct device *dev,
  					 struct device_attribute *attr,
-@@ -2582,8 +2831,13 @@ static ssize_t dev_id_show(struct device *dev,
+@@ -2582,8 +2826,13 @@ static ssize_t dev_id_show(struct device *dev,
  			   struct device_attribute *attr, char *buf)
  {
  	struct net_device *ndev = to_net_dev(dev);
@@ -626,7 +618,7 @@ index xxxxxxx..xxxxxxx 100644
  		netdev_info_once(ndev,
  			"\"%s\" wants to know my dev_id. Should it look at dev_port instead? See Documentation/ABI/testing/sysfs-class-net for more info.\n",
  			current->comm);
-@@ -2642,14 +2896,22 @@ static struct net_device *ipoib_add_port(const char *format,
+@@ -2642,14 +2891,22 @@ static struct net_device *ipoib_add_port(const char *format,
  		if (!rc && ops->priv_size < params.sizeof_priv)
  			ops->priv_size = params.sizeof_priv;
  	}
@@ -650,7 +642,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (ipoib_intercept_dev_id_attr(ndev))
  		goto sysfs_failed;
  	if (ipoib_cm_add_mode_attr(ndev))
-@@ -2727,11 +2989,25 @@ static void ipoib_remove_one(struct ib_device *device, void *client_data)
+@@ -2727,11 +2984,25 @@ static void ipoib_remove_one(struct ib_device *device, void *client_data)
  
  		list_for_each_entry_safe(cpriv, tcpriv, &priv->child_intfs,
  					 list)
