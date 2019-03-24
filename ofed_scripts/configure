@@ -181,6 +181,9 @@ Usage:  `basename $0` [options]
     --with-bf-device-emulation    make CONFIG_BF_DEVICE_EMULATION=y [no]
     --without-bf-device-emulation    [yes]
 
+    --with-bf-power-failure-event make CONFIG_BF_POWER_FAILURE_EVENT=y [no]
+    --without-bf-power-failure-event [yes]
+
     --help - print out options
 
 
@@ -339,6 +342,7 @@ CONFIG_INFINIBAND_PA_MR=${CONFIG_INFINIBAND_PA_MR:-''}
 CONFIG_MLNX_BLOCK_REQUEST_MODULE=${CONFIG_MLNX_BLOCK_REQUEST_MODULE:-''}
 
 CONFIG_BF_DEVICE_EMULATION=${CONFIG_BF_DEVICE_EMULATION:-''}
+CONFIG_BF_POWER_FAILURE_EVENT=${CONFIG_BF_POWER_FAILURE_EVENT:-''}
 
 main()
 {
@@ -984,6 +988,12 @@ main()
                         --without-bf-device-emulation)
                         CONFIG_BF_DEVICE_EMULATION=
                         ;;
+                        --with-bf-power-failure-event)
+                        CONFIG_BF_POWER_FAILURE_EVENT="y"
+                        ;;
+                        --without-bf-power-failure-event)
+                        CONFIG_BF_POWER_FAILURE_EVENT=
+                        ;;
 
                         -h | --help)
                                 usage
@@ -1412,6 +1422,7 @@ CONFIG_MLNX_BLOCK_REQUEST_MODULE=${CONFIG_MLNX_BLOCK_REQUEST_MODULE}
 
 CONFIG_BF_DEVICE_EMULATION=${CONFIG_BF_DEVICE_EMULATION}
 
+CONFIG_BF_POWER_FAILURE_EVENT=${CONFIG_BF_POWER_FAILURE_EVENT}
 EOFCONFIG
         echo "Created ${CONFIG}:"
         cat ${CWD}/${CONFIG}
@@ -1839,6 +1850,11 @@ if [ "X${CONFIG_BF_DEVICE_EMULATION}" == "Xy" ]; then
 else
         DEFINE_CONFIG_BF_DEVICE_EMULATION="#undef CONFIG_BF_DEVICE_EMULATION"
 fi
+if [ "X${CONFIG_BF_POWER_FAILURE_EVENT}" == "Xy" ]; then
+        DEFINE_CONFIG_BF_POWER_FAILURE_EVENT="#undef CONFIG_BF_POWER_FAILURE_EVENT\n#define CONFIG_BF_POWER_FAILURE_EVENT 1"
+else
+        DEFINE_CONFIG_BF_POWER_FAILURE_EVENT="#undef CONFIG_BF_POWER_FAILURE_EVENT"
+fi
 
 cat > ${AUTOCONF_H} << EOFAUTOCONF
 #ifndef __OFED_BUILD__
@@ -1926,6 +1942,7 @@ $(echo -e "${DEFINE_INFINIBAND_ON_WQE_FORMAT}" | grep -v undef)
 $(echo -e "${DEFINE_INFINIBAND_PA_MR}" | grep -v undef)
 $(echo -e "${DEFINE_CONFIG_MLNX_BLOCK_REQUEST_MODULE}" | grep -v undef)
 $(echo -e "${DEFINE_CONFIG_BF_DEVICE_EMULATION}" | grep -v undef)
+$(echo -e "${DEFINE_CONFIG_BF_POWER_FAILURE_EVENT}" | grep -v undef)
 
 #else
 #undef CONFIG_COMPAT_VERSION
@@ -2016,6 +2033,7 @@ $(echo -e "${DEFINE_CONFIG_BF_DEVICE_EMULATION}" | grep -v undef)
 #undef CONFIG_E_IPOIB
 
 #undef CONFIG_BF_DEVICE_EMULATION
+#undef CONFIG_BF_POWER_FAILURE_EVENT
 
 $(echo -e "${DEFINE_INFINIBAND}")
 $(echo -e "${DEFINE_INFINIBAND_CORE_DUMMY}")
@@ -2106,6 +2124,7 @@ $(echo -e "${DEFINE_INFINIBAND_ON_WQE_FORMAT}")
 $(echo -e "${DEFINE_INFINIBAND_PA_MR}")
 $(echo -e "${DEFINE_CONFIG_MLNX_BLOCK_REQUEST_MODULE}")
 $(echo -e "${DEFINE_CONFIG_BF_DEVICE_EMULATION}")
+$(echo -e "${DEFINE_CONFIG_BF_POWER_FAILURE_EVENT}")
 #endif
 
 EOFAUTOCONF
