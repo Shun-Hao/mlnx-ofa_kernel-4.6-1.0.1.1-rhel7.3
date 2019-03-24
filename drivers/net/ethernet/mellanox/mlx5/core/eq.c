@@ -66,6 +66,12 @@ enum {
 	MLX5_EQ_DOORBEL_OFFSET	= 0x40,
 };
 
+enum {
+	MLX5_PCI_POWER_COULD_NOT_BE_READ = 0x0,
+	MLX5_PCI_POWER_SUFFICIENT_REPORTED = 0x1,
+	MLX5_PCI_POWER_INSUFFICIENT_REPORTED = 0x2,
+};
+
 #define MLX5_ASYNC_EVENT_MASK ((1ull << MLX5_EVENT_TYPE_PATH_MIG)	    | \
 			       (1ull << MLX5_EVENT_TYPE_COMM_EST)	    | \
 			       (1ull << MLX5_EVENT_TYPE_SQ_DRAINED)	    | \
@@ -467,6 +473,55 @@ int mlx5_core_page_fault_resume(struct mlx5_core_dev *dev,
 EXPORT_SYMBOL_GPL(mlx5_core_page_fault_resume);
 #endif
 
+void mlx5_pcie_event_work(struct work_struct *work)
+{
+	u32 out[MLX5_ST_SZ_DW(mpein_reg)] = {0};
+	u32 in[MLX5_ST_SZ_DW(mpein_reg)] = {0};
+	struct mlx5_pcie_power_state *pcie;
+	struct mlx5_core_dev *dev;
+	struct mlx5_priv *priv;
+	u8 power_status;
+	u16 pci_power;
+
+	pcie = container_of(work, struct mlx5_pcie_power_state, work);
+	priv = container_of(pcie, struct mlx5_priv, pcie_power);
+	dev  = container_of(priv, struct mlx5_core_dev, priv);
+
+	if (!MLX5_CAP_MCAM_FEATURE(dev, pci_status_and_power))
+		return;
+	if (!printk_ratelimit())
+		return;
+
+	mlx5_core_access_reg(dev, in, sizeof(in), out, sizeof(out),
+			     MLX5_REG_MPEIN, 0, 0);
+	power_status = MLX5_GET(mpein_reg, out, pwr_status);
+	pci_power = MLX5_GET(mpein_reg, out, pci_power);
+
+	switch (power_status) {
+	case MLX5_PCI_POWER_COULD_NOT_BE_READ:
+		mlx5_core_info(dev,
+			       "PCIe slot power capability was not advertised.\n");
+		break;
+	case MLX5_PCI_POWER_INSUFFICIENT_REPORTED:
+		mlx5_core_warn(dev,
+			       "Detected insufficient power on the PCIe slot (%uW).\n",
+			       pci_power);
+		break;
+	case MLX5_PCI_POWER_SUFFICIENT_REPORTED:
+		mlx5_core_info(dev,
+			       "PCIe slot advertised sufficient power (%uW).\n",
+			       pci_power);
+		break;
+	}
+}
+
+void mlx5_pcie_event_handler(struct mlx5_core_dev *dev)
+{
+	struct mlx5_priv *priv = &dev->priv;
+
+	queue_work(priv->pcie_power.wq, &priv->pcie_power.work);
+}
+
 static void general_event_handler(struct mlx5_core_dev *dev,
 				  struct mlx5_eqe *eqe)
 {
@@ -474,6 +529,9 @@ static void general_event_handler(struct mlx5_core_dev *dev,
 	case MLX5_GENERAL_SUBTYPE_DELAY_DROP_TIMEOUT:
 		if (dev->event)
 			dev->event(dev, MLX5_DEV_EVENT_DELAY_DROP_TIMEOUT, 0);
+		break;
+	case MLX5_GENERAL_SUBTYPE_PCIE_POWER_CHANGE_EVENT:
+		mlx5_pcie_event_handler(dev);
 		break;
 	default:
 		mlx5_core_dbg(dev, "General event with unrecognized subtype: sub_type %d\n",

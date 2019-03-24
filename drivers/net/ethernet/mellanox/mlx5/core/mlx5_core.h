@@ -242,6 +242,8 @@ int mlx5_core_eq_query(struct mlx5_core_dev *dev, struct mlx5_eq *eq,
 		       u32 *out, int outlen);
 int mlx5_start_eqs(struct mlx5_core_dev *dev);
 void mlx5_stop_eqs(struct mlx5_core_dev *dev);
+void mlx5_pcie_event_work(struct work_struct *work);
+
 /* This function should only be called after mlx5_cmd_force_teardown_hca */
 void mlx5_core_eq_free_irqs(struct mlx5_core_dev *dev);
 void mlx5_core_eq_disable_irqs(struct mlx5_core_dev *dev);

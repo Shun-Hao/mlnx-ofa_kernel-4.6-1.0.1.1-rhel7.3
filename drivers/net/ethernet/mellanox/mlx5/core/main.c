@@ -355,6 +355,20 @@ static int set_dma_caps(struct pci_dev *pdev)
 	return err;
 }
 
+static int pcie_state_init(struct mlx5_priv *priv)
+{
+	priv->pcie_power.wq = create_singlethread_workqueue("mlx5_pcie");
+	if (!priv->pcie_power.wq)
+		return -ENOMEM;
+	INIT_WORK(&priv->pcie_power.work, mlx5_pcie_event_work);
+	return 0;
+}
+
+static void pcie_state_destroy(struct mlx5_priv *priv)
+{
+	destroy_workqueue(priv->pcie_power.wq);
+}
+
 static int mlx5_pci_enable_device(struct mlx5_core_dev *dev)
 {
 	struct pci_dev *pdev = dev->pdev;
@@ -1196,6 +1210,12 @@ static int mlx5_pci_init(struct mlx5_core_dev *dev, struct mlx5_priv *priv)
 		goto err_io_unmap;
 	}
 
+	err = pcie_state_init(priv);
+	if (err) {
+		dev_err(&pdev->dev, "Failed initializing PCIE event workqueue, aborting\n");
+		goto err_io_unmap;
+	}
+
 	return 0;
 
 err_io_unmap:
@@ -1213,6 +1233,7 @@ err_dbg:
 
 static void mlx5_pci_close(struct mlx5_core_dev *dev, struct mlx5_priv *priv)
 {
+	pcie_state_destroy(priv);
 	iounmap(dev->iseg);
 	pci_clear_master(dev->pdev);
 	release_bar(dev->pdev);
