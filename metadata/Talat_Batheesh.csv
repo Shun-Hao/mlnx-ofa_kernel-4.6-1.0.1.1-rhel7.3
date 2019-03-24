@@ -37,3 +37,4 @@ Change-Id=Ic3a73152e4b972b0bc1a17f4e30810c76efd7d26; subject=mlx5/IB: set defaul
 Change-Id=Iaba35c7346a9c02f0e1e2633daf2c2115df9ce2c; subject=BACKPORTS IPOIB HAVE_NDO_GET_IFLINK; feature=backports; upstream_status=ignore; general=;
 Change-Id=I00ab285a0591afe0a083bb9774465046ed3205d8; subject=BACKPORTS - ADDING ETH PATCHES FROM STABLE; feature=rebase; upstream_status=ignore; general=;
 Change-Id=I7a676084420e4b745dbf777b56ea049bcbe96e99; subject=Update metadata for IB patches from stable; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=Ic1cd714b12ce810807596ee6039582332565233d; subject=Fix UAR mapping; feature=dynamic_uar; upstream_status=NA; general=;

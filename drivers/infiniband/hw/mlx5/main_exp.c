@@ -2496,19 +2496,17 @@ int alloc_and_map_wc(struct mlx5_ib_dev *dev,
 
 
 	vma->vm_page_prot = mlx5_ib_pgprot_writecombine(vma->vm_page_prot);
-/*
-	if (io_remap_pfn_range(vma, vma->vm_start, pfn,
-			       PAGE_SIZE, vma->vm_page_prot)) {
+
+	if (rdma_user_mmap_io(&context->ibucontext, vma, pfn, map_size,
+		pgprot_writecombine(vma->vm_page_prot), vma_prv)) {
+
 		mlx5_ib_err(dev, "io remap failed\n");
 		mlx5_cmd_free_uar(dev->mdev, uar_index);
 		kfree(vma_prv);
 		return -EAGAIN;
 	}
-	context->dynamic_wc_uar_index[sys_page_idx] = uar_index;
-*/
-	rdma_user_mmap_io(&context->ibucontext, vma, pfn, map_size, pgprot_writecombine(vma->vm_page_prot),vma_prv);
-//	mlx5_ib_set_vma_data(vma, context, vma_prv);
 
+	context->dynamic_wc_uar_index[sys_page_idx] = uar_index;
 	return 0;
 }
 
