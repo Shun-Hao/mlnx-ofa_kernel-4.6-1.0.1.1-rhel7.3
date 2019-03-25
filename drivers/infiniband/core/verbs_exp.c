@@ -282,9 +282,7 @@ int ib_exp_memcpy_dm(struct ib_dm *dm, struct ib_exp_memcpy_dm_attr *attr)
 }
 EXPORT_SYMBOL_GPL(ib_exp_memcpy_dm);
 
-struct ib_mr *__ib_exp_alloc_mr(struct ib_pd *pd,
-				struct ib_mr_init_attr *attr,
-				struct ib_udata *udata)
+struct ib_mr *ib_exp_alloc_mr(struct ib_pd *pd, struct ib_mr_init_attr *attr)
 {
 	struct ib_mr *mr;
 
@@ -294,7 +292,7 @@ struct ib_mr *__ib_exp_alloc_mr(struct ib_pd *pd,
 	if ((attr->mr_type == IB_MR_TYPE_DM) && !attr->dm)
 		return ERR_PTR(-EINVAL);
 
-	mr = pd->device->exp_alloc_mr(pd, attr, udata);
+	mr = pd->device->exp_alloc_mr(pd, attr);
 	if (!IS_ERR(mr)) {
 		mr->device  = pd->device;
 		mr->pd      = pd;
@@ -304,12 +302,6 @@ struct ib_mr *__ib_exp_alloc_mr(struct ib_pd *pd,
 	}
 
 	return mr;
-}
-EXPORT_SYMBOL_GPL(__ib_exp_alloc_mr);
-
-struct ib_mr *ib_exp_alloc_mr(struct ib_pd *pd, struct ib_mr_init_attr *attr)
-{
-	return __ib_exp_alloc_mr(pd, attr, NULL);
 }
 EXPORT_SYMBOL_GPL(ib_exp_alloc_mr);
 

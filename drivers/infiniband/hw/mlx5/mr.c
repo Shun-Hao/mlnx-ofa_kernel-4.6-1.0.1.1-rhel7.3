@@ -1843,8 +1843,7 @@ int mlx5_ib_dereg_mr(struct ib_mr *ibmr)
 
 struct ib_mr *mlx5_ib_alloc_mr(struct ib_pd *pd,
 			       enum ib_mr_type mr_type,
-			       u32 max_num_sg,
-			       struct ib_udata *udata)
+			       u32 max_num_sg)
 {
 	struct mlx5_ib_dev *dev = to_mdev(pd->device);
 	int inlen = MLX5_ST_SZ_BYTES(create_mkey_in);
@@ -1890,13 +1889,7 @@ struct ib_mr *mlx5_ib_alloc_mr(struct ib_pd *pd,
 		mr->desc_size = sizeof(struct mlx5_klm);
 		mr->max_descs = ndescs;
 	} else if (mr_type == IB_MR_TYPE_SIGNATURE) {
-		struct mlx5_ib_create_mr_resp resp = {};
 		u32 psv_index[2];
-
-		if (udata && udata->outlen < sizeof(resp)) {
-			err = -EINVAL;
-			goto err_free_in;
-		}
 
 		MLX5_SET(mkc, mkc, bsf_en, 1);
 		MLX5_SET(mkc, mkc, bsf_octword_size, MLX5_MKEY_BSF_OCTO_SIZE);
@@ -1920,14 +1913,6 @@ struct ib_mr *mlx5_ib_alloc_mr(struct ib_pd *pd,
 		mr->sig->sig_err_exists = false;
 		/* Next UMR, Arm SIGERR */
 		++mr->sig->sigerr_count;
-
-		if (udata) {
-			resp.psv_mem_idx = psv_index[0];
-			resp.psv_wire_idx = psv_index[1];
-			err = ib_copy_to_udata(udata, &resp, sizeof(resp));
-			if (err)
-				return ERR_PTR(err);
-		}
 	} else if (mr_type == IB_MR_INDIRECT_REG) {
 		MLX5_SET(mkc, mkc, translations_octword_size,
 			 ALIGN(max_num_sg + 1, 4));

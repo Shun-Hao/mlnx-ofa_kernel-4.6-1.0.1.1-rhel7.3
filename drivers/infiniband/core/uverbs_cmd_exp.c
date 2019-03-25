@@ -733,7 +733,7 @@ int ib_uverbs_exp_create_mr(struct ib_uverbs_file *file,
 	struct ib_uobject                       *uobj = NULL;
 	int ret;
 
-	if (ucore->outlen < sizeof(resp_exp))
+	if (ucore->outlen + uhw->outlen < sizeof(resp_exp))
 		return -ENOSPC;
 
 	ret = ib_copy_from_udata(&cmd_exp, ucore, sizeof(cmd_exp));
@@ -750,9 +750,10 @@ int ib_uverbs_exp_create_mr(struct ib_uverbs_file *file,
 		goto err_free;
 	}
 
+
 	attr.mr_type = mr_create_flag_to_mr_type(cmd_exp.create_flags);
 	attr.max_num_sg = cmd_exp.max_reg_descriptors;
-	mr = __ib_exp_alloc_mr(pd, &attr, uhw);
+	mr = ib_exp_alloc_mr(pd, &attr);
 	if (IS_ERR(mr)) {
 		ret = PTR_ERR(mr);
 		goto err_put;

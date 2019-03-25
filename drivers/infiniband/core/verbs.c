@@ -2045,7 +2045,7 @@ struct ib_mr *ib_alloc_mr(struct ib_pd *pd,
 	if (!pd->device->alloc_mr)
 		return ERR_PTR(-EOPNOTSUPP);
 
-	mr = pd->device->alloc_mr(pd, mr_type, max_num_sg, NULL);
+	mr = pd->device->alloc_mr(pd, mr_type, max_num_sg);
 	if (!IS_ERR(mr)) {
 		mr->device  = pd->device;
 		mr->pd      = pd;
