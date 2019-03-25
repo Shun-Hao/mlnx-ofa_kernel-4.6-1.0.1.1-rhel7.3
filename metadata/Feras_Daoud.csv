@@ -65,3 +65,4 @@ Change-Id=I7e6334e12ba2a9c718786ebe8393d438c4ff1505; subject=Revert "IB/{mlx5,co
 Change-Id=Ief1fa3547ae98845f2f4ec98ed369cebca93d40a; subject=Revert "{IB,net}/mlx5: Handover SIGERR SQD to userspace"; feature=mlx5_core_bugs; upstream_status=NA; general=;
 Change-Id=I389fca015132ad8cf29f5ac3dc5a4aa783173e99; subject=Revert "IB/{uverbs,mlx5}: Pass SIG MR PSV indices to userspace"; feature=mlx5_core_bugs; upstream_status=NA; general=;
 Change-Id=Ia2a273d608d90ab703340a791117f50f5a9cb746; subject=Revert "IB/uverbs: Expose signature handover caps to UAPI"; feature=mlx5_core_bugs; upstream_status=NA; general=;
+Change-Id=I20bc365e5bde201c865e28653ce709de67729548; subject=Revert "BACKPORTS: fix xdp_rxq_info_reg_mem_model backport"; feature=backports; upstream_status=ignore; general=;

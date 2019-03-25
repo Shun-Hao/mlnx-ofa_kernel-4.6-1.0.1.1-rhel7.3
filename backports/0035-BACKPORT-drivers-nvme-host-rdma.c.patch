@@ -3,7 +3,7 @@ Subject: [PATCH] BACKPORT: drivers/nvme/host/rdma.c
 
 Change-Id: I2d26aedcdc44d668f4dd931ab7d7511c4bad6e7d
 ---
- drivers/nvme/host/rdma.c | 159 +++++++++++++++++++++++++++++++++++++++++++++++
+ drivers/nvme/host/rdma.c | 159 +++++++++++++++++++++++++++++++++++++++
  1 file changed, 159 insertions(+)
 
 diff --git a/drivers/nvme/host/rdma.c b/drivers/nvme/host/rdma.c
@@ -75,14 +75,14 @@ index xxxxxxx..xxxxxxx 100644
 +{
 +	__nvme_rdma_exit_request(data, rq, hctx_idx + 1);
 +}
-+
+ 
 +static void nvme_rdma_exit_admin_request(void *data, struct request *rq,
 +					 unsigned int hctx_idx, unsigned int rq_idx)
 +{
 +	__nvme_rdma_exit_request(data, rq, 0);
 +}
 +#endif
- 
++
 +#ifdef HAVE_BLK_MQ_OPS_INIT_REQUEST_HAS_4_PARAMS
  static int nvme_rdma_init_request(struct blk_mq_tag_set *set,
  		struct request *rq, unsigned int hctx_idx,
