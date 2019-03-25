@@ -56,3 +56,6 @@ Change-Id=I60fcbafdebf2ff3bbbe40de5810f07241c10da3e; subject=IB/mlx5: Fix packet
 Change-Id=I58b146064347f0564df3bdbe6e13386a2f6f839d; subject=net/mlx5: Devcom register should not return error for VF; feature=mlx5_core_bugs; upstream_status=NA; general=;
 Change-Id=I90af64b73c74a2277dac5d29056a9a2338296a6d; subject=net/mlx5: E-Switch, Remove redundant mutex init of fdb_prio_lock; feature=mlx5_bf; upstream_status=accepted; general=;
 Change-Id=I0480b5d616e8a04a84194dda5d0d8f250fd336da; subject=net/mlx5: Correctly set LAG mode for ECPF; feature=mlx5_bf; upstream_status=accepted; general=upstream commit ID: 86b39a66b75f, tag: v5.1-rc1;
+Change-Id=Ic967d9c8c8297707b8576a42c41aa9ce1bd51463; subject=Revert "net/mlx5e: RX, Implement page biased-refcount optimization"; feature=mlx5e_perf_improvements; upstream_status=NA; general=;
+Change-Id=Ibebb7675aa5a3d5fe3de189ad7b9ee0e61bff977; subject=net/mlx5e: Cleanup refcnt optimization on XDP; feature=mlx5e_perf_improvements; upstream_status=NA; general=;
+Change-Id=I37b6f38243036f581170edaf001a165e24a5b408; subject=Backports: Fix mlx5 backports; feature=backports; upstream_status=ignore; general=;

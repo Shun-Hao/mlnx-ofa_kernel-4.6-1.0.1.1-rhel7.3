@@ -58,8 +58,8 @@ index xxxxxxx..xxxxxxx 100644
  	case XDP_REDIRECT:
  		/* When XDP enabled then page-refcnt==1 here */
  		err = xdp_do_redirect(rq->netdev, &xdp, prog);
-@@ -90,13 +102,16 @@ bool mlx5e_xdp_handle(struct mlx5e_rq *rq, struct mlx5e_dma_info *di,
- 		page_ref_sub(di->page, di->refcnt_bias);
+@@ -89,13 +101,16 @@ bool mlx5e_xdp_handle(struct mlx5e_rq *rq, struct mlx5e_dma_info *di,
+ 		mlx5e_page_dma_unmap(rq, di);
  		rq->stats->xdp_redirect++;
  		return true;
 +#endif
@@ -75,7 +75,7 @@ index xxxxxxx..xxxxxxx 100644
  	case XDP_DROP:
  		rq->stats->xdp_drop++;
  		return true;
-@@ -174,7 +189,9 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
+@@ -173,7 +188,9 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
  	struct mlx5e_xdpsq *sq;
  	struct mlx5_cqe64 *cqe;
  	struct mlx5e_rq *rq;
@@ -95,7 +95,7 @@ index xxxxxxx..xxxxxxx 100644
  	rq = container_of(sq, struct mlx5e_rq, xdpsq);
  
  	/* sq->cc must be updated only after mlx5_cqwq_update_db_record(),
-@@ -211,11 +230,20 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
+@@ -210,11 +229,20 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
  			last_wqe = (sqcc == wqe_counter);
  			sqcc++;
  
@@ -116,7 +116,7 @@ index xxxxxxx..xxxxxxx 100644
  				/* Recycle RX page */
  				mlx5e_page_release(rq, &xdpi->di, true);
  			}
-@@ -236,10 +264,16 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
+@@ -235,10 +263,16 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
  void mlx5e_free_xdpsq_descs(struct mlx5e_xdpsq *sq)
  {
  	struct mlx5e_rq *rq;
@@ -162,7 +162,7 @@ index xxxxxxx..xxxxxxx 100644
  int mlx5e_xdp_xmit(struct net_device *dev, int n, struct xdp_frame **frames,
  		   u32 flags)
  {
-@@ -298,9 +343,14 @@ int mlx5e_xdp_xmit(struct net_device *dev, int n, struct xdp_frame **frames,
+@@ -295,9 +340,14 @@ int mlx5e_xdp_xmit(struct net_device *dev, int n, struct xdp_frame **frames,
  		xdpi.xdpf = xdpf;
  
  		if (unlikely(!mlx5e_xmit_xdp_frame(sq, &xdpi))) {
@@ -177,7 +177,7 @@ index xxxxxxx..xxxxxxx 100644
  			drops++;
  		}
  	}
-@@ -310,3 +360,63 @@ int mlx5e_xdp_xmit(struct net_device *dev, int n, struct xdp_frame **frames,
+@@ -307,3 +357,63 @@ int mlx5e_xdp_xmit(struct net_device *dev, int n, struct xdp_frame **frames,
  
  	return n - drops;
  }
