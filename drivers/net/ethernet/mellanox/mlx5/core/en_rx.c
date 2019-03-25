@@ -165,10 +165,6 @@ static inline u32 mlx5e_decompress_cqes_start(struct mlx5e_rq *rq,
 	return mlx5e_decompress_cqes_cont(rq, cq, 1, budget_rem) - 1;
 }
 
-#define PAGE_REF_ELEV  (U32_MAX - 1)    /* elevation on page-alloc */
-#define PAGE_REF_THRSD (PAGE_SIZE / 64) /* maximum number of pkts on a single page */
-#define PAGE_REF_BUMP  (PAGE_REF_ELEV - PAGE_REF_THRSD)
-
 static inline void mlx5e_rx_cache_page_swap(struct mlx5e_page_cache *cache,
 					    u32 a, u32 b)
 {
@@ -197,8 +193,7 @@ static inline bool mlx5e_rx_cache_is_empty(struct mlx5e_page_cache *cache)
 static inline bool mlx5e_rx_cache_page_busy(struct mlx5e_page_cache *cache,
 					    u32 i)
 {
-	return (page_ref_count(cache->page_cache[i].page) -
-		cache->page_cache[i].refcnt_bias) != 1;
+	return page_ref_count(cache->page_cache[i].page) != 1;
 }
 
 static inline bool mlx5e_rx_cache_check_reduce(struct mlx5e_rq *rq)
@@ -324,10 +319,6 @@ static inline bool mlx5e_rx_cache_get(struct mlx5e_rq *rq,
 	stats->cache_reuse++;
 	*dma_info = cache->page_cache[cache->head--];
 
-	if (page_ref_count(dma_info->page) <= PAGE_REF_THRSD) {
-		page_ref_add(dma_info->page, PAGE_REF_BUMP);
-		dma_info->refcnt_bias += PAGE_REF_BUMP;
-	}
 	return true;
 
 err_no_page:
@@ -344,14 +335,12 @@ static inline int mlx5e_page_alloc_mapped(struct mlx5e_rq *rq,
 		if (unlikely(!dma_info->page))
 			return -ENOMEM;
 		rq->stats->cache_alloc++;
-		page_ref_add(dma_info->page, PAGE_REF_ELEV);
-		dma_info->refcnt_bias = PAGE_REF_ELEV;
 	}
 
 	dma_info->addr = dma_map_page(rq->pdev, dma_info->page, 0,
 				      PAGE_SIZE, rq->buff.map_dir);
 	if (unlikely(dma_mapping_error(rq->pdev, dma_info->addr))) {
-		mlx5e_put_page(dma_info);
+		put_page(dma_info->page);
 		dma_info->page = NULL;
 		return -ENOMEM;
 	}
@@ -372,10 +361,9 @@ void mlx5e_page_release(struct mlx5e_rq *rq, struct mlx5e_dma_info *dma_info,
 		if (mlx5e_rx_cache_put(rq, dma_info))
 			return;
 
-		page_ref_sub(dma_info->page, dma_info->refcnt_bias);
 		page_pool_recycle_direct(rq->page_pool, dma_info->page);
 	} else {
-		mlx5e_put_page(dma_info);
+		put_page(dma_info->page);
 	}
 }
 
@@ -481,7 +469,7 @@ mlx5e_add_skb_frag(struct mlx5e_rq *rq, struct sk_buff *skb,
 	dma_sync_single_for_cpu(rq->pdev,
 				di->addr + frag_offset,
 				len, DMA_FROM_DEVICE);
-	di->refcnt_bias--;
+	page_ref_inc(di->page);
 	skb_add_rx_frag(skb, skb_shinfo(skb)->nr_frags,
 			di->page, frag_offset, len, truesize);
 }
@@ -1060,7 +1048,7 @@ mlx5e_skb_from_cqe_linear(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe,
 		return NULL;
 
 	/* queue up for recycling/reuse */
-	di->refcnt_bias--;
+	page_ref_inc(di->page);
 
 	return skb;
 }
@@ -1279,7 +1267,7 @@ mlx5e_skb_from_cqe_mpwrq_linear(struct mlx5e_rq *rq, struct mlx5e_mpw_info *wi,
 		return NULL;
 
 	/* queue up for recycling/reuse */
-	di->refcnt_bias--;
+	page_ref_inc(di->page);
 
 	return skb;
 }
