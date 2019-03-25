@@ -163,7 +163,6 @@ static int (*uverbs_exp_cmd_table[])(struct ib_uverbs_file *file,
 	[IB_USER_VERBS_EXP_CMD_CREATE_SRQ]	= ib_uverbs_exp_create_srq,
 	[IB_USER_VERBS_EXP_CMD_ALLOC_DM]	= ib_uverbs_exp_alloc_dm,
 	[IB_USER_VERBS_EXP_CMD_FREE_DM]		= ib_uverbs_exp_free_dm,
-	[IB_USER_VERBS_EXP_CMD_QUERY_QP]	= ib_uverbs_exp_query_qp,
 };
 
 static void ib_uverbs_add_one(struct ib_device *device);

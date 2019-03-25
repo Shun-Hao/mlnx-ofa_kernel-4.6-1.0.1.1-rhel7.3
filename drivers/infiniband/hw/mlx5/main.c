@@ -6270,8 +6270,7 @@ static int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 		(1ull << IB_USER_VERBS_EXP_CMD_MODIFY_QP)	|
 		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_FLOW)	|
 		(1ull << IB_USER_VERBS_EXP_CMD_QUERY_MKEY)	|
-		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_SRQ)	|
-		(1ull << IB_USER_VERBS_EXP_CMD_QUERY_QP);
+		(1ull << IB_USER_VERBS_EXP_CMD_CREATE_SRQ);
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	dev->ib_dev.uverbs_exp_cmd_mask |=
@@ -6344,7 +6343,6 @@ static int mlx5_ib_stage_caps_init(struct mlx5_ib_dev *dev)
 	dev->ib_dev.exp_alloc_mr	= mlx5_ib_exp_alloc_mr;
 	dev->ib_dev.map_mr_sg		= mlx5_ib_map_mr_sg;
 	dev->ib_dev.check_mr_status	= mlx5_ib_check_mr_status;
-	dev->ib_dev.exp_query_qp	= mlx5_ib_exp_query_qp;
 	dev->ib_dev.get_dev_fw_str      = get_dev_fw_str;
 	dev->ib_dev.get_vector_affinity	= mlx5_ib_get_vector_affinity;
 	if (MLX5_CAP_GEN(mdev, ipoib_enhanced_offloads) &&
