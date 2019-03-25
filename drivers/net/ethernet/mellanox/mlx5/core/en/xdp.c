@@ -87,7 +87,6 @@ bool mlx5e_xdp_handle(struct mlx5e_rq *rq, struct mlx5e_dma_info *di,
 		__set_bit(MLX5E_RQ_FLAG_XDP_XMIT, rq->flags);
 		rq->xdpsq.redirect_flush = true;
 		mlx5e_page_dma_unmap(rq, di);
-		page_ref_sub(di->page, di->refcnt_bias);
 		rq->stats->xdp_redirect++;
 		return true;
 	default:
