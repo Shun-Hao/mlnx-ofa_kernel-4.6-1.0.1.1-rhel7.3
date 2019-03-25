@@ -659,12 +659,7 @@ int ib_uverbs_exp_query_device(struct ib_uverbs_file *file,
 		resp->tm_caps.max_ops = exp_attr->tm_caps.max_ops;
 		resp->tm_caps.max_sge = exp_attr->tm_caps.max_sge;
 		resp->comp_mask |= IB_EXP_DEVICE_ATTR_TM_CAPS;
-	}
 
-	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_SIG_CAPS) {
-		resp->sig_caps.prot_cap = exp_attr->sig_caps.prot_cap;
-		resp->sig_caps.guard_cap = exp_attr->sig_caps.guard_cap;
-		resp->comp_mask |= IB_EXP_DEVICE_ATTR_SIG_CAPS;
 	}
 
 	if (exp_attr->exp_comp_mask & IB_EXP_DEVICE_ATTR_TUNNEL_OFFLOADS_CAPS) {

@@ -38,3 +38,5 @@ Change-Id=Ia4bfaee2b723ed0b424a1863179ad675fff529f1; subject=BACKPORTS: Add pcie
 Change-Id=I6680f37c09dffe75f904ea47d37dc4f913846324; subject=BACKPORTS: Fix pcie_dev_attr_group sysfs vars; feature=backports; upstream_status=NA; general=;
 Change-Id=I38437bb159c34acc670c6812a02b396c0ef35774; subject=RDMA/umem: Add missing initialization of owning_mm; feature=ib_core_bugs; upstream_status=accepted; general=upstream commit ID: a2093dd35f8c, tag: v5.0-rc5;
 Change-Id=I00606b91c1bd0e44808c4297f649021bdbeb63e8; subject=IB/uverbs: Expose signature handover caps to UAPI; feature=signature_handover; upstream_status=NA; general=;
+Change-Id=I0759c8ac5f202da093055f47d93607b2327e5860; subject=IB/{uverbs,mlx5}: Pass SIG MR PSV indices to userspace; feature=signature_handover; upstream_status=NA; general=;
+Change-Id=I57d7a666250855b745fbc7dccee0128f986b1098; subject={IB,net}/mlx5: Handover SIGERR SQD to userspace; feature=signature_pipeline; upstream_status=NA; general=;

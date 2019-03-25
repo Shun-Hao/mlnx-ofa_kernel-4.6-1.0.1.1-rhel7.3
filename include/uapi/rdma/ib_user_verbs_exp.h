@@ -326,11 +326,6 @@ struct ib_uverbs_exp_pci_atomic_caps {
 	__u16 reserved;
 };
 
-struct ib_uverbs_exp_sig_caps {
-	__u32 prot_cap;
-	__u32 guard_cap;
-};
-
 struct ib_uverbs_exp_query_device_resp {
 	__u64					comp_mask;
 	struct ib_uverbs_query_device_resp	base;
@@ -371,7 +366,6 @@ struct ib_uverbs_exp_query_device_resp {
 	__u64					comp_mask_2;
 	struct ib_uverbs_exp_umr_fixed_size_caps umr_fixed_size_caps;
 	struct ib_uverbs_exp_pci_atomic_caps	pci_atomic_caps;
-	struct ib_uverbs_exp_sig_caps		sig_caps;
 };
 
 enum ib_uverbs_exp_create_cq_comp_mask {

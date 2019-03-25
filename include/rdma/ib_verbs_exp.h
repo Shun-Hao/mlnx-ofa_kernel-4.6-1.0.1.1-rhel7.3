@@ -169,7 +169,6 @@ enum ib_exp_device_attr_comp_mask {
 enum ib_exp_device_attr_comp_mask_2 {
 	IB_EXP_DEVICE_ATTR_UMR_FIXED_SIZE_CAPS  = 1ULL << 0,
 	IB_EXP_DEVICE_ATTR_PCI_ATOMIC_CAPS	= 1ULL << 1,
-	IB_EXP_DEVICE_ATTR_SIG_CAPS		= 1ULL << 2,
 };
 
 enum ib_exp_device_cap_flags2 {
@@ -181,7 +180,6 @@ enum ib_exp_device_cap_flags2 {
 	IB_EXP_DEVICE_NOP		= 1 << 5,
 	IB_EXP_DEVICE_UMR		= 1 << 6,
 	IB_EXP_DEVICE_ODP               = 1 << 7,
-	IB_EXP_DEVICE_SIGNATURE_HANDOVER	= 1 << 8,
 	IB_EXP_DEVICE_VXLAN_SUPPORT		= 1 << 10,
 	IB_EXP_DEVICE_RX_CSUM_TCP_UDP_PKT	= 1 << 11,
 	IB_EXP_DEVICE_RX_CSUM_IP_PKT		= 1 << 12,
@@ -316,11 +314,6 @@ struct ib_exp_pci_atomic_caps {
 	u16 compare_swap;
 };
 
-struct ib_exp_sig_caps {
-	u32 prot_cap;
-	u32 guard_cap;
-};
-
 struct ib_exp_device_attr {
 	struct ib_device_attr	base;
 	/* Use IB_EXP_DEVICE_ATTR_... for exp_comp_mask */
@@ -373,7 +366,6 @@ struct ib_exp_device_attr {
 	u64				exp_comp_mask_2;         /* ib_exp_device_attr_comp_mask_2 */
 	struct ib_exp_umr_fixed_size_caps umr_fixed_size_caps;
 	struct ib_exp_pci_atomic_caps pci_atomic_caps;
-	struct ib_exp_sig_caps		sig_caps;
 };
 
 enum ib_dct_create_flags {

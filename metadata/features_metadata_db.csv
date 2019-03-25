@@ -310,3 +310,4 @@ name=fdb_bypass; type=feature; upstream_status=in_progress;
 name=sw_steering; type=feature; upstream_status=in_progress;
 name=roce_steering; type=feature; upstream_status=in_progress;
 name=signature_handover; type=feature; upstream_status=NA;
+name=sig_crc32; type=feature; upstream_status=NA;

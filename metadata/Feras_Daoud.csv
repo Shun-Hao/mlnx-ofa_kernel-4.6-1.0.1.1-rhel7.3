@@ -60,3 +60,8 @@ Change-Id=Ia2815599a6cd1ab89cc4599bab43d280b651fae7; subject=BACKPORTS: Fix IPoI
 Change-Id=I6706f63b5982f265ced72b89006dbc0159a61282; subject=BACKPORTS: Move parent netdevice resources to remove_one; feature=backports; upstream_status=ignore; general=;
 Change-Id=Ibf73a9cbdd8f16a3f9e121df7701673ebb14f772; subject=Revert "net/mlx5e: Use CQE padding for Ethernet CQs"; feature=mlx5_core_bugs; upstream_status=ignore; general=;
 Change-Id=I2c7d7601d9c1ee540f6776294f3eeef455dc8090; subject=IB/ipoib: Fix ipoib_get_iflink panic in child interfaces; feature=backports; upstream_status=ignore; general=;
+Change-Id=I08e40ea69b552c98f0bcfd7a08cfb919a287784e; subject=Revert "IB/mlx5: Fix handling of SIGERR SQD event for user QPs"; feature=mlx5_core_bugs; upstream_status=NA; general=;
+Change-Id=I7e6334e12ba2a9c718786ebe8393d438c4ff1505; subject=Revert "IB/{mlx5,core}: Introduce and implement new IB_PROT_CRC32"; feature=mlx5_core_bugs; upstream_status=NA; general=;
+Change-Id=Ief1fa3547ae98845f2f4ec98ed369cebca93d40a; subject=Revert "{IB,net}/mlx5: Handover SIGERR SQD to userspace"; feature=mlx5_core_bugs; upstream_status=NA; general=;
+Change-Id=I389fca015132ad8cf29f5ac3dc5a4aa783173e99; subject=Revert "IB/{uverbs,mlx5}: Pass SIG MR PSV indices to userspace"; feature=mlx5_core_bugs; upstream_status=NA; general=;
+Change-Id=Ia2a273d608d90ab703340a791117f50f5a9cb746; subject=Revert "IB/uverbs: Expose signature handover caps to UAPI"; feature=mlx5_core_bugs; upstream_status=NA; general=;
