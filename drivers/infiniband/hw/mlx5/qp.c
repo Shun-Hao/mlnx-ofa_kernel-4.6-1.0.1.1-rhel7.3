@@ -352,7 +352,6 @@ static void mlx5_ib_qp_event(struct mlx5_core_qp *qp, int event_info)
 	u8 error_type = (event_info >> 8) & 0xff;
 
 	if (type == MLX5_EVENT_TYPE_SQ_DRAINED &&
-	    to_mibqp(qp)->create_type == MLX5_QP_KERNEL &&
 	    to_mibqp(qp)->state != IB_QPS_SQD) {
 		mlx5_ib_sigerr_sqd_event(to_mibqp(qp));
 		return;
