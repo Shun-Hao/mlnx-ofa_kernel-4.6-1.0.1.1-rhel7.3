@@ -1,7 +1,7 @@
-From: Alaa Hleihel <alaa@mellanox.com>
+From: Aya Levin <ayal@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/eq.c
 
-Change-Id: I297a7dcf4de77e98fefd40c7032695165bed1ba3
+Change-Id: I6f47e4f82e0b9acc9b1ec0ed2269ad0c0d942306
 ---
  drivers/net/ethernet/mellanox/mlx5/core/eq.c | 31 ++++++++++++++++++++++++++--
  1 file changed, 29 insertions(+), 2 deletions(-)
@@ -10,7 +10,7 @@ diff --git a/drivers/net/ethernet/mellanox/mlx5/core/eq.c b/drivers/net/ethernet
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/net/ethernet/mellanox/mlx5/core/eq.c
 +++ b/drivers/net/ethernet/mellanox/mlx5/core/eq.c
-@@ -243,7 +243,11 @@ static void eq_pf_process(struct mlx5_eq *eq)
+@@ -249,7 +249,11 @@ static void eq_pf_process(struct mlx5_eq *eq)
  			break;
  		}
  
@@ -22,16 +22,16 @@ index xxxxxxx..xxxxxxx 100644
  		pf_eqe = &eqe->data.page_fault;
  		pfault->event_subtype = eqe->sub_type;
  		pfault->bytes_committed = be32_to_cpu(pf_eqe->bytes_committed);
-@@ -465,7 +469,7 @@ int mlx5_core_page_fault_resume(struct mlx5_core_dev *dev,
+@@ -471,7 +475,7 @@ int mlx5_core_page_fault_resume(struct mlx5_core_dev *dev,
  	return ret;
  }
  EXPORT_SYMBOL_GPL(mlx5_core_page_fault_resume);
 -#endif
 +#endif /* CONFIG_INFINIBAND_ON_DEMAND_PAGING */
  
- static void general_event_handler(struct mlx5_core_dev *dev,
- 				  struct mlx5_eqe *eqe)
-@@ -559,7 +563,11 @@ static irqreturn_t mlx5_eq_int(int irq, void *eq_ptr)
+ void mlx5_pcie_event_work(struct work_struct *work)
+ {
+@@ -617,7 +621,11 @@ static irqreturn_t mlx5_eq_int(int irq, void *eq_ptr)
  		 * Make sure we read EQ entry contents after we've
  		 * checked the ownership bit.
  		 */
@@ -43,7 +43,7 @@ index xxxxxxx..xxxxxxx 100644
  
  		mlx5_core_dbg(eq->dev, "eqn %d, eqe type %s\n",
  			      eq->eqn, eqe_type_str(eqe->type));
-@@ -667,9 +675,11 @@ static irqreturn_t mlx5_eq_int(int irq, void *eq_ptr)
+@@ -725,9 +733,11 @@ static irqreturn_t mlx5_eq_int(int irq, void *eq_ptr)
  			mlx5_port_module_event(dev, eqe);
  			break;
  
@@ -55,7 +55,7 @@ index xxxxxxx..xxxxxxx 100644
  
  		case MLX5_EVENT_TYPE_FPGA_ERROR:
  		case MLX5_EVENT_TYPE_FPGA_QP_ERROR:
-@@ -821,7 +831,11 @@ int mlx5_create_map_eq(struct mlx5_core_dev *dev, struct mlx5_eq *eq, u8 vecidx,
+@@ -879,7 +889,11 @@ int mlx5_create_map_eq(struct mlx5_core_dev *dev, struct mlx5_eq *eq, u8 vecidx,
  	mlx5_add_pci_to_irq_name(dev, name, priv->irq_info[vecidx].name);
  
  	eq->eqn = MLX5_GET(create_eq_out, out, eq_number);
@@ -68,7 +68,7 @@ index xxxxxxx..xxxxxxx 100644
  	eq->dev = dev;
  	eq->doorbell = priv->uar->map + MLX5_EQ_DOORBEL_OFFSET;
  	err = request_irq(eq->irqn, handler, 0,
-@@ -856,7 +870,11 @@ int mlx5_create_map_eq(struct mlx5_core_dev *dev, struct mlx5_eq *eq, u8 vecidx,
+@@ -914,7 +928,11 @@ int mlx5_create_map_eq(struct mlx5_core_dev *dev, struct mlx5_eq *eq, u8 vecidx,
  	return 0;
  
  err_irq:
@@ -80,7 +80,7 @@ index xxxxxxx..xxxxxxx 100644
  
  err_eq:
  	mlx5_cmd_destroy_eq(dev, eq->eqn);
-@@ -929,6 +947,13 @@ int mlx5_eq_del_cq(struct mlx5_eq *eq, struct mlx5_core_cq *cq)
+@@ -987,6 +1005,13 @@ int mlx5_eq_del_cq(struct mlx5_eq *eq, struct mlx5_core_cq *cq)
  	return 0;
  }
  
@@ -94,7 +94,7 @@ index xxxxxxx..xxxxxxx 100644
  int mlx5_eq_init(struct mlx5_core_dev *dev)
  {
  	int err;
-@@ -1108,7 +1133,9 @@ void mlx5_core_eq_free_irqs(struct mlx5_core_dev *dev)
+@@ -1166,7 +1191,9 @@ void mlx5_core_eq_free_irqs(struct mlx5_core_dev *dev)
  	if (MLX5_CAP_GEN(dev, pg))
  		free_irq(table->pfault_eq.irqn, &table->pfault_eq);
  #endif

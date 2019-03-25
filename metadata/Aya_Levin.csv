@@ -14,3 +14,7 @@ Change-Id=Iab269eff05d84f4aef266cf799d5f0337c820ba2; subject=BACKPORTS: ethtool,
 Change-Id=Iaf16150bbb051dc07577e3fae63f4b12bab30a34; subject=net/mlx4_core: Add masking for a few queries on HCA caps; feature=rebase; upstream_status=ignore; general=;
 Change-Id=I09231598a9f6a5077cfeb2c2b8a116a8c1e1de83; subject=net/mlx5e: Allow MAC invalidation while spoofchk is ON; feature=rebase; upstream_status=ignore; general=;
 Change-Id=I0e6c0cae5403cc3cd03d26f04e405ac38eafc206; subject=net/mlx5e: Specify advertise restriction to cx6 and on; feature=rebase; upstream_status=ignore; general=;
+Change-Id=I1a0d5e55108686c7180939127b21b31f081c9802; subject=net/mlx5: Expose MPEIN (Management PCIE INfo) register layout; feature=mlx5_pcie_power; upstream_status=in_progress; general=;
+Change-Id=I3fb8e9b3bcaffd4b7df9b28ea824c200e6b0e014; subject=net/mlx5: Handle event of power detection in the PCIE slot; feature=mlx5_pcie_power; upstream_status=in_progress; general=;
+Change-Id=I5b63c2f43ff0c7c6e60e64f76c1d9007ff08820c; subject=BACKPORTS: Fix mlx5/mlx5_core.h backports; feature=backports; upstream_status=ignore; general=;
+Change-Id=I97914ff19e627f3ed053be7a7273529f2c91144d; subject=BACKPORTS: Fix mlx5/eq.c backports; feature=mlx5_pcie_power; upstream_status=in_progress; general=;
