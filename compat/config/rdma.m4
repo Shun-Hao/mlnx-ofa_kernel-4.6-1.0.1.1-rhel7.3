@@ -9169,6 +9169,21 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if tcf_hash helper functions have tcf_hashinfo parameter])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <net/act_api.h>
+	],[
+		tcf_hash_check(0, NULL, 0, NULL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_TCF_HASH_WITH_HASHINFO, 1,
+			  [tcf_hash helper functions have tcf_hashinfo parameter])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if uapi/linux/nvme_ioctl.h has NVME_IOCTL_RESCAN])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/nvme_ioctl.h>

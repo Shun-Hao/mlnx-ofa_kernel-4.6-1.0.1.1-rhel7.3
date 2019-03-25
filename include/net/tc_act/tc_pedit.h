@@ -12,7 +12,7 @@ struct tcf_pedit_key_ex {
 };
 
 struct tcf_pedit {
-#ifndef CONFIG_COMPAT_KERNEL_4_9
+#ifdef HAVE_TCF_COMMON
 	struct tcf_common	common;
 #else
 	struct tc_action	common;
@@ -23,7 +23,7 @@ struct tcf_pedit {
 	struct tcf_pedit_key_ex	*tcfp_keys_ex;
 };
 
-#ifndef CONFIG_COMPAT_KERNEL_4_9
+#ifdef HAVE_TCF_COMMON
 #define to_pedit(a) ((struct tcf_pedit *) a->priv)
 
 #define pc_to_pedit(pc) \

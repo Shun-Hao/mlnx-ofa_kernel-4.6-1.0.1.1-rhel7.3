@@ -193,6 +193,9 @@ if [[ ! -z ${RHEL7_2} ]]; then
 	set_config CONFIG_COMPAT_CLS_FLOWER_MOD m
 	set_config CONFIG_COMPAT_TCF_TUNNEL_KEY_MOD m
 	set_config CONFIG_COMPAT_TCF_VLAN_MOD m
+fi
+
+if [[ ${RHEL_MAJOR} -eq "7" && ${RHEL_MINOR} -le "4" ]]; then
 	set_config CONFIG_COMPAT_TCF_PEDIT_MOD m
 fi
 
