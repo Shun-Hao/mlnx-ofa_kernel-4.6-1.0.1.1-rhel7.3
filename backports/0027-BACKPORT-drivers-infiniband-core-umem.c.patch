@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/infiniband/core/umem.c
 
 Change-Id: I21e5866ce3102df0e005fccb882bf55844072c36
 ---
- drivers/infiniband/core/umem.c | 61 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 61 insertions(+)
+ drivers/infiniband/core/umem.c | 65 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 65 insertions(+)
 
 diff --git a/drivers/infiniband/core/umem.c b/drivers/infiniband/core/umem.c
 index xxxxxxx..xxxxxxx 100644
@@ -66,7 +66,7 @@ index xxxxxxx..xxxxxxx 100644
  	up_write(&mm->mmap_sem);
  
  	cur_base = addr & PAGE_MASK;
-@@ -296,22 +317,46 @@ struct ib_umem *ib_umem_get(struct ib_ucontext *context, unsigned long addr,
+@@ -296,22 +317,50 @@ struct ib_umem *ib_umem_get(struct ib_ucontext *context, unsigned long addr,
  		goto vma;
  	}
  
@@ -88,7 +88,11 @@ index xxxxxxx..xxxxxxx 100644
 +#ifdef HAVE_GET_USER_PAGES_LONGTERM
  		ret = get_user_pages_longterm(cur_base,
 +#else
++#ifdef HAVE_GET_USER_PAGES_7_PARAMS
++		ret = get_user_pages(current, current->mm, cur_base,
++#else
 +		ret = get_user_pages(cur_base,
++#endif
 +#endif
  				     min_t(unsigned long, npages,
  					   PAGE_SIZE / sizeof (struct page *)),
@@ -113,7 +117,7 @@ index xxxxxxx..xxxxxxx 100644
  			up_read(&mm->mmap_sem);
  			goto umem_release;
  		}
-@@ -339,7 +384,11 @@ struct ib_umem *ib_umem_get(struct ib_ucontext *context, unsigned long addr,
+@@ -339,7 +388,11 @@ struct ib_umem *ib_umem_get(struct ib_ucontext *context, unsigned long addr,
  				  umem->sg_head.sgl,
  				  umem->npages,
  				  DMA_BIDIRECTIONAL,
@@ -125,7 +129,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	if (!umem->nmap) {
  		pr_err("%s: failed to map scatterlist, npages=%d\n", __func__,
-@@ -355,7 +404,11 @@ umem_release:
+@@ -355,7 +408,11 @@ umem_release:
  	__ib_umem_release(context->device, umem, 0);
  vma:
  	down_write(&mm->mmap_sem);
@@ -137,7 +141,7 @@ index xxxxxxx..xxxxxxx 100644
  	up_write(&mm->mmap_sem);
  out:
  	if (vma_list)
-@@ -406,7 +459,11 @@ static void ib_umem_release_defer(struct work_struct *work)
+@@ -406,7 +463,11 @@ static void ib_umem_release_defer(struct work_struct *work)
  	struct ib_umem *umem = container_of(work, struct ib_umem, work);
  
  	down_write(&umem->owning_mm->mmap_sem);
@@ -149,7 +153,7 @@ index xxxxxxx..xxxxxxx 100644
  	up_write(&umem->owning_mm->mmap_sem);
  
  	__ib_umem_release_tail(umem);
-@@ -450,7 +507,11 @@ void ib_umem_release(struct ib_umem *umem)
+@@ -450,7 +511,11 @@ void ib_umem_release(struct ib_umem *umem)
  	} else {
  		down_write(&umem->owning_mm->mmap_sem);
  	}

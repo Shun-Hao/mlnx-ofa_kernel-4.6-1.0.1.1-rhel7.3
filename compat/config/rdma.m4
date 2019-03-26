@@ -61,6 +61,48 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		MLNX_AC_DEFINE(HAVE_GET_USER_PAGES_GUP_FLAGS, 1,
 			[get_user_pages uses gup_flags])
 	],[
+		AC_MSG_CHECKING([if get_user_pages has 7 params])
+		MLNX_BG_LB_LINUX_TRY_COMPILE([
+			#include <linux/mm.h>
+		],[
+			unsigned long start;
+			unsigned long nr_pages;
+			unsigned int gup_flags;
+			struct page **page_list;
+			struct vm_area_struct **vmas;
+			int ret;
+			ret = get_user_pages(NULL, NULL, start, nr_pages, gup_flags,
+					page_list, vmas);
+			return 0;
+		],[
+			AC_MSG_RESULT(yes)
+			MLNX_AC_DEFINE(HAVE_GET_USER_PAGES_GUP_FLAGS, 1,
+				[get_user_pages has 7 params])
+		],[
+			AC_MSG_RESULT(no)
+		])
+
+	])
+
+	AC_MSG_CHECKING([if get_user_pages has 7 params])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/mm.h>
+	],[
+		unsigned long start;
+		unsigned long nr_pages;
+		unsigned int gup_flags;
+		struct page **page_list;
+		struct vm_area_struct **vmas;
+		int ret;
+
+		ret = get_user_pages(NULL, NULL, start, nr_pages, gup_flags,
+					page_list, vmas);
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_GET_USER_PAGES_7_PARAMS, 1,
+			[get_user_pages has 7 params])
+	],[
 		AC_MSG_RESULT(no)
 	])
 

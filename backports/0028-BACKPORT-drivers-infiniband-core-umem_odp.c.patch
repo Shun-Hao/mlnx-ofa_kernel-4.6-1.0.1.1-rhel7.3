@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/infiniband/core/umem_odp.c
 
 Change-Id: I7521ac463c4930da1679b7cb2e1f3451e5602c1e
 ---
- drivers/infiniband/core/umem_odp.c | 107 ++++++++++++++++++++++++++++++++++++-
- 1 file changed, 105 insertions(+), 2 deletions(-)
+ drivers/infiniband/core/umem_odp.c | 111 ++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 109 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/infiniband/core/umem_odp.c b/drivers/infiniband/core/umem_odp.c
 index xxxxxxx..xxxxxxx 100644
@@ -184,7 +184,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	start_idx = (user_virt - ib_umem_start(umem)) >> page_shift;
  	k = start_idx;
-@@ -695,9 +769,25 @@ int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 user_virt,
+@@ -695,9 +769,29 @@ int ib_umem_odp_map_dma_pages(struct ib_umem_odp *umem_odp, u64 user_virt,
  		 * complex (and doesn't gain us much performance in most use
  		 * cases).
  		 */
@@ -204,13 +204,17 @@ index xxxxxxx..xxxxxxx 100644
 +#else
 +		npages = get_user_pages(owning_process, owning_mm,
 +				user_virt, gup_num_pages,
++#ifdef HAVE_GET_USER_PAGES_7_PARAMS
++				flags, local_page_list, NULL);
++#else
 +				access_mask & ODP_WRITE_ALLOWED_BIT,
 +				0, local_page_list, NULL);
++#endif
 +#endif
  		up_read(&owning_mm->mmap_sem);
  
  		if (npages < 0) {
-@@ -828,10 +918,16 @@ EXPORT_SYMBOL(ib_umem_odp_unmap_dma_pages);
+@@ -828,10 +922,16 @@ EXPORT_SYMBOL(ib_umem_odp_unmap_dma_pages);
  /* @last is not a part of the interval. See comment for function
   * node_last.
   */
@@ -227,7 +231,7 @@ index xxxxxxx..xxxxxxx 100644
  				  void *cookie)
  {
  	int ret_val = 0;
-@@ -844,8 +940,10 @@ int rbt_ib_umem_for_each_in_range(struct rb_root_cached *root,
+@@ -844,8 +944,10 @@ int rbt_ib_umem_for_each_in_range(struct rb_root_cached *root,
  	for (node = rbt_ib_umem_iter_first(root, start, last - 1);
  			node; node = next) {
  		/* TODO move the blockable decision up to the callback */
@@ -238,7 +242,7 @@ index xxxxxxx..xxxxxxx 100644
  		next = rbt_ib_umem_iter_next(node, start, last - 1);
  		umem = container_of(node, struct ib_umem_odp, interval_tree);
  		ret_val = cb(umem, start, last, cookie) || ret_val;
-@@ -854,8 +952,13 @@ int rbt_ib_umem_for_each_in_range(struct rb_root_cached *root,
+@@ -854,8 +956,13 @@ int rbt_ib_umem_for_each_in_range(struct rb_root_cached *root,
  	return ret_val;
  }
  EXPORT_SYMBOL(rbt_ib_umem_for_each_in_range);
