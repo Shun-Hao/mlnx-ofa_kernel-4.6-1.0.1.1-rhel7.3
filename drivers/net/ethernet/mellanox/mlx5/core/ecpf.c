@@ -133,6 +133,44 @@ static int mlx5_query_host_params_context(struct mlx5_core_dev *dev,
 	return mlx5_cmd_exec(dev, in, sizeof(in), out, outlen);
 }
 
+static ssize_t mac_store(struct kobject *kobj,
+			 struct kobj_attribute *attr,
+			 const char *buf,
+			 size_t count)
+{
+	struct mlx5_smart_nic_vport *tmp =
+		container_of(kobj, struct mlx5_smart_nic_vport, kobj);
+	struct mlx5_eswitch *esw = tmp->esw;
+	u8 mac[ETH_ALEN];
+	int err;
+
+	err = sscanf(buf, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+		     &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+	if (err == 6)
+		goto set_mac;
+
+	if (sysfs_streq(buf, "Random"))
+		eth_random_addr(mac);
+	else
+		return -EINVAL;
+
+set_mac:
+	err = mlx5_eswitch_set_vport_mac(esw, tmp->vport, mac);
+	return err ? err : count;
+}
+
+static ssize_t mac_show(struct kobject *kobj,
+			struct kobj_attribute *attr,
+			char *buf)
+{
+	return sprintf(buf,
+		       "usage: write <LLADDR|Random> to set Mac Address\n");
+}
+
+#define _sprintf(p, buf, format, arg...)                               \
+       ((PAGE_SIZE - (int)(p - buf)) <= 0 ? 0 :                        \
+       scnprintf(p, PAGE_SIZE - (int)(p - buf), format, ## arg))
+
 static ssize_t config_show(struct kobject *kobj,
 			   struct kobj_attribute *attr,
 			   char *buf)
@@ -146,8 +184,8 @@ static ssize_t config_show(struct kobject *kobj,
 
 	mutex_lock(&esw->state_lock);
 	ivi = &esw->vports[vport].info;
-	p += sprintf(p, buf, "MAC        : %pM\n", ivi->mac);
-	p += sprintf(p, buf, "MaxTxRate  : %d\n", ivi->max_rate);
+	p += _sprintf(p, buf, "MAC        : %pM\n", ivi->mac);
+	p += _sprintf(p, buf, "MaxTxRate  : %d\n", ivi->max_rate);
 	mutex_unlock(&esw->state_lock);
 
 	return (ssize_t)(p - buf);
@@ -160,6 +198,12 @@ static struct kobj_attribute attr_max_tx_rate = {
 	.store = max_tx_rate_store,
 };
 
+static struct kobj_attribute attr_mac = {
+	.attr = {.name = "mac",
+		 .mode = 0644 },
+	.show = mac_show,
+	.store = mac_store,
+};
 static struct kobj_attribute attr_config = {
 	.attr = {.name = "config",
 		 .mode = 0444 },
@@ -169,6 +213,7 @@ static struct kobj_attribute attr_config = {
 static struct attribute *smart_nic_attrs[] = {
 	&attr_config.attr,
 	&attr_max_tx_rate.attr,
+	&attr_mac.attr,
 	NULL,
 };
 
