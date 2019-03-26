@@ -29,3 +29,4 @@ Change-Id=If341b150e6501017e28833373b9a7b025a5cc52d; subject=metadata: Update me
 Change-Id=Ibb6f49bd293d91aeaa73155c1649fcd946f4a525; subject=BACKPORTS: Use unregister_netdevice in case close_list not defined; feature=backports; upstream_status=ignore; general=;
 Change-Id=I547554bb09196dc5e1fd3e364966d731e96ffb6e; subject=BACKPORTS: Fix XDP backport; feature=backports; upstream_status=ignore; general=;
 Change-Id=I73c46f3fe8ee2f4bc31c282c2382dc587828a6b7; subject=BACKPORTS: Fix Ubuntu 16.04.5 compilaton; feature=backports; upstream_status=ignore; general=;
+Change-Id=I47d98650127cb896d0faa523c49803c3eb4d241f; subject=BACKPORTS: Free netdevice if no destructor and need to delete VLAN; feature=backports; upstream_status=ignore; general=;
