@@ -27,3 +27,4 @@ Change-Id=I7a0b9501a1c7b11cd9ea1db3af592bf5d99d7f6d; subject=BACKPORTS: XDP from
 Change-Id=Ia5b2ee8758a52afd6fcd608a6c50b708430be279; subject=BACKPORTS: 4_5_2 allign backports; feature=backports; upstream_status=ignore; general=;
 Change-Id=If341b150e6501017e28833373b9a7b025a5cc52d; subject=metadata: Update metada for merge 4_5_2 to 4_6; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=Ibb6f49bd293d91aeaa73155c1649fcd946f4a525; subject=BACKPORTS: Use unregister_netdevice in case close_list not defined; feature=backports; upstream_status=ignore; general=;
+Change-Id=I547554bb09196dc5e1fd3e364966d731e96ffb6e; subject=BACKPORTS: Fix XDP backport; feature=backports; upstream_status=ignore; general=;
