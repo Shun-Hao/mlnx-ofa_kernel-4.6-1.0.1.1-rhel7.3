@@ -9253,6 +9253,22 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if linux/atomic.h has atomic_read_acquire])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/atomic.h>
+	],[
+		atomic_t x;
+		atomic_read_acquire(&x);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_ATOMIC_READ_ACQUIRE, 1,
+			  [atomic_read_acquire is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if linux/atomic.h has atomic_fetch_add_unless])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/highmem.h>
