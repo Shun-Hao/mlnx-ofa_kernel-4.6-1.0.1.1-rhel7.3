@@ -1087,14 +1087,14 @@ static void add_unready_flow(struct mlx5e_tc_flow *flow)
 	esw = flow->priv->mdev->priv.eswitch;
 	rpriv = mlx5_eswitch_get_uplink_priv(esw, REP_ETH);
 
-	flow->flags |= MLX5E_TC_FLOW_NOT_READY;
+	atomic_or(MLX5E_TC_FLOW_NOT_READY, &flow->flags);
 	list_add_tail(&flow->unready, &rpriv->unready_flows);
 }
 
 static void remove_unready_flow(struct mlx5e_tc_flow *flow)
 {
 	list_del(&flow->unready);
-	flow->flags &= ~MLX5E_TC_FLOW_NOT_READY;
+	atomic_and(~MLX5E_TC_FLOW_NOT_READY, &flow->flags);
 }
 
 static int
@@ -1188,7 +1188,7 @@ static void mlx5e_tc_del_fdb_flow(struct mlx5e_priv *priv,
 	struct mlx5_esw_flow_attr *attr = flow->esw_attr;
 	struct mlx5_esw_flow_attr slow_attr;
 
-	if (flow->flags & MLX5E_TC_FLOW_NOT_READY) {
+	if (atomic_read(&flow->flags) & MLX5E_TC_FLOW_NOT_READY) {
 		remove_unready_flow(flow);
 #ifdef HAVE_TCF_TUNNEL_INFO
 		if (attr->action & MLX5_FLOW_CONTEXT_ACTION_PACKET_REFORMAT)
@@ -1564,15 +1564,15 @@ static void __mlx5e_tc_del_fdb_peer_flow(struct mlx5e_tc_flow *flow)
 {
 	struct mlx5_eswitch *esw = flow->priv->mdev->priv.eswitch;
 
-	if (!(flow->flags & MLX5E_TC_FLOW_ESWITCH) ||
-	    !(flow->flags & MLX5E_TC_FLOW_DUP))
+	if (!(atomic_read(&flow->flags) & MLX5E_TC_FLOW_ESWITCH) ||
+	    !(atomic_read(&flow->flags) & MLX5E_TC_FLOW_DUP))
 		return;
 
 	mutex_lock(&esw->offloads.peer_mutex);
 	list_del(&flow->peer);
 	mutex_unlock(&esw->offloads.peer_mutex);
 
-	flow->flags &= ~MLX5E_TC_FLOW_DUP;
+	atomic_and(~MLX5E_TC_FLOW_DUP, &flow->flags);
 
 	mlx5e_tc_del_fdb_flow(flow->peer_flow->priv, flow->peer_flow);
 	kvfree(flow->peer_flow);
@@ -3704,7 +3704,7 @@ static bool is_peer_flow_needed(struct mlx5e_tc_flow *flow)
 {
 	struct mlx5_esw_flow_attr *attr = flow->esw_attr;
 	bool is_rep_ingress = attr->in_rep->vport != MLX5_VPORT_UPLINK &&
-				flow->flags & MLX5E_TC_FLOW_INGRESS;
+				atomic_read(&flow->flags) & MLX5E_TC_FLOW_INGRESS;
 	bool act_is_encap = !!(attr->action &
 			       MLX5_FLOW_CONTEXT_ACTION_PACKET_REFORMAT);
 	bool esw_paired = mlx5_devcom_is_paired(attr->in_mdev->priv.devcom,
@@ -3923,7 +3923,7 @@ static int mlx5e_tc_add_fdb_peer_flow(struct tc_cls_flower_offload *f,
 		goto out;
 
 	flow->peer_flow = peer_flow;
-	flow->flags |= MLX5E_TC_FLOW_DUP;
+	atomic_or(MLX5E_TC_FLOW_DUP, &flow->flags);
 	mutex_lock(&esw->offloads.peer_mutex);
 	list_add_tail(&flow->peer, &esw->offloads.peer_flows);
 	mutex_unlock(&esw->offloads.peer_mutex);
@@ -4145,8 +4145,8 @@ int mlx5e_stats_flower(struct mlx5e_priv *priv,
 	/* Under multipath it's possible for one rule to be currently
 	 * un-offloaded while the other rule is offloaded.
 	 */
-	if ((flow->flags & MLX5E_TC_FLOW_DUP) &&
-	    (flow->peer_flow->flags & MLX5E_TC_FLOW_OFFLOADED)) {
+	if ((atomic_read(&flow->flags) & MLX5E_TC_FLOW_DUP) &&
+	    (atomic_read(&flow->peer_flow->flags) & MLX5E_TC_FLOW_OFFLOADED)) {
 		u64 bytes2;
 		u64 packets2;
 		u64 lastuse2;
