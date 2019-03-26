@@ -195,7 +195,9 @@ if [[ ! -z ${RHEL7_2} ]]; then
 	set_config CONFIG_COMPAT_TCF_VLAN_MOD m
 fi
 
-if [[ ${RHEL_MAJOR} -eq "7" && ${RHEL_MINOR} -le "4" ]]; then
+RHEL7_4_JD=$(echo ${KVERSION} | grep 3.10.0-693.21.3)
+
+if [[ ${RHEL_MAJOR} -eq "7" && ${RHEL_MINOR} -le "4" && ! $RHEL7_4_JD ]]; then
 	set_config CONFIG_COMPAT_TCF_PEDIT_MOD m
 fi
 
