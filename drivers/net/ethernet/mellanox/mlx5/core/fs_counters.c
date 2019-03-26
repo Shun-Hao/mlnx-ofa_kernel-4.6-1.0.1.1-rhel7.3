@@ -128,16 +128,22 @@ static struct mlx5_fc *mlx5_fc_stats_query(struct mlx5_core_dev *dev,
 
 	int max_bulk = min_t(int, MLX5_SW_MAX_COUNTERS_BULK,
 			     (1 << MLX5_CAP_GEN(dev, log_max_flow_counter_bulk)));
+	max_bulk = max_bulk & ~0x3;
 
 	/* first id must be aligned to 4 when using bulk query */
 	afirst_id = first->id & ~0x3;
 
 	/* number of counters to query inc. the last counter */
 	num = ALIGN(last_id - afirst_id + 1, 4);
-	if (num > max_bulk) {
+	if (num > max_bulk)
 		num = max_bulk;
-		last_id = afirst_id + num - 1;
+
+	if (num == 0) {
+		 /* happens if max_bulk < 4, like from CAP above */
+		num = 1;
+		afirst_id = first->id;
 	}
+	last_id = afirst_id + num - 1;
 
 	b = mlx5_cmd_fc_bulk_alloc(dev, afirst_id, num);
 	if (!b) {
