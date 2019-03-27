@@ -45,3 +45,4 @@ Change-Id=I5faa7d0e101fec59aa161d7d665522be93307a22; subject=BACKPORTS: do ethto
 Change-Id=I64018aa5f5138c727c654d040fe767277c0010c0; subject=RDMA/hns: add dummy modules for hns_roce_hw_v1/2; feature=rebase; upstream_status=ignore; general=;
 Change-Id=I10beae91352746e0ebd410182058861cb8bbd853; subject=ofed-scripts: Add kernel 5.0 compat check; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=I993a2f915ccb59348a2660b43776114fafd825e5; subject=rdma.m4: add support for kernel 5.0; feature=backports; upstream_status=ignore; general=;
+Change-Id=Ic8516a9ebb46d9e4fbd3503a8489f8aae304c80c; subject=mlx4: Add crdump sysfile support; feature=mlx4_crdump; upstream_status=NA; general=;

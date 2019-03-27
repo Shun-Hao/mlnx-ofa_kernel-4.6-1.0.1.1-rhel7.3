@@ -1025,6 +1025,10 @@ struct mlx4_vf_dev {
 };
 
 struct mlx4_fw_crdump {
+	u32 crspace_size;
+	u8  *crspace;
+	u32 health_size;
+	u8  *health;
 	bool snapshot_enable;
 	struct devlink_region *region_crspace;
 	struct devlink_region *region_fw_health;

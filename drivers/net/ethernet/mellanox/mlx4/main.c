@@ -62,6 +62,7 @@ MODULE_LICENSE("Dual BSD/GPL");
 MODULE_VERSION(DRV_VERSION);
 
 struct workqueue_struct *mlx4_wq;
+static struct proc_dir_entry *mlx4_core_proc_dir;
 
 static int mlx4_en_only_mode = 0;
 module_param(mlx4_en_only_mode, int, 0444);
@@ -5368,9 +5369,20 @@ static int __init mlx4_init(void)
 	if (!mlx4_wq)
 		return -ENOMEM;
 
+	mlx4_core_proc_dir = proc_mkdir(MLX4_CORE_PROC, NULL);
+	if (mlx4_core_proc_dir)
+		mlx4_crdump_proc_init(mlx4_core_proc_dir);
+
 	ret = pci_register_driver(&mlx4_driver);
-	if (ret < 0)
+	if (ret < 0){
+		if (mlx4_core_proc_dir) {
+			mlx4_crdump_proc_cleanup(mlx4_core_proc_dir);
+			remove_proc_entry(MLX4_CORE_PROC, NULL);
+		}
+
 		destroy_workqueue(mlx4_wq);
+	}
+
 	return ret < 0 ? ret : 0;
 }
 
@@ -5378,6 +5390,10 @@ static void __exit mlx4_cleanup(void)
 {
 	pci_unregister_driver(&mlx4_driver);
 	destroy_workqueue(mlx4_wq);
+	if (mlx4_core_proc_dir) {
+		mlx4_crdump_proc_cleanup(mlx4_core_proc_dir);
+		remove_proc_entry(MLX4_CORE_PROC, NULL);
+	}
 }
 
 module_init(mlx4_init);

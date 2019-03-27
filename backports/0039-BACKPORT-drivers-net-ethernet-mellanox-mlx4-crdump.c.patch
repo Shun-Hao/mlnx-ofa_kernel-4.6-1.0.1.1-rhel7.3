@@ -1,60 +1,150 @@
 From: Talat Batheesh <talatb@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx4/crdump.c
 
-Change-Id: Ib3bbc4e1369d2b599a6cb14c917afa8e634e992b
+Change-Id: I6f4d9629a5b3a289b73f185d32915cecafd782bf
 ---
- drivers/net/ethernet/mellanox/mlx4/crdump.c | 11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+ drivers/net/ethernet/mellanox/mlx4/crdump.c | 35 +++++++++++++++++++++--------
+ 1 file changed, 26 insertions(+), 9 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx4/crdump.c b/drivers/net/ethernet/mellanox/mlx4/crdump.c
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/net/ethernet/mellanox/mlx4/crdump.c
 +++ b/drivers/net/ethernet/mellanox/mlx4/crdump.c
-@@ -31,7 +31,7 @@
+@@ -31,7 +31,6 @@
   */
  
  #include "mlx4.h"
 -
-+#ifdef HAVE_DEVLINK_PARAM_GENERIC_ID_REGION_SNAPSHOT
  #define BAD_ACCESS			0xBADACCE5
  #define HEALTH_BUFFER_SIZE		0x40
  #define CR_ENABLE_BIT			swab32(BIT(6))
-@@ -78,18 +78,21 @@ static void mlx4_crdump_collect_crspace(struct mlx4_dev *dev,
- 					u8 __iomem *cr_space,
- 					u32 id)
- {
-+#ifdef HAVE_DEVLINK_PARAM_GENERIC_ID_REGION_SNAPSHOT
- 	struct mlx4_fw_crdump *crdump = &dev->persist->crdump;
-+#endif
- 	struct pci_dev *pdev = dev->persist->pdev;
- 	unsigned long cr_res_size;
- 	u8 *crspace_data;
- 	int offset;
- 	int err;
+@@ -39,8 +38,10 @@
+ #define MAX_NUM_OF_DUMPS_TO_STORE	(8)
+ #define CRDUMP_PROC_DIR "crdump"
  
 +#ifdef HAVE_DEVLINK_PARAM_GENERIC_ID_REGION_SNAPSHOT
- 	if (!crdump->region_crspace) {
+ static const char *region_cr_space_str = "cr-space";
+ static const char *region_fw_health_str = "fw-health";
++#endif
+ 
+ /* Set to true in case cr enable bit was set to true before crdump */
+ static bool crdump_enbale_bit_set;
+@@ -89,6 +90,7 @@ void mlx4_crdump_proc_cleanup(struct proc_dir_entry *proc_core_dir)
+ 		remove_proc_entry(CRDUMP_PROC_DIR, proc_core_dir);
+ }
+ 
++#ifdef HAVE_DEVLINK_PARAM_GENERIC_ID_REGION_SNAPSHOT
+ static void mlx4_crdump_collect_crspace(struct mlx4_dev *dev,
+ 					u8 __iomem *cr_space,
+ 					u32 id)
+@@ -104,7 +106,6 @@ static void mlx4_crdump_collect_crspace(struct mlx4_dev *dev,
  		mlx4_err(dev, "crdump: cr-space region is NULL\n");
  		return;
  	}
 -
-+#endif
  	/* Try to collect CR space */
  	cr_res_size = pci_resource_len(pdev, 0);
  	crspace_data = kvmalloc(cr_res_size, GFP_KERNEL);
-@@ -203,8 +206,9 @@ int mlx4_crdump_init(struct mlx4_dev *dev)
- 	struct mlx4_fw_crdump *crdump = &dev->persist->crdump;
- 	struct pci_dev *pdev = dev->persist->pdev;
- 
-+#ifdef HAVE_DEVLINK_PARAM_GENERIC_ID_REGION_SNAPSHOT
- 	crdump->snapshot_enable = false;
--
-+#endif
- 	/* Create cr-space region */
- 	crdump->region_crspace =
- 		devlink_region_create(devlink,
-@@ -237,3 +241,4 @@ void mlx4_crdump_end(struct mlx4_dev *dev)
- 	devlink_region_destroy(crdump->region_fw_health);
- 	devlink_region_destroy(crdump->region_crspace);
+@@ -169,15 +170,18 @@ static void mlx4_crdump_collect_fw_health(struct mlx4_dev *dev,
+ 		mlx4_err(dev, "crdump: Failed to allocate health buffer\n");
+ 	}
  }
 +#endif
+ 
+ int mlx4_crdump_collect(struct mlx4_dev *dev)
+ {
++#ifdef HAVE_DEVLINK_PARAM_GENERIC_ID_REGION_SNAPSHOT
+ 	struct devlink *devlink = priv_to_devlink(mlx4_priv(dev));
++	u32 id;
++#endif
+ 	struct mlx4_fw_crdump *crdump = &dev->persist->crdump;
+ 	struct pci_dev *pdev = dev->persist->pdev;
+ 	unsigned long cr_res_size;
+ 	u8 __iomem *cr_space;
+-	u32 id;
+ 	int offset;
+ 
+ 	if (!dev->caps.health_buffer_addrs) {
+@@ -225,6 +229,7 @@ int mlx4_crdump_collect(struct mlx4_dev *dev)
+ 				MLX4_CORE_PROC, CRDUMP_PROC_DIR,
+ 				pci_name(dev->persist->pdev));
+ 
++#ifdef HAVE_DEVLINK_PARAM_GENERIC_ID_REGION_SNAPSHOT
+ 	if (!crdump->snapshot_enable) {
+ 		mlx4_info(dev, "crdump: devlink snapshot disabled, skipping\n");
+ 		goto out;
+@@ -236,11 +241,12 @@ int mlx4_crdump_collect(struct mlx4_dev *dev)
+ 	/* Try to capture dumps */
+ 	mlx4_crdump_collect_crspace(dev, cr_space, id);
+ 	mlx4_crdump_collect_fw_health(dev, cr_space, id);
+-
++#endif
+ 	if (crdump->crspace || crdump->health)
+ 		mlx4_info(dev, "crdump: Crash snapshot collected to /proc/%s/%s/%s\n",
+ 				MLX4_CORE_PROC, CRDUMP_PROC_DIR,
+ 				pci_name(dev->persist->pdev));
++	goto out;
+ 
+ out:
+ 	crdump_disable_crspace_access(dev, cr_space);
+@@ -319,14 +325,21 @@ static int crdump_proc_open(struct inode *inode, struct file *file)
+ {
+ 	struct seq_file *seq;
+ 	int ret;
++#ifndef HAVE_PDE_DATA
++	struct proc_dir_entry *pde;
++#endif
+ 
+ 	ret = seq_open(file, &crdump_seq_ops);
+ 	if (ret)
+ 		return ret;
+ 
++#ifdef HAVE_PDE_DATA
+ 	seq = file->private_data;
+ 	seq->private = PDE_DATA(inode);
+-
++#else
++	pde = PDE(inode);
++	seq->private = pde->data;
++#endif
+ 	return 0;
+ }
+ 
+@@ -340,11 +353,14 @@ static const struct file_operations crdump_proc_fops = {
+ 
+ int mlx4_crdump_init(struct mlx4_dev *dev)
+ {
+-	struct devlink *devlink = priv_to_devlink(mlx4_priv(dev));
+ 	struct mlx4_fw_crdump *crdump = &dev->persist->crdump;
++#ifdef HAVE_DEVLINK_PARAM_GENERIC_ID_REGION_SNAPSHOT
++	struct devlink *devlink = priv_to_devlink(mlx4_priv(dev));
+ 	struct pci_dev *pdev = dev->persist->pdev;
+-
++#endif
+ 	memset(crdump, 0, sizeof(struct mlx4_fw_crdump));
++
++#ifdef HAVE_DEVLINK_PARAM_GENERIC_ID_REGION_SNAPSHOT
+ 	crdump->snapshot_enable = false;
+ 
+ 	/* Create cr-space region */
+@@ -368,7 +384,7 @@ int mlx4_crdump_init(struct mlx4_dev *dev)
+ 		mlx4_warn(dev, "crdump: create devlink region %s err %ld\n",
+ 			  region_fw_health_str,
+ 			  PTR_ERR(crdump->region_fw_health));
+-
++#endif
+ 	if (crdump_proc_dir)
+ 		proc_create_data(pci_name(dev->persist->pdev), S_IRUGO,
+ 				 crdump_proc_dir, &crdump_proc_fops, crdump);
+@@ -380,9 +396,10 @@ void mlx4_crdump_end(struct mlx4_dev *dev)
+ {
+ 	struct mlx4_fw_crdump *crdump = &dev->persist->crdump;
+ 
++#ifdef HAVE_DEVLINK_PARAM_GENERIC_ID_REGION_SNAPSHOT
+ 	devlink_region_destroy(crdump->region_fw_health);
+ 	devlink_region_destroy(crdump->region_crspace);
+-
++#endif
+ 	if (crdump_proc_dir)
+ 		remove_proc_entry(pci_name(dev->persist->pdev), crdump_proc_dir);
+ 

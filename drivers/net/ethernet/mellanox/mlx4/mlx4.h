@@ -66,6 +66,8 @@
 
 #define MLX4_QUERY_IF_STAT_RESET	BIT(31)
 
+#define MLX4_CORE_PROC "driver/mlx4_core"
+
  enum {
 	 MLX4_INGRESS_PARSER_MODE_STANDARD               = 0,
 	 MLX4_INGRESS_PARSER_MODE_NON_L4_CSUM_OFFLOAD    = 1,
@@ -1069,6 +1071,8 @@ void mlx4_start_catas_poll(struct mlx4_dev *dev);
 void mlx4_stop_catas_poll(struct mlx4_dev *dev);
 int mlx4_catas_init(struct mlx4_dev *dev);
 void mlx4_catas_end(struct mlx4_dev *dev);
+void mlx4_crdump_proc_init(struct proc_dir_entry *proc_core_dir);
+void mlx4_crdump_proc_cleanup(struct proc_dir_entry *proc_core_dir);
 int mlx4_crdump_init(struct mlx4_dev *dev);
 void mlx4_crdump_end(struct mlx4_dev *dev);
 int mlx4_restart_one(struct pci_dev *pdev, bool reload,
