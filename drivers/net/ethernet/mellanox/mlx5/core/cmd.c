@@ -770,6 +770,35 @@ static int mlx5_cmd_check(struct mlx5_core_dev *dev, void *in, void *out)
 			mlx5_command_str(opcode), opcode, op_mod,
 			cmd_status_str(status), status, syndrome);
 	else
+#ifdef CONFIG_BF_DEVICE_EMULATION
+	if (mlx5_core_is_dev_emulation_manager(dev)) {
+		/*
+		 * Temporary: until nvme emulation matures we always want to
+		 * see command failures
+		 */
+		if (status == MLX5_CMD_STAT_BAD_SYS_STATE_ERR &&
+		    syndrome == 0x408b33)
+			/*
+			 * During FLR we can get a lot of failures because FW
+			 * already cleaned host resources (syndrome 0x408b33).
+			 */
+			mlx5_core_dbg(dev,
+				"%s(0x%x) op_mod(0x%x) failed, status %s(0x%x), syndrome (0x%x)\n",
+				mlx5_command_str(opcode),
+				opcode, op_mod,
+				cmd_status_str(status),
+				status,
+				syndrome);
+		else
+			mlx5_core_warn(dev,
+				"%s(0x%x) op_mod(0x%x) failed, status %s(0x%x), syndrome (0x%x)\n",
+				mlx5_command_str(opcode),
+				opcode, op_mod,
+				cmd_status_str(status),
+				status,
+				syndrome);
+	} else
+#endif
 		mlx5_core_dbg(dev,
 		      "%s(0x%x) op_mod(0x%x) failed, status %s(0x%x), syndrome (0x%x)\n",
 		      mlx5_command_str(opcode),
