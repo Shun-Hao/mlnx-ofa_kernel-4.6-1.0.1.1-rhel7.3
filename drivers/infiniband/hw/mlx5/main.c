@@ -4763,7 +4763,7 @@ static int set_has_smi_cap(struct mlx5_ib_dev *dev)
 	int err;
 	int port;
 
-	for (port = 1; port <= dev->num_ports; port++) {
+	for (port = 1; port <= ARRAY_SIZE(dev->mdev->port_caps); port++) {
 		dev->mdev->port_caps[port - 1].has_smi = false;
 		if (MLX5_CAP_GEN(dev->mdev, port_type) ==
 		    MLX5_CAP_PORT_TYPE_IB) {
@@ -4807,10 +4807,6 @@ static int __get_port_caps(struct mlx5_ib_dev *dev, u8 port)
 
 	dprops = kmalloc(sizeof(*dprops), GFP_KERNEL);
 	if (!dprops)
-		goto out;
-
-	err = set_has_smi_cap(dev);
-	if (err)
 		goto out;
 
 	err = mlx5_ib_exp_query_device(&dev->ib_dev, dprops, &uhw);
@@ -6149,6 +6145,10 @@ static int mlx5_ib_stage_init_init(struct mlx5_ib_dev *dev)
 	}
 
 	err = mlx5_ib_init_multiport_master(dev);
+	if (err)
+		return err;
+
+	err = set_has_smi_cap(dev);
 	if (err)
 		return err;
 
