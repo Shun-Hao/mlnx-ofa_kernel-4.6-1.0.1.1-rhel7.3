@@ -29,3 +29,6 @@ Change-Id=I6abaa77ccb76d5abb3c1fa350a59570fe68da68d; subject=IB/mlx5: Fix a pani
 Change-Id=I630e8448003614bd8095bfc920df2c10edc7e2ae; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=I7e8dcd234fe88eaa5e2ad3b371f47ddcc8a33fb5; subject=BACKPORTS: fix xdp_rxq_info_reg_mem_model backport; feature=backports; upstream_status=ignore; general=;
 Change-Id=I1c780787c82b76f3d0f4b2a9ee780c5b7fab4824; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=Iacdd3f0b73d45381e9cf8bd359e1668735c60ac7; subject=BACKPORTS: fix xdp_rxq_info_reg_mem_model backport; feature=backports; upstream_status=ignore; general=;
+Change-Id=Idb4db3220632cc2e4e519c96a98475fcd8f101ae; subject=gen-compat-config.sh: Fix pedit compile failure on JD kernel; feature=ofed_scripts; upstream_status=NA; general=;
+Change-Id=I495147b59ef4b8a0faa1e9cb14e649d91be271dc; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
