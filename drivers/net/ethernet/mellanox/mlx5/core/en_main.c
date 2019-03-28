@@ -290,9 +290,11 @@ static void mlx5e_update_stats_work(struct work_struct *work)
 	struct mlx5e_priv *priv = container_of(dwork, struct mlx5e_priv,
 					       update_stats_work);
 	mutex_lock(&priv->state_lock);
-	priv->profile->update_stats(priv);
-	queue_delayed_work(priv->wq, dwork,
-			   msecs_to_jiffies(MLX5E_UPDATE_STATS_INTERVAL));
+	if (!test_bit(MLX5E_STATE_DESTROYING, &priv->state)) {
+		priv->profile->update_stats(priv);
+		queue_delayed_work(priv->wq, dwork,
+				   msecs_to_jiffies(MLX5E_UPDATE_STATS_INTERVAL));
+	}
 	mutex_unlock(&priv->state_lock);
 }
 
