@@ -59,3 +59,4 @@ Change-Id=I0480b5d616e8a04a84194dda5d0d8f250fd336da; subject=net/mlx5: Correctly
 Change-Id=Ic967d9c8c8297707b8576a42c41aa9ce1bd51463; subject=Revert "net/mlx5e: RX, Implement page biased-refcount optimization"; feature=mlx5e_perf_improvements; upstream_status=NA; general=;
 Change-Id=Ibebb7675aa5a3d5fe3de189ad7b9ee0e61bff977; subject=net/mlx5e: Cleanup refcnt optimization on XDP; feature=mlx5e_perf_improvements; upstream_status=NA; general=;
 Change-Id=I37b6f38243036f581170edaf001a165e24a5b408; subject=Backports: Fix mlx5 backports; feature=backports; upstream_status=ignore; general=;
+Change-Id=Ifcd36bdeee145201946bf44c2e5179915d63b714; subject=mlx5/IB: Cleanup rep when doing unload; feature=mlx5_bf; upstream_status=in_progress; general=;
