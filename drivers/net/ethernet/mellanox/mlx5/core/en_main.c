@@ -3299,9 +3299,6 @@ int mlx5e_open_locked(struct net_device *netdev)
 	if (priv->profile->update_carrier)
 		priv->profile->update_carrier(priv);
 
-	if (priv->profile->update_stats)
-		queue_delayed_work(priv->wq, &priv->update_stats_work, 0);
-
 	return 0;
 
 err_clear_state_opened_flag:
@@ -5341,6 +5338,9 @@ static void mlx5e_nic_enable(struct mlx5e_priv *priv)
 
 	mlx5e_enable_async_events(priv);
 
+	if (priv->profile->update_stats)
+		queue_delayed_work(priv->wq, &priv->update_stats_work, 0);
+
 	if (netdev->reg_state != NETREG_REGISTERED)
 		return;
 #ifdef CONFIG_MLX5_CORE_EN_DCB
@@ -5375,6 +5375,7 @@ static void mlx5e_nic_disable(struct mlx5e_priv *priv)
 
 	queue_work(priv->wq, &priv->set_rx_mode_work);
 
+	cancel_delayed_work_sync(&priv->update_stats_work);
 	mlx5e_disable_async_events(priv);
 	mlx5_lag_remove(mdev);
 }
@@ -5525,7 +5526,6 @@ void mlx5e_detach_netdev(struct mlx5e_priv *priv)
 
 	profile->cleanup_rx(priv);
 	profile->cleanup_tx(priv);
-	cancel_delayed_work_sync(&priv->update_stats_work);
 }
 
 void mlx5e_destroy_netdev(struct mlx5e_priv *priv)
