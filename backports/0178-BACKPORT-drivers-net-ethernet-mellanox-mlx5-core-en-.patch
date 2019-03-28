@@ -3,22 +3,26 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c
 
 Change-Id: I2b2d6b9f70609955b215ccd167e9a5cd09a1db53
 ---
- drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c | 110 +++++++++++++++++++++++
- 1 file changed, 110 insertions(+)
+ drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c | 116 +++++++++++++++++++++++
+ 1 file changed, 116 insertions(+)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c b/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c
 +++ b/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c
-@@ -30,6 +30,7 @@
+@@ -30,8 +30,11 @@
   * SOFTWARE.
   */
  
 +#ifdef HAVE_XDP_BUFF
  #include <linux/bpf_trace.h>
++#ifdef HAVE_NET_PAGE_POOL_H
+ #include <net/page_pool.h>
++#endif
  #include "en/xdp.h"
  
-@@ -57,21 +58,31 @@ bool mlx5e_xdp_handle(struct mlx5e_rq *rq, struct mlx5e_dma_info *di,
+ static inline bool
+@@ -58,21 +61,31 @@ bool mlx5e_xdp_handle(struct mlx5e_rq *rq, struct mlx5e_dma_info *di,
  	struct bpf_prog *prog = READ_ONCE(rq->xdp_prog);
  	struct xdp_buff xdp;
  	u32 act;
@@ -50,16 +54,26 @@ index xxxxxxx..xxxxxxx 100644
  		*len = xdp.data_end - xdp.data;
  		return false;
  	case XDP_TX:
-@@ -79,6 +90,7 @@ bool mlx5e_xdp_handle(struct mlx5e_rq *rq, struct mlx5e_dma_info *di,
+@@ -80,25 +93,33 @@ bool mlx5e_xdp_handle(struct mlx5e_rq *rq, struct mlx5e_dma_info *di,
  			goto xdp_abort;
  		__set_bit(MLX5E_RQ_FLAG_XDP_XMIT, rq->flags); /* non-atomic */
  		return true;
 +#ifdef HAVE_XDP_REDIRECT
  	case XDP_REDIRECT:
+ 		mlx5e_page_dma_unmap(rq, di);
+ 		page_ref_sub(di->page, di->refcnt_bias);
  		/* When XDP enabled then page-refcnt==1 here */
  		err = xdp_do_redirect(rq->netdev, &xdp, prog);
-@@ -89,13 +101,16 @@ bool mlx5e_xdp_handle(struct mlx5e_rq *rq, struct mlx5e_dma_info *di,
- 		mlx5e_page_dma_unmap(rq, di);
+ 		if (unlikely(err)) {
++#ifdef HAVE_NET_PAGE_POOL_H
+ 			page_pool_recycle_direct(rq->page_pool, di->page);
++#else
++			put_page(di->page);
++#endif
+ 			goto xdp_abort;
+ 		}
+ 		__set_bit(MLX5E_RQ_FLAG_XDP_XMIT, rq->flags);
+ 		rq->xdpsq.redirect_flush = true;
  		rq->stats->xdp_redirect++;
  		return true;
 +#endif
@@ -70,12 +84,11 @@ index xxxxxxx..xxxxxxx 100644
  xdp_abort:
 +#if defined(HAVE_TRACE_XDP_EXCEPTION) && !defined(MLX_DISABLE_TRACEPOINTS)
  		trace_xdp_exception(rq->netdev, prog, act);
- 		/* fall through */
 +#endif
+ 		/* fall through */
  	case XDP_DROP:
  		rq->stats->xdp_drop++;
- 		return true;
-@@ -173,7 +188,9 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
+@@ -177,7 +198,9 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
  	struct mlx5e_xdpsq *sq;
  	struct mlx5_cqe64 *cqe;
  	struct mlx5e_rq *rq;
@@ -85,7 +98,7 @@ index xxxxxxx..xxxxxxx 100644
  	u16 sqcc;
  	int i;
  
-@@ -186,7 +203,9 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
+@@ -190,7 +213,9 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
  	if (!cqe)
  		return false;
  
@@ -95,7 +108,7 @@ index xxxxxxx..xxxxxxx 100644
  	rq = container_of(sq, struct mlx5e_rq, xdpsq);
  
  	/* sq->cc must be updated only after mlx5_cqwq_update_db_record(),
-@@ -210,11 +229,20 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
+@@ -214,11 +239,20 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
  			last_wqe = (sqcc == wqe_counter);
  			sqcc++;
  
@@ -116,7 +129,7 @@ index xxxxxxx..xxxxxxx 100644
  				/* Recycle RX page */
  				mlx5e_page_release(rq, &xdpi->di, true);
  			}
-@@ -235,10 +263,16 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
+@@ -239,10 +273,16 @@ bool mlx5e_poll_xdpsq_cq(struct mlx5e_cq *cq)
  void mlx5e_free_xdpsq_descs(struct mlx5e_xdpsq *sq)
  {
  	struct mlx5e_rq *rq;
@@ -133,7 +146,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	while (sq->cc != sq->pc) {
  		u16 ci = mlx5_wq_cyc_ctr2ix(&sq->wq, sq->cc);
-@@ -246,17 +280,28 @@ void mlx5e_free_xdpsq_descs(struct mlx5e_xdpsq *sq)
+@@ -250,17 +290,28 @@ void mlx5e_free_xdpsq_descs(struct mlx5e_xdpsq *sq)
  
  		sq->cc++;
  
@@ -162,7 +175,7 @@ index xxxxxxx..xxxxxxx 100644
  int mlx5e_xdp_xmit(struct net_device *dev, int n, struct xdp_frame **frames,
  		   u32 flags)
  {
-@@ -295,9 +340,14 @@ int mlx5e_xdp_xmit(struct net_device *dev, int n, struct xdp_frame **frames,
+@@ -299,9 +350,14 @@ int mlx5e_xdp_xmit(struct net_device *dev, int n, struct xdp_frame **frames,
  		xdpi.xdpf = xdpf;
  
  		if (unlikely(!mlx5e_xmit_xdp_frame(sq, &xdpi))) {
@@ -177,7 +190,7 @@ index xxxxxxx..xxxxxxx 100644
  			drops++;
  		}
  	}
-@@ -307,3 +357,63 @@ int mlx5e_xdp_xmit(struct net_device *dev, int n, struct xdp_frame **frames,
+@@ -311,3 +367,63 @@ int mlx5e_xdp_xmit(struct net_device *dev, int n, struct xdp_frame **frames,
  
  	return n - drops;
  }
