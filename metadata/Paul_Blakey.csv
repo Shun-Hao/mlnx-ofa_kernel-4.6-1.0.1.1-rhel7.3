@@ -4,3 +4,5 @@ Change-Id=I9668ceb7083fa2898b56bc8212132ec6e3f82442; subject=compat: Enable devl
 Change-Id=Ib6449f759fee7141696cf0bde5fb68dda4eb7ba6; subject=compat: Move devlink compat from debugfs to sysfs.; feature=mlx5_asap; upstream_status=NA; general=;
 Change-Id=I370e0fba0c5b8e20d5b207759572521df7b487ec; subject=compat: Enable devlink compat only on vport managers; feature=backports; upstream_status=ignore; general=;
 Change-Id=Ie0aa76d59c051f3087f73652cc4b20dbed87995d; subject=BACKPORTS: Set tc prio to 1 if not supported by kernel; feature=backports; upstream_status=ignore; general=;
+Change-Id=Iaa8a5e44e29b3dfee343a2ea5d1ed47f1d87c34e; subject=RDMA/mlx5: Move SMI caps logic; feature=mlx5_ib_reps; upstream_status=in_progress; general=;
+Change-Id=I95c45eff747fdb28bfe254030fce818c19f4b1fc; subject=net/mlx5: Fix reading of counters if bulk reading isn't supported; feature=mlx5_asap; upstream_status=in_progress; general=;
