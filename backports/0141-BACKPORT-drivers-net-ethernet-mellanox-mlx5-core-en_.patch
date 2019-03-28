@@ -71,7 +71,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static ssize_t mlx5e_show_lro_timeout(struct device *device,
  				      struct device_attribute *attr,
-@@ -752,6 +765,7 @@ static void mlx5e_remove_attributes(struct mlx5e_priv *priv,
+@@ -802,6 +815,7 @@ static void mlx5e_remove_attributes(struct mlx5e_priv *priv,
  	}
  }
  
@@ -79,7 +79,7 @@ index xxxxxxx..xxxxxxx 100644
  #ifdef CONFIG_MLX5_CORE_EN_DCB
  static ssize_t mlx5e_show_prio2buffer(struct device *device,
  				      struct device_attribute *attr,
-@@ -894,7 +908,9 @@ static ssize_t mlx5e_store_buffer_size(struct device *device,
+@@ -944,7 +958,9 @@ static ssize_t mlx5e_store_buffer_size(struct device *device,
  	return count;
  }
  #endif
@@ -89,7 +89,7 @@ index xxxxxxx..xxxxxxx 100644
  #ifdef CONFIG_MLX5_CORE_EN_DCB
  static DEVICE_ATTR(buffer_size, S_IRUGO | S_IWUSR,
  		   mlx5e_show_buffer_size,
-@@ -904,6 +920,7 @@ static DEVICE_ATTR(prio2buffer, S_IRUGO | S_IWUSR,
+@@ -954,6 +970,7 @@ static DEVICE_ATTR(prio2buffer, S_IRUGO | S_IWUSR,
  		   mlx5e_show_prio2buffer,
  		   mlx5e_store_prio2buffer);
  #endif
@@ -97,17 +97,17 @@ index xxxxxxx..xxxxxxx 100644
  
  #ifdef CONFIG_MLX5_ESWITCH
  static DEVICE_ATTR(vf_roce, S_IRUGO | S_IWUSR,
-@@ -935,10 +952,22 @@ static ssize_t mlx5e_store_force_local_lb(struct device *device,
+@@ -985,10 +1002,22 @@ static ssize_t mlx5e_store_force_local_lb(struct device *device,
  	struct mlx5_core_dev *mdev = priv->mdev;
  	bool disable;
  	int err;
 +#ifndef HAVE_KSTRTOBOOL
 +	int udata;
- 
++
 +	err = sscanf(buf, "%d", &udata);
 +	if (err != 1)
 +		return -EINVAL;
-+
+ 
 +	if (udata >> 1)
 +		return -EINVAL;
 +
@@ -120,7 +120,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	if (mdev->local_lb.user_force_disable != disable) {
  		mdev->local_lb.user_force_disable = disable;
-@@ -971,7 +1000,9 @@ static struct attribute *mlx5e_debug_group_attrs[] = {
+@@ -1021,7 +1050,9 @@ static struct attribute *mlx5e_debug_group_attrs[] = {
  };
  
  static struct attribute *mlx5e_qos_attrs[] = {
@@ -130,7 +130,7 @@ index xxxxxxx..xxxxxxx 100644
  	&dev_attr_maxrate.attr,
  	NULL,
  };
-@@ -1022,6 +1053,7 @@ static int update_qos_sysfs(struct net_device *dev,
+@@ -1072,6 +1103,7 @@ static int update_qos_sysfs(struct net_device *dev,
  {
  	int err = 0;
  
@@ -138,7 +138,7 @@ index xxxxxxx..xxxxxxx 100644
  #ifdef CONFIG_MLX5_CORE_EN_DCB
  	if (MLX5_BUFFER_SUPPORTED(mdev)) {
  		err = sysfs_add_file_to_group(&dev->dev.kobj,
-@@ -1032,6 +1064,7 @@ static int update_qos_sysfs(struct net_device *dev,
+@@ -1082,6 +1114,7 @@ static int update_qos_sysfs(struct net_device *dev,
  					      "qos");
  	}
  #endif
@@ -146,7 +146,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	return err;
  }
-@@ -1101,6 +1134,8 @@ int mlx5e_sysfs_create(struct net_device *dev)
+@@ -1155,6 +1188,8 @@ int mlx5e_sysfs_create(struct net_device *dev)
  	if (err)
  		goto remove_debug_group;
  
@@ -155,7 +155,7 @@ index xxxxxxx..xxxxxxx 100644
  	return 0;
  
  remove_debug_group:
-@@ -1125,6 +1160,8 @@ void mlx5e_sysfs_remove(struct net_device *dev)
+@@ -1179,6 +1214,8 @@ void mlx5e_sysfs_remove(struct net_device *dev)
  	struct mlx5e_priv *priv = netdev_priv(dev);
  	int i;
  
@@ -164,7 +164,7 @@ index xxxxxxx..xxxxxxx 100644
  	sysfs_remove_group(&dev->dev.kobj, &qos_group);
  	sysfs_remove_group(&dev->dev.kobj, &debug_group);
  	sysfs_remove_group(&dev->dev.kobj, &settings_group);
-@@ -1138,7 +1175,7 @@ void mlx5e_sysfs_remove(struct net_device *dev)
+@@ -1192,7 +1229,7 @@ void mlx5e_sysfs_remove(struct net_device *dev)
  	kobject_put(priv->ecn_root_kobj);
  }
  
