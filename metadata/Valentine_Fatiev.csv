@@ -30,3 +30,4 @@ Change-Id=Ibb6f49bd293d91aeaa73155c1649fcd946f4a525; subject=BACKPORTS: Use unre
 Change-Id=I547554bb09196dc5e1fd3e364966d731e96ffb6e; subject=BACKPORTS: Fix XDP backport; feature=backports; upstream_status=ignore; general=;
 Change-Id=I73c46f3fe8ee2f4bc31c282c2382dc587828a6b7; subject=BACKPORTS: Fix Ubuntu 16.04.5 compilaton; feature=backports; upstream_status=ignore; general=;
 Change-Id=I47d98650127cb896d0faa523c49803c3eb4d241f; subject=BACKPORTS: Free netdevice if no destructor and need to delete VLAN; feature=backports; upstream_status=ignore; general=;
+Change-Id=Icfdddd9ab8197a2187327bbc95d1132faa954ebc; subject=BACKPORTS: IPOIB,PKEY - Free child memory in case no destructor; feature=backports; upstream_status=ignore; general=;
