@@ -178,8 +178,6 @@ static int UVERBS_HANDLER(MLX5_IB_METHOD_CREATE_FLOW)(
 			return -EINVAL;
 		flow_act.action |= MLX5_FLOW_CONTEXT_ACTION_COUNT;
 	}
-	if (dev->is_rep)
-		return -ENOTSUPP;
 
 	cmd_in = uverbs_attr_get_alloced_ptr(
 		attrs, MLX5_IB_ATTR_CREATE_FLOW_MATCH_VALUE);

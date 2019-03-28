@@ -93,3 +93,4 @@ Change-Id=Ibee1a8fbd2bd05c79255ffc7a36fd38fe74020c3; subject=net/mlx5: Pass flow
 Change-Id=I88221fb0cb2aae2dbd8a5b7ef494306b7b4abbf8; subject=net/mlx5: Add support in RDMA RX steering; feature=roce_steering; upstream_status=in_progress; general=;
 Change-Id=Ifdaa06d181acffd061abfcf2da518ee5ba08f4e7; subject=net/mlx5: Eswitch, enable RoCE loopback traffic; feature=roce_steering; upstream_status=in_progress; general=;
 Change-Id=I09cac383906eb21fb767a2f45db24c4f5c9a10f4; subject=BACKPORTS: Fix backports; feature=backports; upstream_status=ignore; general=;
+Change-Id=Iaa6e6ac3804db13062ac6d505a3ab3ed192527bc; subject=RDMA/mlx5: Allow raw creation flow on reps; feature=mlx5_ib_reps; upstream_status=in_progress; general=;
