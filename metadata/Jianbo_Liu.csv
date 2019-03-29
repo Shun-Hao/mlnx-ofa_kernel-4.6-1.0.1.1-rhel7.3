@@ -11,3 +11,7 @@ Change-Id=I05332c934233333718644b14f37e7410e01dde68; subject=BACKPORTS: Fix comp
 Change-Id=I4b37c9a852a996e60c20892f9727f0db1dd4053b; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=I8ec39f2152ea339cf0bf043597fe832ca7aa9392; subject=gen-compat-config.sh: Fix pedit compile failure on KERNEL_4_11_ARM; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=I7d494046618c831e966ad08c360697b6c8464f79; subject=net/sched: Support compat pedit action for centos 7.x; feature=mlx5_asap; upstream_status=NA; general=;
+Change-Id=I28bb3b822a6755ede0a8ca70aa469842272de2c2; subject=net: sched: flower: Fix delete filter scheme; feature=mlx5_asap; upstream_status=NA; general=;
+Change-Id=I83f325a9fb7b7192465bbda6077a135bf8792b6d; subject=net/mlx5e: Properly set steering match levels for offloaded TC decap rules; feature=mlx5_asap; upstream_status=accepted; general=;
+Change-Id=I9cb4eae98c6373697c2a5f76845cad078060a03b; subject=net/mlx5e: Allow IPv4 ttl & IPv6 hop_limit rewrite for all L4 protocols; feature=mlx5_asap; upstream_status=accepted; general=;
+Change-Id=Ifa2cbd5cd8537c7d05f799eea411869936a250a9; subject=BACKPORTS: Fixes for the last 3 commits; feature=backports; upstream_status=ignore; general=;
