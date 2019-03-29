@@ -1459,7 +1459,7 @@ static int mlx5_enable_roce_steering(struct mlx5_eswitch *esw)
 	spec->match_criteria_enable = MLX5_MATCH_MISC_PARAMETERS;
 	misc = MLX5_ADDR_OF(fte_match_param, spec->match_value,
 			    misc_parameters);
-	MLX5_SET(fte_match_set_misc, misc, source_port, 0);
+	MLX5_SET(fte_match_set_misc, misc, source_port, esw->manager_vport);
 	misc = MLX5_ADDR_OF(fte_match_param, spec->match_criteria,
 			    misc_parameters);
 	MLX5_SET_TO_ONES(fte_match_set_misc, misc, source_port);
