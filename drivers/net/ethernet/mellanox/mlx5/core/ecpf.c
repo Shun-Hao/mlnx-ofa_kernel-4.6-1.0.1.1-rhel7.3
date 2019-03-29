@@ -244,7 +244,9 @@ void mlx5_smartnic_sysfs_init(struct net_device *dev)
 	struct mlx5_core_dev *mdev = priv->mdev;
 	struct mlx5_smart_nic_vport *tmp;
 	struct mlx5_eswitch *esw;
+	int num_vports;
 	int err;
+	int i;
 
 	if (!mlx5_core_is_ecpf(mdev))
 		return;
@@ -255,24 +257,34 @@ void mlx5_smartnic_sysfs_init(struct net_device *dev)
 	if (!esw->smart_nic_sysfs.kobj)
 		return;
 
-	/* Only PF setting for now */
+	num_vports = mlx5_core_max_vfs(mdev) + 1;
 	esw->smart_nic_sysfs.vport =
-		kcalloc(1, sizeof(struct mlx5_smart_nic_vport), GFP_KERNEL);
+		kcalloc(num_vports, sizeof(struct mlx5_smart_nic_vport),
+			GFP_KERNEL);
 	if (!esw->smart_nic_sysfs.vport)
 		goto err_attr_mem;
 
-	/* PF setting */
-	tmp = &esw->smart_nic_sysfs.vport[0];
-	tmp->esw = esw;
-	tmp->vport = 0;
-	err = kobject_init_and_add(&tmp->kobj, &smart_nic_type,
-				   esw->smart_nic_sysfs.kobj, "%s", "pf");
-	if (err)
-		goto err_attr_pf;
+	for (i = 0; i < num_vports; i++) {
+		tmp = &esw->smart_nic_sysfs.vport[i];
+		tmp->esw = esw;
+		tmp->vport = i;
+		if (i == 0)
+			err = kobject_init_and_add(&tmp->kobj, &smart_nic_type,
+						   esw->smart_nic_sysfs.kobj,
+						   "pf");
+		else
+			err = kobject_init_and_add(&tmp->kobj, &smart_nic_type,
+						   esw->smart_nic_sysfs.kobj,
+						   "vf%d", i - 1);
+		if (err)
+			goto err_attr;
+	}
 
 	return;
 
-err_attr_pf:
+err_attr:
+	for (; i >= 0;	i--)
+		kobject_put(&esw->smart_nic_sysfs.vport[i].kobj);
 	kfree(esw->smart_nic_sysfs.vport);
 	esw->smart_nic_sysfs.vport = NULL;
 
@@ -287,6 +299,7 @@ void mlx5_smartnic_sysfs_cleanup(struct net_device *dev)
 	struct mlx5_core_dev *mdev = priv->mdev;
 	struct mlx5_smart_nic_vport *tmp;
 	struct mlx5_eswitch *esw;
+	int i;
 
 	if (!mlx5_core_is_ecpf(mdev))
 		return;
@@ -296,8 +309,10 @@ void mlx5_smartnic_sysfs_cleanup(struct net_device *dev)
 	if (!esw->smart_nic_sysfs.kobj || !esw->smart_nic_sysfs.vport)
 		return;
 
-	tmp = &esw->smart_nic_sysfs.vport[0];
-	kobject_put(&tmp->kobj);
+	for  (i = 0; i < mlx5_core_max_vfs(mdev); i++) {
+		tmp = &esw->smart_nic_sysfs.vport[i];
+		kobject_put(&tmp->kobj);
+	}
 
 	kfree(esw->smart_nic_sysfs.vport);
 	esw->smart_nic_sysfs.vport = NULL;
