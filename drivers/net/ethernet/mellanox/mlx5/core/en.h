@@ -201,8 +201,10 @@ static inline int mlx5e_get_max_num_channels(struct mlx5_core_dev *mdev)
 }
 
 /* Use this function to get max num channels after netdev was created */
-static inline int mlx5e_get_netdev_max_channels(struct net_device *netdev)
+static inline int mlx5e_get_netdev_max_channels(struct mlx5e_priv *priv)
 {
+	struct net_device *netdev = priv->netdev;
+
 	return min_t(unsigned int, netdev->num_rx_queues,
 		     netdev->num_tx_queues);
 }

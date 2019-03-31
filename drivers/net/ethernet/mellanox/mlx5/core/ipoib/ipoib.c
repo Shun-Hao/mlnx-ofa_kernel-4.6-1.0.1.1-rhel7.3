@@ -92,13 +92,6 @@ unlock:
 	rtnl_unlock();
 }
 
-/* Use this function to get max num channels after netdev was created */
-static inline int mlx5i_get_netdev_max_channels(struct net_device *netdev)
-{
-	return min_t(unsigned int, netdev->num_rx_queues,
-		     netdev->num_tx_queues);
-}
-
 /* Called directly after IPoIB netdevice was created to initialize SW structs */
 int mlx5i_init(struct mlx5_core_dev *mdev,
 	       struct net_device *netdev,
@@ -118,7 +111,7 @@ int mlx5i_init(struct mlx5_core_dev *mdev,
 	netdev->mtu = max_mtu;
 
 	mlx5e_build_nic_params(mdev, &priv->channels.params,
-			       mlx5i_get_netdev_max_channels(netdev),
+			       mlx5e_get_netdev_max_channels(priv),
 			       netdev->mtu);
 	mlx5i_build_nic_params(mdev, &priv->channels.params);
 
@@ -148,7 +141,7 @@ void mlx5i_cleanup(struct mlx5e_priv *priv)
 
 static void mlx5i_grp_sw_update_stats(struct mlx5e_priv *priv)
 {
-	int max_nch = mlx5i_get_netdev_max_channels(priv->netdev);
+	int max_nch = mlx5e_get_netdev_max_channels(priv);
 	struct mlx5e_sw_stats s = { 0 };
 	int i, j;
 

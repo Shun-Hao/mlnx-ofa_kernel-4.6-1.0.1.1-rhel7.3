@@ -390,7 +390,7 @@ static int mlx5e_set_ringparam(struct net_device *dev,
 void mlx5e_ethtool_get_channels(struct mlx5e_priv *priv,
 				struct ethtool_channels *ch)
 {
-	ch->max_combined   = mlx5e_get_netdev_max_channels(priv->netdev);
+	ch->max_combined   = mlx5e_get_netdev_max_channels(priv);
 	ch->combined_count = priv->channels.params.num_channels;
 #ifdef CONFIG_MLX5_EN_SPECIAL_SQ
 	ch->max_other      = priv->mdev->mlx5e_res.max_rl_queues;

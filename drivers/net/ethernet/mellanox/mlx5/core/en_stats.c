@@ -134,7 +134,7 @@ void mlx5e_grp_sw_update_stats(struct mlx5e_priv *priv)
 
 	memset(s, 0, sizeof(*s));
 
-	for (i = 0; i < mlx5e_get_netdev_max_channels(priv->netdev); i++) {
+	for (i = 0; i < mlx5e_get_netdev_max_channels(priv); i++) {
 		struct mlx5e_channel_stats *channel_stats =
 			&priv->channel_stats[i];
 		struct mlx5e_xdpsq_stats *xdpsq_red_stats = &channel_stats->xdpsq;
@@ -1259,7 +1259,7 @@ static const struct counter_desc ch_stats_desc[] = {
 
 static int mlx5e_grp_channels_get_num_stats(struct mlx5e_priv *priv)
 {
-	int max_nch = mlx5e_get_netdev_max_channels(priv->netdev);
+	int max_nch = mlx5e_get_netdev_max_channels(priv);
 
 	if (!MLX5E_GET_PFLAG_PER_CH_STATS(priv))
 		return 0;
@@ -1279,7 +1279,7 @@ static int mlx5e_grp_channels_get_num_stats(struct mlx5e_priv *priv)
 static int mlx5e_grp_channels_fill_strings(struct mlx5e_priv *priv, u8 *data,
 					   int idx)
 {
-	int max_nch = mlx5e_get_netdev_max_channels(priv->netdev);
+	int max_nch = mlx5e_get_netdev_max_channels(priv);
 	int i, j, tc;
 
 	if (!MLX5E_GET_PFLAG_PER_CH_STATS(priv))
@@ -1327,7 +1327,7 @@ static int mlx5e_grp_channels_fill_strings(struct mlx5e_priv *priv, u8 *data,
 static int mlx5e_grp_channels_fill_stats(struct mlx5e_priv *priv, u64 *data,
 					 int idx)
 {
-	int max_nch = mlx5e_get_netdev_max_channels(priv->netdev);
+	int max_nch = mlx5e_get_netdev_max_channels(priv);
 	int i, j, tc, rlq;
 
 	if (!MLX5E_GET_PFLAG_PER_CH_STATS(priv))
