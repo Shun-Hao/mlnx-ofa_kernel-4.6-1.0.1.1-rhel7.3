@@ -67,3 +67,5 @@ Change-Id=I389fca015132ad8cf29f5ac3dc5a4aa783173e99; subject=Revert "IB/{uverbs,
 Change-Id=Ia2a273d608d90ab703340a791117f50f5a9cb746; subject=Revert "IB/uverbs: Expose signature handover caps to UAPI"; feature=mlx5_core_bugs; upstream_status=NA; general=;
 Change-Id=I20bc365e5bde201c865e28653ce709de67729548; subject=Revert "BACKPORTS: fix xdp_rxq_info_reg_mem_model backport"; feature=backports; upstream_status=ignore; general=;
 Change-Id=I1901b582e61a076417d327f8059eda25893024cb; subject=mlx5/core: Lower fast/force teardown error verbosity; feature=mlx5_core_bugs; upstream_status=in_progress; general=;
+Change-Id=I540cc480835baeb9d4ffcf0618276bfe630db81f; subject=net/mlx5: Use priv to get max number of channels; feature=ipoib_bugs; upstream_status=NA; general=;
+Change-Id=I7874717c793ee7527282b20c6d8f1c23d08aefd7; subject=BACKPORTS: Fix Netdev + IPoIB backports; feature=backports; upstream_status=ignore; general=;
