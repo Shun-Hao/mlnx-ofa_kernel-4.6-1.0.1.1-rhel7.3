@@ -2190,8 +2190,10 @@ static int init_one(struct pci_dev *pdev,
 	}
 
 	err = device_create_file(&pdev->dev, mlx5_roce_enable_dev_attrs);
-	if (err)
-		return 0;
+	if (err) {
+		err = 0;
+		goto clean_dev;
+	}
 
 	dev = devlink_priv(devlink);
 	priv = &dev->priv;
@@ -2202,7 +2204,7 @@ static int init_one(struct pci_dev *pdev,
 
 	if (pdev->is_virtfn && !probe_vf) {
 		dev_info(&pdev->dev, "VFs are not binded to mlx5_core\n");
-		return 0;
+		goto remove_file;
 	}
 
 	dev->pdev = pdev;
@@ -2222,7 +2224,7 @@ static int init_one(struct pci_dev *pdev,
 	if (err) {
 		dev_err(&pdev->dev, "init_srcu_struct failed with error code %d\n",
 			err);
-		goto clean_dev;
+		goto remove_file;
 	}
 #endif
 	mutex_init(&priv->bfregs.reg_head.lock);
@@ -2295,8 +2297,10 @@ close_pci:
 clean_srcu:
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
 	cleanup_srcu_struct(&priv->pfault_srcu);
-clean_dev:
 #endif
+remove_file:
+	device_remove_file(&pdev->dev, mlx5_roce_enable_dev_attrs);
+clean_dev:
 	devlink_free(devlink);
 
 	return err;
