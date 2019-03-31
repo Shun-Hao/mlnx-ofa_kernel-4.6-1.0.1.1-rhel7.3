@@ -3036,8 +3036,7 @@ static void fl_hw_destroy_filter(struct tcf_proto *tp, struct cls_fl_filter *f)
 	offload.cookie = (unsigned long)f;
 
 	priv = netdev_priv(dev);
-	mlx5e_delete_flower(priv, &offload, f->mlx5e_flags |
-			    MLX5E_TC_INGRESS | MLX5E_TC_ESW_OFFLOAD);
+	mlx5e_delete_flower(priv, &offload, f->mlx5e_flags | MLX5E_TC_ESW_OFFLOAD);
 }
 
 static int fl_hw_replace_filter(struct tcf_proto *tp,
@@ -3109,6 +3108,5 @@ static void fl_hw_update_stats(struct tcf_proto *tp, struct cls_fl_filter *f)
 	offload.exts = &f->exts;
 
 	priv = netdev_priv(dev);
-	mlx5e_stats_flower(priv, &offload, f->mlx5e_flags |
-			   MLX5E_TC_INGRESS | MLX5E_TC_ESW_OFFLOAD);
+	mlx5e_stats_flower(priv, &offload, f->mlx5e_flags | MLX5E_TC_ESW_OFFLOAD);
 }
