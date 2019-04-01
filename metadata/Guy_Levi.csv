@@ -14,3 +14,5 @@ Change-Id=I38104afcf09ad7a0eef39c3a2de693bc8f61436d; subject=IB/mlx5: Use fragme
 Change-Id=Idbcf2bff2f1988eecb3e47f42f816f94da9c2206; subject=IB/mlx5: Fix fragmented QP data-path; feature=mlx5_frag_qps; upstream_status=in_progress; general=;
 Change-Id=Id103088cb7d1e9efda04e2c289456810f496514c; subject=IB/mlx5: Fix fragmented kernel QP in reset state; feature=mlx5_frag_qps; upstream_status=in_progress; general=;
 Change-Id=I71beaedde132048b4baf8df87e93dd5974b02f80; subject=IB/mlx5: Fix fragmented kernel QP post REG_MR WR; feature=mlx5_frag_qps; upstream_status=in_progress; general=;
+Change-Id=I61ec2cbef471c7e5a4d40ff3696e315a26680a82; subject=IB/mlx5: Fix scatter to CQE in DCT QP creation; feature=mlx5_ib_bugs; upstream_status=in_progress; general=;
+Change-Id=I218d9a81295a8c3e905d18dfe4bf605a12b5ed49; subject=metadata: Update MD; feature=ofed_scripts; upstream_status=ignore; general=;
