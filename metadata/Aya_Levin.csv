@@ -18,3 +18,6 @@ Change-Id=I1a0d5e55108686c7180939127b21b31f081c9802; subject=net/mlx5: Expose MP
 Change-Id=I3fb8e9b3bcaffd4b7df9b28ea824c200e6b0e014; subject=net/mlx5: Handle event of power detection in the PCIE slot; feature=mlx5_pcie_power; upstream_status=in_progress; general=;
 Change-Id=I5b63c2f43ff0c7c6e60e64f76c1d9007ff08820c; subject=BACKPORTS: Fix mlx5/mlx5_core.h backports; feature=backports; upstream_status=ignore; general=;
 Change-Id=I97914ff19e627f3ed053be7a7273529f2c91144d; subject=BACKPORTS: Fix mlx5/eq.c backports; feature=mlx5_pcie_power; upstream_status=in_progress; general=;
+Change-Id=I3c4e631e0314121408c55de87675626709aa49ae; subject=net/mlx5e: Fix a race between statistics polling and q_counters destroy; feature=mlx5_en_bugs; upstream_status=ignore; general=;
+Change-Id=I35955aa07a595fb14622508d42948df0da6612da; subject=net/mlx5e: Start statistics polling on netdev device attach; feature=mlx5_en_bugs; upstream_status=ignore; general=;
+Change-Id=I522457ed33ffe4563fcd635311768c9c2c7d2e99; subject=BACKPORTS: Fix mlx5/en_main.c backports; feature=backports; upstream_status=ignore; general=;
