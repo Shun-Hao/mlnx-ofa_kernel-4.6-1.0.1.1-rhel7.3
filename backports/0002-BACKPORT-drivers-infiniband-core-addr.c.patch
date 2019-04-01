@@ -306,19 +306,35 @@ index xxxxxxx..xxxxxxx 100644
  
  static int addr_resolve_neigh(const struct dst_entry *dst,
  			      const struct sockaddr *dst_in,
-@@ -485,7 +617,11 @@ static int copy_src_l2_addr(struct rdma_dev_addr *dev_addr,
+@@ -474,6 +606,15 @@ static int copy_src_l2_addr(struct rdma_dev_addr *dev_addr,
+ 			    const struct net_device *ndev)
+ {
+ 	int ret = 0;
++#ifndef HAVE_RT_USES_GATEWAY
++	const struct sockaddr_in *dst_in4 =
++		(const struct sockaddr_in *)dst_in;
++	const struct sockaddr_in6 *dst_in6 =
++		(const struct sockaddr_in6 *)dst_in;
++	const void *daddr = (dst_in->sa_family == AF_INET) ?
++		(const void *)&dst_in4->sin_addr.s_addr :
++		(const void *)&dst_in6->sin6_addr;
++#endif
+ 
+ 	if (dst->dev->flags & IFF_LOOPBACK)
+ 		ret = rdma_translate_ip(dst_in, dev_addr);
+@@ -485,7 +626,11 @@ static int copy_src_l2_addr(struct rdma_dev_addr *dev_addr,
  	 * we're definitely in RoCE v2 (as RoCE v1 isn't routable) set the
  	 * network type accordingly.
  	 */
 +#ifdef HAVE_RT_USES_GATEWAY
  	if (has_gateway(dst, dst_in->sa_family) &&
 +#else
-+	if (has_gateway(dst, dev_addr, dst_in->sa_family) &&
++	if (has_gateway(dst, daddr, dst_in->sa_family) &&
 +#endif
  	    ndev->type != ARPHRD_INFINIBAND)
  		dev_addr->network = dst_in->sa_family == AF_INET ?
  						RDMA_NETWORK_IPV4 :
-@@ -583,7 +719,11 @@ static int addr_resolve(struct sockaddr *src_in,
+@@ -583,7 +728,11 @@ static int addr_resolve(struct sockaddr *src_in,
  	}
  	if (src_in->sa_family == AF_INET) {
  		ret = addr4_resolve(src_in, dst_in, addr, &rt);
@@ -330,7 +346,7 @@ index xxxxxxx..xxxxxxx 100644
  	} else {
  		ret = addr6_resolve(src_in, dst_in, addr, &dst);
  	}
-@@ -847,6 +987,7 @@ int rdma_addr_find_l2_eth_by_grh(const union ib_gid *sgid,
+@@ -847,6 +996,7 @@ int rdma_addr_find_l2_eth_by_grh(const union ib_gid *sgid,
  static int netevent_callback(struct notifier_block *self, unsigned long event,
  	void *ctx)
  {
@@ -338,7 +354,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct addr_req *req;
  
  	if (event == NETEVENT_NEIGH_UPDATE) {
-@@ -859,6 +1000,7 @@ static int netevent_callback(struct notifier_block *self, unsigned long event,
+@@ -859,6 +1009,7 @@ static int netevent_callback(struct notifier_block *self, unsigned long event,
  			spin_unlock_bh(&lock);
  		}
  	}
