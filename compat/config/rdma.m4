@@ -511,6 +511,21 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if dev_open has 2 parameters])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/netdevice.h>
+	],[
+		int s = dev_open(NULL, NULL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(DEV_OPEN_HAS_2_PARAMS, 1,
+			  [dev_open has 2 parameters])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if napi_gro_flush has 2 parameters])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/netdevice.h>
@@ -1412,6 +1427,36 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(yes)
 		MLNX_AC_DEFINE(HAVE_SKB_FLOW_DISSECT, 1,
 			  [skb_flow_dissect is defined])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if netdevice.h dev_change_flags has 3 parameters])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/netdevice.h>
+	],[
+		dev_change_flags(NULL, 0, NULL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_DEV_CHANGE_FLAGS_HAS_3_PARAMS, 1,
+			  [dev_change_flags has 3 parameters])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([if uaccess.h access_ok has 3 parameters])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/uaccess.h>
+	],[
+		access_ok(0, NULL, 0);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_ACCESS_OK_HAS_3_PARAMS, 1,
+			  [access_okhas 3 parameters])
 	],[
 		AC_MSG_RESULT(no)
 	])
@@ -7479,6 +7524,21 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+	AC_MSG_CHECKING([if dma-mapping.h has dma_zalloc_coherent function])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/dma-mapping.h>
+	],[
+		dma_zalloc_coherent(NULL, 0, NULL, GFP_KERNEL);
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_DMA_ZALLOC_COHERENT, 1,
+			  [dma-mapping.h has dma_zalloc_coherent function])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 	AC_MSG_CHECKING([if dma-mapping.h has dma_alloc_attrs takes unsigned long attrs])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
 		#include <linux/dma-mapping.h>
@@ -10405,6 +10465,26 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 		AC_MSG_RESULT(no)
 	])
 
+
+	AC_MSG_CHECKING([if ib_umem_notifier_invalidate_range_start get struct mmu_notifier_range ])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/mmu_notifier.h>
+		static int notifier(struct mmu_notifier *mn,
+					const struct mmu_notifier_range *range)
+		{
+			return 0;
+		}
+	],[
+		static const struct mmu_notifier_ops notifiers = {
+			.invalidate_range_start = notifier
+		};
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_MMU_NOTIFIER_RANGE_STRUCT, 1,
+			  [ ib_umem_notifier_invalidate_range_start get struct mmu_notifier_range ])
+	],[
+		AC_MSG_RESULT(no)
+	])
 
 	AC_MSG_CHECKING([if mmu_notifier.h has mmu_notifier_unregister_no_release])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
