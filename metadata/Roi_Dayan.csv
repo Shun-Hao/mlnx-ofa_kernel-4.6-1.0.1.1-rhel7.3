@@ -24,3 +24,8 @@ Change-Id=Ib46d332ff33f3b529effe33bf4d53f7868c30a98; subject=compat/rdma.m4: Fix
 Change-Id=I35377d54bf8ef137579e6ed55b26fe872a20b77e; subject=ofed_scripts: Update vf-net-link-name.sh; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=Icecbab1d953d9cf7a5a02f35ee4189e4896e85fe; subject=net/mlx5e: Properly get the PF number phys port name ndo; feature=mlx5_vf_lag; upstream_status=accepted; general=upstream commit ID: 5b33eba99fbc, tag: v5.1-rc1;
 Change-Id=I27dac969e5d81cf5a6c79fdfe8c518c0ea7d2058; subject=net/mlx5: Remove redundant lag function to get pf num; feature=mlx5_vf_lag; upstream_status=accepted; general=upstream commit ID: 6ffb6303426c, tag: v5.1-rc1;
+Change-Id=Ibdc42c3a7a3baee2a7b65240c0b71601e7548564; subject=net/mlx5e: Set peer flow needed also for multipath; feature=mlx5_asap; upstream_status=accepted; general=;
+Change-Id=I78b10de8a9c40baa9c849678d9d878dce18e7304; subject=net/mlx5e: Re-attempt to offload flows on multipath port affinity events; feature=mlx5_asap; upstream_status=accepted; general=;
+Change-Id=I77d1d1309427413442ac777f0aec8c8507290ba8; subject=BACKPORTS: Update; feature=backports; upstream_status=ignore; general=;
+Change-Id=I75946ee440cc98a4f1d26705701a5d5e26056f34; subject=Update meatadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=Id632debbe4121e794a769b2239a4ff822b8e6546; subject=net/mlx5e: Don't inherit flow flags on peer flow creation; feature=mlx5_asap; upstream_status=accepted; general=;
