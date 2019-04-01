@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/infiniband/core/uverbs_main.c
 
 Change-Id: Ia43a6cc4eea88142f4bffc2403aa7c2646c5267f
 ---
- drivers/infiniband/core/uverbs_main.c | 47 +++++++++++++++++++++++++++++++----
- 1 file changed, 42 insertions(+), 5 deletions(-)
+ drivers/infiniband/core/uverbs_main.c | 53 +++++++++++++++++++++++++++++++----
+ 1 file changed, 47 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/infiniband/core/uverbs_main.c b/drivers/infiniband/core/uverbs_main.c
 index xxxxxxx..xxxxxxx 100644
@@ -38,7 +38,23 @@ index xxxxxxx..xxxxxxx 100644
  	if (!srcu_dereference(ufile->device->ib_dev,
  			      &ufile->device->disassociate_srcu))
  		return ERR_PTR(-EIO);
-@@ -1276,8 +1282,16 @@ static const struct attribute_group dev_attr_group = {
+@@ -748,10 +754,14 @@ static ssize_t verify_hdr(struct ib_uverbs_cmd_hdr *hdr,
+ 		if (ex_hdr->response) {
+ 			if (!hdr->out_words && !ex_hdr->provider_out_words)
+ 				return -EINVAL;
+-
++#ifdef HAVE_ACCESS_OK_HAS_3_PARAMS 
+ 			if (!access_ok(VERIFY_WRITE,
+ 				       u64_to_user_ptr(ex_hdr->response),
+ 				       (hdr->out_words + ex_hdr->provider_out_words) * 8))
++#else
++			if (!access_ok(u64_to_user_ptr(ex_hdr->response),
++				       (hdr->out_words + ex_hdr->provider_out_words) * 8))
++#endif
+ 				return -EFAULT;
+ 		} else {
+ 			if (hdr->out_words || ex_hdr->provider_out_words)
+@@ -1284,8 +1294,16 @@ static const struct attribute_group dev_attr_group = {
  	.attrs = ib_dev_attrs,
  };
  
@@ -55,7 +71,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static int ib_uverbs_create_uapi(struct ib_device *device,
  				 struct ib_uverbs_device *uverbs_dev)
-@@ -1328,11 +1342,19 @@ static void ib_uverbs_add_one(struct ib_device *device)
+@@ -1336,11 +1354,19 @@ static void ib_uverbs_add_one(struct ib_device *device)
  	rcu_assign_pointer(uverbs_dev->ib_dev, device);
  	uverbs_dev->num_comp_vectors = device->num_comp_vectors;
  
@@ -75,7 +91,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (devnum >= IB_UVERBS_NUM_FIXED_MINOR)
  		base = dynamic_uverbs_dev + devnum - IB_UVERBS_NUM_FIXED_MINOR;
  	else
-@@ -1359,7 +1381,11 @@ static void ib_uverbs_add_one(struct ib_device *device)
+@@ -1367,7 +1393,11 @@ static void ib_uverbs_add_one(struct ib_device *device)
  	return;
  
  err_uapi:
@@ -87,7 +103,7 @@ index xxxxxxx..xxxxxxx 100644
  err:
  	if (atomic_dec_and_test(&uverbs_dev->refcount))
  		ib_uverbs_comp_dev(uverbs_dev);
-@@ -1398,7 +1424,6 @@ static void ib_uverbs_free_hw_resources(struct ib_uverbs_device *uverbs_dev,
+@@ -1406,7 +1436,6 @@ static void ib_uverbs_free_hw_resources(struct ib_uverbs_device *uverbs_dev,
  		ib_uverbs_event_handler(&file->event_handler, &event);
  		uverbs_destroy_ufile_hw(file, RDMA_REMOVE_DRIVER_REMOVE);
  		kref_put(&file->ref, ib_uverbs_release_file);
@@ -95,7 +111,7 @@ index xxxxxxx..xxxxxxx 100644
  		mutex_lock(&uverbs_dev->lists_mutex);
  	}
  
-@@ -1434,8 +1459,11 @@ static void ib_uverbs_remove_one(struct ib_device *device, void *client_data)
+@@ -1442,8 +1471,11 @@ static void ib_uverbs_remove_one(struct ib_device *device, void *client_data)
  		return;
  
  	cdev_device_del(&uverbs_dev->cdev, &uverbs_dev->dev);
@@ -108,7 +124,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (device->disassociate_ucontext) {
  		/* We disassociate HW resources and immediately return.
  		 * Userspace will see a EIO errno for all future access.
-@@ -1460,7 +1488,11 @@ static void ib_uverbs_remove_one(struct ib_device *device, void *client_data)
+@@ -1468,7 +1500,11 @@ static void ib_uverbs_remove_one(struct ib_device *device, void *client_data)
  	put_device(&uverbs_dev->dev);
  }
  
@@ -120,7 +136,7 @@ index xxxxxxx..xxxxxxx 100644
  {
  	if (mode)
  		*mode = 0666;
-@@ -1496,7 +1528,12 @@ static int __init ib_uverbs_init(void)
+@@ -1504,7 +1540,12 @@ static int __init ib_uverbs_init(void)
  
  	uverbs_class->devnode = uverbs_devnode;
  
