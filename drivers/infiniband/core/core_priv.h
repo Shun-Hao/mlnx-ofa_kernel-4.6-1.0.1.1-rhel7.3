@@ -348,7 +348,6 @@ struct sa_path_rec;
 int roce_resolve_route_from_path(struct sa_path_rec *rec,
 				 const struct ib_gid_attr *attr);
 
-struct net_device *rdma_read_gid_attr_ndev_rcu(const struct ib_gid_attr *attr);
 bool rdma_check_gid_user_access(const struct ib_gid_attr *attr);
 
 #endif /* _CORE_PRIV_H */

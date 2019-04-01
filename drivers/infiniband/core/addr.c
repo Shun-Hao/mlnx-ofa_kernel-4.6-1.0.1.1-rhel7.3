@@ -45,12 +45,11 @@
 #include <net/addrconf.h>
 #include <net/ip6_route.h>
 #include <rdma/ib_addr.h>
+#include <rdma/ib_cache.h>
 #include <rdma/ib_sa.h>
 #include <rdma/ib.h>
 #include <rdma/rdma_netlink.h>
 #include <net/netlink.h>
-
-#include "core_priv.h"
 
 struct addr_req {
 	struct list_head list;
