@@ -1422,6 +1422,8 @@ static int mlx5e_init_rep_tx(struct mlx5e_priv *priv)
 	}
 
 	if (rpriv->rep->vport == MLX5_VPORT_UPLINK) {
+		INIT_LIST_HEAD(&rpriv->unready_flows);
+
 		/* init shared tc flow table */
 		err = mlx5e_tc_esw_init(&rpriv->tc_ht);
 		if (err)

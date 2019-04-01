@@ -31,6 +31,8 @@ bool mlx5_lag_is_multipath(struct mlx5_core_dev *dev)
 	return res;
 }
 
+void mlx5e_tc_reoffload_flows_work(struct mlx5_core_dev *mdev);
+
 /**
  * Set lag port affinity
  *
@@ -72,6 +74,12 @@ static void mlx5_lag_set_port_affinity(struct mlx5_lag *ldev, int port)
 			       port);
 		return;
 	}
+
+	if (tracker.netdev_state[0].tx_enabled)
+		mlx5e_tc_reoffload_flows_work(ldev->pf[0].dev);
+
+	if (tracker.netdev_state[1].tx_enabled)
+		mlx5e_tc_reoffload_flows_work(ldev->pf[1].dev);
 
 	mlx5_modify_lag(ldev, &tracker);
 }

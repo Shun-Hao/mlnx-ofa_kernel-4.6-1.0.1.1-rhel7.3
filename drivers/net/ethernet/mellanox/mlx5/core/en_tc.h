@@ -71,6 +71,7 @@ struct mlx5e_neigh_hash_entry;
 void mlx5e_tc_update_neigh_used_value(struct mlx5e_neigh_hash_entry *nhe);
 
 int mlx5e_tc_num_filters(struct mlx5e_priv *priv, int flags);
+void mlx5e_tc_reoffload_flows_work(struct mlx5_core_dev *mdev);
 
 #else /* CONFIG_MLX5_ESWITCH */
 static inline int  mlx5e_tc_nic_init(struct mlx5e_priv *priv) { return 0; }
