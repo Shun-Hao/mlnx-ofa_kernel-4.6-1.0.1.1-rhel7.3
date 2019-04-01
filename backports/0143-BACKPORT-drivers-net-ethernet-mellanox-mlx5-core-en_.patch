@@ -37,13 +37,14 @@ index xxxxxxx..xxxxxxx 100644
  struct mlx5e_encap_entry;
  void mlx5e_tc_encap_flows_add(struct mlx5e_priv *priv,
  			      struct mlx5e_encap_entry *e);
-@@ -69,8 +74,10 @@ void mlx5e_tc_encap_flows_del(struct mlx5e_priv *priv,
+@@ -69,9 +74,11 @@ void mlx5e_tc_encap_flows_del(struct mlx5e_priv *priv,
  
  struct mlx5e_neigh_hash_entry;
  void mlx5e_tc_update_neigh_used_value(struct mlx5e_neigh_hash_entry *nhe);
 +#endif
  
  int mlx5e_tc_num_filters(struct mlx5e_priv *priv, int flags);
+ void mlx5e_tc_reoffload_flows_work(struct mlx5_core_dev *mdev);
 +#endif /* HAVE_TC_FLOWER_OFFLOAD */
  
  #else /* CONFIG_MLX5_ESWITCH */

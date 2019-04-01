@@ -35,10 +35,10 @@ index xxxxxxx..xxxxxxx 100644
  }
  
 +#ifdef HAVE_FIB_NH_NOTIFIER_INFO
+ void mlx5e_tc_reoffload_flows_work(struct mlx5_core_dev *mdev);
+ 
  /**
-  * Set lag port affinity
-  *
-@@ -302,3 +309,5 @@ void mlx5_lag_mp_cleanup(struct mlx5_lag *ldev)
+@@ -310,3 +317,5 @@ void mlx5_lag_mp_cleanup(struct mlx5_lag *ldev)
  	unregister_fib_notifier(&mp->fib_nb);
  	mp->fib_nb.notifier_call = NULL;
  }
