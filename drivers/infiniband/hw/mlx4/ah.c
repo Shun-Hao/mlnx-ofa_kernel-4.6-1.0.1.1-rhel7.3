@@ -103,9 +103,11 @@ static struct ib_ah *create_iboe_ah(struct ib_pd *pd,
 	 */
 	gid_attr = ah_attr->grh.sgid_attr;
 	if (gid_attr) {
-		if (is_vlan_dev(gid_attr->ndev))
-			vlan_tag = vlan_dev_vlan_id(gid_attr->ndev);
-		memcpy(ah->av.eth.s_mac, gid_attr->ndev->dev_addr, ETH_ALEN);
+		ret = rdma_read_gid_l2_fields(gid_attr, &vlan_tag,
+					      &ah->av.eth.s_mac[0]);
+		if (ret)
+			return ERR_PTR(ret);
+
 		ret = mlx4_ib_gid_index_to_real_index(ibdev, gid_attr);
 		if (ret < 0)
 			return ERR_PTR(ret);
