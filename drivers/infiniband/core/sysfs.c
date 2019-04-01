@@ -341,10 +341,18 @@ static struct attribute *port_default_attrs[] = {
 
 static size_t print_ndev(const struct ib_gid_attr *gid_attr, char *buf)
 {
+	struct net_device __rcu *ndev;
+	size_t ret = -EINVAL;
+
 	if (!gid_attr->ndev)
 		return -EINVAL;
 
-	return sprintf(buf, "%s\n", gid_attr->ndev->name);
+	rcu_read_lock();
+	ndev = rcu_dereference(gid_attr->ndev);
+	if (ndev)
+		ret = sprintf(buf, "%s\n", ndev->name);
+	rcu_read_unlock();
+	return ret;
 }
 
 static size_t print_gid_type(const struct ib_gid_attr *gid_attr, char *buf)
