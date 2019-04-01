@@ -21,3 +21,5 @@ Change-Id=If2378186a23f2f5e361c7e755f042934cb0101ab; subject=BACKPORTS: Fix back
 Change-Id=I739f20d192025ef88bb68723210969d516ba3240; subject=BACKPORTS: net/mlx5e: Fix kernel panic on systems like RHEL 6.x; feature=backports; upstream_status=ignore; general=;
 Change-Id=Ief7c9701249978cf0b376ca13d390a43bf40b51d; subject=net/mlx5e: Run periodic job for HW stats when interface is down too; feature=rebase; upstream_status=ignore; general=;
 Change-Id=Ia7a934a17e3339836cebde96e02af8e54a3d2c1b; subject=net/mlx5e: Use CQE padding for Ethernet CQs; feature=rebase; upstream_status=accepted; general=upstream commit ID: 939de57d3034, tag: v5.0-rc1;
+Change-Id=Ie9f8d843b3e1773ccb841374b2cf1e22992d8eb9; subject=net/mlx5e: Make RX-FCS and LRO / HW GRO mutually exclusive; feature=mlx5e_rxfcs_exclusive; upstream_status=NA; general=;
+Change-Id=I4bee86c5bf6416512479ecfb103ffe02d27438e9; subject=BACKPORTS: Update backports for "RX-FCS exclusive w LRO/GRO" feature; feature=backports; upstream_status=ignore; general=;
