@@ -56,8 +56,8 @@ Change-Id=I4a6fa1335c449435d5716b72b2a5716c2bb4cb48; subject=net/mlx5: Disable i
 Change-Id=I57f12527fe33de81d1337dee5f60c8da25910301; subject=Revert "net/mlx5: Fix issue when deleting VEPA flow table"; feature=mlx5_vepa; upstream_status=ignore; general=;
 Change-Id=I3e63f83153308ac64c85c4d69a63e59843fa9832; subject=Revert "net/mlx5: E-Switch, Add support for VEPA in legacy mode."; feature=mlx5_vepa; upstream_status=ignore; general=;
 Change-Id=I56880b9d7b71dbc9663e851182a5a8aec01da424; subject=net/mlx5: Remove vepa code in sriov_sysfs.c; feature=mlx5_vepa; upstream_status=ignore; general=;
-Change-Id=I159c2a5e0eebf63e52e6b75ef419e1b954e76e85; subject=net/mlx5: E-Switch, Add support for VEPA in legacy mode.; feature=mlx5_vepa; upstream_status=accepted; general=;
-Change-Id=I7fd4e0ab8624d5ea84482dfe14ec5075aa8c98ce; subject=net/mlx5: Support ndo bridge_setlink and getlink; feature=mlx5_vepa; upstream_status=accepted; general=;
+Change-Id=I159c2a5e0eebf63e52e6b75ef419e1b954e76e85; subject=net/mlx5: E-Switch, Add support for VEPA in legacy mode.; feature=mlx5_vepa; upstream_status=accepted; general=upstream commit ID: 8da202b24913, tag: v5.1-rc1;
+Change-Id=I7fd4e0ab8624d5ea84482dfe14ec5075aa8c98ce; subject=net/mlx5: Support ndo bridge_setlink and getlink; feature=mlx5_vepa; upstream_status=accepted; general=upstream commit ID: 4b89251de024, tag: v5.1-rc1;
 Change-Id=I2417542a49297865d2a44797c66d704c056f6f0d; subject=net/mlx5: E-Switch, Fix access to invalid memory when toggling esw modes; feature=mlx5_vepa; upstream_status=accepted; general=;
 Change-Id=Icbdcda3e98c060017f05b90f6c7e72171985003b; subject=net/mlx5: E-Switch, Protect from invalid memory access in offload fdb table; feature=mlx5_vepa; upstream_status=accepted; general=;
 Change-Id=I4d3fad88b3ea3c200e5190414c8f398b6b47cf87; subject=net/mlx5: E-Switch, fix syndrome (0x678139) when turn on vepa; feature=mlx5_vepa; upstream_status=in_progress; general=;
