@@ -625,9 +625,11 @@ int nvmet_ns_enable(struct nvmet_ns *ns)
 	if (ns->pdev) {
 		list_for_each_entry(ctrl, &subsys->ctrls, subsys_entry) {
 			// TODO: enable only one ns
-			ret = ctrl->ops->enable_offload_ns(ctrl);
-			if (ret)
-				goto out_remove_list;
+			if (ctrl->offload_ctrl) {
+				ret = ctrl->ops->enable_offload_ns(ctrl);
+				if (ret)
+					goto out_remove_list;
+			}
 		}
 	}
 
