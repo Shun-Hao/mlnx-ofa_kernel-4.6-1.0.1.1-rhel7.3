@@ -575,13 +575,20 @@ int nvmet_ns_enable(struct nvmet_ns *ns)
 	if (ret)
 		goto out_unlock;
 
+	ret = nvmet_p2pmem_ns_enable(ns);
+	if (ret)
+		goto out_dev_disable;
+
+	list_for_each_entry(ctrl, &subsys->ctrls, subsys_entry)
+		nvmet_p2pmem_ns_add_p2p(ctrl, ns);
+
 	if (subsys->offloadble) {
 		ns->pdev = nvme_find_pdev_from_bdev(ns->bdev);
 		if (!ns->pdev) {
 			pr_err("Couldn't find nvme pci device from device %s\n",
 			       ns->device_path);
 			ret = -EINVAL;
-			goto out_bdev_put;
+			goto out_dev_put;
 		}
 		pci_dev_get(ns->pdev);
 	}
@@ -591,13 +598,6 @@ int nvmet_ns_enable(struct nvmet_ns *ns)
 		ret = -EINVAL;
 		goto out_pdev_put;
 	}
-
-	ret = nvmet_p2pmem_ns_enable(ns);
-	if (ret)
-		goto out_dev_disable;
-
-	list_for_each_entry(ctrl, &subsys->ctrls, subsys_entry)
-		nvmet_p2pmem_ns_add_p2p(ctrl, ns);
 
 	ret = percpu_ref_init(&ns->ref, nvmet_destroy_namespace,
 				0, GFP_KERNEL);
@@ -654,7 +654,7 @@ out_pdev_put:
 		ns->pdev = NULL;
 	}
 
-out_bdev_put:
+out_dev_put:
 	list_for_each_entry(ctrl, &subsys->ctrls, subsys_entry)
 		pci_dev_put(radix_tree_delete(&ctrl->p2p_ns_map, ns->nsid));
 out_dev_disable:

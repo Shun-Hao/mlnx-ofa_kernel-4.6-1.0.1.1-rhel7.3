@@ -33,3 +33,4 @@ Change-Id=Icf345d85192f2d9bace5b8d2839fae651a419cc5; subject=BACKPORTS: Don't pr
 Change-Id=Ib5f8e50991d54bdc9fadb3242d27e85f853d678b; subject=nvmet-rdma: Add unlikely for response allocated check; feature=nvmf_bugs; upstream_status=accepted; general=upstream commit ID: ad1f824948e4, tag: v5.0-rc1;
 Change-Id=I6d2e29375a6b4bba1221f7bd70f759d31b6df111; subject=BACKPORTS: Fix nvme pci queue mapping; feature=backports; upstream_status=ignore; general=;
 Change-Id=I8bab96b7596b03de22b85934bcae8b4139903f48; subject=BACKPORTS: Fix nvme-pci compilation warning; feature=backports; upstream_status=ignore; general=;
+Change-Id=Ie195fb175efd3154feec2ee3a065af9cc0f78af8; subject=nvmet: fix error flow during ns enable (offload); feature=nvmf_offload; upstream_status=in_progress; general=;
