@@ -16,3 +16,5 @@ Change-Id=Id103088cb7d1e9efda04e2c289456810f496514c; subject=IB/mlx5: Fix fragme
 Change-Id=I71beaedde132048b4baf8df87e93dd5974b02f80; subject=IB/mlx5: Fix fragmented kernel QP post REG_MR WR; feature=mlx5_frag_qps; upstream_status=in_progress; general=;
 Change-Id=I61ec2cbef471c7e5a4d40ff3696e315a26680a82; subject=IB/mlx5: Fix scatter to CQE in DCT QP creation; feature=mlx5_ib_bugs; upstream_status=in_progress; general=;
 Change-Id=I218d9a81295a8c3e905d18dfe4bf605a12b5ed49; subject=metadata: Update MD; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I2f12aa0e4e5b0d82594b29571b2c91d95fb5ce15; subject=net/mlx5: Properly unwind resources in init_one bad flow; feature=mlx5_core_bugs; upstream_status=NA; general=;
+Change-Id=Ied500aa567c53e0443b5dff3916c52de3bd86e09; subject=metadata: Update MD; feature=ofed_scripts; upstream_status=ignore; general=;
