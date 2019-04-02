@@ -12,3 +12,8 @@ Change-Id=Id6827134fc20c90b7c45eaafdf6dcef224474e8b; subject=RDMA/core: Sync unr
 Change-Id=I951aaeeabc0a966a17d129d37b40958fa39ef487; subject=RDMA/core: Rescan netdev to add IP based GIDs; feature=ib_core_bugs; upstream_status=NA; general=;
 Change-Id=I276b31d7989bbc3a865e28449ea4db7efd713f6e; subject=RDMA/core: Delete RoCE GID in hw when corresponding IP is deleted; feature=ib_core_bugs; upstream_status=accepted; general=upstream commit ID: be5914c124bc, tag: v5.0-rc1;
 Change-Id=Id679a304e324974322d3870cff310ea6d55da86e; subject=ibdev2netdev: Revert ibdev2netdev: Improve script for dual port RoCE; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=Id08a5d889c6246bacf0cd00a526238427acd7aa2; subject=IB/cm: Reduce dependency on gid attribute ndev check; feature=ib_core_bugs; upstream_status=in_progress; general=;
+Change-Id=I5815757b1228d0b4aea5ee05f940f7180f7fa14c; subject=RDMA: Introduce and use GID attr helper to read RoCE L2 fields; feature=ib_core_bugs; upstream_status=in_progress; general=;
+Change-Id=I05d88d2d7fb7918ea87ed5a2e12346431d187544; subject=RDMA/cma: Use rdma_read_gid_attr_ndev_rcu to access netdev; feature=ib_core_bugs; upstream_status=in_progress; general=;
+Change-Id=I6b23b9ffb8674a3a97a3ea4ed2904a7ee892234f; subject=RDMA/core: Allow detaching gid attribute netdevice for RoCE; feature=ib_core_bugs; upstream_status=in_progress; general=;
+Change-Id=I44cc764251d2a807b45b1fbd31322f3002c7adb5; subject=BACKPORTS: mlx5/main.c core/addr.c core/cache.c; feature=backports; upstream_status=ignore; general=;

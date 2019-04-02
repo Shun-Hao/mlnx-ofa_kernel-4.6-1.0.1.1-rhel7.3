@@ -10,15 +10,15 @@ diff --git a/drivers/infiniband/core/addr.c b/drivers/infiniband/core/addr.c
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/infiniband/core/addr.c
 +++ b/drivers/infiniband/core/addr.c
-@@ -49,6 +49,7 @@
+@@ -50,6 +50,7 @@
  #include <rdma/ib.h>
  #include <rdma/rdma_netlink.h>
  #include <net/netlink.h>
 +#include <linux/ratelimit.h>
  
- #include "core_priv.h"
- 
-@@ -128,11 +129,26 @@ static void ib_nl_process_good_ip_rsep(const struct nlmsghdr *nlh)
+ struct addr_req {
+ 	struct list_head list;
+@@ -127,11 +128,26 @@ static void ib_nl_process_good_ip_rsep(const struct nlmsghdr *nlh)
  }
  
  int ib_nl_handle_ip_res_resp(struct sk_buff *skb,
@@ -45,7 +45,7 @@ index xxxxxxx..xxxxxxx 100644
  		return -EPERM;
  
  	if (ib_nl_is_good_ip_resp(nlh))
-@@ -176,7 +192,8 @@ static int ib_nl_ip_send_msg(struct rdma_dev_addr *dev_addr,
+@@ -175,7 +191,8 @@ static int ib_nl_ip_send_msg(struct rdma_dev_addr *dev_addr,
  	}
  
  	/* Construct the family header first */
@@ -55,7 +55,7 @@ index xxxxxxx..xxxxxxx 100644
  	header->ifindex = dev_addr->bound_dev_if;
  	nla_put(skb, attrtype, size, daddr);
  
-@@ -248,17 +265,30 @@ rdma_find_ndev_for_src_ip_rcu(struct net *net, const struct sockaddr *src_in)
+@@ -247,17 +264,30 @@ rdma_find_ndev_for_src_ip_rcu(struct net *net, const struct sockaddr *src_in)
  
  	switch (src_in->sa_family) {
  	case AF_INET:
@@ -87,7 +87,7 @@ index xxxxxxx..xxxxxxx 100644
  					  dev, 1)) {
  				ret = 0;
  				break;
-@@ -321,14 +351,23 @@ static int ib_nl_fetch_ha(struct rdma_dev_addr *dev_addr,
+@@ -320,14 +350,23 @@ static int ib_nl_fetch_ha(struct rdma_dev_addr *dev_addr,
  	return ib_nl_ip_send_msg(dev_addr, daddr, seq, family);
  }
  
@@ -111,7 +111,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (!n)
  		return -ENODATA;
  
-@@ -336,25 +375,47 @@ static int dst_fetch_ha(const struct dst_entry *dst,
+@@ -335,25 +374,47 @@ static int dst_fetch_ha(const struct dst_entry *dst,
  		neigh_event_send(n, NULL);
  		ret = -ENODATA;
  	} else {
@@ -159,7 +159,7 @@ index xxxxxxx..xxxxxxx 100644
  	return rt6->rt6i_flags & RTF_GATEWAY;
  }
  
-@@ -370,11 +431,19 @@ static int fetch_ha(const struct dst_entry *dst, struct rdma_dev_addr *dev_addr,
+@@ -369,11 +430,19 @@ static int fetch_ha(const struct dst_entry *dst, struct rdma_dev_addr *dev_addr,
  		(const void *)&dst_in6->sin6_addr;
  	sa_family_t family = dst_in->sa_family;
  
@@ -179,7 +179,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static int addr4_resolve(struct sockaddr *src_sock,
-@@ -389,9 +458,14 @@ static int addr4_resolve(struct sockaddr *src_sock,
+@@ -388,9 +457,14 @@ static int addr4_resolve(struct sockaddr *src_sock,
  	__be32 src_ip = src_in->sin_addr.s_addr;
  	__be32 dst_ip = dst_in->sin_addr.s_addr;
  	struct rtable *rt;
@@ -194,7 +194,7 @@ index xxxxxxx..xxxxxxx 100644
  	memset(&fl4, 0, sizeof(fl4));
  	fl4.daddr = dst_ip;
  	fl4.saddr = src_ip;
-@@ -401,10 +475,28 @@ static int addr4_resolve(struct sockaddr *src_sock,
+@@ -400,10 +474,28 @@ static int addr4_resolve(struct sockaddr *src_sock,
  	if (ret)
  		return ret;
  
@@ -223,7 +223,7 @@ index xxxxxxx..xxxxxxx 100644
  	*prt = rt;
  	return 0;
  }
-@@ -418,28 +510,72 @@ static int addr6_resolve(struct sockaddr *src_sock,
+@@ -417,28 +509,72 @@ static int addr6_resolve(struct sockaddr *src_sock,
  	struct sockaddr_in6 *src_in = (struct sockaddr_in6 *)src_sock;
  	const struct sockaddr_in6 *dst_in =
  				(const struct sockaddr_in6 *)dst_sock;
@@ -297,7 +297,7 @@ index xxxxxxx..xxxxxxx 100644
  static int addr6_resolve(struct sockaddr *src_sock,
  			 const struct sockaddr *dst_sock,
  			 struct rdma_dev_addr *addr,
-@@ -447,7 +583,7 @@ static int addr6_resolve(struct sockaddr *src_sock,
+@@ -446,7 +582,7 @@ static int addr6_resolve(struct sockaddr *src_sock,
  {
  	return -EADDRNOTAVAIL;
  }
@@ -306,7 +306,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static int addr_resolve_neigh(const struct dst_entry *dst,
  			      const struct sockaddr *dst_in,
-@@ -474,6 +610,15 @@ static int copy_src_l2_addr(struct rdma_dev_addr *dev_addr,
+@@ -473,6 +609,15 @@ static int copy_src_l2_addr(struct rdma_dev_addr *dev_addr,
  			    const struct net_device *ndev)
  {
  	int ret = 0;
@@ -322,7 +322,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	if (dst->dev->flags & IFF_LOOPBACK)
  		ret = rdma_translate_ip(dst_in, dev_addr);
-@@ -485,7 +630,11 @@ static int copy_src_l2_addr(struct rdma_dev_addr *dev_addr,
+@@ -484,7 +629,11 @@ static int copy_src_l2_addr(struct rdma_dev_addr *dev_addr,
  	 * we're definitely in RoCE v2 (as RoCE v1 isn't routable) set the
  	 * network type accordingly.
  	 */
@@ -334,7 +334,7 @@ index xxxxxxx..xxxxxxx 100644
  	    ndev->type != ARPHRD_INFINIBAND)
  		dev_addr->network = dst_in->sa_family == AF_INET ?
  						RDMA_NETWORK_IPV4 :
-@@ -583,7 +732,11 @@ static int addr_resolve(struct sockaddr *src_in,
+@@ -582,7 +731,11 @@ static int addr_resolve(struct sockaddr *src_in,
  	}
  	if (src_in->sa_family == AF_INET) {
  		ret = addr4_resolve(src_in, dst_in, addr, &rt);
@@ -346,7 +346,7 @@ index xxxxxxx..xxxxxxx 100644
  	} else {
  		ret = addr6_resolve(src_in, dst_in, addr, &dst);
  	}
-@@ -847,6 +1000,7 @@ int rdma_addr_find_l2_eth_by_grh(const union ib_gid *sgid,
+@@ -846,6 +999,7 @@ int rdma_addr_find_l2_eth_by_grh(const union ib_gid *sgid,
  static int netevent_callback(struct notifier_block *self, unsigned long event,
  	void *ctx)
  {
@@ -354,7 +354,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct addr_req *req;
  
  	if (event == NETEVENT_NEIGH_UPDATE) {
-@@ -859,6 +1013,7 @@ static int netevent_callback(struct notifier_block *self, unsigned long event,
+@@ -858,6 +1012,7 @@ static int netevent_callback(struct notifier_block *self, unsigned long event,
  			spin_unlock_bh(&lock);
  		}
  	}
