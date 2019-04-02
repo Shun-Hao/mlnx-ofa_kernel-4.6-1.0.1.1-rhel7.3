@@ -3,14 +3,14 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c
 
 Change-Id: I696f11ce6fa899c865ad2c82164f23bfd076c79e
 ---
- drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c | 13 +++++++++++--
- 1 file changed, 11 insertions(+), 2 deletions(-)
+ drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c b/drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c
 +++ b/drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c
-@@ -2,11 +2,17 @@
+@@ -2,11 +2,18 @@
  /* Copyright (c) 2019 Mellanox Technologies. */
  
  #include <linux/netdevice.h>
@@ -27,10 +27,19 @@ index xxxxxxx..xxxxxxx 100644
 +#include "lag.h"
 +#include "lag_mp.h"
 +
++#ifdef HAVE_FIB_NH_NOTIFIER_INFO
  static bool mlx5_lag_multipath_check_prereq(struct mlx5_lag *ldev)
  {
  	if (!ldev->pf[0].dev || !ldev->pf[1].dev)
-@@ -31,6 +37,7 @@ bool mlx5_lag_is_multipath(struct mlx5_core_dev *dev)
+@@ -14,6 +21,7 @@ static bool mlx5_lag_multipath_check_prereq(struct mlx5_lag *ldev)
+ 
+ 	return mlx5_esw_multipath_prereq(ldev->pf[0].dev, ldev->pf[1].dev);
+ }
++#endif
+ 
+ static bool __mlx5_lag_is_multipath(struct mlx5_lag *ldev)
+ {
+@@ -31,6 +39,7 @@ bool mlx5_lag_is_multipath(struct mlx5_core_dev *dev)
  	return res;
  }
  
@@ -38,7 +47,7 @@ index xxxxxxx..xxxxxxx 100644
  void mlx5e_tc_reoffload_flows_work(struct mlx5_core_dev *mdev);
  
  /**
-@@ -310,3 +317,5 @@ void mlx5_lag_mp_cleanup(struct mlx5_lag *ldev)
+@@ -310,3 +319,5 @@ void mlx5_lag_mp_cleanup(struct mlx5_lag *ldev)
  	unregister_fib_notifier(&mp->fib_nb);
  	mp->fib_nb.notifier_call = NULL;
  }

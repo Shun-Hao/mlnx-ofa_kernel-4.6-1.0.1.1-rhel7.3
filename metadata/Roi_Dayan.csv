@@ -29,3 +29,4 @@ Change-Id=I78b10de8a9c40baa9c849678d9d878dce18e7304; subject=net/mlx5e: Re-attem
 Change-Id=I77d1d1309427413442ac777f0aec8c8507290ba8; subject=BACKPORTS: Update; feature=backports; upstream_status=ignore; general=;
 Change-Id=I75946ee440cc98a4f1d26705701a5d5e26056f34; subject=Update meatadata; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=Id632debbe4121e794a769b2239a4ff822b8e6546; subject=net/mlx5e: Don't inherit flow flags on peer flow creation; feature=mlx5_asap; upstream_status=accepted; general=;
+Change-Id=I80a910760fdec955589d179f2d1857cfd49ee6c2; subject=BACKPORTS: fix multiple compile warnings; feature=backports; upstream_status=ignore; general=;
