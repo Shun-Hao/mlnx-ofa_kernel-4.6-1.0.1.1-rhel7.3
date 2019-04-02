@@ -764,7 +764,6 @@ struct mlx5_priv {
 	struct dentry	       *eq_debugfs;
 	struct dentry	       *cq_debugfs;
 	struct dentry	       *cmdif_debugfs;
-	struct dentry	       *vxlan_debugfs;
 	/* end: qp staff */
 
 	/* start: dct stuff */
@@ -1365,8 +1364,6 @@ int mlx5_qp_debugfs_init(struct mlx5_core_dev *dev);
 void mlx5_qp_debugfs_cleanup(struct mlx5_core_dev *dev);
 int mlx5_dct_debugfs_init(struct mlx5_core_dev *dev);
 void mlx5_dct_debugfs_cleanup(struct mlx5_core_dev *dev);
-int mlx5_vxlan_debugfs_init(struct mlx5_core_dev *dev);
-void mlx5_vxlan_debugfs_cleanup(struct mlx5_core_dev *dev);
 int mlx5_core_set_dc_cnak_trace(struct mlx5_core_dev *dev, int enable,
 				u64 addr);
 int mlx5_core_access_reg(struct mlx5_core_dev *dev, void *data_in,

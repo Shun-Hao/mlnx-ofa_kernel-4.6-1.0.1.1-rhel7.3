@@ -37,7 +37,6 @@
 #include <linux/mlx5/cq.h>
 #include <linux/mlx5/driver.h>
 #include "mlx5_core.h"
-#include "lib/vxlan.h"
 
 enum {
 	QP_PID,
@@ -178,49 +177,6 @@ void mlx5_eq_debugfs_cleanup(struct mlx5_core_dev *dev)
 		return;
 
 	debugfs_remove_recursive(dev->priv.eq_debugfs);
-}
-
-int mlx5_vxlan_debugfs_init(struct mlx5_core_dev *dev)
-{
-	if (!mlx5_debugfs_root)
-		return 0;
-
-	dev->priv.vxlan_debugfs = debugfs_create_dir("VXLAN",
-						     dev->priv.dbg_root);
-
-	return dev->priv.vxlan_debugfs ? 0 : -ENOMEM;
-}
-
-void mlx5_vxlan_debugfs_cleanup(struct mlx5_core_dev *dev)
-{
-	if (!mlx5_debugfs_root)
-		return;
-
-	debugfs_remove_recursive(dev->priv.vxlan_debugfs);
-}
-
-int mlx5_vxlan_debugfs_add(struct mlx5_core_dev *dev,
-			   struct mlx5_vxlan_port *vxlan)
-{
-	char resn[32];
-
-	if (!mlx5_debugfs_root)
-		return 0;
-
-	sprintf(resn, "%d", vxlan->udp_port);
-	vxlan->dbg = debugfs_create_u16(resn, 0400, dev->priv.vxlan_debugfs,
-					&vxlan->udp_port);
-
-	return vxlan->dbg ? 0 : -ENOMEM;
-}
-
-void mlx5_vxlan_debugfs_remove(struct mlx5_core_dev *dev,
-			       struct mlx5_vxlan_port *vxlan)
-{
-	if (!mlx5_debugfs_root)
-		return;
-
-	debugfs_remove(vxlan->dbg);
 }
 
 static ssize_t average_read(struct file *filp, char __user *buf, size_t count,

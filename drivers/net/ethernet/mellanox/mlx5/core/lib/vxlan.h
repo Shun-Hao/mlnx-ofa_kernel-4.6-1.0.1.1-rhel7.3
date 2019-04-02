@@ -50,7 +50,7 @@ struct mlx5_vxlan_port {
 	atomic_t refcount;
 	u16 udp_port;
 #ifdef CONFIG_MLX5_INNER_RSS
-	struct mlx5_flow_handle     *flow_rule;
+	struct mlx5_flow_handle	*flow_rule;
 #endif
 	struct dentry		*dbg;
 };
@@ -71,6 +71,4 @@ static inline struct mx5_vxlan_port*
 mlx5_vxlan_lookup_port(struct mlx5_vxlan *vxlan, u16 port) { return NULL; }
 #endif
 
-int  mlx5_vxlan_debugfs_add(struct mlx5_core_dev *mdev, struct mlx5_vxlan_port *vxlan);
-void mlx5_vxlan_debugfs_remove(struct mlx5_core_dev *mdev, struct mlx5_vxlan_port *vxlan);
 #endif /* __MLX5_VXLAN_H__ */
