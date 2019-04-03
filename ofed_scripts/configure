@@ -290,7 +290,6 @@ CONFIG_MLX5_CORE_EN_DCB=${CONFIG_MLX5_CORE_EN_DCB:-''}
 CONFIG_MLX5_MPFS=${CONFIG_MLX5_MPFS:-''}
 CONFIG_MLX5_ESWITCH=${CONFIG_MLX5_ESWITCH:-''}
 CONFIG_MLX5_CORE_IPOIB=${CONFIG_MLX5_CORE_IPOIB:-''}
-CONFIG_MLX5_INNER_RSS=${CONFIG_MLX5_INNER_RSS:-''}
 CONFIG_MLX5_EN_SPECIAL_SQ=${CONFIG_MLX5_EN_SPECIAL_SQ:-''}
 CONFIG_MLX4_EN=${CONFIG_MLX4_EN:-''}
 CONFIG_MLX4_INFINIBAND=${CONFIG_MLX4_INFINIBAND:-''}
@@ -659,7 +658,6 @@ main()
                             CONFIG_MLX5_MPFS="y"
                             CONFIG_MLX5_ESWITCH="y"
                             CONFIG_MLX5_CORE_IPOIB="y"
-                            CONFIG_MLX5_INNER_RSS="y"
                             CONFIG_MLX5_EN_SPECIAL_SQ="y"
                             CONFIG_MLX5_INFINIBAND="m"
                             CONFIG_BACKPORT_LRO="m"
@@ -675,7 +673,6 @@ main()
                             CONFIG_MLX5_MPFS=
                             CONFIG_MLX5_ESWITCH=
                             CONFIG_MLX5_CORE_IPOIB=
-                            CONFIG_MLX5_INNER_RSS=
                             CONFIG_MLX5_INFINIBAND=
                             CONFIG_BACKPORT_LRO="m"
                             CONFIG_MLX5_DEBUG="y"
@@ -690,7 +687,6 @@ main()
                             CONFIG_MLX5_MPFS=
                             CONFIG_MLX5_ESWITCH=
                             CONFIG_MLX5_CORE_IPOIB=
-                            CONFIG_MLX5_INNER_RSS=
                             CONFIG_MLX5_INFINIBAND="m"
                             CONFIG_BACKPORT_LRO="m"
                             CONFIG_MLX5_DEBUG="y"
@@ -706,7 +702,6 @@ main()
                             CONFIG_MLX5_ESWITCH="y"
                             CONFIG_MLX5_CORE_IPOIB=
                             CONFIG_MLX5_EN_SPECIAL_SQ="y"
-                            CONFIG_MLX5_INNER_RSS="y"
                             CONFIG_MLX5_INFINIBAND=
                             CONFIG_BACKPORT_LRO="m"
                             CONFIG_MLX5_DEBUG="y"
@@ -721,7 +716,6 @@ main()
                             CONFIG_MLX5_MPFS="y"
                             CONFIG_MLX5_ESWITCH="y"
                             CONFIG_MLX5_CORE_IPOIB=
-                            CONFIG_MLX5_INNER_RSS="y"
                             CONFIG_MLX5_INFINIBAND="m"
                             CONFIG_BACKPORT_LRO="m"
                             CONFIG_MLX5_DEBUG="y"
@@ -736,7 +730,6 @@ main()
                             CONFIG_MLX5_MPFS=
                             CONFIG_MLX5_ESWITCH=
                             CONFIG_MLX5_CORE_IPOIB="y"
-                            CONFIG_MLX5_INNER_RSS=
                             CONFIG_MLX5_INFINIBAND="m"
                             CONFIG_BACKPORT_LRO="m"
                             CONFIG_MLX5_DEBUG="y"
@@ -757,7 +750,6 @@ main()
                             CONFIG_MLX5_MPFS="y"
                             CONFIG_MLX5_ESWITCH="y"
                             CONFIG_MLX5_CORE_IPOIB="y"
-                            CONFIG_MLX5_INNER_RSS="y"
                             CONFIG_MLX5_EN_SPECIAL_SQ="y"
                         ;;
                         --without-mlx5_core-mod)
@@ -769,7 +761,6 @@ main()
                             CONFIG_MLX5_MPFS=
                             CONFIG_MLX5_ESWITCH=
                             CONFIG_MLX5_CORE_IPOIB=
-                            CONFIG_MLX5_INNER_RSS=
                             CONFIG_MLX5_EN_SPECIAL_SQ=
                         ;;
                         --without-mlx4-mod)
@@ -786,7 +777,6 @@ main()
                             CONFIG_MLX5_MPFS=
                             CONFIG_MLX5_ESWITCH=
                             CONFIG_MLX5_CORE_IPOIB=
-                            CONFIG_MLX5_INNER_RSS=
                             CONFIG_MLX5_EN_SPECIAL_SQ=
                             CONFIG_MLX5_INFINIBAND=
                             CONFIG_MLX5_DEBUG=
@@ -823,7 +813,6 @@ main()
                             CONFIG_MLX5_MPFS="y"
                             CONFIG_MLX5_ESWITCH="y"
                             CONFIG_MLX5_CORE_IPOIB="y"
-                            CONFIG_MLX5_INNER_RSS="y"
                             CONFIG_MLX5_INFINIBAND="m"
                         ;;
                         --without-mlx5_inf-mod)
@@ -835,7 +824,6 @@ main()
                             CONFIG_MLX5_MPFS=
                             CONFIG_MLX5_ESWITCH=
                             CONFIG_MLX5_CORE_IPOIB=
-                            CONFIG_MLX5_INNER_RSS=
                         ;;
                         --with-mlx4_fc-mod)
                             CONFIG_MLX4_CORE="m"
@@ -1364,7 +1352,6 @@ CONFIG_MLX5_CORE_EN_DCB=${CONFIG_MLX5_CORE_EN_DCB}
 CONFIG_MLX5_MPFS=${CONFIG_MLX5_MPFS}
 CONFIG_MLX5_ESWITCH=${CONFIG_MLX5_ESWITCH}
 CONFIG_MLX5_CORE_IPOIB=${CONFIG_MLX5_CORE_IPOIB}
-CONFIG_MLX5_INNER_RSS=${CONFIG_MLX5_INNER_RSS}
 CONFIG_MLX5_EN_SPECIAL_SQ=${CONFIG_MLX5_EN_SPECIAL_SQ}
 CONFIG_MLX4_EN=${CONFIG_MLX4_EN}
 CONFIG_MLX4_EN_DCB=${CONFIG_MLX4_EN_DCB}
@@ -1592,11 +1579,6 @@ if [ "X${CONFIG_MLX5_CORE_IPOIB}" == "Xy" ]; then
         DEFINE_MLX5_CORE_IPOIB="#undef CONFIG_MLX5_CORE_IPOIB\n#define CONFIG_MLX5_CORE_IPOIB 1"
 else
         DEFINE_MLX5_CORE_IPOIB="#undef CONFIG_MLX5_CORE_IPOIB"
-fi
-if [ "X${CONFIG_MLX5_INNER_RSS}" == "Xy" ]; then
-        DEFINE_MLX5_INNER_RSS="#undef CONFIG_MLX5_INNER_RSS\n#define CONFIG_MLX5_INNER_RSS 1"
-else
-        DEFINE_MLX5_INNER_RSS="#undef CONFIG_MLX5_INNER_RSS"
 fi
 if [ "X${CONFIG_MLX5_EN_SPECIAL_SQ}" == "Xy" ]; then
         DEFINE_MLX5_EN_SPECIAL_SQ="#undef CONFIG_MLX5_EN_SPECIAL_SQ\n#define CONFIG_MLX5_EN_SPECIAL_SQ 1"
@@ -1906,7 +1888,6 @@ $(echo -e "${DEFINE_MLX5_CORE_EN_DCB}" | grep -v undef)
 $(echo -e "${DEFINE_MLX5_MPFS}" | grep -v undef)
 $(echo -e "${DEFINE_MLX5_ESWITCH}" | grep -v undef)
 $(echo -e "${DEFINE_MLX5_CORE_IPOIB}" | grep -v undef)
-$(echo -e "${DEFINE_MLX5_INNER_RSS}" | grep -v undef)
 $(echo -e "${DEFINE_MLX5_EN_SPECIAL_SQ}" | grep -v undef)
 $(echo -e "${DEFINE_MLX4_EN}" | grep -v undef)
 $(echo -e "${DEFINE_MLX4_IB_DEBUG_FS}" | grep -v undef)
@@ -1982,7 +1963,6 @@ $(echo -e "${DEFINE_CONFIG_BF_POWER_FAILURE_EVENT}" | grep -v undef)
 #undef CONFIG_MLX5_MPFS
 #undef CONFIG_MLX5_ESWITCH
 #undef CONFIG_MLX5_CORE_IPOIB
-#undef CONFIG_MLX5_INNER_RSS
 #undef CONFIG_MLX5_EN_SPECIAL_SQ
 #undef CONFIG_MLX4_DEBUG
 #undef CONFIG_MLX5_DEBUG
@@ -2082,7 +2062,6 @@ $(echo -e "${DEFINE_MLX5_CORE_EN_DCB}")
 $(echo -e "${DEFINE_MLX5_MPFS}")
 $(echo -e "${DEFINE_MLX5_ESWITCH}")
 $(echo -e "${DEFINE_MLX5_CORE_IPOIB}")
-$(echo -e "${DEFINE_MLX5_INNER_RSS}")
 $(echo -e "${DEFINE_MLX5_EN_SPECIAL_SQ}")
 $(echo -e "${DEFINE_MLX4_EN}")
 $(echo -e "${DEFINE_MLX4_IB_DEBUG_FS}")
