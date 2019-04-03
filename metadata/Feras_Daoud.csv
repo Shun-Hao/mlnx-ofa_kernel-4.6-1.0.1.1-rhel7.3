@@ -70,3 +70,4 @@ Change-Id=I1901b582e61a076417d327f8059eda25893024cb; subject=mlx5/core: Lower fa
 Change-Id=I540cc480835baeb9d4ffcf0618276bfe630db81f; subject=net/mlx5: Use priv to get max number of channels; feature=ipoib_bugs; upstream_status=NA; general=;
 Change-Id=I7874717c793ee7527282b20c6d8f1c23d08aefd7; subject=BACKPORTS: Fix Netdev + IPoIB backports; feature=backports; upstream_status=ignore; general=;
 Change-Id=I4caee3fc6e77fa4f91c45812444309d1d0ad038b; subject=net/sched: cls_flower: Fix passing wrong direction flag matadata fixup; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=Ibf4869ec7298ad62e5d588c1ca90bc7cf802c098; subject=IB/mlx5: Allow modify AV in DCI QP to RTR; feature=ib_core_bugs; upstream_status=accepted; general=;
