@@ -1662,6 +1662,7 @@ static int mlx5e_get_module_eeprom(struct net_device *netdev,
 	struct mlx5e_priv *priv = netdev_priv(netdev);
 	struct mlx5_core_dev *mdev = priv->mdev;
 	int offset = ee->offset;
+	int len = ee->len;
 	int size_read;
 	int i = 0;
 
@@ -1670,8 +1671,14 @@ static int mlx5e_get_module_eeprom(struct net_device *netdev,
 
 	memset(data, 0, ee->len);
 
-	while (i < ee->len) {
-		size_read = mlx5_query_module_eeprom(mdev, offset, ee->len - i,
+	/* Multiple pages request is not supported when querying FW */
+	if (offset >= MLX5_EEPROM_PAGE_LENGTH)
+		len = 0;
+	else if (offset + len > MLX5_EEPROM_PAGE_LENGTH)
+		len = MLX5_EEPROM_PAGE_LENGTH - offset;
+
+	while (i < len) {
+		size_read = mlx5_query_module_eeprom(mdev, offset, len - i,
 						     data + i);
 
 		if (!size_read)

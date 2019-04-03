@@ -23,3 +23,4 @@ Change-Id=Ief7c9701249978cf0b376ca13d390a43bf40b51d; subject=net/mlx5e: Run peri
 Change-Id=Ia7a934a17e3339836cebde96e02af8e54a3d2c1b; subject=net/mlx5e: Use CQE padding for Ethernet CQs; feature=rebase; upstream_status=accepted; general=upstream commit ID: 939de57d3034, tag: v5.0-rc1;
 Change-Id=Ie9f8d843b3e1773ccb841374b2cf1e22992d8eb9; subject=net/mlx5e: Make RX-FCS and LRO / HW GRO mutually exclusive; feature=mlx5e_rxfcs_exclusive; upstream_status=NA; general=;
 Change-Id=I4bee86c5bf6416512479ecfb103ffe02d27438e9; subject=BACKPORTS: Update backports for "RX-FCS exclusive w LRO/GRO" feature; feature=backports; upstream_status=ignore; general=;
+Change-Id=Ie1cec5aa0ea9aea05d3e3c143a5cab58472affa9; subject=net/mlx5e: Restrict data len in FW EEPROM queries to one page; feature=mlx5e_fw_eeprom; upstream_status=in_progress; general=;
