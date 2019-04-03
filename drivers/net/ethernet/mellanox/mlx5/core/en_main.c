@@ -4975,7 +4975,7 @@ void mlx5e_build_rq_params(struct mlx5_core_dev *mdev,
 
 void mlx5e_build_rss_params(struct mlx5e_params *params)
 {
-	params->rss_hfunc = ETH_RSS_HASH_XOR;
+	params->rss_hfunc = ETH_RSS_HASH_TOP;
 	netdev_rss_key_fill(params->toeplitz_hash_key, sizeof(params->toeplitz_hash_key));
 	mlx5e_build_default_indir_rqt(params->indirection_rqt,
 				      MLX5E_INDIR_RQT_SIZE, params->num_channels);
