@@ -1,7 +1,7 @@
-From: Alaa Hleihel <alaa@mellanox.com>
+From: Chris Mi <chrism@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en_tc.h
 
-Change-Id: If8086f2ba05232404ec4dd03f4c4769876f5b204
+Change-Id: I775cf775e8daa5cbe4447543663ea2fe9d33a0a4
 ---
  drivers/net/ethernet/mellanox/mlx5/core/en_tc.h | 7 +++++++
  1 file changed, 7 insertions(+)
@@ -36,8 +36,8 @@ index xxxxxxx..xxxxxxx 100644
 +#ifdef HAVE_TCF_TUNNEL_INFO
  struct mlx5e_encap_entry;
  void mlx5e_tc_encap_flows_add(struct mlx5e_priv *priv,
- 			      struct mlx5e_encap_entry *e);
-@@ -69,9 +74,11 @@ void mlx5e_tc_encap_flows_del(struct mlx5e_priv *priv,
+ 			      struct mlx5e_encap_entry *e,
+@@ -73,9 +78,11 @@ void mlx5e_encap_put(struct mlx5e_priv *priv, struct mlx5e_encap_entry *e);
  
  struct mlx5e_neigh_hash_entry;
  void mlx5e_tc_update_neigh_used_value(struct mlx5e_neigh_hash_entry *nhe);
