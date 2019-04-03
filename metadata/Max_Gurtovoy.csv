@@ -106,3 +106,4 @@ Change-Id=I5f867d0f5dcc8b62a1cb5a68b2cc50faa9e881ed; subject=RDMA/mlx5: Add defa
 Change-Id=I3be4fc972b74cdfa2f6448ea8c85bdcdaef1b115; subject=IB/mlx5: disable umem checks for DEVX on_behalf commands; feature=mlx5_bf; upstream_status=ignore; general=;
 Change-Id=I0c90092108213b4f4c07b10f993f2590f0df253f; subject=IB/mlx5: disable uid for DEVX on_behalf commands; feature=mlx5_bf; upstream_status=ignore; general=;
 Change-Id=I8664207566f38b5be61348a3367a894415b33e96; subject=net/mlx5: Eswitch, don't use default RoCE conf for device emulation; feature=mlx5_bf; upstream_status=ignore; general=;
+Change-Id=I7ebb9cb75ee0e8eaa30dafe6afc7e581ccccbc48; subject=RDMA/mlx5: limit devx fdb rules to emulation manager; feature=mlx5_bf; upstream_status=ignore; general=;

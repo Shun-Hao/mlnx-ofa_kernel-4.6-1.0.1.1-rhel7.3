@@ -4042,7 +4042,8 @@ _get_flow_table(struct mlx5_ib_dev *dev,
 		priority = ib_prio_to_core_prio(fs_matcher->priority, false);
 
 #ifdef CONFIG_BF_DEVICE_EMULATION
-	if (fs_matcher->ns_type == MLX5_FLOW_NAMESPACE_FDB) {
+	if (mlx5_core_is_dev_emulation_manager(dev->mdev) &&
+	    fs_matcher->ns_type == MLX5_FLOW_NAMESPACE_FDB) {
 		/* These rules must have higher priority then our
 		 * default steering rules. See esw_default_rule_add()
 		 * Use chain 0, prio 1
