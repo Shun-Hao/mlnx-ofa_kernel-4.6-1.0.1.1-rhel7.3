@@ -4153,7 +4153,7 @@ int mlx5e_stats_flower(struct mlx5e_priv *priv,
 		goto errout;
 	}
 
-	if (!mlx5e_is_offloaded_flow(flow)) {
+	if (mlx5e_is_offloaded_flow(flow)) {
 		counter = mlx5e_tc_get_counter(flow);
 		if (!counter)
 			goto errout;
