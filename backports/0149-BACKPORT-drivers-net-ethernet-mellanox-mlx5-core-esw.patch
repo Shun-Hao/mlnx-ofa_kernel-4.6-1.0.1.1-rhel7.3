@@ -1,8 +1,8 @@
-From: Eli Cohen <eli@mellanox.com>
+From: Chris Mi <chrism@mellanox.com>
 Subject: [PATCH] BACKPORT:
  drivers/net/ethernet/mellanox/mlx5/core/eswitch_offloads.c
 
-Change-Id: Ide97d36815ec9844b813ce6b2241379d3cfe2478
+Change-Id: I5b94affcb17bb997531e064e4ac70088afbd685d
 ---
  .../ethernet/mellanox/mlx5/core/eswitch_offloads.c | 144 ++++++++++++++++++---
  1 file changed, 127 insertions(+), 17 deletions(-)
@@ -11,7 +11,7 @@ diff --git a/drivers/net/ethernet/mellanox/mlx5/core/eswitch_offloads.c b/driver
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/net/ethernet/mellanox/mlx5/core/eswitch_offloads.c
 +++ b/drivers/net/ethernet/mellanox/mlx5/core/eswitch_offloads.c
-@@ -114,7 +114,11 @@ u16 mlx5_eswitch_get_prio_range(struct mlx5_eswitch *esw)
+@@ -117,7 +117,11 @@ u16 mlx5_eswitch_get_prio_range(struct mlx5_eswitch *esw)
  	if (esw->fdb_table.flags & ESW_FDB_CHAINS_AND_PRIOS_SUPPORTED)
  		return FDB_MAX_PRIO;
  
@@ -23,7 +23,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  struct mlx5_flow_handle *
-@@ -195,12 +199,15 @@ mlx5_eswitch_add_offloaded_rule(struct mlx5_eswitch *esw,
+@@ -198,12 +202,15 @@ mlx5_eswitch_add_offloaded_rule(struct mlx5_eswitch *esw,
  				 source_eswitch_owner_vhca_id);
  
  	spec->match_criteria_enable = MLX5_MATCH_MISC_PARAMETERS;
@@ -40,7 +40,7 @@ index xxxxxxx..xxxxxxx 100644
  		spec->match_criteria_enable |= MLX5_MATCH_OUTER_HEADERS;
  	}
  
-@@ -1562,10 +1569,15 @@ disable_roce:
+@@ -1583,10 +1590,15 @@ disable_roce:
  	return err;
  }
  
@@ -58,7 +58,7 @@ index xxxxxxx..xxxxxxx 100644
  	return schedule_work(&esw->handler.start_handler) != true;
  }
  
-@@ -1576,12 +1588,19 @@ void esw_offloads_start_handler(struct work_struct *work)
+@@ -1597,12 +1609,19 @@ void esw_offloads_start_handler(struct work_struct *work)
  	struct mlx5_eswitch *esw =
  	       container_of(handler, struct mlx5_eswitch, handler);
  	int err, err1, num_vfs = esw->dev->priv.sriov.num_vfs;
@@ -78,7 +78,7 @@ index xxxxxxx..xxxxxxx 100644
  		atomic_set(&esw->handler.in_progress, 0);
  		return;
  	}
-@@ -1589,12 +1608,21 @@ void esw_offloads_start_handler(struct work_struct *work)
+@@ -1610,12 +1629,21 @@ void esw_offloads_start_handler(struct work_struct *work)
  	mlx5_eswitch_disable_sriov(esw);
  	err = mlx5_eswitch_enable_sriov(esw, num_vfs, SRIOV_OFFLOADS);
  	if (err) {
@@ -100,7 +100,7 @@ index xxxxxxx..xxxxxxx 100644
  		}
  	}
  	if (esw->offloads.inline_mode == MLX5_INLINE_MODE_NONE) {
-@@ -1602,8 +1630,13 @@ void esw_offloads_start_handler(struct work_struct *work)
+@@ -1623,8 +1651,13 @@ void esw_offloads_start_handler(struct work_struct *work)
  						 num_vfs,
  						 &esw->offloads.inline_mode)) {
  			esw->offloads.inline_mode = MLX5_INLINE_MODE_L2;
@@ -114,7 +114,7 @@ index xxxxxxx..xxxxxxx 100644
  		}
  	}
  	atomic_set(&esw->handler.in_progress, 0);
-@@ -2063,10 +2096,15 @@ err_reps:
+@@ -2092,10 +2125,15 @@ err_reps:
  	return err;
  }
  
@@ -132,7 +132,7 @@ index xxxxxxx..xxxxxxx 100644
  	return schedule_work(&esw->handler.stop_handler) != true;
  }
  
-@@ -2077,16 +2115,27 @@ void esw_offloads_stop_handler(struct work_struct *work)
+@@ -2106,16 +2144,27 @@ void esw_offloads_stop_handler(struct work_struct *work)
  	struct mlx5_eswitch *esw =
  		container_of(handler, struct mlx5_eswitch, handler);
  	int err, err1, num_vfs = esw->dev->priv.sriov.num_vfs;
@@ -160,7 +160,7 @@ index xxxxxxx..xxxxxxx 100644
  		}
  	}
  
-@@ -2209,8 +2258,34 @@ static int mlx5_devlink_eswitch_check(struct devlink *devlink)
+@@ -2238,8 +2287,34 @@ static int mlx5_devlink_eswitch_check(struct devlink *devlink)
  	return 0;
  }
  
@@ -197,7 +197,7 @@ index xxxxxxx..xxxxxxx 100644
  {
  	struct mlx5_core_dev *dev = devlink_priv(devlink);
  	struct mlx5_eswitch *esw = dev->priv.eswitch;
-@@ -2233,15 +2308,23 @@ int mlx5_devlink_eswitch_mode_set(struct devlink *devlink, u16 mode,
+@@ -2262,15 +2337,23 @@ int mlx5_devlink_eswitch_mode_set(struct devlink *devlink, u16 mode,
  		return -EBUSY;
  
  	if (mode == DEVLINK_ESWITCH_MODE_SWITCHDEV)
@@ -224,7 +224,7 @@ index xxxxxxx..xxxxxxx 100644
  {
  	struct mlx5_core_dev *dev = devlink_priv(devlink);
  	int err;
-@@ -2253,8 +2336,11 @@ int mlx5_devlink_eswitch_mode_get(struct devlink *devlink, u16 *mode)
+@@ -2282,8 +2365,11 @@ int mlx5_devlink_eswitch_mode_get(struct devlink *devlink, u16 *mode)
  	return esw_mode_to_devlink(dev->priv.eswitch->mode, mode);
  }
  
@@ -238,7 +238,7 @@ index xxxxxxx..xxxxxxx 100644
  {
  	struct mlx5_core_dev *dev = devlink_priv(devlink);
  	struct mlx5_eswitch *esw = dev->priv.eswitch;
-@@ -2271,15 +2357,23 @@ int mlx5_devlink_eswitch_inline_mode_set(struct devlink *devlink, u8 mode,
+@@ -2300,15 +2386,23 @@ int mlx5_devlink_eswitch_inline_mode_set(struct devlink *devlink, u8 mode,
  			return 0;
  		/* fall through */
  	case MLX5_CAP_INLINE_MODE_L2:
@@ -252,7 +252,7 @@ index xxxxxxx..xxxxxxx 100644
  		break;
  	}
  
- 	if (esw->offloads.num_flows > 0) {
+ 	if (atomic64_read(&esw->offloads.num_flows) > 0) {
 +#ifdef HAVE_DEVLINK_ESWITCH_MODE_SET_EXTACK
  		NL_SET_ERR_MSG_MOD(extack,
  				   "Can't set inline mode when flows are configured");
@@ -262,7 +262,7 @@ index xxxxxxx..xxxxxxx 100644
  		return -EOPNOTSUPP;
  	}
  
-@@ -2290,8 +2384,12 @@ int mlx5_devlink_eswitch_inline_mode_set(struct devlink *devlink, u8 mode,
+@@ -2319,8 +2413,12 @@ int mlx5_devlink_eswitch_inline_mode_set(struct devlink *devlink, u8 mode,
  	mlx5_esw_for_each_vf_vport(esw, vport, esw->enabled_vports) {
  		err = mlx5_modify_nic_vport_min_inline(dev, vport, mlx5_mode);
  		if (err) {
@@ -275,7 +275,7 @@ index xxxxxxx..xxxxxxx 100644
  			goto revert_inline_mode;
  		}
  	}
-@@ -2308,7 +2406,7 @@ out:
+@@ -2337,7 +2435,7 @@ out:
  	return err;
  }
  
@@ -284,7 +284,7 @@ index xxxxxxx..xxxxxxx 100644
  {
  	struct mlx5_core_dev *dev = devlink_priv(devlink);
  	struct mlx5_eswitch *esw = dev->priv.eswitch;
-@@ -2323,7 +2421,7 @@ int mlx5_devlink_eswitch_inline_mode_get(struct devlink *devlink, u8 *mode)
+@@ -2352,7 +2450,7 @@ int mlx5_devlink_eswitch_inline_mode_get(struct devlink *devlink, u8 *mode)
  
  int mlx5_eswitch_inline_mode_get(struct mlx5_eswitch *esw, int nvfs, u8 *mode)
  {
@@ -293,7 +293,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5_core_dev *dev = esw->dev;
  	int vport;
  
-@@ -2357,8 +2455,11 @@ out:
+@@ -2386,8 +2484,11 @@ out:
  	return 0;
  }
  
@@ -307,10 +307,10 @@ index xxxxxxx..xxxxxxx 100644
  {
  	struct mlx5_core_dev *dev = devlink_priv(devlink);
  	struct mlx5_eswitch *esw = dev->priv.eswitch;
-@@ -2385,8 +2486,13 @@ int mlx5_devlink_eswitch_encap_mode_set(struct devlink *devlink, u8 encap,
+@@ -2414,8 +2515,13 @@ int mlx5_devlink_eswitch_encap_mode_set(struct devlink *devlink, u8 encap,
  		return 0;
  
- 	if (esw->offloads.num_flows > 0) {
+ 	if (atomic64_read(&esw->offloads.num_flows) > 0) {
 +#ifdef HAVE_DEVLINK_ESWITCH_MODE_SET_EXTACK
  		NL_SET_ERR_MSG_MOD(extack,
  				   "Can't set encapsulation when flows are configured");
@@ -321,7 +321,7 @@ index xxxxxxx..xxxxxxx 100644
  		return -EOPNOTSUPP;
  	}
  
-@@ -2397,8 +2503,12 @@ int mlx5_devlink_eswitch_encap_mode_set(struct devlink *devlink, u8 encap,
+@@ -2426,8 +2532,12 @@ int mlx5_devlink_eswitch_encap_mode_set(struct devlink *devlink, u8 encap,
  	err = esw_create_offloads_fdb_tables(esw, esw->nvports);
  
  	if (err) {
@@ -334,7 +334,7 @@ index xxxxxxx..xxxxxxx 100644
  		esw->offloads.encap = !encap;
  		(void)esw_create_offloads_fdb_tables(esw, esw->nvports);
  	}
-@@ -2406,7 +2516,7 @@ int mlx5_devlink_eswitch_encap_mode_set(struct devlink *devlink, u8 encap,
+@@ -2435,7 +2545,7 @@ int mlx5_devlink_eswitch_encap_mode_set(struct devlink *devlink, u8 encap,
  	return err;
  }
  
