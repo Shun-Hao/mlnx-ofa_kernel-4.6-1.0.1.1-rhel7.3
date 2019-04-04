@@ -1892,7 +1892,7 @@ common:
 	MLX5_SET(tirc, tirc, indirect_table, ind_tbl_num);
 	MLX5_SET(tirc, tirc, transport_domain, tdn);
 
-	if (ucmd.flags & MLX5_QP_FLAG_TUNNEL_OFFLOADS)
+	if (ucmd.flags & MLX5_QP_FLAG_TUNNEL_OFFLOADS || tunnel_offloads_en)
 		MLX5_SET(tirc, tirc, tunneled_offload_en, 1);
 
 	MLX5_SET(tirc, tirc, self_lb_block, lb_flag);

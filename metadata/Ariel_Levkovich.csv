@@ -31,3 +31,4 @@ Change-Id=I501fb65cde2be01bd2356da26d36622534fb4a03; subject=IB/mlx5: Device mem
 Change-Id=I74d3edfd1052273053b2ce020760132a4036227a; subject=IB/mlx5: Device resource control for privileged DEVX user; feature=sw_icm; upstream_status=in_progress; general=;
 Change-Id=I9c41c47053ae5cc3b6fecf75b5f7884079a98d60; subject=IB/mlx5: Avoid allocation of zero size SW ICM maps; feature=sw_icm; upstream_status=in_progress; general=;
 Change-Id=If4737062159c7bd03ae873eb7e5556e39ff8849e; subject=net/mlx5: Use a single MSIX vector for all control EQs in VFs; feature=shared_msix; upstream_status=in_progress; general=;
+Change-Id=I8a99fccb87de0b5cc7eb307d5f45417313151a3a; subject=IB/mlx5: Set tunnel offloads for experimental RSS qp creation command; feature=mlx5_ib_bugs; upstream_status=NA; general=;
