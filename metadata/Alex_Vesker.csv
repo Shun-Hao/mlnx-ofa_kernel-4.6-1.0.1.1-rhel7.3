@@ -30,3 +30,4 @@ Change-Id=I2e22293e9046b680d60e14def0f149aef88f0ec7; subject=mlx5/ipoib: Indicat
 Change-Id=Ib6c936685454df1f06555d6d619fcca5d1e9f617; subject=IB/mlx5: Enable TX on a DEVX flow table; feature=mlx5_ib_bugs; upstream_status=accepted; general=upstream commit ID: 419822c8b83f, tag: v5.0-rc1;
 Change-Id=I18f4c42099f95b24f03fc168bd1a09d69bfa007e; subject=mlx5_ifc: Update sync steering opcode; feature=sw_steering; upstream_status=in_progress; general=;
 Change-Id=Ic8fc7ae2215150c837eddde60acaa7b6bf9d5583; subject=mlx5_ifc: Update misc3 struct; feature=sw_steering; upstream_status=in_progress; general=;
+Change-Id=Ie7bbe8f07ec99d0f8e798973b2ccbd7e38c1790b; subject=RDMA/mlx5: Fix access to uninitialized esw struct; feature=sw_steering; upstream_status=in_progress; general=;

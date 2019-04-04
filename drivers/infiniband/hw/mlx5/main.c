@@ -3378,16 +3378,18 @@ static struct mlx5_ib_flow_prio *get_flow_table(struct mlx5_ib_dev *dev,
 	struct mlx5_ib_flow_prio *prio;
 	struct mlx5_flow_table *ft;
 	int max_table_size;
+	u8 esw_encap = 0;
 	int num_entries;
 	int num_groups;
 	u32 flags = 0;
 	int priority;
-	u8 esw_encap;
 
 	max_table_size = BIT(MLX5_CAP_FLOWTABLE_NIC_RX(dev->mdev,
 						       log_max_ft_size));
-	esw_encap = mlx5_eswitch_get_encap_mode(esw) !=
-		DEVLINK_ESWITCH_ENCAP_MODE_NONE;
+	if (MLX5_ESWITCH_MANAGER(dev->mdev))
+		esw_encap = mlx5_eswitch_get_encap_mode(esw) !=
+			    DEVLINK_ESWITCH_ENCAP_MODE_NONE;
+
 	if (flow_attr->type == IB_FLOW_ATTR_NORMAL) {
 		enum mlx5_flow_namespace_type fn_type;
 
@@ -3400,7 +3402,7 @@ static struct mlx5_ib_flow_prio *get_flow_table(struct mlx5_ib_dev *dev,
 		if (ft_type == MLX5_IB_FT_RX) {
 			fn_type = MLX5_FLOW_NAMESPACE_BYPASS;
 			prio = &dev->flow_db->prios[priority];
-			num_entries = 
+			num_entries =
 				1 << dev->flow_db->steering_data->ingress_log_ft_size[priority];
 			if (!dev->is_rep && !esw_encap &&
 			    MLX5_CAP_FLOWTABLE_NIC_RX(dev->mdev, decap))
@@ -4031,12 +4033,13 @@ _get_flow_table(struct mlx5_ib_dev *dev,
 	struct mlx5_flow_namespace *ns = NULL;
 	struct mlx5_ib_flow_prio *prio = NULL;
 	int max_table_size = 0;
+	u8 esw_encap = 0;
 	u32 flags = 0;
 	int priority;
-	u8 esw_encap;
 
-	esw_encap = mlx5_eswitch_get_encap_mode(esw) !=
-		DEVLINK_ESWITCH_ENCAP_MODE_NONE;
+	if (MLX5_ESWITCH_MANAGER(dev->mdev))
+		esw_encap = mlx5_eswitch_get_encap_mode(esw) !=
+			    DEVLINK_ESWITCH_ENCAP_MODE_NONE;
 
 	if (mcast)
 		priority = MLX5_IB_FLOW_MCAST_PRIO;
