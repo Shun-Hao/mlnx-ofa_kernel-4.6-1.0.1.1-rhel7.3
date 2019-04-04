@@ -11942,6 +11942,24 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 	],[
 		AC_MSG_RESULT(no)
 	])
+
+	AC_MSG_CHECKING([if struct Qdisc_ops has ingress_block_set net/sch_generic.h ])
+	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <net/sch_generic.h>
+	],[
+		struct Qdisc_ops ops = {
+			.ingress_block_set = 0,
+		};
+
+		return 0;
+	],[
+		AC_MSG_RESULT(yes)
+		MLNX_AC_DEFINE(HAVE_QDISC_SUPPORTS_BLOCK_SHARING, 1,
+			  [struct Qdisc_ops has ingress_block_set])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
 ])
 #
 # COMPAT_CONFIG_HEADERS
