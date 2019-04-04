@@ -26,7 +26,7 @@ index xxxxxxx..xxxxxxx 100644
  	priv->child_type = type;
  
 +#ifndef HAVE_NDO_GET_IFLINK
-+	priv->dev->iflink = ppriv->dev->ifindex;
++	priv->dev->ifindex = ppriv->dev->ifindex;
 +#endif
 +
  	if (!is_child_unique(ppriv, priv)) {
@@ -44,7 +44,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
 @@ -272,6 +279,11 @@ static void ipoib_vlan_delete_task(struct work_struct *work)
-
+ 
  	rtnl_unlock();
  
 +#ifndef HAVE_NET_DEVICE_NEEDS_FREE_NETDEV

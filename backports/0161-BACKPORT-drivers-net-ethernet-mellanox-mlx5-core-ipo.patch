@@ -50,7 +50,7 @@ index xxxxxxx..xxxxxxx 100644
 +#ifdef HAVE_NDO_GET_IFLINK
  	parent_ifindex = dev->netdev_ops->ndo_get_iflink(dev);
 +#else
-+	parent_ifindex = dev->iflink;
++	parent_ifindex = dev->ifindex;
 +#endif
  	parent_dev = dev_get_by_index(dev_net(dev), parent_ifindex);
  	if (!parent_dev) {

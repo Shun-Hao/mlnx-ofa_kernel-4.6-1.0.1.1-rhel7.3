@@ -31,3 +31,4 @@ Change-Id=I547554bb09196dc5e1fd3e364966d731e96ffb6e; subject=BACKPORTS: Fix XDP 
 Change-Id=I73c46f3fe8ee2f4bc31c282c2382dc587828a6b7; subject=BACKPORTS: Fix Ubuntu 16.04.5 compilaton; feature=backports; upstream_status=ignore; general=;
 Change-Id=I47d98650127cb896d0faa523c49803c3eb4d241f; subject=BACKPORTS: Free netdevice if no destructor and need to delete VLAN; feature=backports; upstream_status=ignore; general=;
 Change-Id=Icfdddd9ab8197a2187327bbc95d1132faa954ebc; subject=BACKPORTS: IPOIB,PKEY - Free child memory in case no destructor; feature=backports; upstream_status=ignore; general=;
+Change-Id=I117e1475e057a46917061c6f9a84b55624f7c0d5; subject=BACKPORTS: Fix add P_Key flow in case HAVE_NDO_GET_IFLINK not defined; feature=backports; upstream_status=ignore; general=;
