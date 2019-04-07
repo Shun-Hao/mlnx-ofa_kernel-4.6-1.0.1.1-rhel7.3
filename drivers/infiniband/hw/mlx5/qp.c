@@ -2287,7 +2287,9 @@ static int create_qp_common(struct mlx5_ib_dev *dev, struct ib_pd *pd,
 					      MLX5_QP_FLAG_BFREG_INDEX |
 					      MLX5_QP_FLAG_TYPE_DCT |
 					      MLX5_QP_FLAG_TYPE_DCI |
-					      MLX5_QP_FLAG_ALLOW_SCATTER_CQE))
+					      MLX5_QP_FLAG_ALLOW_SCATTER_CQE |
+					      MLX5_QP_FLAG_TIR_ALLOW_SELF_LB_UC |
+					      MLX5_QP_FLAG_TIR_ALLOW_SELF_LB_MC))
 			return -EINVAL;
 
 		pucmd = (struct mlx5_ib_create_qp *)&ucmd;
