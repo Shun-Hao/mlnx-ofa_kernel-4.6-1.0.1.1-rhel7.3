@@ -4280,7 +4280,8 @@ int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 static int ignored_ts_check(enum ib_qp_type qp_type)
 {
 	if (qp_type == MLX5_IB_QPT_REG_UMR ||
-	    qp_type == MLX5_IB_QPT_SW_CNAK)
+	    qp_type == MLX5_IB_QPT_SW_CNAK ||
+	    qp_type == MLX5_IB_QPT_DCI)
 		return 1;
 
 	return 0;
