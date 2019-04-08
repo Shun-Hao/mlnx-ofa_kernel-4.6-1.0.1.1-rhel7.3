@@ -4,4 +4,4 @@ Change-Id=I815d27c41b4a43b694f96827287471e238317db6; subject=RDMA/restrack: Add 
 Change-Id=I50255d2222b3f3f3a62bc779646488604a65f22f; subject=RDMA/mlx5: Initialize return variable in case pagefault was skipped; feature=rebase; upstream_status=accepted; general=upstream commit ID: 7bca603a69c0, tag: v4.20-rc7;
 Change-Id=Ic432a191f3e25d53fa4eb784edc6c27a05fe56fc; subject=RDMA/nldev: Don't expose unsafe global rkey to regular user; feature=rebase; upstream_status=ignore; general=;
 Change-Id=I4c299666b398004c827b11bb882badc2d1845ac6; subject=RDMA/mlx5: Use stages for callback to setup and release DEVX; feature=devx; upstream_status=accepted; general=upstream commit ID: 81773ce5f07f, tag: v5.0-rc1;
-Change-Id=I88ddac79003332148869fbd1ed5eb3a0e34680fa; subject=Revert "IB/mlx5: Fix long EEH recover time with NVMe offloads"; feature=mlx5_ib_bugs; upstream_status=accepted; general=;
+Change-Id=I88ddac79003332148869fbd1ed5eb3a0e34680fa; subject=Revert "IB/mlx5: Fix long EEH recover time with NVMe offloads"; feature=mlx5_ib_bugs; upstream_status=accepted; general=upstream commit ID: ccffa5454857, tag: v5.0-rc1;

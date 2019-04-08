@@ -12,4 +12,4 @@ Change-Id=If7050003eb0ab3b0968ede3f471266b672622c0e; subject=BACKPORTS: Fix agen
 Change-Id=Ibe5ebbb7141de80409cf9a019a8dfe6fd2efb767; subject=RDMA/uverbs: Fix odp experimental sysfs interface; feature=exp_odp; upstream_status=NA; general=;
 Change-Id=I123d97ddcaf697fc09003a10afe74db76fbcad51; subject=BACKPORTS: ib_core: Add missing dev_put to addr.c backport; feature=backports; upstream_status=ignore; general=;
 Change-Id=I92962bc4fde27e2e8a19f56008564f390c087246; subject=BACKPORTS: ib_core: Fix addr.c copy_src_l2_addr() backport; feature=backports; upstream_status=ignore; general=;
-Change-Id=Ic7f3a0bee812a6f765a8b62aaf021e52875b8d1e; subject=IB/mlx4: Fix using wrong function to destroy sqp AHs under SRIOV; feature=mlx4_ib_bugs; upstream_status=accepted; general=;
+Change-Id=Ic7f3a0bee812a6f765a8b62aaf021e52875b8d1e; subject=IB/mlx4: Fix using wrong function to destroy sqp AHs under SRIOV; feature=mlx4_ib_bugs; upstream_status=accepted; general=upstream commit ID: f45f8edbe1d3, tag: v5.0-rc5;

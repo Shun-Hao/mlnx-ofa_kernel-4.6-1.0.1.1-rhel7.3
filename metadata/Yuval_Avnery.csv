@@ -8,4 +8,4 @@ Change-Id=I744dcb26fcdb38c88d3061af8177a7549db1184f; subject=net/mlx5e: Support 
 Change-Id=If40fa3058c59d15b14b4a38c3ca03f2a34277c37; subject=net/mlx5e: Align ratelimit feature with upstream code; feature=mlx5e_pp_special_queue; upstream_status=NA; general=;
 Change-Id=I2130cb7b5313727b156a0e1d3f2fa1ad125e1a66; subject=mlx5/core: Get pp rate limit queues based on capability; feature=mlx5e_pp_special_queue; upstream_status=NA; general=;
 Change-Id=I35a635be50d41dda6781418b6d92fcd372e09fc4; subject=BACKPORTS: Fix mlx5 backports for packet pacing; feature=mlx5e_pp_special_queue; upstream_status=NA; general=;
-Change-Id=Ideb5577a1fac265384eaa1f5467a82e4fa3cdd55; subject=net/mlx5e: Add a lock on tir list; feature=mlx5_core_bugs; upstream_status=in_progress; general=;
+Change-Id=Ideb5577a1fac265384eaa1f5467a82e4fa3cdd55; subject=net/mlx5e: Add a lock on tir list; feature=mlx5_core_bugs; upstream_status=accepted; general=upstream commit ID: 80a2a9026b24, tag: v5.1-rc4;
