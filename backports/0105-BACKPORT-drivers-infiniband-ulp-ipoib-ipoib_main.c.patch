@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/infiniband/ulp/ipoib/ipoib_main.c
 
 Change-Id: I9e88cce534b39322f5434230816c77bad446337f
 ---
- drivers/infiniband/ulp/ipoib/ipoib_main.c | 336 +++++++++++++++++++++++++++---
- 1 file changed, 311 insertions(+), 25 deletions(-)
+ drivers/infiniband/ulp/ipoib/ipoib_main.c | 334 +++++++++++++++++++++++++++---
+ 1 file changed, 310 insertions(+), 24 deletions(-)
 
 diff --git a/drivers/infiniband/ulp/ipoib/ipoib_main.c b/drivers/infiniband/ulp/ipoib/ipoib_main.c
 index xxxxxxx..xxxxxxx 100644
@@ -397,21 +397,21 @@ index xxxxxxx..xxxxxxx 100644
 +#ifdef HAVE_NET_DEVICE_NEEDS_FREE_NETDEV
  	WARN_ON(!list_empty(&priv->child_intfs));
 +#endif
-
+ 
  	ipoib_neigh_hash_uninit(dev);
-
+ 
 @@ -2071,23 +2256,28 @@ static void ipoib_ndo_uninit(struct net_device *dev)
  	}
-
+ 
  	if (priv->parent) {
 +#ifdef HAVE_NET_DEVICE_NEEDS_FREE_NETDEV
  		struct ipoib_dev_priv *ppriv = ipoib_priv(priv->parent);
-
+ 
  		down_write(&ppriv->vlan_rwsem);
  		list_del(&priv->list);
  		up_write(&ppriv->vlan_rwsem);
 +#endif
-
+ 
  		dev_put(priv->parent);
  	}
  }
@@ -423,9 +423,8 @@ index xxxxxxx..xxxxxxx 100644
  
  	return ib_set_vf_link_state(priv->ca, vf, priv->port, link_state);
  }
--
 +#endif
-+
+ 
 +#ifdef HAVE_NDO_SET_VF_MAC
  static int ipoib_get_vf_config(struct net_device *dev, int vf,
  			       struct ifla_vf_info *ivf)

@@ -41,3 +41,4 @@ Change-Id=Ic1cd714b12ce810807596ee6039582332565233d; subject=Fix UAR mapping; fe
 Change-Id=Ib0418ffb0e0a0cd043841fbf31141986358793eb; subject=ofed-scripts: Add kernel 5.0 compat check; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=Ief6a385d17fc85019120cdd413e06f5b9537ce39; subject=rdma.m4: add support for kernel 5.0; feature=backports; upstream_status=ignore; general=;
 Change-Id=Ie4cb0666489429b39b678fab06297633daeab02e; subject=ofed-scripts: mlnx_qos python3 TypeError; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I5faa7d0e101fec59aa161d7d665522be93307a22; subject=BACKPORTS: do ethtool get/set_setting when available; feature=backports; upstream_status=ignore; general=;

@@ -117,7 +117,7 @@ index xxxxxxx..xxxxxxx 100644
 -
 +#endif
  	ipoib_dev_uninit_rss(dev);
-
+ 
  	if (priv->parent) {
 +#ifdef HAVE_NET_DEVICE_NEEDS_FREE_NETDEV
  		struct ipoib_dev_priv *ppriv = ipoib_priv(priv->parent);

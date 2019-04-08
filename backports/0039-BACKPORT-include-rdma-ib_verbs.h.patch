@@ -176,17 +176,18 @@ index xxxxxxx..xxxxxxx 100644
  
  	/**
  	 * rdma netdev operation
-@@ -2751,8 +2835,10 @@ struct ib_device {
+@@ -2751,9 +2835,11 @@ struct ib_device {
  	struct attribute_group	     *hw_stats_ag;
  	struct rdma_hw_stats         *hw_stats;
  
 +#ifdef HAVE_CGROUP_RDMA_H
  #ifdef CONFIG_CGROUP_RDMA
  	struct rdmacg_device         cg_device;
-+#endif
  #endif
++#endif
  
  	u32                          index;
+ 	/*
 @@ -2775,6 +2861,16 @@ struct ib_device {
  
  	const struct uverbs_object_tree_def *const *driver_specs;

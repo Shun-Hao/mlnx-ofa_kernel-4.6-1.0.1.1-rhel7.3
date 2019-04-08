@@ -4,8 +4,8 @@ Subject: [PATCH] BACKPORT:
 
 Change-Id: I270fc830df97f83dd9bc9baff41f47ffd38399f6
 ---
- .../ethernet/mellanox/mlx5/core/ipoib/ethtool.c    | 102 +++++++++++++++++++--
- 1 file changed, 95 insertions(+), 7 deletions(-)
+ .../ethernet/mellanox/mlx5/core/ipoib/ethtool.c    | 105 +++++++++++++++++++--
+ 1 file changed, 98 insertions(+), 7 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/ipoib/ethtool.c b/drivers/net/ethernet/mellanox/mlx5/core/ipoib/ethtool.c
 index xxxxxxx..xxxxxxx 100644
@@ -51,17 +51,18 @@ index xxxxxxx..xxxxxxx 100644
  static int mlx5i_get_link_ksettings(struct net_device *netdev,
  				    struct ethtool_link_ksettings *link_ksettings)
  {
-@@ -234,8 +239,7 @@ static int mlx5i_get_link_ksettings(struct net_device *netdev,
+@@ -234,8 +239,8 @@ static int mlx5i_get_link_ksettings(struct net_device *netdev,
  	return 0;
  }
  
 -/*
 - * Talat TODO Add it to Backports
-+#else
++#endif
++#ifdef HAVE_ETHTOOL_GET_SET_SETTINGS
  static int mlx5i_get_settings(struct net_device *netdev,
  			      struct ethtool_cmd *ecmd)
  {
-@@ -254,7 +258,7 @@ static int mlx5i_get_settings(struct net_device *netdev,
+@@ -254,7 +259,7 @@ static int mlx5i_get_settings(struct net_device *netdev,
  		return -EINVAL;
  
  	ecmd->duplex = DUPLEX_FULL;
@@ -70,7 +71,7 @@ index xxxxxxx..xxxxxxx 100644
  	ecmd->phy_address = 255;
  	ecmd->autoneg = AUTONEG_DISABLE;
  
-@@ -262,7 +266,47 @@ static int mlx5i_get_settings(struct net_device *netdev,
+@@ -262,7 +267,47 @@ static int mlx5i_get_settings(struct net_device *netdev,
  
  	return 0;
  }
@@ -119,7 +120,7 @@ index xxxxxxx..xxxxxxx 100644
  const struct ethtool_ops mlx5i_ethtool_ops = {
  	.get_drvinfo        = mlx5i_get_drvinfo,
  	.get_strings        = mlx5i_get_strings,
-@@ -271,21 +315,65 @@ const struct ethtool_ops mlx5i_ethtool_ops = {
+@@ -271,21 +316,67 @@ const struct ethtool_ops mlx5i_ethtool_ops = {
  	.get_ringparam      = mlx5i_get_ringparam,
  	.set_ringparam      = mlx5i_set_ringparam,
  	.flash_device       = mlx5i_flash_device,
@@ -134,7 +135,8 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
 +#ifdef HAVE_GET_SET_LINK_KSETTINGS
  	.get_link_ksettings = mlx5i_get_link_ksettings,
-+#else
++#endif
++#ifdef HAVE_ETHTOOL_GET_SET_SETTINGS
 +	.get_settings       = mlx5i_get_settings,
 +#endif
  	.get_link           = ethtool_op_get_link,
@@ -170,7 +172,8 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
 +#ifdef HAVE_GET_SET_LINK_KSETTINGS
  	.get_link_ksettings = mlx5i_get_link_ksettings,
-+#else
++#endif
++#ifdef HAVE_ETHTOOL_GET_SET_SETTINGS
 +	.get_settings	    = mlx5i_get_settings,
 +#endif
 +};

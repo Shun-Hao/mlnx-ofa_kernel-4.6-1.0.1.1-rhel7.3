@@ -1210,8 +1210,8 @@ index xxxxxxx..xxxxxxx 100644
  #ifdef CONFIG_MLX4_EN_DCB
  	bool qcn_disable_new = !!(flags & MLX4_EN_PRIV_FLAGS_DISABLE_32_14_4_E);
  	bool qcn_disable_old = !!(priv->pflags & MLX4_EN_PRIV_FLAGS_DISABLE_32_14_4_E);
-+#endif
  #endif
++#endif
  	bool ld_new = !!(flags & MLX4_EN_PRIV_FLAGS_DISABLE_MC_LOOPBACK);
  	bool ld_old = !!(priv->pflags & MLX4_EN_PRIV_FLAGS_DISABLE_MC_LOOPBACK);
 +#ifndef HAVE_ETH_SS_RSS_HASH_FUNCS
