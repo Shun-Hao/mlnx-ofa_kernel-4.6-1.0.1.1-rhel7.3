@@ -600,9 +600,11 @@ int mlx5_reclaim_startup_pages(struct mlx5_core_dev *dev)
 	WARN(dev->priv.vfs_pages,
 	     "VFs FW pages counter is %d after reclaiming all pages\n",
 	     dev->priv.vfs_pages);
-	WARN(dev->priv.peer_pf_pages,
-	     "Peer PF FW pages counter is %d after reclaiming all pages\n",
-	     dev->priv.peer_pf_pages);
+
+	/* Warning but don't dump stack */
+	if (dev->priv.peer_pf_pages)
+		mlx5_core_warn(dev, "Peer PF FW pages counter is %d after reclaiming all pages\n",
+			       dev->priv.peer_pf_pages);
 
 	return 0;
 }
