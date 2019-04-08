@@ -2206,7 +2206,7 @@ static int init_one(struct pci_dev *pdev,
 
 	if (pdev->is_virtfn && !probe_vf) {
 		dev_info(&pdev->dev, "VFs are not binded to mlx5_core\n");
-		goto remove_file;
+		return 0;
 	}
 
 	dev->pdev = pdev;
@@ -2324,7 +2324,6 @@ static void remove_one(struct pci_dev *pdev)
 	if (mlx5_try_fast_unload(dev))
 		dev_dbg(&dev->pdev->dev, "mlx5_try_fast_unload failed\n");
 
-	device_remove_file(&pdev->dev, mlx5_roce_enable_dev_attrs);
 	devlink_unregister(devlink);
 	mlx5_unregister_device(dev);
 
@@ -2349,6 +2348,7 @@ static void remove_one(struct pci_dev *pdev)
 #endif
 
 out:
+	device_remove_file(&pdev->dev, mlx5_roce_enable_dev_attrs);
 	devlink_free(devlink);
 }
 
