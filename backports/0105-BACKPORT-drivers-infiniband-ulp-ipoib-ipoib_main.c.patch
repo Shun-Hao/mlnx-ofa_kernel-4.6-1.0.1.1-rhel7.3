@@ -33,31 +33,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	if (dev->netdev_ops->ndo_open != ipoib_open)
  		return NOTIFY_DONE;
-@@ -177,7 +183,11 @@ int ipoib_open(struct net_device *dev)
- 			if (flags & IFF_UP)
- 				continue;
- 
-+#ifdef HAVE_DEV_CHANGE_FLAGS_HAS_3_PARAMS
-+			dev_change_flags(cpriv->dev, flags | IFF_UP, NULL);
-+#else
- 			dev_change_flags(cpriv->dev, flags | IFF_UP);
-+#endif
- 		}
- 		up_read(&priv->vlan_rwsem);
- 	}
-@@ -217,7 +227,11 @@ static int ipoib_stop(struct net_device *dev)
- 			if (!(flags & IFF_UP))
- 				continue;
- 
-+#ifdef HAVE_DEV_CHANGE_FLAGS_HAS_3_PARAMS
-+			dev_change_flags(cpriv->dev, flags & ~IFF_UP, NULL);
-+#else
- 			dev_change_flags(cpriv->dev, flags & ~IFF_UP);
-+#endif
- 		}
- 		up_read(&priv->vlan_rwsem);
- 	}
-@@ -225,6 +239,7 @@ static int ipoib_stop(struct net_device *dev)
+@@ -225,6 +231,7 @@ static int ipoib_stop(struct net_device *dev)
  	return 0;
  }
  
@@ -65,7 +41,7 @@ index xxxxxxx..xxxxxxx 100644
  static netdev_features_t ipoib_fix_features(struct net_device *dev, netdev_features_t features)
  {
  	struct ipoib_dev_priv *priv = ipoib_priv(dev);
-@@ -238,6 +253,7 @@ static netdev_features_t ipoib_fix_features(struct net_device *dev, netdev_featu
+@@ -238,6 +245,7 @@ static netdev_features_t ipoib_fix_features(struct net_device *dev, netdev_featu
  
  	return features;
  }
@@ -73,7 +49,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static int ipoib_change_mtu(struct net_device *dev, int new_mtu)
  {
-@@ -268,14 +284,21 @@ static int ipoib_change_mtu(struct net_device *dev, int new_mtu)
+@@ -268,14 +276,21 @@ static int ipoib_change_mtu(struct net_device *dev, int new_mtu)
  				"link layer MTU - 4 (%u)\n", priv->mcast_mtu);
  
  	new_mtu = min(priv->mcast_mtu, priv->admin_mtu);
@@ -96,7 +72,7 @@ index xxxxxxx..xxxxxxx 100644
  
  		if (carrier_status)
  			netif_carrier_on(dev);
-@@ -286,15 +309,42 @@ static int ipoib_change_mtu(struct net_device *dev, int new_mtu)
+@@ -286,15 +301,42 @@ static int ipoib_change_mtu(struct net_device *dev, int new_mtu)
  	return ret;
  }
  
@@ -139,7 +115,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  /* Called with an RCU read lock taken */
-@@ -313,9 +363,21 @@ static bool ipoib_is_dev_match_addr_rcu(const struct sockaddr *addr,
+@@ -313,9 +355,21 @@ static bool ipoib_is_dev_match_addr_rcu(const struct sockaddr *addr,
  		if (!in_dev)
  			return false;
  
@@ -161,7 +137,7 @@ index xxxxxxx..xxxxxxx 100644
  		in_dev_put(in_dev);
  		if (ret_addr)
  			return true;
-@@ -360,6 +422,7 @@ struct ipoib_walk_data {
+@@ -360,6 +414,7 @@ struct ipoib_walk_data {
  	struct net_device *result;
  };
  
@@ -169,7 +145,7 @@ index xxxxxxx..xxxxxxx 100644
  static int ipoib_upper_walk(struct net_device *upper, void *_data)
  {
  	struct ipoib_walk_data *data = _data;
-@@ -373,6 +436,7 @@ static int ipoib_upper_walk(struct net_device *upper, void *_data)
+@@ -373,6 +428,7 @@ static int ipoib_upper_walk(struct net_device *upper, void *_data)
  
  	return ret;
  }
@@ -177,7 +153,7 @@ index xxxxxxx..xxxxxxx 100644
  
  /**
   * Find a net_device matching the given address, which is an upper device of
-@@ -389,6 +453,9 @@ static struct net_device *ipoib_get_net_dev_match_addr(
+@@ -389,6 +445,9 @@ static struct net_device *ipoib_get_net_dev_match_addr(
  	struct ipoib_walk_data data = {
  		.addr = addr,
  	};
@@ -187,7 +163,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	rcu_read_lock();
  	if (ipoib_is_dev_match_addr_rcu(addr, dev)) {
-@@ -396,8 +463,18 @@ static struct net_device *ipoib_get_net_dev_match_addr(
+@@ -396,8 +455,18 @@ static struct net_device *ipoib_get_net_dev_match_addr(
  		data.result = dev;
  		goto out;
  	}
@@ -207,7 +183,7 @@ index xxxxxxx..xxxxxxx 100644
  out:
  	rcu_read_unlock();
  	return data.result;
-@@ -546,7 +623,11 @@ int ipoib_set_mode(struct net_device *dev, const char *buf)
+@@ -546,7 +615,11 @@ int ipoib_set_mode(struct net_device *dev, const char *buf)
  			set_bit(IPOIB_FLAG_ADMIN_CM, &priv->flags);
  			ipoib_warn(priv, "enabling connected mode "
  				   "will cause multicast packet drops\n");
@@ -219,7 +195,7 @@ index xxxxxxx..xxxxxxx 100644
  			dev_set_mtu(dev, ipoib_cm_max_mtu(dev));
  			rtnl_unlock();
  			priv->tx_wr.wr.send_flags &= ~IB_SEND_IP_CSUM;
-@@ -563,7 +644,19 @@ int ipoib_set_mode(struct net_device *dev, const char *buf)
+@@ -563,7 +636,19 @@ int ipoib_set_mode(struct net_device *dev, const char *buf)
  
  	if (!strcmp(buf, "datagram\n")) {
  		clear_bit(IPOIB_FLAG_ADMIN_CM, &priv->flags);
@@ -239,7 +215,7 @@ index xxxxxxx..xxxxxxx 100644
  		dev_set_mtu(dev, min(priv->mcast_mtu, dev->mtu));
  		rtnl_unlock();
  		ipoib_flush_paths(dev);
-@@ -725,7 +818,7 @@ static void push_pseudo_header(struct sk_buff *skb, const char *daddr)
+@@ -725,7 +810,7 @@ static void push_pseudo_header(struct sk_buff *skb, const char *daddr)
  {
  	struct ipoib_pseudo_header *phdr;
  
@@ -248,7 +224,7 @@ index xxxxxxx..xxxxxxx 100644
  	memcpy(phdr->hwaddr, daddr, INFINIBAND_ALEN);
  }
  
-@@ -1293,8 +1386,13 @@ static int ipoib_hard_header(struct sk_buff *skb,
+@@ -1293,8 +1378,13 @@ static int ipoib_hard_header(struct sk_buff *skb,
  {
  	struct ipoib_header *header;
  
@@ -263,7 +239,7 @@ index xxxxxxx..xxxxxxx 100644
  	header->proto = htons(type);
  	header->tss_qpn_mask_sz = 0; /* Needed for RSS support */
  
-@@ -1320,6 +1418,7 @@ static void ipoib_set_mcast_list(struct net_device *dev)
+@@ -1320,6 +1410,7 @@ static void ipoib_set_mcast_list(struct net_device *dev)
  	queue_work(priv->wq, &priv->restart_task);
  }
  
@@ -271,7 +247,7 @@ index xxxxxxx..xxxxxxx 100644
  static int ipoib_get_iflink(const struct net_device *dev)
  {
  	struct ipoib_dev_priv *priv = ipoib_priv(dev);
-@@ -1331,6 +1430,76 @@ static int ipoib_get_iflink(const struct net_device *dev)
+@@ -1331,6 +1422,76 @@ static int ipoib_get_iflink(const struct net_device *dev)
  	/* child/vlan interface */
  	return priv->parent->ifindex;
  }
@@ -348,7 +324,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static u32 ipoib_addr_hash(struct ipoib_neigh_hash *htbl, u8 *daddr)
  {
-@@ -1794,6 +1963,10 @@ static int ipoib_dev_init_default(struct net_device *dev)
+@@ -1794,6 +1955,10 @@ static int ipoib_dev_init_default(struct net_device *dev)
  	if (!priv->rx_ring)
  		goto out;
  
@@ -359,19 +335,7 @@ index xxxxxxx..xxxxxxx 100644
  	priv->tx_ring = vzalloc(array_size(priv->sendq_size,
  					   sizeof(*priv->tx_ring)));
  	if (!priv->tx_ring) {
-@@ -1920,7 +2093,11 @@ static void ipoib_parent_unregister_pre(struct net_device *ndev)
- 	 * running ensures the it will not add more work.
- 	 */
- 	rtnl_lock();
-+#ifdef HAVE_DEV_CHANGE_FLAGS_HAS_3_PARAMS
-+	dev_change_flags(priv->dev, priv->dev->flags & ~IFF_UP, NULL);
-+#else
- 	dev_change_flags(priv->dev, priv->dev->flags & ~IFF_UP);
-+#endif
- 	rtnl_unlock();
- 
- 	/* ipoib_event() cannot be running once this returns */
-@@ -1938,12 +2115,19 @@ static void ipoib_set_dev_features(struct ipoib_dev_priv *priv, struct ib_device
+@@ -1938,12 +2103,19 @@ static void ipoib_set_dev_features(struct ipoib_dev_priv *priv, struct ib_device
  	ipoib_get_hca_features(priv, hca);
  
  	if (priv->hca_caps & IB_DEVICE_UD_IP_CSUM) {
@@ -391,7 +355,7 @@ index xxxxxxx..xxxxxxx 100644
  	}
  }
  
-@@ -1978,9 +2162,16 @@ static int ipoib_parent_init(struct net_device *ndev)
+@@ -1978,9 +2150,16 @@ static int ipoib_parent_init(struct net_device *ndev)
  	       sizeof(union ib_gid));
  
  	SET_NETDEV_DEV(priv->dev, priv->ca->dev.parent);
@@ -410,7 +374,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	return 0;
  }
-@@ -2022,9 +2213,13 @@ static int ipoib_ndo_init(struct net_device *ndev)
+@@ -2022,9 +2201,13 @@ static int ipoib_ndo_init(struct net_device *ndev)
  	/* MTU will be reset when mcast join happens */
  	ndev->mtu = IPOIB_UD_MTU(priv->max_ib_mtu);
  	priv->mcast_mtu = priv->admin_mtu = ndev->mtu;

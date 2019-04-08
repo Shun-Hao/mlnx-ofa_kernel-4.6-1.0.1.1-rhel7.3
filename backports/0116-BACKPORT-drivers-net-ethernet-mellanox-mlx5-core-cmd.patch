@@ -3,14 +3,14 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/cmd.c
 
 Change-Id: I6c810325c3c00046a4bdd8218258905f92e496d4
 ---
- drivers/net/ethernet/mellanox/mlx5/core/cmd.c | 62 ++++++++++++++++++++++++++-
- 1 file changed, 61 insertions(+), 1 deletion(-)
+ drivers/net/ethernet/mellanox/mlx5/core/cmd.c | 53 +++++++++++++++++++++++++++
+ 1 file changed, 53 insertions(+)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/cmd.c b/drivers/net/ethernet/mellanox/mlx5/core/cmd.c
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/net/ethernet/mellanox/mlx5/core/cmd.c
 +++ b/drivers/net/ethernet/mellanox/mlx5/core/cmd.c
-@@ -765,7 +765,11 @@ static int mlx5_cmd_check(struct mlx5_core_dev *dev, void *in, void *out)
+@@ -763,7 +763,11 @@ static int mlx5_cmd_check(struct mlx5_core_dev *dev, void *in, void *out)
  	if (!uid &&
  	    opcode != MLX5_CMD_OP_DESTROY_MKEY &&
  	    !(opcode == MLX5_CMD_OP_ALLOC_MEMIC && status == MLX5_CMD_STAT_NO_RES_ERR))
@@ -22,7 +22,7 @@ index xxxxxxx..xxxxxxx 100644
  			"%s(0x%x) op_mod(0x%x) failed, status %s(0x%x), syndrome (0x%x)\n",
  			mlx5_command_str(opcode), opcode, op_mod,
  			cmd_status_str(status), status, syndrome);
-@@ -947,7 +951,11 @@ static void cmd_work_handler(struct work_struct *work)
+@@ -916,7 +920,11 @@ static void cmd_work_handler(struct work_struct *work)
  	lay->status_own = CMD_OWNER_HW;
  	set_signature(ent, !cmd->checksum_disabled);
  	dump_command(dev, ent, 1);
@@ -34,7 +34,7 @@ index xxxxxxx..xxxxxxx 100644
  	cmd_mode = cmd->mode;
  
  	if (ent->callback)
-@@ -1050,6 +1058,9 @@ static int mlx5_cmd_invoke(struct mlx5_core_dev *dev, struct mlx5_cmd_msg *in,
+@@ -1019,6 +1027,9 @@ static int mlx5_cmd_invoke(struct mlx5_core_dev *dev, struct mlx5_cmd_msg *in,
  	struct mlx5_cmd *cmd = &dev->cmd;
  	struct mlx5_cmd_work_ent *ent;
  	struct mlx5_cmd_stats *stats;
@@ -44,7 +44,7 @@ index xxxxxxx..xxxxxxx 100644
  	int err = 0;
  	s64 ds;
  	u16 op;
-@@ -1085,7 +1096,14 @@ static int mlx5_cmd_invoke(struct mlx5_core_dev *dev, struct mlx5_cmd_msg *in,
+@@ -1054,7 +1065,14 @@ static int mlx5_cmd_invoke(struct mlx5_core_dev *dev, struct mlx5_cmd_msg *in,
  	if (err == -ETIMEDOUT)
  		goto out;
  
@@ -59,7 +59,7 @@ index xxxxxxx..xxxxxxx 100644
  	op = MLX5_GET(mbox_in, in->first.data, opcode);
  	if (op < ARRAY_SIZE(cmd->stats)) {
  		stats = &cmd->stats[op];
-@@ -1214,13 +1232,22 @@ static struct mlx5_cmd_mailbox *alloc_cmd_box(struct mlx5_core_dev *dev,
+@@ -1183,13 +1201,22 @@ static struct mlx5_cmd_mailbox *alloc_cmd_box(struct mlx5_core_dev *dev,
  	if (!mailbox)
  		return ERR_PTR(-ENOMEM);
  
@@ -82,7 +82,7 @@ index xxxxxxx..xxxxxxx 100644
  	mailbox->next = NULL;
  
  	return mailbox;
-@@ -1466,7 +1493,11 @@ static void trigger_cmd_completions(struct mlx5_core_dev *dev)
+@@ -1435,7 +1462,11 @@ static void trigger_cmd_completions(struct mlx5_core_dev *dev)
  	u64 vector;
  
  	/* wait for pending handlers to complete */
@@ -94,7 +94,7 @@ index xxxxxxx..xxxxxxx 100644
  	spin_lock_irqsave(&dev->cmd.alloc_lock, flags);
  	vector = ~dev->cmd.bitmask & ((1ul << (1 << dev->cmd.log_sz)) - 1);
  	if (!vector)
-@@ -1551,6 +1582,9 @@ void mlx5_cmd_comp_handler(struct mlx5_core_dev *dev, u64 vec, bool forced)
+@@ -1520,6 +1551,9 @@ void mlx5_cmd_comp_handler(struct mlx5_core_dev *dev, u64 vec, bool forced)
  	struct mlx5_cmd *cmd = &dev->cmd;
  	struct mlx5_cmd_work_ent *ent;
  	mlx5_cmd_cbk_t callback;
@@ -104,7 +104,7 @@ index xxxxxxx..xxxxxxx 100644
  	void *context;
  	int err;
  	int i;
-@@ -1581,12 +1615,20 @@ void mlx5_cmd_comp_handler(struct mlx5_core_dev *dev, u64 vec, bool forced)
+@@ -1550,12 +1584,20 @@ void mlx5_cmd_comp_handler(struct mlx5_core_dev *dev, u64 vec, bool forced)
  			}
  
  			if (ent->callback)
@@ -125,7 +125,7 @@ index xxxxxxx..xxxxxxx 100644
  			memcpy(ent->out->first.data, ent->lay->out, sizeof(ent->lay->out));
  			dump_command(dev, ent, 0);
  			if (!ent->ret) {
-@@ -1608,7 +1650,14 @@ void mlx5_cmd_comp_handler(struct mlx5_core_dev *dev, u64 vec, bool forced)
+@@ -1577,7 +1619,14 @@ void mlx5_cmd_comp_handler(struct mlx5_core_dev *dev, u64 vec, bool forced)
  				free_ent(cmd, ent->idx);
  
  			if (ent->callback) {
@@ -140,32 +140,7 @@ index xxxxxxx..xxxxxxx 100644
  				if (ent->op < ARRAY_SIZE(cmd->stats)) {
  					stats = &cmd->stats[ent->op];
  					spin_lock_irqsave(&stats->lock, flags);
-@@ -1931,8 +1980,11 @@ static void create_msg_cache(struct mlx5_core_dev *dev)
- static int alloc_cmd_page(struct mlx5_core_dev *dev, struct mlx5_cmd *cmd)
- {
- 	struct device *ddev = &dev->pdev->dev;
--
-+#ifdef HAVE_DMA_ZALLOC_COHERENT
- 	cmd->cmd_alloc_buf = dma_zalloc_coherent(ddev, MLX5_ADAPTER_PAGE_SIZE,
-+#else
-+	cmd->cmd_alloc_buf = dma_alloc_coherent(ddev, MLX5_ADAPTER_PAGE_SIZE,
-+#endif
- 						 &cmd->alloc_dma, GFP_KERNEL);
- 	if (!cmd->cmd_alloc_buf)
- 		return -ENOMEM;
-@@ -1947,7 +1999,11 @@ static int alloc_cmd_page(struct mlx5_core_dev *dev, struct mlx5_cmd *cmd)
- 
- 	dma_free_coherent(ddev, MLX5_ADAPTER_PAGE_SIZE, cmd->cmd_alloc_buf,
- 			  cmd->alloc_dma);
-+#ifdef HAVE_DMA_ZALLOC_COHERENT
- 	cmd->cmd_alloc_buf = dma_zalloc_coherent(ddev,
-+#else
-+	cmd->cmd_alloc_buf = dma_alloc_coherent(ddev,
-+#endif
- 						 2 * MLX5_ADAPTER_PAGE_SIZE - 1,
- 						 &cmd->alloc_dma, GFP_KERNEL);
- 	if (!cmd->cmd_alloc_buf)
-@@ -2299,7 +2355,11 @@ static ssize_t real_miss_store(struct device *dev, struct device_attribute *attr
+@@ -2210,7 +2259,11 @@ static ssize_t real_miss_store(struct device *dev, struct device_attribute *attr
  	return count;
  }
  

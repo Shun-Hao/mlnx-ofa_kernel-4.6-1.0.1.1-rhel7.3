@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx4/alloc.c
 
 Change-Id: I577537b1ea7f28acce24ae5267414efc2e045b23
 ---
- drivers/net/ethernet/mellanox/mlx4/alloc.c | 70 ++++++++++++++++++++++++++++++
- 1 file changed, 70 insertions(+)
+ drivers/net/ethernet/mellanox/mlx4/alloc.c | 61 ++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx4/alloc.c b/drivers/net/ethernet/mellanox/mlx4/alloc.c
 index xxxxxxx..xxxxxxx 100644
@@ -22,16 +22,10 @@ index xxxxxxx..xxxxxxx 100644
  {
  	dma_addr_t t;
  
-@@ -584,8 +588,17 @@ static int mlx4_buf_direct_alloc(struct mlx4_dev *dev, int size,
- 	buf->npages       = 1;
+@@ -585,7 +589,11 @@ static int mlx4_buf_direct_alloc(struct mlx4_dev *dev, int size,
  	buf->page_shift   = get_order(size) + PAGE_SHIFT;
  	buf->direct.buf   =
-+#ifdef HAVE_DMA_ZALLOC_COHERENT
  		dma_zalloc_coherent(&dev->persist->pdev->dev,
-+#else
-+
-+		dma_alloc_coherent(&dev->persist->pdev->dev,
-+#endif
 +#ifdef HAVE_MEMALLOC_NOIO_SAVE
  				    size, &t, GFP_KERNEL);
 +#else
@@ -40,7 +34,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (!buf->direct.buf)
  		return -ENOMEM;
  
-@@ -605,10 +618,18 @@ static int mlx4_buf_direct_alloc(struct mlx4_dev *dev, int size,
+@@ -605,10 +613,18 @@ static int mlx4_buf_direct_alloc(struct mlx4_dev *dev, int size,
   *  multiple pages, so we don't require too much contiguous memory.
   */
  int mlx4_buf_alloc(struct mlx4_dev *dev, int size, int max_direct,
@@ -59,7 +53,7 @@ index xxxxxxx..xxxxxxx 100644
  	} else {
  		dma_addr_t t;
  		int i;
-@@ -622,14 +643,26 @@ int mlx4_buf_alloc(struct mlx4_dev *dev, int size, int max_direct,
+@@ -622,14 +638,22 @@ int mlx4_buf_alloc(struct mlx4_dev *dev, int size, int max_direct,
  					       dev_to_node(&dev->persist->pdev->dev));
  		if (!buf->page_list)
  			buf->page_list = kcalloc(buf->nbufs, sizeof(*buf->page_list),
@@ -73,11 +67,7 @@ index xxxxxxx..xxxxxxx 100644
  
  		for (i = 0; i < buf->nbufs; ++i) {
  			buf->page_list[i].buf =
-+#ifdef HAVE_DMA_ZALLOC_COHERENT
  				dma_zalloc_coherent(&dev->persist->pdev->dev,
-+#else
-+				dma_alloc_coherent(&dev->persist->pdev->dev,
-+#endif
 +#ifdef HAVE_MEMALLOC_NOIO_SAVE
  						    PAGE_SIZE, &t, GFP_KERNEL);
 +#else
@@ -86,7 +76,7 @@ index xxxxxxx..xxxxxxx 100644
  			if (!buf->page_list[i].buf)
  				goto err_free;
  
-@@ -665,14 +698,27 @@ void mlx4_buf_free(struct mlx4_dev *dev, int size, struct mlx4_buf *buf)
+@@ -665,14 +689,27 @@ void mlx4_buf_free(struct mlx4_dev *dev, int size, struct mlx4_buf *buf)
  }
  EXPORT_SYMBOL_GPL(mlx4_buf_free);
  
@@ -114,7 +104,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (!pgdir)
  		return NULL;
  
-@@ -680,7 +726,11 @@ static struct mlx4_db_pgdir *mlx4_alloc_db_pgdir(struct device *dma_device)
+@@ -680,7 +717,11 @@ static struct mlx4_db_pgdir *mlx4_alloc_db_pgdir(struct device *dma_device)
  	pgdir->bits[0] = pgdir->order0;
  	pgdir->bits[1] = pgdir->order1;
  	pgdir->db_page = dma_alloc_coherent(dma_device, PAGE_SIZE,
@@ -126,7 +116,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (!pgdir->db_page) {
  		kfree(pgdir);
  		return NULL;
-@@ -720,7 +770,11 @@ found:
+@@ -720,7 +761,11 @@ found:
  	return 0;
  }
  
@@ -138,7 +128,7 @@ index xxxxxxx..xxxxxxx 100644
  {
  	struct mlx4_priv *priv = mlx4_priv(dev);
  	struct mlx4_db_pgdir *pgdir;
-@@ -732,7 +786,11 @@ int mlx4_db_alloc(struct mlx4_dev *dev, struct mlx4_db *db, int order)
+@@ -732,7 +777,11 @@ int mlx4_db_alloc(struct mlx4_dev *dev, struct mlx4_db *db, int order)
  		if (!mlx4_alloc_db_from_pgdir(pgdir, db, order))
  			goto out;
  
@@ -150,7 +140,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (!pgdir) {
  		ret = -ENOMEM;
  		goto out;
-@@ -784,13 +842,21 @@ int mlx4_alloc_hwq_res(struct mlx4_dev *dev, struct mlx4_hwq_resources *wqres,
+@@ -784,13 +833,21 @@ int mlx4_alloc_hwq_res(struct mlx4_dev *dev, struct mlx4_hwq_resources *wqres,
  {
  	int err;
  
@@ -172,7 +162,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (err)
  		goto err_db;
  
-@@ -799,7 +865,11 @@ int mlx4_alloc_hwq_res(struct mlx4_dev *dev, struct mlx4_hwq_resources *wqres,
+@@ -799,7 +856,11 @@ int mlx4_alloc_hwq_res(struct mlx4_dev *dev, struct mlx4_hwq_resources *wqres,
  	if (err)
  		goto err_buf;
  

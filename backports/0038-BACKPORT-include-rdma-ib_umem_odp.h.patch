@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: include/rdma/ib_umem_odp.h
 
 Change-Id: I8c221e22a60a9a134498815bf8f8187b155a1433
 ---
- include/rdma/ib_umem_odp.h | 28 ++++++++++++++++++++++++++--
- 1 file changed, 26 insertions(+), 2 deletions(-)
+ include/rdma/ib_umem_odp.h | 27 ++++++++++++++++++++++++++-
+ 1 file changed, 26 insertions(+), 1 deletion(-)
 
 diff --git a/include/rdma/ib_umem_odp.h b/include/rdma/ib_umem_odp.h
 index xxxxxxx..xxxxxxx 100644
@@ -68,7 +68,7 @@ index xxxxxxx..xxxxxxx 100644
  /*
   * The lower 2 bits of the DMA address signal the R/W permissions for
   * the entry. To upgrade the permissions, provide the appropriate
-@@ -136,16 +149,27 @@ typedef int (*umem_call_back)(struct ib_umem_odp *item, u64 start, u64 end,
+@@ -136,16 +149,28 @@ typedef int (*umem_call_back)(struct ib_umem_odp *item, u64 start, u64 end,
   * Call the callback on each ib_umem in the range. Returns the logical or of
   * the return values of the functions called.
   */
@@ -79,11 +79,11 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  				  u64 start, u64 end,
  				  umem_call_back cb,
--				  bool blockable, void *cookie);
-+#if defined(HAVE_UMEM_NOTIFIER_PARAM_BLOCKABLE) || defined(HAVE_MMU_NOTIFIER_RANGE_STRUCT)
-+				  bool blockable,
++#ifdef HAVE_UMEM_NOTIFIER_PARAM_BLOCKABLE
+ 				  bool blockable, void *cookie);
++#else
++				void *cookie);
 +#endif
-+				  void *cookie);
  
  /*
   * Find first region intersecting with address range.

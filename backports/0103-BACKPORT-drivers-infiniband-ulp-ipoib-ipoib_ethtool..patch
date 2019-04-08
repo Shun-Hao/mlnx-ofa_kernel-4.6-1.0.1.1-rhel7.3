@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/infiniband/ulp/ipoib/ipoib_ethtool.c
 
 Change-Id: I1169d1d6dc2bd40b4befa59e0469dd8992c152dc
 ---
- drivers/infiniband/ulp/ipoib/ipoib_ethtool.c | 99 ++++++++++++++++++++++++++++
- 1 file changed, 99 insertions(+)
+ drivers/infiniband/ulp/ipoib/ipoib_ethtool.c | 91 ++++++++++++++++++++++++++++
+ 1 file changed, 91 insertions(+)
 
 diff --git a/drivers/infiniband/ulp/ipoib/ipoib_ethtool.c b/drivers/infiniband/ulp/ipoib/ipoib_ethtool.c
 index xxxxxxx..xxxxxxx 100644
@@ -26,31 +26,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static const struct ipoib_stats ipoib_gstrings_stats[] = {
  	IPOIB_NETDEV_STAT(rx_packets),
-@@ -100,7 +106,11 @@ static int ipoib_set_ring_param(struct net_device *dev,
- 		priv_current_flags = priv->flags;
- 		dev_current_flags = dev->flags;
- 
-+#ifdef HAVE_DEV_CHANGE_FLAGS_HAS_3_PARAMS
-+		dev_change_flags(dev, dev->flags & ~IFF_UP, NULL);
-+#else
- 		dev_change_flags(dev, dev->flags & ~IFF_UP);
-+#endif
- 		priv->rn_ops->ndo_uninit(dev);
- 
- 		do {
-@@ -136,7 +146,11 @@ static int ipoib_set_ring_param(struct net_device *dev,
- 				dev->name, new_recvq_size, new_sendq_size);
- 
- 		if (dev_current_flags & IFF_UP)
-+#ifdef HAVE_DEV_CHANGE_FLAGS_HAS_3_PARAMS
-+			dev_change_flags(dev, dev_current_flags, NULL);
-+#else
- 			dev_change_flags(dev, dev_current_flags);
-+#endif
- 	}
- 
- 	return 0;
-@@ -211,6 +225,37 @@ static int ipoib_set_coalesce(struct net_device *dev,
+@@ -211,6 +217,37 @@ static int ipoib_set_coalesce(struct net_device *dev,
  
  	return 0;
  }
@@ -88,7 +64,7 @@ index xxxxxxx..xxxxxxx 100644
  static void ipoib_get_ethtool_stats(struct net_device *dev,
  				    struct ethtool_stats __always_unused *stats,
  				    u64 *data)
-@@ -275,6 +320,7 @@ static inline int ib_speed_enum_to_int(int speed)
+@@ -275,6 +312,7 @@ static inline int ib_speed_enum_to_int(int speed)
  	return SPEED_UNKNOWN;
  }
  
@@ -96,7 +72,7 @@ index xxxxxxx..xxxxxxx 100644
  static int ipoib_get_link_ksettings(struct net_device *netdev,
  				    struct ethtool_link_ksettings *cmd)
  {
-@@ -312,18 +358,71 @@ static int ipoib_get_link_ksettings(struct net_device *netdev,
+@@ -312,18 +350,71 @@ static int ipoib_get_link_ksettings(struct net_device *netdev,
  
  	return 0;
  }
