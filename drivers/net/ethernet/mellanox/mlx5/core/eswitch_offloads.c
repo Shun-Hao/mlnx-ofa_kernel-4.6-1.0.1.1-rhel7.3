@@ -1583,28 +1583,17 @@ disable_roce:
 	return err;
 }
 
-static int esw_offloads_start(struct mlx5_eswitch *esw,
-			      struct netlink_ext_ack *extack)
+static int esw_offloads_start_imp(struct mlx5_eswitch *esw,
+				  struct netlink_ext_ack *extack)
 {
-	esw->handler.extack = extack;
-	return schedule_work(&esw->handler.start_handler) != true;
-}
-
-void esw_offloads_start_handler(struct work_struct *work)
-{
-	struct mlx5_esw_handler *handler =
-	       container_of(work, struct mlx5_esw_handler, start_handler);
-	struct mlx5_eswitch *esw =
-	       container_of(handler, struct mlx5_eswitch, handler);
 	int err, err1, num_vfs = esw->dev->priv.sriov.num_vfs;
-	struct netlink_ext_ack *extack = handler->extack;
 
 	if (esw->mode != SRIOV_LEGACY &&
 	    !mlx5_core_is_ecpf_esw_manager(esw->dev)) {
 		NL_SET_ERR_MSG_MOD(extack,
 				   "Can't set offloads mode, SRIOV legacy not enabled");
 		atomic_set(&esw->handler.in_progress, 0);
-		return;
+		return -EINVAL;
 	}
 
 	mlx5_eswitch_disable_sriov(esw);
@@ -1613,10 +1602,9 @@ void esw_offloads_start_handler(struct work_struct *work)
 		NL_SET_ERR_MSG_MOD(extack,
 				   "Failed setting eswitch to offloads");
 		err1 = mlx5_eswitch_enable_sriov(esw, num_vfs, SRIOV_LEGACY);
-		if (err1) {
+		if (err1)
 			NL_SET_ERR_MSG_MOD(extack,
 					   "Failed setting eswitch back to legacy");
-		}
 	}
 	if (esw->offloads.inline_mode == MLX5_INLINE_MODE_NONE) {
 		if (mlx5_eswitch_inline_mode_get(esw,
@@ -1628,6 +1616,28 @@ void esw_offloads_start_handler(struct work_struct *work)
 		}
 	}
 	atomic_set(&esw->handler.in_progress, 0);
+	return err;
+}
+
+void esw_offloads_start_handler(struct work_struct *work)
+{
+	struct mlx5_esw_handler *handler =
+		container_of(work, struct mlx5_esw_handler, start_handler);
+	struct mlx5_eswitch *esw =
+		container_of(handler, struct mlx5_eswitch, handler);
+	struct netlink_ext_ack *extack = handler->extack;
+
+	esw_offloads_start_imp(esw, extack);
+}
+
+static int esw_offloads_start(struct mlx5_eswitch *esw,
+			      struct netlink_ext_ack *extack)
+{
+	esw->handler.extack = extack;
+	if (strcmp(current->comm, "devlink"))
+		return schedule_work(&esw->handler.start_handler) != true;
+	else
+		return esw_offloads_start_imp(esw, extack);
 }
 
 void esw_offloads_cleanup_reps(struct mlx5_eswitch *esw)
@@ -2092,34 +2102,45 @@ err_reps:
 	return err;
 }
 
-static int esw_offloads_stop(struct mlx5_eswitch *esw,
-			     struct netlink_ext_ack *extack)
+static int esw_offloads_stop_imp(struct mlx5_eswitch *esw,
+				 struct netlink_ext_ack *extack)
 {
-	esw->handler.extack = extack;
-	return schedule_work(&esw->handler.stop_handler) != true;
-}
-
-void esw_offloads_stop_handler(struct work_struct *work)
-{
-	struct mlx5_esw_handler *handler =
-		container_of(work, struct mlx5_esw_handler, stop_handler);
-	struct mlx5_eswitch *esw =
-		container_of(handler, struct mlx5_eswitch, handler);
 	int err, err1, num_vfs = esw->dev->priv.sriov.num_vfs;
-	struct netlink_ext_ack *extack = handler->extack;
 
 	mlx5_eswitch_disable_sriov(esw);
 	err = mlx5_eswitch_enable_sriov(esw, num_vfs, SRIOV_LEGACY);
 	if (err) {
 		NL_SET_ERR_MSG_MOD(extack, "Failed setting eswitch to legacy");
 		err1 = mlx5_eswitch_enable_sriov(esw, num_vfs, SRIOV_OFFLOADS);
-		if (err1) {
+		if (err1)
 			NL_SET_ERR_MSG_MOD(extack,
 					   "Failed setting eswitch back to offloads");
-		}
 	}
 
 	atomic_set(&esw->handler.in_progress, 0);
+	return err;
+}
+
+void esw_offloads_stop_handler(struct work_struct *work)
+{
+	struct mlx5_esw_handler *handler =
+		container_of(work, struct mlx5_esw_handler, start_handler);
+	struct mlx5_eswitch *esw =
+		container_of(handler, struct mlx5_eswitch, handler);
+	struct netlink_ext_ack *extack = handler->extack;
+
+	esw_offloads_stop_imp(esw, extack);
+}
+
+static int esw_offloads_stop(struct mlx5_eswitch *esw,
+			     struct netlink_ext_ack *extack)
+{
+	esw->handler.extack = extack;
+
+	if (strcmp(current->comm, "devlink"))
+		return schedule_work(&esw->handler.stop_handler) != true;
+	else
+		return esw_offloads_stop_imp(esw, extack);
 }
 
 void esw_offloads_cleanup(struct mlx5_eswitch *esw)

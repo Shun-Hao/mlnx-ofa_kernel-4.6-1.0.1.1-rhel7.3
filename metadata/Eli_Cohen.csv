@@ -16,3 +16,4 @@ Change-Id=I4e6fe9573a3b96e82a507153c2defbad3252e4eb; subject=net/mlx5_core: Fix 
 Change-Id=Idca6838c561e330a1b2896f008af23f57ade8afe; subject=net/mlx5: Fix representor link up; feature=mlx5_asap; upstream_status=accepted; general=;
 Change-Id=Ia6519558e82da85ca495fd074a06b845e742ca66; subject=Backports: Offloaded VXLAN causes kernel oops; feature=backports; upstream_status=ignore; general=;
 Change-Id=I2e2c3ace6ed55aa222f1f19905df4dfc5e0dba95; subject=net/sched: cls_flower: Fix passing wrong direction flag; feature=backports; upstream_status=ignore; general=;
+Change-Id=I8d0c8df210d3f2852e3c873929a40a409c055857; subject=net/mlx5: Eswitch, avoid using work queue on direct devlink invocation; feature=mlx5_asap; upstream_status=NA; general=;
