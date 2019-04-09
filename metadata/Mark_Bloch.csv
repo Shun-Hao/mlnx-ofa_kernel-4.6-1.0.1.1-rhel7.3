@@ -54,3 +54,4 @@ Change-Id=I82dd4cc19ae22a938c626709f7cb6596ca805d95; subject=RDMA/mlx5: Access t
 Change-Id=I16be0352a7ae2c6b99dbbabe865ed2d704a750cc; subject=RDMA/mlx5: Create flow table with max size supported; feature=fdb_bypass; upstream_status=in_progress; general=;
 Change-Id=I9779ee5ee69b5815cb8d541a466ed444a0880795; subject=RDMA/mlx5: Refactor netdev affinity code; feature=mlx5_ib_reps; upstream_status=in_progress; general=;
 Change-Id=Iccbb011f7b1246022d4e23a022767e1c3319259c; subject=RDMA/mlx5: Allow inserting a steering rule to the FDB; feature=fdb_bypass; upstream_status=in_progress; general=;
+Change-Id=I4a9b0ba8071dc48b0aa3fde5a20fdf75df268937; subject=RDMA/mlx5: Fix TX affinity assignemnt when in RoCE lag; feature=sw_steering; upstream_status=in_progress; general=;

@@ -3807,7 +3807,7 @@ static int __mlx5_ib_modify_qp(struct ib_qp *ibqp,
 		    (ibqp->qp_type == IB_QPT_XRC_TGT) ||
 		    (ibqp->qp_type == IB_EXP_QPT_DC_INI)) {
 			if (dev->lag_active) {
-				u8 p = mlx5_core_native_port_num(dev->mdev);
+				u8 p = mlx5_core_native_port_num(dev->mdev) - 1;
 				tx_affinity = get_tx_affinity(dev, pd, base, p);
 				context->flags |= cpu_to_be32(tx_affinity << 24);
 			}
@@ -4212,7 +4212,7 @@ int mlx5_ib_modify_dct(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 		}
 		MLX5_SET(dctc, dctc, pkey_index, attr->pkey_index);
 		if (dev->lag_active) {
-			u8 p = mlx5_core_native_port_num(dev->mdev);
+			u8 p = mlx5_core_native_port_num(dev->mdev) - 1;
 			MLX5_SET(dctc, dctc, port, get_tx_affinity(dev, pd, base, p));
 		}
 		else

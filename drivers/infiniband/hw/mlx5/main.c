@@ -2048,7 +2048,7 @@ static struct ib_ucontext *mlx5_ib_alloc_ucontext(struct ib_device *ibdev,
 	print_lib_caps(dev, context->lib_caps);
 
 	if (dev->lag_active) {
-		u8 port = mlx5_core_native_port_num(dev->mdev);
+		u8 port = mlx5_core_native_port_num(dev->mdev) - 1;
 
 		atomic_set(&context->tx_port_affinity,
 			   atomic_add_return(
