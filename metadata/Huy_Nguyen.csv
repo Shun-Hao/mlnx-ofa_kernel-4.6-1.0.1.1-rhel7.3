@@ -26,7 +26,7 @@ Change-Id=I85c84f2f7960a576ce8035e11b63123ac0c832f7; subject=IB/mlx5: fix proces
 Change-Id=Ia5495555796c6a4174d1d2d63476b8923b7550df; subject=net/mlx5: Check capi capability before calling cxllib_slot_is_supported; feature=mlx5_core_bugs; upstream_status=NA; general=;
 Change-Id=Ia7129ee0aa9512cc36ea801b9feb1757838572bd; subject=net/mlx5: set as_match_value for tunnel atomics; feature=ibm_as_notify; upstream_status=NA; general=;
 Change-Id=Idd4e6a83b93e0566e545e909babf21ce490994d2; subject=IB/mlx5: CAPI fixes; feature=mlx5_ib_bugs; upstream_status=NA; general=;
-Change-Id=I6ee8fd77253103090803ab5364eb27ba9628ad59; subject=IB/core: Fix address overflow check in ib_umem_get; feature=mlx5_ib_bugs; upstream_status=NA; general=;
+Change-Id=I6ee8fd77253103090803ab5364eb27ba9628ad59; subject=IB/core: Fix address overflow check in ib_umem_get; feature=mlx5_ib_bugs; upstream_status=ignore; general=;
 Change-Id=Ie0c0c7835e9df37f16aad287e948b2dd9dd79bca; subject=IB/mlx5: Support implicit mr for CAPI mode.; feature=capi_implicit_mr; upstream_status=NA; general=;
 Change-Id=I47f16f589781302f2da14d7ab3a513ffa141fb3d; subject=IB/mlx5: Skip prefetch_mr when CAPI is enabled.; feature=mlx5_ib_bugs; upstream_status=NA; general=;
 Change-Id=I5368f5280a4247c3fdaca64565bf7db3d759a266; subject=IB/mlx5: Add CAPI enablement via experimental device capability; feature=mlx5_ib_bugs; upstream_status=NA; general=;
@@ -62,4 +62,7 @@ Change-Id=I2417542a49297865d2a44797c66d704c056f6f0d; subject=net/mlx5: E-Switch,
 Change-Id=Icbdcda3e98c060017f05b90f6c7e72171985003b; subject=net/mlx5: E-Switch, Protect from invalid memory access in offload fdb table; feature=mlx5_vepa; upstream_status=accepted; general=upstream commit ID: 5c1d260ed10c, tag: v5.1-rc4;
 Change-Id=I4d3fad88b3ea3c200e5190414c8f398b6b47cf87; subject=net/mlx5: E-Switch, fix syndrome (0x678139) when turn on vepa; feature=mlx5_vepa; upstream_status=accepted; general=upstream commit ID: 36acf63a066f, tag: v5.1-rc4;
 Change-Id=I05a9efefb643c9bcd7f2cf3f0fde5c63a86e057d; subject=net/mlx5e: VEPA sysfs control for backport; feature=mlx5_vepa; upstream_status=NA; general=;
-Change-Id=Id84b7f2d35b9a9b2b7a9196e858c3b630a813849; subject=backport: For VEPA; feature=backports; upstream_status=ignore; general=;
+Change-Id=Id84b7f2d35b9a9b2b7a9196e858c3b630a813849; subject=backport: For VEPA; feature=backports; upstream_status=NA; general=;
+Change-Id=I59f3f1007b72310bc66345a4866b74129cdcaa7f; subject=IB/mlx5: Remove mmgrab/mmdrop for CAPI umem.; feature=mlx5_ib_bugs; upstream_status=NA; general=;
+Change-Id=Ie7889578273e5109d16874e0e1c2db23bfb9a023; subject=IB/mlx5: Use zero address and length for CAPI umem; feature=mlx5_ib_bugs; upstream_status=in_progress; general=;
+Change-Id=Ie53f82a984a08c8e63047f67f3737602a9046040; subject=Revert "IB/core: Fix address overflow check in ib_umem_get"; feature=mlx5_ib_bugs; upstream_status=ignore; general=;

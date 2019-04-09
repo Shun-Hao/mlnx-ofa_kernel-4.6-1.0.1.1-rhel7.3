@@ -205,7 +205,7 @@ struct ib_umem *ib_umem_get(struct ib_ucontext *context, unsigned long addr,
 	 * region causes an integer overflow, return error.
 	 */
 	if (((addr + size) < addr) ||
-	    (addr && PAGE_ALIGN(addr + size) < (addr + size))) {
+	    PAGE_ALIGN(addr + size) < (addr + size)) {
 		pr_err("%s: integer overflow, size=%zu\n", __func__, size);
  		return ERR_PTR(-EINVAL);
 	}
