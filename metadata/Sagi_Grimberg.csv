@@ -3,3 +3,4 @@ Change-Id=If62667b74549278416475db318501ea1d8ca2d6f; subject=nvmet-rdma: automat
 Change-Id=I5925e4b4f588f9ab371e40c1fe3804c1044db4c6; subject=iser: set sector for ambiguous mr status errors; feature=rebase; upstream_status=accepted; general=upstream commit ID: 24c3456c8d5e, tag: v4.20-rc7;
 Change-Id=Iebb0a503a0730b91032f4dc4a138403843cca67a; subject=nvme: flush namespace scanning work just before removing namespaces; feature=rebase; upstream_status=accepted; general=upstream commit ID: f6c8e432cb04, tag: v4.20-rc5;
 Change-Id=Ic5c1513276ed6088d64aa073ab3d7835a10549ef; subject=rxe: fix error completion wr_id and qp_num; feature=rebase; upstream_status=ignore; general=;
+Change-Id=I9caff43cb1af0f8ac1f852a2356b322ec24b20f5; subject=nvmet: allow host connect even if no allowed subsystems are exported; feature=rebase; upstream_status=accepted; general=;
