@@ -1318,27 +1318,33 @@ struct ib_mr *mlx5_ib_reg_user_mr(struct ib_pd *pd,
 		    start, virt_addr, length, access_flags);
 
 #ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
-	if (!start && length == U64_MAX) {
+	if (!start && length == U64_MAX && !mlx5_ib_capi_enabled(dev)) {
 		if (!(access_flags & IB_ACCESS_ON_DEMAND) ||
 		    !(dev->odp_caps.general_caps & IB_ODP_SUPPORT_IMPLICIT))
 			return ERR_PTR(-EINVAL);
 
-		if (mlx5_ib_capi_enabled(dev)) {
-			length = READ_ONCE(current->signal->rlim[RLIMIT_AS].rlim_cur);
-		} else {
-			mr = mlx5_ib_alloc_implicit_mr(to_mpd(pd), access_flags);
-			if (IS_ERR(mr))
-				return ERR_CAST(mr);
-			atomic_inc(&dev->odp_stats.num_odp_mrs);
+		mr = mlx5_ib_alloc_implicit_mr(to_mpd(pd), access_flags);
+		if (IS_ERR(mr))
+			return ERR_CAST(mr);
+		atomic_inc(&dev->odp_stats.num_odp_mrs);
 
-			return &mr->ibmr;
-		}
+		return &mr->ibmr;
 	}
 #endif
 
-	err = mr_umem_get(pd, start, length, access_flags, &umem, &npages,
-			   &page_shift, &ncont, &order,
-			   IB_PEER_MEM_ALLOW | IB_PEER_MEM_INVAL_SUPP);
+#ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
+	if (mlx5_ib_capi_enabled(dev) && (access_flags & IB_ACCESS_ON_DEMAND)) {
+		/* Use zero address and zero length for CAPI's umem struct */
+		umem = ib_umem_get(pd->uobject->context, 0, 0, access_flags, 0, 0);
+		err = PTR_ERR_OR_ZERO(umem);
+	} else {
+#endif
+		err = mr_umem_get(pd, start, length, access_flags, &umem, &npages,
+				  &page_shift, &ncont, &order,
+				  IB_PEER_MEM_ALLOW | IB_PEER_MEM_INVAL_SUPP);
+#ifdef CONFIG_INFINIBAND_ON_DEMAND_PAGING
+	}
+#endif
 
 	if (err < 0)
 		return ERR_PTR(err);
