@@ -10,7 +10,7 @@ diff --git a/drivers/net/ethernet/mellanox/mlx5/core/lib/vxlan.c b/drivers/net/e
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/net/ethernet/mellanox/mlx5/core/lib/vxlan.c
 +++ b/drivers/net/ethernet/mellanox/mlx5/core/lib/vxlan.c
-@@ -79,7 +79,12 @@ mlx5_vxlan_lookup_port_locked(struct mlx5_vxlan *vxlan, u16 port)
+@@ -83,7 +83,12 @@ mlx5_vxlan_lookup_port_locked(struct mlx5_vxlan *vxlan, u16 port)
  {
  	struct mlx5_vxlan_port *vxlanp;
  
@@ -23,7 +23,7 @@ index xxxxxxx..xxxxxxx 100644
  		if (vxlanp->udp_port == port)
  			return vxlanp;
  	}
-@@ -248,12 +253,18 @@ void mlx5_vxlan_destroy(struct mlx5_vxlan *vxlan)
+@@ -215,12 +220,18 @@ void mlx5_vxlan_destroy(struct mlx5_vxlan *vxlan)
  	struct mlx5_vxlan_port *vxlanp;
  	struct hlist_node *tmp;
  	int bkt;
@@ -41,5 +41,5 @@ index xxxxxxx..xxxxxxx 100644
 +	hash_for_each_safe(vxlan->htable, bkt, tmp, hlnode, vxlanp, hlist) {
 +#endif
  		hash_del(&vxlanp->hlist);
- 		mlx5_vxlan_debugfs_remove(vxlan->mdev, vxlanp);
- /* Talat - Saeed need to add the rule with the new design
+ 		mlx5_vxlan_core_del_port_cmd(vxlan->mdev, vxlanp->udp_port);
+ 		kfree(vxlanp);

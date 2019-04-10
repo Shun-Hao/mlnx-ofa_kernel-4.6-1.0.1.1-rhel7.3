@@ -315,3 +315,4 @@ name=mlx5_pcie_power; type=feature; upstream_status=in_progress;
 name=mlx5e_rxfcs_exclusive; type=feature; upstream_status=NA;
 name=shared_msix; type=feature; upstream_status=in_progress;
 name=mlx5e_fw_eeprom; type=feature; upstream_status=in_progress;
+name=mlx5e_rss_default_toeplitz; type=feature; upstream_status=in_progress;

@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en_fs.c
 
 Change-Id: I9b06e4feda6217d0ddf2aeef4ed824cab36289af
 ---
- drivers/net/ethernet/mellanox/mlx5/core/en_fs.c | 107 +++++++++++++++++++++++-
- 1 file changed, 103 insertions(+), 4 deletions(-)
+ drivers/net/ethernet/mellanox/mlx5/core/en_fs.c | 109 ++++++++++++++++++++++--
+ 1 file changed, 104 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en_fs.c b/drivers/net/ethernet/mellanox/mlx5/core/en_fs.c
 index xxxxxxx..xxxxxxx 100644
@@ -90,9 +90,10 @@ index xxxxxxx..xxxxxxx 100644
  	netdev_update_features(netdev);
  	return err;
  }
-+#endif
- 
+-
 -int mlx5e_vlan_rx_add_vid(struct net_device *dev, __be16 proto, u16 vid)
++#endif
++
 +#if defined(HAVE_NDO_RX_ADD_VID_HAS_3_PARAMS)
 +int mlx5e_vlan_rx_add_vid(struct net_device *dev, __always_unused __be16 proto,
 +			  u16 vid)
@@ -263,7 +264,7 @@ index xxxxxxx..xxxxxxx 100644
  		mlx5e_add_l2_flow_rule(priv, &ea->promisc, MLX5E_PROMISC);
  		if (!priv->fs.vlan.cvlan_filter_disabled)
  			mlx5e_add_any_vid_rules(priv);
-@@ -1432,6 +1509,7 @@ err_destroy_flow_table:
+@@ -1348,6 +1425,7 @@ err_destroy_flow_table:
  	return err;
  }
  
@@ -271,7 +272,7 @@ index xxxxxxx..xxxxxxx 100644
  #define MLX5E_NUM_VLAN_GROUPS	4
  #define MLX5E_VLAN_GROUP0_SIZE	BIT(12)
  #define MLX5E_VLAN_GROUP1_SIZE	BIT(12)
-@@ -1441,6 +1519,15 @@ err_destroy_flow_table:
+@@ -1357,6 +1435,15 @@ err_destroy_flow_table:
  				 MLX5E_VLAN_GROUP1_SIZE +\
  				 MLX5E_VLAN_GROUP2_SIZE +\
  				 MLX5E_VLAN_GROUP3_SIZE)
@@ -287,7 +288,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static int __mlx5e_create_vlan_table_groups(struct mlx5e_flow_table *ft, u32 *in,
  					    int inlen)
-@@ -1463,8 +1550,12 @@ static int __mlx5e_create_vlan_table_groups(struct mlx5e_flow_table *ft, u32 *in
+@@ -1379,8 +1466,12 @@ static int __mlx5e_create_vlan_table_groups(struct mlx5e_flow_table *ft, u32 *in
  
  	memset(in, 0, inlen);
  	MLX5_SET_CFG(in, match_criteria_enable, MLX5_MATCH_OUTER_HEADERS);
@@ -300,7 +301,7 @@ index xxxxxxx..xxxxxxx 100644
  	MLX5_SET_CFG(in, start_flow_index, ix);
  	ix += MLX5E_VLAN_GROUP1_SIZE;
  	MLX5_SET_CFG(in, end_flow_index, ix - 1);
-@@ -1475,7 +1566,11 @@ static int __mlx5e_create_vlan_table_groups(struct mlx5e_flow_table *ft, u32 *in
+@@ -1391,7 +1482,11 @@ static int __mlx5e_create_vlan_table_groups(struct mlx5e_flow_table *ft, u32 *in
  
  	memset(in, 0, inlen);
  	MLX5_SET_CFG(in, match_criteria_enable, MLX5_MATCH_OUTER_HEADERS);
@@ -312,7 +313,7 @@ index xxxxxxx..xxxxxxx 100644
  	MLX5_SET_CFG(in, start_flow_index, ix);
  	ix += MLX5E_VLAN_GROUP2_SIZE;
  	MLX5_SET_CFG(in, end_flow_index, ix - 1);
-@@ -1484,6 +1579,7 @@ static int __mlx5e_create_vlan_table_groups(struct mlx5e_flow_table *ft, u32 *in
+@@ -1400,6 +1495,7 @@ static int __mlx5e_create_vlan_table_groups(struct mlx5e_flow_table *ft, u32 *in
  		goto err_destroy_groups;
  	ft->num_groups++;
  
@@ -320,7 +321,7 @@ index xxxxxxx..xxxxxxx 100644
  	memset(in, 0, inlen);
  	MLX5_SET_CFG(in, match_criteria_enable, MLX5_MATCH_OUTER_HEADERS);
  	MLX5_SET_TO_ONES(fte_match_param, mc, outer_headers.svlan_tag);
-@@ -1494,6 +1590,7 @@ static int __mlx5e_create_vlan_table_groups(struct mlx5e_flow_table *ft, u32 *in
+@@ -1410,6 +1506,7 @@ static int __mlx5e_create_vlan_table_groups(struct mlx5e_flow_table *ft, u32 *in
  	if (IS_ERR(ft->g[ft->num_groups]))
  		goto err_destroy_groups;
  	ft->num_groups++;
@@ -328,7 +329,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	return 0;
  
-@@ -1584,7 +1681,9 @@ int mlx5e_create_flow_steering(struct mlx5e_priv *priv)
+@@ -1500,7 +1597,9 @@ int mlx5e_create_flow_steering(struct mlx5e_priv *priv)
  	if (err) {
  		netdev_err(priv->netdev, "Failed to create arfs tables, err=%d\n",
  			   err);

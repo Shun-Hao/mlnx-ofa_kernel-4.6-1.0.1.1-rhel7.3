@@ -8,3 +8,9 @@ Change-Id=I59af93f4db4e219b071510def718025219251848; subject=net/mlx5: Enable VS
 Change-Id=Ib422da7f51da1e5499d1e6dc89a056c4b6dfe236; subject=net/mlx5e: RX, verify received packet size in Linear Striding RQ; feature=mlx5_en_bugs; upstream_status=accepted; general=upstream commit ID: 0073c8f72736, tag: v4.20-rc4;
 Change-Id=I3d7b7b55dddc820a8e041ec31a423a8e65f0f4e5; subject=net/mlx5e: RX, Verify MPWQE stride size is in range; feature=mlx5_en_bugs; upstream_status=accepted; general=upstream commit ID: e1c15b62b701, tag: v4.20;
 Change-Id=Ied8c8ea516a119aa69ae8aeef464ef354d193015; subject=net/mlx5e: Expand XPS cpumask to cover all online cpus; feature=mlx5_en_bugs; upstream_status=accepted; general=upstream commit ID: 149e566fef81, tag: v5.1-rc1;
+Change-Id=Ia763c04ca8a375bd1bef974d6ae9b719b5d7173e; subject=Revert "net/mlx5e: Check for inner TTC support before adding a VXLAN flow rule"; feature=mlx5e_rss_default_toeplitz; upstream_status=ignore; general=;
+Change-Id=I398c852ad36f4e851125c8f9109ba62dd5709534; subject=Revert "net/mlx5e: Remove vxlan debugfs and flow rules on mlx5e_vxlan_cleanup"; feature=mlx5e_rss_default_toeplitz; upstream_status=ignore; general=;
+Change-Id=I537a7b0c2b907fde525f3529939a9c0f8f23eee7; subject=Revert "net/mlx5e: Add RSS support for UDP tunnels"; feature=mlx5e_rss_default_toeplitz; upstream_status=ignore; general=;
+Change-Id=I127576fb7654a861e781d44eb0b688d9e4335f15; subject=ofed_scripts: remove CONFIG_MLX5_INNER_RSS; feature=ofed_scripts; upstream_status=NA; general=;
+Change-Id=Ic0c543f8abb8fc87ad3c363eb2ba6adc670d9846; subject=net/mlx5e: switch to Toeplitz RSS hash by default; feature=mlx5e_rss_default_toeplitz; upstream_status=in_progress; general=;
+Change-Id=Iaf6ff28d77a3211bad9ea035e32b158ca3819f3c; subject=BACKPORTS: update backports for "switch to Toeplitz RSS hash"; feature=backports; upstream_status=ignore; general=;

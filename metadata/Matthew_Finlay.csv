@@ -1,2 +1,2 @@
 sep=;
-Change-Id=I7b8db8d26af99bb23f0099303e38bf6d1e91b3fe; subject=net/mlx5e: Add RSS support for UDP tunnels; feature=vxlan_cx4_backport; upstream_status=NA; general=;
+Change-Id=I7b8db8d26af99bb23f0099303e38bf6d1e91b3fe; subject=net/mlx5e: Add RSS support for UDP tunnels; feature=vxlan_cx4_backport; upstream_status=ignore; general=;

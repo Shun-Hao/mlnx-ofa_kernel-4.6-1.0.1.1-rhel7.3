@@ -8,7 +8,7 @@ Change-Id=I8a7103ba44fe0a647727c2ad016cad9a22b491ce; subject=net/mlx4_core: Make
 Change-Id=I922feb53f5ec0b04fe9705527f598169936b6dae; subject=net/mlx4_core: Enable fast_drop option; feature=mlx4_core_misc; upstream_status=NA; general=;
 Change-Id=I0f1c5db28f7b251dd4c11330ea45ffce1d2bf040; subject=net/mlx4_en: Added udev_dev_port_dev_id module parameter; feature=mlx4_en_udev_dev_port_dev_id_param; upstream_status=NA; general=;
 Change-Id=I8220183eaf2abb14d834586c23b353e1dc00458b; subject=IB/ipoib: Print a warning when Connected Mode is not supported; feature=ipoib_cm_prints; upstream_status=NA; general=;
-Change-Id=I21323c6b4096b3f2abab57d6e5868e89bf9311fc; subject=net/mlx5e: Remove vxlan debugfs and flow rules on mlx5e_vxlan_cleanup; feature=mlx5_en_bugs; upstream_status=NA; general=;
+Change-Id=I21323c6b4096b3f2abab57d6e5868e89bf9311fc; subject=net/mlx5e: Remove vxlan debugfs and flow rules on mlx5e_vxlan_cleanup; feature=mlx5_en_bugs; upstream_status=ignore; general=;
 Change-Id=Icc5c217dd75ddeb09e6b3e082767e234554f6355; subject=IB/ipoib: Process netdevice unregister event only once; feature=ipoib_bugs; upstream_status=in_progress; general=;
 Change-Id=I8fa322a5bb98ed675fe36e42f1e29077e8f5bcca; subject=net/mlx5e: Remove the false indication of software timestamping support; feature=rebase; upstream_status=accepted; general=upstream commit ID: 4765420439e7, tag: v4.20;
 Change-Id=Ifcf3fb9cd3b9d046e56581c2e4f413c556412750; subject=metadata: Update accepted commits MD; feature=ofed_scripts; upstream_status=ignore; general=;

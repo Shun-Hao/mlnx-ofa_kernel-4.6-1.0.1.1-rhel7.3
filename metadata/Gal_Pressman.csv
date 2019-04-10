@@ -9,5 +9,5 @@ Change-Id=Ia056a98f89d0a0b550f0ca7ee307be056f7bdc10; subject=net/mlx4_core: Fix 
 Change-Id=Ic8fd27111f9d5ee2c054095fb5ae722999a81ca2; subject=net/mlx5e: Change PDDR string length limit; feature=link_down_reason; upstream_status=NA; general=;
 Change-Id=If40fa3058c59d15b14b4a38c3ca03f2a34277c37; subject=net/mlx5e: Align ratelimit feature with upstream code; feature=mlx5_en_bugs; upstream_status=NA; general=;
 Change-Id=I45b3c4c5b0cc343cf44a9f64dd441ca7dc978cf6; subject=net/mlx5e: Add support for RSS hash function changes through sysfs; feature=mlx5e_hfunc_sysfs; upstream_status=NA; general=;
-Change-Id=I4a5d8fc2a5450929fe4b2d12dc61c6b79bb03824; subject=net/mlx5e: Check for inner TTC support before adding a VXLAN flow rule; feature=mlx5_en_bugs; upstream_status=NA; general=;
+Change-Id=I4a5d8fc2a5450929fe4b2d12dc61c6b79bb03824; subject=net/mlx5e: Check for inner TTC support before adding a VXLAN flow rule; feature=mlx5_en_bugs; upstream_status=ignore; general=;
 Change-Id=Icff8551b03ebdee14671f2fddfe62a2fc26d3fee; subject=net/mlx5: Add resiliency for allocations on numas with no memory; feature=mlx5_core_bugs; upstream_status=NA; general=;
