@@ -376,7 +376,7 @@ static int reclaim_pages_cmd(struct mlx5_core_dev *dev,
 	struct rb_node *p;
 	u32 func_id;
 	u32 npages;
-	u32 i = 0;
+	u32 i = 0, j;
 
 	if (dev->state != MLX5_DEVICE_STATE_INTERNAL_ERROR)
 		return mlx5_cmd_exec(dev, in, in_size, out, out_size);
@@ -387,12 +387,18 @@ static int reclaim_pages_cmd(struct mlx5_core_dev *dev,
 
 	p = rb_first(&dev->priv.page_root);
 	while (p && i < npages) {
+		j = 0;
 		fwp = rb_entry(p, struct fw_page, rb_node);
 		p = rb_next(p);
 		if (fwp->func_id != func_id)
 			continue;
 
-		MLX5_ARRAY_SET64(manage_pages_out, out, pas, i, fwp->addr);
+		j = find_next_zero_bit(&fwp->bitmask, MLX5_NUM_4K_IN_PAGE, j);
+		if (j >= MLX5_NUM_4K_IN_PAGE)
+			continue;
+
+		MLX5_ARRAY_SET64(manage_pages_out, out, pas, i,
+				 fwp->addr + (j << MLX5_ADAPTER_PAGE_SHIFT));
 		i++;
 	}
 
