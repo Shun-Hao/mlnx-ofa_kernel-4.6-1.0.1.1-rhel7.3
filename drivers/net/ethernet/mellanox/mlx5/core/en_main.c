@@ -323,6 +323,7 @@ static void mlx5e_async_event(struct mlx5_core_dev *mdev, void *vpriv,
 	struct mlx5e_priv *priv = vpriv;
 
 #ifdef CONFIG_MLX5_ESWITCH
+#ifndef CONFIG_BF_DEVICE_EMULATION
 	if (MLX5_ESWITCH_MANAGER(mdev) &&
 	    mlx5_eswitch_mode(mdev->priv.eswitch) == SRIOV_OFFLOADS) {
 		struct mlx5e_rep_priv *uplink_rpriv;
@@ -332,6 +333,18 @@ static void mlx5e_async_event(struct mlx5_core_dev *mdev, void *vpriv,
 		uplink_dev = uplink_rpriv->netdev;
 		priv = netdev_priv(uplink_dev);
 	}
+#else
+	if (MLX5_ESWITCH_MANAGER(mdev) &&
+	    mlx5_eswitch_mode(mdev->priv.eswitch) == SRIOV_OFFLOADS &&
+	    !mlx5_core_is_dev_emulation_manager(mdev)) {
+		struct mlx5e_rep_priv *uplink_rpriv;
+		struct net_device *uplink_dev;
+
+		uplink_rpriv = mlx5_eswitch_get_uplink_priv(mdev->priv.eswitch, REP_ETH);
+		uplink_dev = uplink_rpriv->netdev;
+		priv = netdev_priv(uplink_dev);
+	}
+#endif
 #endif
 
 	if (!test_bit(MLX5E_STATE_ASYNC_EVENTS_ENABLED, &priv->state))
@@ -5598,11 +5611,20 @@ static void *mlx5e_add(struct mlx5_core_dev *mdev)
 		return NULL;
 
 #ifdef CONFIG_MLX5_ESWITCH
+#ifndef CONFIG_BF_DEVICE_EMULATION
 	if (MLX5_ESWITCH_MANAGER(mdev) &&
 	    mlx5_eswitch_mode(mdev->priv.eswitch) == SRIOV_OFFLOADS) {
 		mlx5e_rep_register_vport_reps(mdev);
 		return mdev;
 	}
+#else
+	if (MLX5_ESWITCH_MANAGER(mdev) &&
+	    mlx5_eswitch_mode(mdev->priv.eswitch) == SRIOV_OFFLOADS &&
+	    !mlx5_core_is_dev_emulation_manager(mdev)) {
+		mlx5e_rep_register_vport_reps(mdev);
+		return mdev;
+	}
+#endif
 #endif
 
 	nch = mlx5e_get_max_num_channels(mdev);
@@ -5650,10 +5672,18 @@ static void mlx5e_remove(struct mlx5_core_dev *mdev, void *vpriv)
 	struct mlx5e_priv *priv;
 
 #ifdef CONFIG_MLX5_ESWITCH
+#ifndef CONFIG_BF_DEVICE_EMULATION
 	if (MLX5_ESWITCH_MANAGER(mdev) && vpriv == mdev) {
 		mlx5e_rep_unregister_vport_reps(mdev);
 		return;
 	}
+#else
+	if (MLX5_ESWITCH_MANAGER(mdev) && vpriv == mdev &&
+	    !mlx5_core_is_dev_emulation_manager(mdev)) {
+		mlx5e_rep_unregister_vport_reps(mdev);
+		return;
+	}
+#endif
 #endif
 	priv = vpriv;
 #ifdef CONFIG_MLX5_CORE_EN_DCB

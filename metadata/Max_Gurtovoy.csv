@@ -111,3 +111,4 @@ Change-Id=I497e13fe51bcf5abefa0b118b4c647f6826c7a01; subject=nvmet: fix error fl
 Change-Id=I08deb0cf2301af3c9b4778507f0ae74af4b4a174; subject=nvmet: never fail double namespace enablement; feature=nvmf_bugs; upstream_status=in_progress; general=;
 Change-Id=Idd797676da1fb58696a54b60f342b8688e981a2a; subject=IB/mlx5: don't disable ib representors on device emulation; feature=mlx5_bf; upstream_status=ignore; general=;
 Change-Id=I9f3d0bc37a77ff2c619b4e230bd07c978477ee1c; subject=net/mlx5: fix compilation warnings; feature=mlx5_core_bugs; upstream_status=ignore; general=;
+Change-Id=Ifd720ebd2fe2b0603ae980f31ab5296457eb5d19; subject=net/mlx5e: disable all representors on device emulation; feature=mlx5_bf; upstream_status=ignore; general=;
