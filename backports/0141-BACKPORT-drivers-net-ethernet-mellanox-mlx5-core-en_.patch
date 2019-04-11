@@ -138,14 +138,14 @@ index xxxxxxx..xxxxxxx 100644
  #ifdef CONFIG_MLX5_CORE_EN_DCB
  	if (MLX5_BUFFER_SUPPORTED(mdev)) {
  		err = sysfs_add_file_to_group(&dev->dev.kobj,
-@@ -1082,6 +1114,7 @@ static int update_qos_sysfs(struct net_device *dev,
+@@ -1081,6 +1113,7 @@ static int update_qos_sysfs(struct net_device *dev,
+ 					      &dev_attr_buffer_size.attr,
  					      "qos");
  	}
- #endif
 +#endif
+ #endif
  
  	return err;
- }
 @@ -1155,6 +1188,8 @@ int mlx5e_sysfs_create(struct net_device *dev)
  	if (err)
  		goto remove_debug_group;

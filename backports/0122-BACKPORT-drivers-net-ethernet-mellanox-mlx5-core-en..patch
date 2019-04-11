@@ -315,18 +315,17 @@ index xxxxxxx..xxxxxxx 100644
  #ifdef CONFIG_MLX5_EN_SPECIAL_SQ
  	struct mlx5e_sq_stats      special_sq_stats[MLX5E_MAX_RL_QUEUES];
  	int                        max_opened_special_sq;
-@@ -845,9 +924,11 @@ struct mlx5e_priv {
+@@ -845,8 +924,10 @@ struct mlx5e_priv {
  	struct hwtstamp_config     tstamp;
  	u16                        q_counter;
  	u16                        drop_rq_q_counter;
 +#ifdef HAVE_IEEE_DCBNL_ETS
  #ifdef CONFIG_MLX5_CORE_EN_DCB
  	struct mlx5e_dcbx          dcbx;
- #endif
 +#endif
+ #endif
  
  	const struct mlx5e_profile *profile;
- 	void                      *ppriv;
 @@ -892,11 +973,40 @@ struct mlx5e_profile {
  	int	max_tc;
  };
@@ -436,7 +435,7 @@ index xxxxxxx..xxxxxxx 100644
  struct mlx5e_redirect_rqt_param {
  	bool is_rss;
  	union {
-@@ -1071,7 +1211,11 @@ void mlx5e_notify_hw(struct mlx5_wq_cyc *wq, u16 pc,
+@@ -1060,7 +1200,11 @@ void mlx5e_notify_hw(struct mlx5_wq_cyc *wq, u16 pc,
  {
  	ctrl->fm_ce_se = MLX5_WQE_CTRL_CQ_UPDATE;
  	/* ensure wqe is visible to device before updating doorbell record */
@@ -448,7 +447,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	*wq->db = cpu_to_be32(pc);
  
-@@ -1092,13 +1236,23 @@ static inline void mlx5e_cq_arm(struct mlx5e_cq *cq)
+@@ -1081,13 +1225,23 @@ static inline void mlx5e_cq_arm(struct mlx5e_cq *cq)
  }
  
  extern const struct ethtool_ops mlx5e_ethtool_ops;
@@ -472,7 +471,7 @@ index xxxxxxx..xxxxxxx 100644
  
  int mlx5e_create_tir(struct mlx5_core_dev *mdev,
  		     struct mlx5e_tir *tir, u32 *in, int inlen);
-@@ -1108,6 +1262,9 @@ int mlx5e_create_mdev_resources(struct mlx5_core_dev *mdev);
+@@ -1097,6 +1251,9 @@ int mlx5e_create_mdev_resources(struct mlx5_core_dev *mdev);
  void mlx5e_destroy_mdev_resources(struct mlx5_core_dev *mdev);
  int mlx5e_refresh_tirs(struct mlx5e_priv *priv, bool enable_uc_lb);
  int mlx5e_modify_tirs_lro(struct mlx5e_priv *priv);
@@ -482,7 +481,7 @@ index xxxxxxx..xxxxxxx 100644
  
  /* common netdev helpers */
  void mlx5e_create_q_counters(struct mlx5e_priv *priv);
-@@ -1160,24 +1317,42 @@ void mlx5e_ethtool_get_ringparam(struct mlx5e_priv *priv,
+@@ -1149,24 +1306,42 @@ void mlx5e_ethtool_get_ringparam(struct mlx5e_priv *priv,
  				 struct ethtool_ringparam *param);
  int mlx5e_ethtool_set_ringparam(struct mlx5e_priv *priv,
  				struct ethtool_ringparam *param);
@@ -525,7 +524,7 @@ index xxxxxxx..xxxxxxx 100644
  void mlx5e_ethtool_get_pauseparam(struct mlx5e_priv *priv,
  				  struct ethtool_pauseparam *pauseparam);
  int mlx5e_ethtool_set_pauseparam(struct mlx5e_priv *priv,
-@@ -1204,11 +1379,13 @@ void mlx5e_build_rq_params(struct mlx5_core_dev *mdev,
+@@ -1193,11 +1368,13 @@ void mlx5e_build_rq_params(struct mlx5_core_dev *mdev,
  void mlx5e_build_rss_params(struct mlx5e_params *params);
  u8 mlx5e_params_calculate_tx_min_inline(struct mlx5_core_dev *mdev);
  
@@ -539,7 +538,7 @@ index xxxxxxx..xxxxxxx 100644
  static inline bool mlx5e_dropless_rq_supported(struct mlx5_core_dev *mdev)
  {
  	return (MLX5_CAP_GEN(mdev, rq_delay_drop) &&
-@@ -1221,15 +1398,33 @@ void mlx5e_tx_dim_work(struct work_struct *work);
+@@ -1210,15 +1387,33 @@ void mlx5e_tx_dim_work(struct work_struct *work);
  void mlx5e_enable_async_events(struct mlx5e_priv *priv);
  void mlx5e_disable_async_events(struct mlx5e_priv *priv);
  
