@@ -80,3 +80,8 @@ Change-Id=I07843002fdae41099edaa0b21cce3daef00761e1; subject=BACKPORTS: Unlocked
 Change-Id=Ib12f0c0dc9718ce4d00e005e66e7640105e2c5fc; subject=BACKPORTS: Unlocked mlx5 for fs.h; feature=backports; upstream_status=ignore; general=;
 Change-Id=I85885122ecd31ec46e4a7b24f25d2a39a1f70191; subject=net/mlx5e: define list_next_or_null_rcu; feature=mlx5_asap; upstream_status=NA; general=;
 Change-Id=I8f1131e9909823c81024380ef0411a8d34c3bdd9; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I2db9bb5884fc21da38e5b4b24387fde6fa73118b; subject=net/mlx5e: Check that encap is attached to nhe before detaching; feature=mlx5_asap; upstream_status=in_progress; general=;
+Change-Id=I1f8af7c1ef6038fccfc369ef6ac0cca3d503b618; subject=net/mlx5e: Set offloaded flow flag when assigning flow->rule; feature=mlx5_asap; upstream_status=in_progress; general=;
+Change-Id=Icfe3755171365c99650679139a41079a9df07680; subject=net/mlx5e: Cleanup encap if header creation or attachment fails; feature=mlx5_asap; upstream_status=in_progress; general=;
+Change-Id=I0ca0e0ffe7f179e98cc633f366ae12ef15258c04; subject=BACKPORTS: net/mlx5e: Set offloaded flow flag when assigning flow->rule; feature=backports; upstream_status=ignore; general=;
+Change-Id=I2cbb05e846e64039bac718071e95e9bf720a2cac; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
