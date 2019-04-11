@@ -109,3 +109,5 @@ Change-Id=I8664207566f38b5be61348a3367a894415b33e96; subject=net/mlx5: Eswitch, 
 Change-Id=I7ebb9cb75ee0e8eaa30dafe6afc7e581ccccbc48; subject=RDMA/mlx5: limit devx fdb rules to emulation manager; feature=mlx5_bf; upstream_status=ignore; general=;
 Change-Id=I497e13fe51bcf5abefa0b118b4c647f6826c7a01; subject=nvmet: fix error flow during ns enable; feature=nvmf_bugs; upstream_status=accepted; general=upstream commit ID: a536b4978575, tag: v5.1-rc3;
 Change-Id=I08deb0cf2301af3c9b4778507f0ae74af4b4a174; subject=nvmet: never fail double namespace enablement; feature=nvmf_bugs; upstream_status=in_progress; general=;
+Change-Id=Idd797676da1fb58696a54b60f342b8688e981a2a; subject=IB/mlx5: don't disable ib representors on device emulation; feature=mlx5_bf; upstream_status=ignore; general=;
+Change-Id=I9f3d0bc37a77ff2c619b4e230bd07c978477ee1c; subject=net/mlx5: fix compilation warnings; feature=mlx5_core_bugs; upstream_status=ignore; general=;

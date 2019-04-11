@@ -3068,9 +3068,10 @@ int mlx5_eswitch_vport_update_group(struct mlx5_eswitch *esw, int vport_num,
 
 	if (IS_ERR(new_group)) {
 		mutex_unlock(&esw->state_lock);
+		err = PTR_ERR(new_group);
 		esw_warn(esw->dev, "E-Switch couldn't create new vgroup %d (%d)\n",
 			 group_id, err);
-		return PTR_ERR(new_group);
+		return err;
 	}
 
 	err = mlx5_destroy_scheduling_element_cmd(dev,

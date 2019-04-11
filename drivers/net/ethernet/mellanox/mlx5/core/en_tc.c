@@ -3103,7 +3103,7 @@ static int mlx5e_create_encap_header_ipv4(struct mlx5e_priv *priv,
 		break;
 	default:
 		err = -EOPNOTSUPP;
-		goto free_encap;
+		goto out;
 	}
 
 	tos = tun_key->tos;
@@ -3223,7 +3223,7 @@ static int mlx5e_create_encap_header_ipv6(struct mlx5e_priv *priv,
 		break;
 	default:
 		err = -EOPNOTSUPP;
-		goto free_encap;
+		goto out;
 	}
 
 	tos = tun_key->tos;
