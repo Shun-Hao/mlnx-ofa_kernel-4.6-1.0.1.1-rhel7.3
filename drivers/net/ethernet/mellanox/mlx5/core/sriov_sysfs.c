@@ -278,7 +278,7 @@ static int modify_hca_node_guid(struct mlx5_core_dev *dev, u16 vf,
 static int modify_nic_node_guid(struct mlx5_core_dev *dev, u16 vf,
 				u64 node_guid)
 {
-	return mlx5_modify_nic_vport_node_guid(dev, vf + 1, node_guid);
+	return mlx5_modify_other_nic_vport_node_guid(dev, vf + 1, node_guid);
 }
 
 static ssize_t node_store(struct mlx5_sriov_vf *g, struct vf_attributes *oa,

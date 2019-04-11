@@ -2003,10 +2003,10 @@ static void esw_apply_vport_conf(struct mlx5_eswitch *esw,
 
 	/* Host PF has its own mac/guid. */
 	if (vport_num) {
-		mlx5_modify_nic_vport_mac_address(esw->dev, vport_num,
-						  vport->info.mac);
-		mlx5_modify_nic_vport_node_guid(esw->dev, vport_num,
-						vport->info.node_guid);
+		mlx5_modify_other_nic_vport_mac_address(esw->dev, vport_num,
+							vport->info.mac);
+		mlx5_modify_other_nic_vport_node_guid(esw->dev, vport_num,
+						      vport->info.node_guid);
 	}
 
 	if (vst_mode != ESW_VST_MODE_STEERING)
