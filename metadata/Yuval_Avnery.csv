@@ -13,3 +13,4 @@ Change-Id=Ifd8a7ac53dd104bdca4c4e570663295fe7d53405; subject=net/mlx5e: Support 
 Change-Id=I125bb373b5bf2d54db59ebece308bed97ba01598; subject=net/mlx5: sysfs for setting PF's max_tx_rate via ECPF; feature=mlx5_en_bugs; upstream_status=NA; general=;
 Change-Id=If5a1b48e93c5f574415bdf82cd53895b415cbeb1; subject=net/mlx5: config display and mac sysfs of PF via ECPF; feature=mlx5_en_bugs; upstream_status=NA; general=;
 Change-Id=I02ecb5f2cbb50e7fe08210b198968898cda5d124; subject=net/mlx5: Support VF mac and tx_rate conf from ECPF; feature=mlx5_en_bugs; upstream_status=NA; general=;
+Change-Id=I261e2f3d1336ceec06211318aec1eb92e37dbcfe; subject=net/mlx5: Host control sysfs backport support; feature=mlx5_en_bugs; upstream_status=NA; general=;
