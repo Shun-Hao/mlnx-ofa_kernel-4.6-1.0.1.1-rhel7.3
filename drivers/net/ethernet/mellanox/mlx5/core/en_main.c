@@ -1818,7 +1818,7 @@ static int mlx5e_alloc_cq(struct mlx5e_channel *c,
 
 	param->wq.buf_numa_node = cpu_to_node(c->cpu);
 	param->wq.db_numa_node  = cpu_to_node(c->cpu);
-	param->eq_ix   = c->ix % mdev->priv.eq_table.num_comp_vectors;
+	param->eq_ix   = c->ix;
 
 	err = mlx5e_alloc_cq_common(mdev, param, cq);
 
@@ -2169,7 +2169,7 @@ static int mlx5e_open_channel(struct mlx5e_priv *priv, int ix,
 	c->mdev     = priv->mdev;
 	c->tstamp   = &priv->tstamp;
 	c->ix       = ix;
-	c->cpu      = cpu % priv->mdev->priv.eq_table.num_comp_vectors;
+	c->cpu      = cpu;
 	c->pdev     = &priv->mdev->pdev->dev;
 	c->netdev   = priv->netdev;
 	c->mkey_be  = cpu_to_be32(priv->mdev->mlx5e_res.mkey.key);
@@ -2307,17 +2307,15 @@ static void mlx5e_activate_channel(struct mlx5e_channel *c)
 		mlx5e_activate_txqsq(&c->special_sq[tc]);
 #endif
 	mlx5e_activate_rq(&c->rq);
-	netif_set_xps_queue(c->netdev, c->xps_cpumask, c->ix);
-	if (c->ix < c->priv->mdev->priv.eq_table.num_comp_vectors)
-		mlx5_rename_comp_eq(c->priv->mdev, c->ix, c->priv->netdev->name);
+	netif_set_xps_queue(c->netdev, get_cpu_mask(c->cpu), c->ix);
+	mlx5_rename_comp_eq(c->priv->mdev, c->ix, c->priv->netdev->name);
 }
 
 static void mlx5e_deactivate_channel(struct mlx5e_channel *c)
 {
 	int tc;
 
-	if (c->ix < c->priv->mdev->priv.eq_table.num_comp_vectors)
-		mlx5_rename_comp_eq(c->priv->mdev, c->ix, NULL);
+	mlx5_rename_comp_eq(c->priv->mdev, c->ix, NULL);
 	mlx5e_deactivate_rq(&c->rq);
 #ifdef CONFIG_MLX5_EN_SPECIAL_SQ
 	for (tc = 0; tc < c->num_special_sq; tc++)

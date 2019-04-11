@@ -34,3 +34,4 @@ Change-Id=Icfdddd9ab8197a2187327bbc95d1132faa954ebc; subject=BACKPORTS: IPOIB,PK
 Change-Id=I117e1475e057a46917061c6f9a84b55624f7c0d5; subject=BACKPORTS: Fix add P_Key flow in case HAVE_NDO_GET_IFLINK not defined; feature=backports; upstream_status=ignore; general=;
 Change-Id=Id4cbe6e2331e7aa16a60c6670b71e9b7975103d9; subject=Revert "net/mlx5: Fix incorrect page count when in internal error on powerpc"; feature=mlx5_core_bugs; upstream_status=ignore; general=;
 Change-Id=I1885b177bdfe07ffca7d0caf57ec3df90f2cca78; subject=mlx5/core: Check FW page bitmask before reclaiming it; feature=mlx5_core_bugs; upstream_status=NA; general=;
+Change-Id=I2adbbdf5c3e1d3d5c8639c3e1ab579414fbd2234; subject=Revert "net/mlx5: Don't overrun EQ count when creating CQs"; feature=set_cpu_eeh; upstream_status=ignore; general=;
