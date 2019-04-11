@@ -7135,10 +7135,18 @@ static void mlx5_ib_remove(struct mlx5_core_dev *mdev, void *context)
 	struct mlx5_ib_multiport_info *mpi;
 	struct mlx5_ib_dev *dev;
 
+#ifndef CONFIG_BF_DEVICE_EMULATION
 	if (MLX5_ESWITCH_MANAGER(mdev) && context == mdev) {
 		mlx5_ib_unregister_vport_reps(mdev);
 		return;
 	}
+#else
+	if (MLX5_ESWITCH_MANAGER(mdev) && context == mdev &&
+	    !mlx5_core_is_dev_emulation_manager(mdev)) {
+		mlx5_ib_unregister_vport_reps(mdev);
+		return;
+	}
+#endif
 
 	flush_workqueue(mlx5_ib_event_wq);
 
