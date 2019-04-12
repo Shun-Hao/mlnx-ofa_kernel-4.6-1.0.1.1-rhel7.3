@@ -85,3 +85,6 @@ Change-Id=I1f8af7c1ef6038fccfc369ef6ac0cca3d503b618; subject=net/mlx5e: Set offl
 Change-Id=Icfe3755171365c99650679139a41079a9df07680; subject=net/mlx5e: Cleanup encap if header creation or attachment fails; feature=mlx5_asap; upstream_status=in_progress; general=;
 Change-Id=I0ca0e0ffe7f179e98cc633f366ae12ef15258c04; subject=BACKPORTS: net/mlx5e: Set offloaded flow flag when assigning flow->rule; feature=backports; upstream_status=ignore; general=;
 Change-Id=I2cbb05e846e64039bac718071e95e9bf720a2cac; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I6e7e2564cb26ebf0ddab37cb1847da3740519e79; subject=net/mlx5: Eswitch, Fix a panic when changing to legacy mode; feature=mlx5_asap; upstream_status=NA; general=;
+Change-Id=Ia285983a89c2b9f448c08e23185fc38ef937a622; subject=BACKPORTS: net/mlx5: Eswitch, Fix a panic when changing to legacy mode; feature=backports; upstream_status=ignore; general=;
+Change-Id=I38605dcca537b8ad090a02b5731b3a896695cbcd; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
