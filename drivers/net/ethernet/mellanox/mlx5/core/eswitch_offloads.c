@@ -2124,7 +2124,7 @@ static int esw_offloads_stop_imp(struct mlx5_eswitch *esw,
 void esw_offloads_stop_handler(struct work_struct *work)
 {
 	struct mlx5_esw_handler *handler =
-		container_of(work, struct mlx5_esw_handler, start_handler);
+		container_of(work, struct mlx5_esw_handler, stop_handler);
 	struct mlx5_eswitch *esw =
 		container_of(handler, struct mlx5_eswitch, handler);
 	struct netlink_ext_ack *extack = handler->extack;
