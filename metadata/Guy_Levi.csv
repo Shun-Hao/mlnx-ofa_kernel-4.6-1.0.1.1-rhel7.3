@@ -20,3 +20,5 @@ Change-Id=I2f12aa0e4e5b0d82594b29571b2c91d95fb5ce15; subject=net/mlx5: Properly 
 Change-Id=Ied500aa567c53e0443b5dff3916c52de3bd86e09; subject=metadata: Update MD; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=I06086ed85ac83be2ef816ea0a44d205c4780885d; subject=IB/mlx5: Expose a capability for scat2cqe over DCT QP; feature=mlx5_ib_bugs; upstream_status=in_progress; general=;
 Change-Id=If0314dc3caafd40c28fce3614d461e86f348d5cb; subject=metadata: Update MD; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I691ff5e487cf9327005a9e928c94080fbd46c3b3; subject=IB/mlx5: DCT scatter to CQE of 64B isn't supported; feature=mlx5_ib_bugs; upstream_status=in_progress; general=;
+Change-Id=I6cbaa10f0e7329b87e4364dcf6fcdc23b734405d; subject=metadata: Update MD; feature=ofed_scripts; upstream_status=ignore; general=;
