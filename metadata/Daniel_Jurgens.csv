@@ -10,7 +10,7 @@ Change-Id=I839df8e9ac7a1208d703463ea57f8a97110593a5; subject=net/mlx5: Save PCI 
 Change-Id=Ifdfbab5c6038b71e134f62eafee35005e413b97b; subject=net/mlx5: Increase wait time for fw initialization; feature=wait_for_vf_flr; upstream_status=in_progress; general=;
 Change-Id=I5ff18bcaa89d6ede5e3686c5a0a95377e2e2b371; subject=IB/ipoib: Don't rely on netdev reg_state for synchronization; feature=ipoib_bugs; upstream_status=in_progress; general=;
 Change-Id=Id65bffc7b6195caeed4ae9014ebd9ddbcd9997e5; subject=net/mlx4: Add linux/prefetch.h include in en_rx.c; feature=mlx4_en_bugs; upstream_status=in_progress; general=;
-Change-Id=I12cbd31d408a96bb535412d17bb39a1a66d86c46; subject=net/mlx5: Don't create inner tirs if in ENCAP mode; feature=bf_compat; upstream_status=in_progress; general=;
+Change-Id=I12cbd31d408a96bb535412d17bb39a1a66d86c46; subject=net/mlx5: Don't create inner tirs if in ENCAP mode; feature=bf_compat; upstream_status=ignore; general=;
 Change-Id=I134ec637080ef38be0a6e5e3cadc956b36f16ea1; subject=net/mlx5: Enable vfs sysfs when not eswitch_manager; feature=mlx5_core_bugs; upstream_status=NA; general=;
 Change-Id=I11f01ce3f8d818a63815b95d45b1fc6864984515; subject=net/mlx5: Implement get/show settings ethtool ops for reps; feature=mlx5_core_bugs; upstream_status=in_progress; general=;
 Change-Id=Icc0f2c7900840b5bf3b9fb614b5bb8bb3d25d7c4; subject=net/mlx5: When fetching CQEs return a CQE pointer instead of void; feature=cqe_padding; upstream_status=accepted; general=;

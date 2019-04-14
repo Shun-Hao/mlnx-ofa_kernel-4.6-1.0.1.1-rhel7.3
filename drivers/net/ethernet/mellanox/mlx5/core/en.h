@@ -51,7 +51,6 @@
 #include <net/switchdev.h>
 #include <net/xdp.h>
 #include <linux/net_dim.h>
-#include "eswitch.h"
 #include "wq.h"
 #include "mlx5_core.h"
 #include "en_stats.h"
@@ -1014,12 +1013,7 @@ void mlx5e_init_rq_type_params(struct mlx5_core_dev *mdev,
 static inline bool mlx5e_tunnel_inner_ft_supported(struct mlx5_core_dev *mdev)
 {
 	return (MLX5_CAP_ETH(mdev, tunnel_stateless_gre) &&
-		MLX5_CAP_FLOWTABLE_NIC_RX(mdev, ft_field_support.inner_ip_version)
-#ifdef CONFIG_MLX5_ESWITCH
-		 && (MLX5_ESWITCH_MANAGER(mdev) &&
-			mdev->priv.eswitch->offloads.encap == DEVLINK_ESWITCH_ENCAP_MODE_NONE)
-#endif
-		);
+		 MLX5_CAP_FLOWTABLE_NIC_RX(mdev, ft_field_support.inner_ip_version));
 }
 
 void mlx5e_create_debugfs(struct mlx5e_priv *priv);
