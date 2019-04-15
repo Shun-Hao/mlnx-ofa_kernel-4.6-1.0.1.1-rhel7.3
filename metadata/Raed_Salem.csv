@@ -14,3 +14,4 @@ Change-Id=Id174e338dc3bd91dbb723fc4eb081a6d057f49c2; subject=BACKPORTS: VF LAG s
 Change-Id=I643b334d553e06db75acb1afc03c6e35d99b6ed0; subject=net/mlx5e: FPGA, fix Innova IPsec TX offload data path performance; feature=rebase; upstream_status=ignore; general=;
 Change-Id=Idd3f2642b1f33fb58e14c1ad0729be84e8538681; subject=net/mlx5: Avoid error message when devcom device is NULL; feature=mlx5_asap; upstream_status=in_progress; general=;
 Change-Id=Ib726c05bc70a5e988f93f5d84a8e2b161efb908d; subject=compat/rdma.m4: Add test for ingress_block_set; feature=backports; upstream_status=ignore; general=;
+Change-Id=I69bf94dbfbf9654f5918b97ba6062559306675c0; subject=net/mlx5: E-Switch, fix peer miss rule setup; feature=backports; upstream_status=ignore; general=;

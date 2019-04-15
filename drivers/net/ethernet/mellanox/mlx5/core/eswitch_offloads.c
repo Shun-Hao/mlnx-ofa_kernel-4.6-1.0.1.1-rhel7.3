@@ -609,6 +609,7 @@ static void peer_miss_rules_setup(struct mlx5_core_dev *peer_dev,
 	dest->type = MLX5_FLOW_DESTINATION_TYPE_VPORT;
 	dest->vport.num = peer_dev->priv.eswitch->manager_vport;
 	dest->vport.vhca_id = MLX5_CAP_GEN(peer_dev, vhca_id);
+	dest->vport.vhca_id_valid = 1;
 }
 
 static int esw_add_fdb_peer_miss_rules(struct mlx5_eswitch *esw,
