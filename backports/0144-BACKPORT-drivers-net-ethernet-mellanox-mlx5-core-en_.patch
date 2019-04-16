@@ -68,7 +68,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (priv->channels.params.num_rl_txqs) {
  		u16 ix = mlx5e_select_queue_assigned(priv, skb);
  
-@@ -176,16 +190,24 @@ u16 mlx5e_select_queue(struct net_device *dev, struct sk_buff *skb,
+@@ -176,17 +190,25 @@ u16 mlx5e_select_queue(struct net_device *dev, struct sk_buff *skb,
  	}
  #endif
  
@@ -89,10 +89,11 @@ index xxxxxxx..xxxxxxx 100644
  	if (priv->dcbx_dp.trust_state == MLX5_QPTS_TRUST_DSCP)
  		up = mlx5e_get_dscp_up(priv, skb);
  	else
-+#endif
  #endif
++#endif
  		if (skb_vlan_tag_present(skb))
  			up = skb->vlan_tci >> VLAN_PRIO_SHIFT;
+ 
 @@ -215,14 +237,29 @@ static inline int mlx5e_skb_l2_header_offset(struct sk_buff *skb)
  
  static inline int mlx5e_skb_l3_header_offset(struct sk_buff *skb)

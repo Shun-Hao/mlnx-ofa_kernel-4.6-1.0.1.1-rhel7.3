@@ -667,28 +667,30 @@ index xxxxxxx..xxxxxxx 100644
  static void mlx4_en_clear_stats(struct net_device *dev)
  {
  	struct mlx4_en_priv *priv = netdev_priv(dev);
-@@ -2703,8 +3065,10 @@ static void mlx4_en_free_resources(struct mlx4_en_priv *priv)
+@@ -2703,9 +3065,11 @@ static void mlx4_en_free_resources(struct mlx4_en_priv *priv)
  {
  	int i, t;
  
 +#ifdef HAVE_NETDEV_RX_CPU_RMAP
  #ifdef CONFIG_RFS_ACCEL
  	priv->dev->rx_cpu_rmap = NULL;
-+#endif
  #endif
++#endif
  
  	for (t = 0; t < MLX4_EN_NUM_TX_TYPES; t++) {
-@@ -2764,8 +3128,10 @@ static int mlx4_en_alloc_resources(struct mlx4_en_priv *priv)
+ 		for (i = 0; i < priv->tx_ring_num[t]; i++) {
+@@ -2764,9 +3128,11 @@ static int mlx4_en_alloc_resources(struct mlx4_en_priv *priv)
  
  	}
  
 +#ifdef HAVE_NETDEV_RX_CPU_RMAP
  #ifdef CONFIG_RFS_ACCEL
  	priv->dev->rx_cpu_rmap = mlx4_get_cpu_rmap(priv->mdev->dev, priv->port);
-+#endif
  #endif
++#endif
  
  	return 0;
+ 
 @@ -2865,11 +3231,19 @@ static void mlx4_en_update_priv(struct mlx4_en_priv *dst,
  
  int mlx4_en_try_alloc_resources(struct mlx4_en_priv *priv,
@@ -780,16 +782,17 @@ index xxxxxxx..xxxxxxx 100644
  		unregister_netdev(dev);
  	}
  
-@@ -2954,7 +3367,9 @@ void mlx4_en_destroy_netdev(struct net_device *dev)
+@@ -2954,8 +3367,10 @@ void mlx4_en_destroy_netdev(struct net_device *dev)
  	}
  
  #ifdef CONFIG_RFS_ACCEL
 +#ifdef HAVE_NDO_RX_FLOW_STEER
  	mlx4_en_cleanup_filters(priv);
-+#endif
  #endif
++#endif
  
  	mlx4_en_free_resources(priv);
+ 
 @@ -2969,6 +3384,7 @@ void mlx4_en_destroy_netdev(struct net_device *dev)
  	free_netdev(dev);
  }
@@ -1474,14 +1477,14 @@ index xxxxxxx..xxxxxxx 100644
  		} else {
  			en_info(priv, "enabling only PFC DCB ops\n");
  			dev->dcbnl_ops = &mlx4_en_dcbnl_pfc_ops;
-@@ -4002,6 +4733,7 @@ int mlx4_en_init_netdev(struct mlx4_en_dev *mdev, int port,
- 			en_err(priv, "Failed to query disable_32_14_4_e field for QCN\n");
+@@ -4003,6 +4734,7 @@ int mlx4_en_init_netdev(struct mlx4_en_dev *mdev, int port,
  		}
  	}
-+#endif
  #endif
++#endif
  
  	for (i = 0; i < MLX4_EN_MAC_HASH_SIZE; ++i)
+ 		INIT_HLIST_HEAD(&priv->mac_hash[i]);
 @@ -4084,24 +4816,41 @@ int mlx4_en_init_netdev(struct mlx4_en_dev *mdev, int port,
  	netif_set_real_num_tx_queues(dev, priv->tx_ring_num[TX]);
  	netif_set_real_num_rx_queues(dev, priv->rx_ring_num);
