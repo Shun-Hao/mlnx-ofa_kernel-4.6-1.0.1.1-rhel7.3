@@ -23,3 +23,4 @@ Change-Id=I35955aa07a595fb14622508d42948df0da6612da; subject=net/mlx5e: Start st
 Change-Id=I522457ed33ffe4563fcd635311768c9c2c7d2e99; subject=BACKPORTS: Fix mlx5/en_main.c backports; feature=backports; upstream_status=ignore; general=;
 Change-Id=Ie0ed2abd016ffc9b639f8fb8a4843e901d30feac; subject=net/mlx5e: ethtool, fix display of capabilities and advertisement; feature=backports; upstream_status=ignore; general=;
 Change-Id=I42eb31745abd742b49f84e7f66c536e1265b2a64; subject=net/mlx5e: ethtool, Add missing link-modes defines; feature=mlx5_en_bugs; upstream_status=ignore; general=;
+Change-Id=I5644c3c452b9ee8e7928616eae98a1c58cb320a3; subject=net/mlx5: Enable general events on all interfaces; feature=mlx5_core_bugs; upstream_status=in_progress; general=;

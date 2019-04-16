@@ -527,7 +527,8 @@ static void general_event_handler(struct mlx5_core_dev *dev,
 {
 	switch (eqe->sub_type) {
 	case MLX5_GENERAL_SUBTYPE_DELAY_DROP_TIMEOUT:
-		if (dev->event)
+		if (dev->event &&
+		    MLX5_CAP_GEN(dev, port_type) == MLX5_CAP_PORT_TYPE_ETH)
 			dev->event(dev, MLX5_DEV_EVENT_DELAY_DROP_TIMEOUT, 0);
 		break;
 	case MLX5_GENERAL_SUBTYPE_PCIE_POWER_CHANGE_EVENT:
@@ -1074,8 +1075,7 @@ int mlx5_start_eqs(struct mlx5_core_dev *dev)
 	if (MLX5_VPORT_MANAGER(dev))
 		async_event_mask |= (1ull << MLX5_EVENT_TYPE_NIC_VPORT_CHANGE);
 
-	if (MLX5_CAP_GEN(dev, port_type) == MLX5_CAP_PORT_TYPE_ETH &&
-	    MLX5_CAP_GEN(dev, general_notification_event))
+	if (MLX5_CAP_GEN(dev, general_notification_event))
 		async_event_mask |= (1ull << MLX5_EVENT_TYPE_GENERAL_EVENT);
 
 	if (MLX5_CAP_GEN(dev, port_module_event))
