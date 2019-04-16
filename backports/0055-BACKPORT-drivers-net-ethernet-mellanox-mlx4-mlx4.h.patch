@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx4/mlx4.h
 
 Change-Id: Iabe8cfbd0ee995c1ea17bad07f49f573043c6eca
 ---
- drivers/net/ethernet/mellanox/mlx4/mlx4.h | 20 ++++++++++++++++++--
- 1 file changed, 18 insertions(+), 2 deletions(-)
+ drivers/net/ethernet/mellanox/mlx4/mlx4.h | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx4/mlx4.h b/drivers/net/ethernet/mellanox/mlx4/mlx4.h
 index xxxxxxx..xxxxxxx 100644
@@ -67,15 +67,13 @@ index xxxxxxx..xxxxxxx 100644
  int mlx4_register_device(struct mlx4_dev *dev);
  void mlx4_unregister_device(struct mlx4_dev *dev);
  void mlx4_dispatch_event(struct mlx4_dev *dev, enum mlx4_dev_event type,
-@@ -1260,9 +1276,9 @@ void mlx4_srq_event(struct mlx4_dev *dev, u32 srqn, int event_type);
+@@ -1260,9 +1276,7 @@ void mlx4_srq_event(struct mlx4_dev *dev, u32 srqn, int event_type);
  
  void mlx4_enter_error_state(struct mlx4_dev_persistent *persist);
  int mlx4_comm_internal_err(u32 slave_read);
 -
-+#ifdef HAVE_DEVLINK_PARAM_GENERIC_ID_REGION_SNAPSHOT
  int mlx4_crdump_collect(struct mlx4_dev *dev);
 -
-+#endif
  int mlx4_SENSE_PORT(struct mlx4_dev *dev, int port,
  		    enum mlx4_port_type *type);
  void mlx4_do_sense_ports(struct mlx4_dev *dev,

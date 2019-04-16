@@ -3,24 +3,14 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx4/catas.c
 
 Change-Id: Ie46562448c8cbb629948c6a77a43fc5b38d5279c
 ---
- drivers/net/ethernet/mellanox/mlx4/catas.c | 23 +++++++++++++++++++++++
- 1 file changed, 23 insertions(+)
+ drivers/net/ethernet/mellanox/mlx4/catas.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx4/catas.c b/drivers/net/ethernet/mellanox/mlx4/catas.c
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/net/ethernet/mellanox/mlx4/catas.c
 +++ b/drivers/net/ethernet/mellanox/mlx4/catas.c
-@@ -181,7 +181,9 @@ void mlx4_enter_error_state(struct mlx4_dev_persistent *persist)
- 	if (mlx4_is_slave(dev)) {
- 		err = mlx4_reset_slave(dev);
- 	} else {
-+#ifdef HAVE_DEVLINK_PARAM_GENERIC_ID_REGION_SNAPSHOT
- 		mlx4_crdump_collect(dev);
-+#endif
- 		err = mlx4_reset_master(dev);
- 	}
- 
-@@ -214,7 +216,11 @@ static void mlx4_handle_error_state(struct mlx4_dev_persistent *persist)
+@@ -214,7 +214,11 @@ static void mlx4_handle_error_state(struct mlx4_dev_persistent *persist)
  	mutex_lock(&persist->interface_state_mutex);
  	if (persist->interface_state & MLX4_INTERFACE_STATE_UP &&
  	    !(persist->interface_state & MLX4_INTERFACE_STATE_DELETION)) {
@@ -32,7 +22,7 @@ index xxxxxxx..xxxxxxx 100644
  		mlx4_info(persist->dev, "mlx4_restart_one was ended, ret=%d\n",
  			  err);
  	}
-@@ -233,10 +239,19 @@ static void dump_err_buf(struct mlx4_dev *dev)
+@@ -233,10 +237,19 @@ static void dump_err_buf(struct mlx4_dev *dev)
  			 i, swab32(readl(priv->catas_err.map + i)));
  }
  
@@ -52,7 +42,7 @@ index xxxxxxx..xxxxxxx 100644
  	u32 slave_read;
  
  	if (mlx4_is_slave(dev)) {
-@@ -279,7 +294,11 @@ void mlx4_start_catas_poll(struct mlx4_dev *dev)
+@@ -279,7 +292,11 @@ void mlx4_start_catas_poll(struct mlx4_dev *dev)
  	phys_addr_t addr;
  
  	INIT_LIST_HEAD(&priv->catas_err.list);
@@ -64,7 +54,7 @@ index xxxxxxx..xxxxxxx 100644
  	priv->catas_err.map = NULL;
  
  	if (!mlx4_is_slave(dev)) {
-@@ -295,6 +314,10 @@ void mlx4_start_catas_poll(struct mlx4_dev *dev)
+@@ -295,6 +312,10 @@ void mlx4_start_catas_poll(struct mlx4_dev *dev)
  		}
  	}
  
