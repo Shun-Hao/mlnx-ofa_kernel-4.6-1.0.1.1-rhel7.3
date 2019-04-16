@@ -166,6 +166,26 @@ end:
 	return ret;
 }
 EXPORT_SYMBOL(ib_umem_activate_invalidation_notifier);
+
+static int ib_client_umem_get(struct ib_ucontext *context, unsigned long addr,
+			      size_t size, unsigned long peer_mem_flags,
+			      struct ib_umem *umem, int dmasync)
+{
+	struct ib_peer_memory_client *peer_mem_client;
+
+	peer_mem_client = ib_get_peer_client(context, addr, size,
+					     peer_mem_flags,
+					     &umem->peer_mem_client_context);
+	if (peer_mem_client) {
+		umem->hugetlb = 0;
+		peer_umem_get(peer_mem_client, umem, addr,
+			      dmasync, peer_mem_flags);
+		return 0;
+	}
+
+	return 1;
+}
+
 /**
  * ib_umem_get - Pin and DMA map userspace memory.
  *
@@ -369,18 +389,10 @@ peer_out:
  	 */
 	if (ret < 0) {
 		if (peer_mem_flags & IB_PEER_MEM_ALLOW) {
-			struct ib_peer_memory_client *peer_mem_client;
-
-			peer_mem_client = ib_get_peer_client(context,
-							     addr,
-							     size,
-							     peer_mem_flags,
-							     &umem->peer_mem_client_context);
-			if (peer_mem_client) {
-				umem->hugetlb = 0;
-				return peer_umem_get(peer_mem_client, umem, addr,
-						     dmasync, peer_mem_flags);
-			}
+			ret = ib_client_umem_get(context, addr, size, peer_mem_flags,
+						 umem, dmasync);
+			if (!ret)
+				return umem;
 		}
 	}
 umem_kfree:
