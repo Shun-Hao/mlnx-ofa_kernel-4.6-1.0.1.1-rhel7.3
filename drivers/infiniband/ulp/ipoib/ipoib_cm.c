@@ -208,6 +208,7 @@ static void ipoib_cm_free_rx_ring(struct net_device *dev,
 			ipoib_cm_dma_unmap_rx(priv, IPOIB_CM_RX_SG - 1,
 					      rx_ring[i].mapping);
 			dev_kfree_skb_any(rx_ring[i].skb);
+			rx_ring[i].skb = NULL;
 		}
 
 	vfree(rx_ring);
@@ -837,6 +838,7 @@ void ipoib_cm_handle_tx_wc(struct net_device *dev, struct ib_wc *wc)
 	dev->stats.tx_bytes += tx_req->skb->len;
 
 	dev_kfree_skb_any(tx_req->skb);
+	tx_req->skb = NULL;
 
 	netif_tx_lock(dev);
 
@@ -1287,6 +1289,7 @@ timeout:
 		if (!tx_req->is_inline)
 			ipoib_dma_unmap_tx(priv, tx_req);
 		dev_kfree_skb_any(tx_req->skb);
+		tx_req->skb = NULL;
 		netif_tx_lock_bh(p->dev);
 		++p->tx_tail;
 		++priv->tx_tail;

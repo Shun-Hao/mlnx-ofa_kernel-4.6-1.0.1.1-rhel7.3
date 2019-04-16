@@ -485,6 +485,7 @@ void ipoib_cm_handle_tx_wc_rss(struct net_device *dev, struct ib_wc *wc)
 	send_ring->stats.tx_bytes += tx_req->skb->len;
 
 	dev_kfree_skb_any(tx_req->skb);
+	tx_req->skb = NULL;
 
 	netif_tx_lock(dev);
 
@@ -644,6 +645,7 @@ timeout:
 		if (!tx_req->is_inline)
 			ipoib_dma_unmap_tx(priv, tx_req);
 		dev_kfree_skb_any(tx_req->skb);
+		tx_req->skb = NULL;
 		++p->tx_tail;
 		netif_tx_lock_bh(p->dev);
 		++send_ring->tx_tail;

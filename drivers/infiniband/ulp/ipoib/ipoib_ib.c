@@ -448,6 +448,7 @@ static void ipoib_ib_handle_tx_wc(struct net_device *dev, struct ib_wc *wc)
 	dev->stats.tx_bytes += tx_req->skb->len;
 
 	dev_kfree_skb_any(tx_req->skb);
+	tx_req->skb = NULL;
 
 	++priv->tx_tail;
 
@@ -864,9 +865,16 @@ int ipoib_ib_dev_stop_default(struct net_device *dev)
 			while ((int)priv->tx_tail - (int)priv->tx_head < 0) {
 				tx_req = &priv->tx_ring[priv->tx_tail &
 							(priv->sendq_size - 1)];
+				if (!tx_req->skb) {
+					ipoib_dbg(priv,
+						  "timing out; tx skb already empty - continue\n");
+					++priv->tx_tail;
+					continue;
+				}
 				if (!tx_req->is_inline)
 					ipoib_dma_unmap_tx(priv, tx_req);
 				dev_kfree_skb_any(tx_req->skb);
+				tx_req->skb = NULL;
 				++priv->tx_tail;
 			}
 

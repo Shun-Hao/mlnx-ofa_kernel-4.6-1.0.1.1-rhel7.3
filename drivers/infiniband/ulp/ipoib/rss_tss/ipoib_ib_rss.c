@@ -272,6 +272,7 @@ static void ipoib_ib_handle_tx_wc_rss(struct ipoib_send_ring *send_ring,
 	send_ring->stats.tx_bytes += tx_req->skb->len;
 
 	dev_kfree_skb_any(tx_req->skb);
+	tx_req->skb = NULL;
 
 	++send_ring->tx_tail;
 	if (unlikely(__netif_subqueue_stopped(dev, send_ring->index) &&
@@ -758,9 +759,16 @@ static void ipoib_ib_send_ring_stop(struct ipoib_dev_priv *priv)
 		while ((int) tx_ring->tx_tail - (int) tx_ring->tx_head < 0) {
 			tx_req = &tx_ring->tx_ring[tx_ring->tx_tail &
 				  (priv->sendq_size - 1)];
+			if (!tx_req->skb) {
+				ipoib_dbg(priv,
+					  "timing out; tx skb already empty - continue\n");
+				++tx_ring->tx_tail;
+				continue;
+			}
 			if (!tx_req->is_inline)
 				ipoib_dma_unmap_tx(priv, tx_req);
 			dev_kfree_skb_any(tx_req->skb);
+			tx_req->skb = NULL;
 			++tx_ring->tx_tail;
 		}
 		tx_ring++;
