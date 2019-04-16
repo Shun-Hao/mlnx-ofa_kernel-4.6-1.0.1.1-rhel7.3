@@ -24,3 +24,4 @@ Change-Id=Ia7a934a17e3339836cebde96e02af8e54a3d2c1b; subject=net/mlx5e: Use CQE 
 Change-Id=Ie9f8d843b3e1773ccb841374b2cf1e22992d8eb9; subject=net/mlx5e: Make RX-FCS and LRO / HW GRO mutually exclusive; feature=mlx5e_rxfcs_exclusive; upstream_status=NA; general=;
 Change-Id=I4bee86c5bf6416512479ecfb103ffe02d27438e9; subject=BACKPORTS: Update backports for "RX-FCS exclusive w LRO/GRO" feature; feature=backports; upstream_status=ignore; general=;
 Change-Id=Ie1cec5aa0ea9aea05d3e3c143a5cab58472affa9; subject=net/mlx5e: Restrict data len in FW EEPROM queries to one page; feature=mlx5e_fw_eeprom; upstream_status=in_progress; general=;
+Change-Id=I2ffd23af8d6a3052c7e3b67e23aedf71c71ae74d; subject=net/mlx5: Fix enabling spoofchk on VF in VST mode steering; feature=mlx5_qinq_vst; upstream_status=in_progress; general=;

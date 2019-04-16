@@ -1501,6 +1501,7 @@ static int esw_vport_ingress_config(struct mlx5_eswitch *esw,
 
 drop_rule:
 	memset(spec, 0, sizeof(*spec));
+	memset(&flow_act, 0, sizeof(flow_act));
 	flow_act.action = MLX5_FLOW_CONTEXT_ACTION_DROP;
 
 	/* Attach drop flow counter */
