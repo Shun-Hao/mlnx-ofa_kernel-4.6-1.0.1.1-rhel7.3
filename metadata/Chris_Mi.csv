@@ -88,3 +88,6 @@ Change-Id=I2cbb05e846e64039bac718071e95e9bf720a2cac; subject=Update metadata; fe
 Change-Id=I6e7e2564cb26ebf0ddab37cb1847da3740519e79; subject=net/mlx5: Eswitch, Fix a panic when changing to legacy mode; feature=mlx5_asap; upstream_status=NA; general=;
 Change-Id=Ia285983a89c2b9f448c08e23185fc38ef937a622; subject=BACKPORTS: net/mlx5: Eswitch, Fix a panic when changing to legacy mode; feature=backports; upstream_status=ignore; general=;
 Change-Id=I38605dcca537b8ad090a02b5731b3a896695cbcd; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I71d3c94505522f271f91543ae150cd47ba392ce6; subject=net: sched: flower: Fix a SRIOV legacy mode regression; feature=mlx5_asap; upstream_status=NA; general=;
+Change-Id=I43f3873f2747c1c098d1036f2400c68adaa2abcf; subject=BACKPORTS: net: sched: flower: Fix a SRIOV legacy mode regression; feature=backports; upstream_status=ignore; general=;
+Change-Id=If4d3072cb1cd5cf9d57e8807f1d51f1a2ed82665; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
