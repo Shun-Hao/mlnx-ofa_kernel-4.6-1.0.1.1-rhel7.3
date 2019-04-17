@@ -49,3 +49,4 @@ Change-Id=Ic8516a9ebb46d9e4fbd3503a8489f8aae304c80c; subject=mlx4: Add crdump sy
 Change-Id=I2c690c4712911dd1e44e95ccf0d10879f0550605; subject=BACKPORTS: fix mlx4_crdump_collect; feature=backports; upstream_status=ignore; general=;
 Change-Id=I89abf30494c30dff183c9d21fd1c0ca9899d28ba; subject=ofed_scripts: dcbnetlink, convert ifname string into bytes; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=I09a55c73af2c76b246d5c9bdb5cbb740a5181804; subject=BACKPORTS: fix crdump seq init; feature=backports; upstream_status=ignore; general=;
+Change-Id=I5bc39217d1875c16452fd81820b797196c10611e; subject=mlx4: prevent delete crdump proc dir when removing vf; feature=mlx4_crdump; upstream_status=NA; general=;

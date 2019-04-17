@@ -4948,7 +4948,9 @@ static void mlx4_remove_one(struct pci_dev *pdev)
 	else
 		mlx4_info(dev, "%s: interface is down\n", __func__);
 	mlx4_catas_end(dev);
-	mlx4_crdump_end(dev);
+	if (!(priv->pci_dev_data & MLX4_PCI_DEV_IS_VF))
+		mlx4_crdump_end(dev);
+
 	if (dev->flags & MLX4_FLAG_SRIOV && !active_vfs) {
 		mlx4_warn(dev, "Disabling SR-IOV\n");
 		pci_disable_sriov(pdev);
