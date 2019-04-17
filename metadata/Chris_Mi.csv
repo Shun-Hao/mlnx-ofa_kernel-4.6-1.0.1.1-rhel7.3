@@ -91,3 +91,6 @@ Change-Id=I38605dcca537b8ad090a02b5731b3a896695cbcd; subject=Update metadata; fe
 Change-Id=I71d3c94505522f271f91543ae150cd47ba392ce6; subject=net: sched: flower: Fix a SRIOV legacy mode regression; feature=mlx5_asap; upstream_status=NA; general=;
 Change-Id=I43f3873f2747c1c098d1036f2400c68adaa2abcf; subject=BACKPORTS: net: sched: flower: Fix a SRIOV legacy mode regression; feature=backports; upstream_status=ignore; general=;
 Change-Id=If4d3072cb1cd5cf9d57e8807f1d51f1a2ed82665; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I6fa1e370d95e131b853a0daaf3b4993788db845a; subject=net/mlx5e: Use flags MLX5E_TC_ESW_OFFLOAD to choose the right hashtable; feature=mlx5_asap; upstream_status=NA; general=;
+Change-Id=I2e8f47d8fb1bf3159f5281d4038387b9ed159082; subject=BACKPORTS: Fix a panic for centos 7.2 kernel 4.9; feature=backports; upstream_status=ignore; general=;
+Change-Id=I83358b0ffb169ad1a0b6d0856fb39a34f3ec458e; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
