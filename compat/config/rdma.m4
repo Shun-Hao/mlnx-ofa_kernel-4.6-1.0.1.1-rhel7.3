@@ -5414,6 +5414,7 @@ AC_DEFUN([LINUX_CONFIG_COMPAT],
 
 	AC_MSG_CHECKING([if ip_fib.h fib_nh_notifier_info exists])
 	MLNX_BG_LB_LINUX_TRY_COMPILE([
+		#include <linux/bug.h>
 		#include <net/ip_fib.h>
 	],[
                 struct fib_nh_notifier_info fnh_info;
