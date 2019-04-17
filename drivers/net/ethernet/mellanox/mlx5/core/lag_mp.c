@@ -2,6 +2,7 @@
 /* Copyright (c) 2019 Mellanox Technologies. */
 
 #include <linux/netdevice.h>
+#include <net/ip_fib.h>
 #include "lag.h"
 #include "lag_mp.h"
 #include "mlx5_core.h"
