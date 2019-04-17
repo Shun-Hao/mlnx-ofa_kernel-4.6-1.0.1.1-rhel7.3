@@ -406,6 +406,7 @@ static int dct_modify_qp_RTR(struct mlx5_ib_qp *mqp, struct ib_dct_init_attr *at
 	qp_attr.ah_attr.grh.sgid_index = attr->gid_index;
 	qp_attr.ah_attr.grh.hop_limit = attr->hop_limit;
 	qp_attr.ah_attr.grh.traffic_class = attr->tclass;
+	qp_attr.min_rnr_timer = attr->min_rnr_timer;
 
 	err = mlx5_ib_modify_dct(qp, &qp_attr, attr_mask, NULL);
 	return err;
