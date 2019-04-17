@@ -65,7 +65,7 @@ index xxxxxxx..xxxxxxx 100644
  	int offset;
  
  	if (!dev->caps.health_buffer_addrs) {
-@@ -225,6 +229,7 @@ int mlx4_crdump_collect(struct mlx4_dev *dev)
+@@ -224,6 +228,7 @@ int mlx4_crdump_collect(struct mlx4_dev *dev)
  				MLX4_CORE_PROC, CRDUMP_PROC_DIR,
  				pci_name(dev->persist->pdev));
  
@@ -73,7 +73,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (!crdump->snapshot_enable) {
  		mlx4_info(dev, "crdump: devlink snapshot disabled, skipping\n");
  		goto out;
-@@ -236,11 +241,12 @@ int mlx4_crdump_collect(struct mlx4_dev *dev)
+@@ -235,11 +240,12 @@ int mlx4_crdump_collect(struct mlx4_dev *dev)
  	/* Try to capture dumps */
  	mlx4_crdump_collect_crspace(dev, cr_space, id);
  	mlx4_crdump_collect_fw_health(dev, cr_space, id);
@@ -87,7 +87,7 @@ index xxxxxxx..xxxxxxx 100644
  
  out:
  	crdump_disable_crspace_access(dev, cr_space);
-@@ -319,14 +325,21 @@ static int crdump_proc_open(struct inode *inode, struct file *file)
+@@ -318,14 +324,21 @@ static int crdump_proc_open(struct inode *inode, struct file *file)
  {
  	struct seq_file *seq;
  	int ret;
@@ -99,8 +99,8 @@ index xxxxxxx..xxxxxxx 100644
  	if (ret)
  		return ret;
  
-+#ifdef HAVE_PDE_DATA
  	seq = file->private_data;
++#ifdef HAVE_PDE_DATA
  	seq->private = PDE_DATA(inode);
 -
 +#else
@@ -110,7 +110,7 @@ index xxxxxxx..xxxxxxx 100644
  	return 0;
  }
  
-@@ -340,11 +353,14 @@ static const struct file_operations crdump_proc_fops = {
+@@ -339,11 +352,14 @@ static const struct file_operations crdump_proc_fops = {
  
  int mlx4_crdump_init(struct mlx4_dev *dev)
  {
@@ -127,7 +127,7 @@ index xxxxxxx..xxxxxxx 100644
  	crdump->snapshot_enable = false;
  
  	/* Create cr-space region */
-@@ -368,7 +384,7 @@ int mlx4_crdump_init(struct mlx4_dev *dev)
+@@ -367,7 +383,7 @@ int mlx4_crdump_init(struct mlx4_dev *dev)
  		mlx4_warn(dev, "crdump: create devlink region %s err %ld\n",
  			  region_fw_health_str,
  			  PTR_ERR(crdump->region_fw_health));
@@ -136,7 +136,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (crdump_proc_dir)
  		proc_create_data(pci_name(dev->persist->pdev), S_IRUGO,
  				 crdump_proc_dir, &crdump_proc_fops, crdump);
-@@ -380,9 +396,10 @@ void mlx4_crdump_end(struct mlx4_dev *dev)
+@@ -379,9 +395,10 @@ void mlx4_crdump_end(struct mlx4_dev *dev)
  {
  	struct mlx4_fw_crdump *crdump = &dev->persist->crdump;
  
