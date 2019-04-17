@@ -3786,12 +3786,12 @@ static struct rhashtable *get_tc_ht(struct mlx5e_priv *priv, int flags)
 		return &priv->fs.tc.ht;
 }
 
-static void mlx5e_lock_tc_ht(struct mlx5e_priv *priv)
+static void mlx5e_lock_tc_ht(struct mlx5e_priv *priv, int flags)
 {
 	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
 	struct mlx5e_rep_priv *uplink_rpriv;
 
-	if (MLX5_VPORT_MANAGER(priv->mdev) && esw->mode == SRIOV_OFFLOADS) {
+	if (flags & MLX5E_TC_ESW_OFFLOAD) {
 		uplink_rpriv = mlx5_eswitch_get_uplink_priv(esw, REP_ETH);
 		spin_lock(&uplink_rpriv->tc_ht_lock);
 	} else {
@@ -3799,12 +3799,12 @@ static void mlx5e_lock_tc_ht(struct mlx5e_priv *priv)
 	}
 }
 
-static void mlx5e_unlock_tc_ht(struct mlx5e_priv *priv)
+static void mlx5e_unlock_tc_ht(struct mlx5e_priv *priv, int flags)
 {
 	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
 	struct mlx5e_rep_priv *uplink_rpriv;
 
-	if (MLX5_VPORT_MANAGER(priv->mdev) && esw->mode == SRIOV_OFFLOADS) {
+	if (flags & MLX5E_TC_ESW_OFFLOAD) {
 		uplink_rpriv = mlx5_eswitch_get_uplink_priv(esw, REP_ETH);
 		spin_unlock(&uplink_rpriv->tc_ht_lock);
 	} else {
@@ -4119,16 +4119,16 @@ int mlx5e_delete_flower(struct mlx5e_priv *priv,
 	struct rhashtable *tc_ht = get_tc_ht(priv, flags);
 	struct mlx5e_tc_flow *flow;
 
-	mlx5e_lock_tc_ht(priv);
+	mlx5e_lock_tc_ht(priv, flags);
 
 	flow = rhashtable_lookup_fast(tc_ht, &f->cookie, tc_ht_params);
 	if (!flow || !same_flow_direction(flow, flags)) {
-		mlx5e_unlock_tc_ht(priv);
+		mlx5e_unlock_tc_ht(priv, flags);
 		return -EINVAL;
 	}
 
 	rhashtable_remove_fast(tc_ht, &flow->node, tc_ht_params);
-	mlx5e_unlock_tc_ht(priv);
+	mlx5e_unlock_tc_ht(priv, flags);
 
 	mlx5e_flow_put(priv, flow);
 
