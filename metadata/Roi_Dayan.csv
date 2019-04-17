@@ -32,3 +32,6 @@ Change-Id=Id632debbe4121e794a769b2239a4ff822b8e6546; subject=net/mlx5e: Don't in
 Change-Id=I80a910760fdec955589d179f2d1857cfd49ee6c2; subject=BACKPORTS: fix multiple compile warnings; feature=backports; upstream_status=ignore; general=;
 Change-Id=I12521ef1d9d359eed7204de8c58e701253b9c4d3; subject=net/mlx5e: Fix query counter if flow is offloaded; feature=mlx5_asap; upstream_status=ignore; general=;
 Change-Id=I9d6d2075fbd6349612884f7f8dd875343127604a; subject=compat: Fix vxlan.h compat; feature=backports; upstream_status=ignore; general=;
+Change-Id=I1098cb3c8e84e9e1db25ee171e19e60c42484236; subject=net/mlx5e: Add needed includes; feature=mlx5_asap; upstream_status=ignore; general=;
+Change-Id=Ic9126bbe9143a0583797d6d4bc6c0c13e722948e; subject=BACKPORTS: update and add metadata; feature=backports; upstream_status=ignore; general=;
+Change-Id=Iead327d92a91e9f99c458743163b42034174fa5c; subject=compat/rdma.m4: add include that may not implict added in some kernels; feature=backports; upstream_status=ignore; general=;

@@ -30,8 +30,8 @@ index xxxxxxx..xxxxxxx 100644
  				       PTE_ATTRINDX(MT_DEVICE_GRE) |
  				       PTE_PXN | PTE_UXN);
  	}
- #endif
 +#endif
+ #endif
  	return prot;
  }
  

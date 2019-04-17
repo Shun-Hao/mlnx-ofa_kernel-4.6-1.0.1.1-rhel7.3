@@ -314,18 +314,17 @@ index xxxxxxx..xxxxxxx 100644
  #ifdef CONFIG_MLX5_EN_SPECIAL_SQ
  	struct mlx5e_sq_stats      special_sq_stats[MLX5E_MAX_RL_QUEUES];
  	int                        max_opened_special_sq;
-@@ -844,9 +923,11 @@ struct mlx5e_priv {
+@@ -844,8 +923,10 @@ struct mlx5e_priv {
  	struct hwtstamp_config     tstamp;
  	u16                        q_counter;
  	u16                        drop_rq_q_counter;
 +#ifdef HAVE_IEEE_DCBNL_ETS
  #ifdef CONFIG_MLX5_CORE_EN_DCB
  	struct mlx5e_dcbx          dcbx;
- #endif
 +#endif
+ #endif
  
  	const struct mlx5e_profile *profile;
- 	void                      *ppriv;
 @@ -891,11 +972,40 @@ struct mlx5e_profile {
  	int	max_tc;
  };

@@ -429,7 +429,7 @@ index xxxxxxx..xxxxxxx 100644
  		netdev_dbg(priv->netdev, "del hairpin: peer %s\n",
  			   hpe->hp->pair->peer_mdev->priv.name);
  
-@@ -785,22 +941,31 @@ static void mlx5e_hairpin_put(struct mlx5e_priv *priv,
+@@ -785,21 +941,30 @@ static void mlx5e_hairpin_put(struct mlx5e_priv *priv,
  }
  
  #define UNKNOWN_MATCH_PRIO 8
@@ -459,11 +459,10 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
  		return -EOPNOTSUPP;
  	}
- #endif
 +#endif
+ #endif
  	headers_c = MLX5_ADDR_OF(fte_match_param, spec->match_criteria, outer_headers);
  	headers_v = MLX5_ADDR_OF(fte_match_param, spec->match_value, outer_headers);
- 
 @@ -813,8 +978,12 @@ static int mlx5e_hairpin_get_prio(struct mlx5e_priv *priv,
  	if (!vlan_present || !prio_mask) {
  		prio_val = UNKNOWN_MATCH_PRIO;

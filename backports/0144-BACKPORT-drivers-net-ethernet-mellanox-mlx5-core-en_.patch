@@ -68,7 +68,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (priv->channels.params.num_rl_txqs) {
  		u16 ix = mlx5e_select_queue_assigned(priv, skb);
  
-@@ -176,17 +190,25 @@ u16 mlx5e_select_queue(struct net_device *dev, struct sk_buff *skb,
+@@ -176,16 +190,24 @@ u16 mlx5e_select_queue(struct net_device *dev, struct sk_buff *skb,
  	}
  #endif
  
@@ -89,11 +89,10 @@ index xxxxxxx..xxxxxxx 100644
  	if (priv->dcbx_dp.trust_state == MLX5_QPTS_TRUST_DSCP)
  		up = mlx5e_get_dscp_up(priv, skb);
  	else
- #endif
 +#endif
+ #endif
  		if (skb_vlan_tag_present(skb))
  			up = skb->vlan_tci >> VLAN_PRIO_SHIFT;
- 
 @@ -215,14 +237,29 @@ static inline int mlx5e_skb_l2_header_offset(struct sk_buff *skb)
  
  static inline int mlx5e_skb_l3_header_offset(struct sk_buff *skb)
@@ -248,7 +247,7 @@ index xxxxxxx..xxxxxxx 100644
  		eseg->insert.vlan_tci = cpu_to_be16(skb_vlan_tag_get(skb));
  		stats->added_vlan_packets++;
  	}
-@@ -613,7 +684,11 @@ bool mlx5e_poll_tx_cq(struct mlx5e_cq *cq, int napi_budget)
+@@ -616,7 +687,11 @@ bool mlx5e_poll_tx_cq(struct mlx5e_cq *cq, int napi_budget)
  				continue;
  			}
  
@@ -260,7 +259,7 @@ index xxxxxxx..xxxxxxx 100644
  				     SKBTX_HW_TSTAMP)) {
  				struct skb_shared_hwtstamps hwts = {};
  
-@@ -633,7 +708,11 @@ bool mlx5e_poll_tx_cq(struct mlx5e_cq *cq, int napi_budget)
+@@ -636,7 +711,11 @@ bool mlx5e_poll_tx_cq(struct mlx5e_cq *cq, int napi_budget)
  			npkts++;
  			nbytes += wi->num_bytes;
  			sqcc += wi->num_wqebbs;
@@ -272,7 +271,7 @@ index xxxxxxx..xxxxxxx 100644
  		} while (!last_wqe);
  
  	} while ((++i < MLX5E_TX_CQ_POLL_BUDGET) && (cqe = mlx5_cqwq_get_cqe(&cq->wq)));
-@@ -739,7 +818,9 @@ netdev_tx_t mlx5i_sq_xmit(struct mlx5e_txqsq *sq, struct sk_buff *skb,
+@@ -742,7 +821,9 @@ netdev_tx_t mlx5i_sq_xmit(struct mlx5e_txqsq *sq, struct sk_buff *skb,
  	}
  
  	stats->bytes     += num_bytes;
