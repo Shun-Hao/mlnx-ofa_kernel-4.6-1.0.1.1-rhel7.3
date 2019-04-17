@@ -213,7 +213,7 @@ name=update_rate; type=feature; upstream_status=in_progress;
 name=mlx5_vgtp; type=feature; upstream_status=in_progress;
 name=mlx5_steer_drop_count; type=feature; upstream_status=in_progress;
 name=fpga; type=feature; upstream_status=NA;
-name=mlx5_qinq_vst; type=feature; upstream_status=in_progress;
+name=mlx5_qinq_vst; type=feature; upstream_status=NA;
 name=mlx5_force_tc; type=feature; upstream_status=NA;
 name=wait_for_vf_flr; type=bug; upstream_status=in_progress;
 name=mlx5_crdump; type=feature; upstream_status=NA;
