@@ -1411,6 +1411,7 @@ static inline void mlx5i_complete_rx_cqe(struct mlx5e_rq *rq,
 	struct net_device *netdev;
 	struct mlx5e_priv *priv;
 	char *pseudo_header;
+	u8 l4_hdr_type = get_cqe_l4_hdr_type(cqe);
 	u32 qpn;
 	u8 *dgid;
 	u8 g;
@@ -1477,6 +1478,11 @@ static inline void mlx5i_complete_rx_cqe(struct mlx5e_rq *rq,
 
 	stats->packets++;
 	stats->bytes += cqe_bcnt;
+
+	if (l4_hdr_type != CQE_L4_HDR_TYPE_TCP_ACK_NO_DATA) {
+		rq->dim_obj.sample.pkt_ctr  = rq->stats->packets;
+		rq->dim_obj.sample.byte_ctr = rq->stats->bytes;
+	}
 }
 
 void mlx5i_handle_rx_cqe(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
