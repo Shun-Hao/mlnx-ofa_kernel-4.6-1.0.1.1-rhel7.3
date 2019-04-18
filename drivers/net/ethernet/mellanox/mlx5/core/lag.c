@@ -253,13 +253,29 @@ static int mlx5_deactivate_lag(struct mlx5_lag *ldev)
 
 static bool mlx5_lag_check_prereq(struct mlx5_lag *ldev)
 {
-	if (!ldev->pf[0].dev || !ldev->pf[1].dev)
+	struct mlx5_core_dev *dev0 = ldev->pf[0].dev;
+	struct mlx5_core_dev *dev1 = ldev->pf[1].dev;
+	bool roce_lag_allowed;
+
+	if (!dev0 || !dev1)
 		return false;
+
+	roce_lag_allowed = !mlx5_sriov_is_enabled(dev0) &&
+			   !mlx5_sriov_is_enabled(dev1);
+
 #ifdef CONFIG_MLX5_ESWITCH
-	return mlx5_esw_lag_prereq(ldev->pf[0].dev, ldev->pf[1].dev);
+	roce_lag_allowed &= dev0->priv.eswitch->mode == SRIOV_NONE &&
+		    dev1->priv.eswitch->mode == SRIOV_NONE;
+#endif
+
+	if (roce_lag_allowed)
+		return !dev0->priv.lag_disabled && !dev1->priv.lag_disabled;
+
+#ifdef CONFIG_MLX5_ESWITCH
+	return mlx5_esw_lag_prereq(dev0, dev1);
 #else
-	return (!mlx5_sriov_is_enabled(ldev->pf[0].dev) &&
-		!mlx5_sriov_is_enabled(ldev->pf[1].dev));
+	return (!mlx5_sriov_is_enabled(dev0) &&
+		!mlx5_sriov_is_enabled(dev1));
 #endif
 }
 
