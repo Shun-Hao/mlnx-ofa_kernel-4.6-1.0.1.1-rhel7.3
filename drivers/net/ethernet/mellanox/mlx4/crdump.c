@@ -185,6 +185,11 @@ int mlx4_crdump_collect(struct mlx4_dev *dev)
 		return 0;
 	}
 
+	if (crdump->crspace || crdump->health) {
+		mlx4_info(dev, "crdump: Dump was already collected, skipping\n");
+		return 0;
+	}
+
 	cr_res_size = pci_resource_len(pdev, 0);
 
 	cr_space = ioremap(pci_resource_start(pdev, 0), cr_res_size);
