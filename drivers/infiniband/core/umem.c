@@ -183,7 +183,7 @@ static int ib_client_umem_get(struct ib_ucontext *context, unsigned long addr,
 		return 0;
 	}
 
-	return 1;
+	return -ENOMEM;
 }
 
 /**

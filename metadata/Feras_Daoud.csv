@@ -76,3 +76,4 @@ Change-Id=I96415acf971ad127e6ec900694a2390255d53d76; subject=Revert "ofed-script
 Change-Id=If9957aa0ea90a60564dbc06af4b3b696e2ee8158; subject=mlx5/core: Properly free SRIOV VFs RoCE sysfs; feature=mlx5_core_bugs; upstream_status=NA; general=;
 Change-Id=I0bb35de7662b235f0b3ee52143cb793d3b43eff5; subject=IB/core: Move peer memory client umem handling to separate function; feature=peer_direct; upstream_status=NA; general=;
 Change-Id=Ice8136c1e515e922865bbd5eb1a6b58298958922; subject=IB/core: Go to host umem flow if peer client does not exist; feature=peer_direct; upstream_status=NA; general=;
+Change-Id=I15d1b0a8d0bde08b94c5bb00102453a165f30d7a; subject=IB/core: Return ENOMEM if peer client does not exist; feature=peer_direct; upstream_status=NA; general=;
