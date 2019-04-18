@@ -2143,6 +2143,23 @@ static void esw_disable_vport(struct mlx5_eswitch *esw,
 	mutex_unlock(&esw->state_lock);
 }
 
+void mlx5_eswitch_enable_vport(struct mlx5_eswitch *esw, u16 vport_num)
+{
+	struct mlx5_vport *vport = mlx5_eswitch_get_vport(esw, vport_num);
+	int enabled_events;
+
+	enabled_events = (esw->mode == SRIOV_LEGACY) ?
+		SRIOV_VPORT_EVENTS : UC_ADDR_CHANGE;
+
+	esw_enable_vport(esw, vport, enabled_events);
+}
+
+void mlx5_eswitch_disable_vport(struct mlx5_eswitch *esw, u16 vport_num)
+{
+	struct mlx5_vport *vport = mlx5_eswitch_get_vport(esw, vport_num);
+	esw_disable_vport(esw, vport);
+}
+
 /* Public E-Switch API */
 #define ESW_ALLOWED(esw) ((esw) && MLX5_ESWITCH_MANAGER((esw)->dev))
 
@@ -2226,7 +2243,7 @@ int mlx5_eswitch_enable_sriov(struct mlx5_eswitch *esw, int nvfs, int mode)
 	}
 
 	/* Enable VF vports */
-	mlx5_esw_for_each_vf_vport(esw, i, vport, nvfs)
+	mlx5_esw_for_each_vf_vport(esw, i, vport, vf_nvports)
 		esw_enable_vport(esw, vport, enabled_events);
 
 	esw_info(esw->dev, "SRIOV enabled: active vports(%d)\n",

@@ -1903,7 +1903,7 @@ static void esw_host_params_event_handler(struct work_struct *work)
 {
 	struct mlx5_host_work *host_work;
 	struct mlx5_eswitch *esw;
-	int err, num_vf = 0;
+	int err, i, num_vf = 0;
 
 	host_work = container_of(work, struct mlx5_host_work, work);
 	esw = host_work->esw;
@@ -1914,12 +1914,18 @@ static void esw_host_params_event_handler(struct work_struct *work)
 
 	/* Number of VFs can only change from "0 to x" or "x to 0". */
 	if (esw->host_info.num_vfs > 0) {
+		mlx5_esw_for_each_vf_vport_reverse(esw, i, esw->host_info.num_vfs)
+			mlx5_eswitch_disable_vport(esw, i);
+
 		esw_offloads_unload_vf_reps(esw, esw->host_info.num_vfs);
 	} else {
 		err = esw_offloads_load_vf_reps(esw, num_vf);
 
 		if (err)
 			goto out;
+
+		mlx5_esw_for_each_vf_vport(esw, i, num_vf)
+			mlx5_eswitch_enable_vport(esw, i);
 	}
 
 	esw->host_info.num_vfs = num_vf;

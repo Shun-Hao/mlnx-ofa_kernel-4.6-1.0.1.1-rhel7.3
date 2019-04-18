@@ -525,6 +525,8 @@ static inline int mlx5_eswitch_index_to_vport_num(struct mlx5_eswitch *esw,
 
 void esw_offloads_start_handler(struct work_struct *work);
 void esw_offloads_stop_handler(struct work_struct *work);
+void mlx5_eswitch_enable_vport(struct mlx5_eswitch *esw, u16 vport_num);
+void mlx5_eswitch_disable_vport(struct mlx5_eswitch *esw, u16 vport_num);
 
 #else  /* CONFIG_MLX5_ESWITCH */
 /* eswitch API stubs */
