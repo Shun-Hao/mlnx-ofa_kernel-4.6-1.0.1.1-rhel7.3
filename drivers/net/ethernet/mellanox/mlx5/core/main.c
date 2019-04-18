@@ -1371,6 +1371,22 @@ static void mlx5_cleanup_once(struct mlx5_core_dev *dev)
 	mlx5_devcom_unregister_device(dev->priv.devcom);
 }
 
+static u16 mlx5_get_max_vfs(struct mlx5_core_dev *dev)
+{
+	int total_vfs = 0;
+
+	if (mlx5_core_is_ecpf_esw_manager(dev)) {
+		mlx5_query_host_params_total_vfs(dev, &total_vfs);
+		return total_vfs;
+	}
+
+	/* In RH6.8 and lower pci_sriov_get_totalvfs might return -EINVAL
+	 * return in that case 1
+	 */
+	return (pci_sriov_get_totalvfs(dev->pdev) < 0) ? 0 :
+		pci_sriov_get_totalvfs(dev->pdev);
+}
+
 static int mlx5_load_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
 			 bool boot)
 {
@@ -1491,6 +1507,8 @@ static int mlx5_load_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
 		dev_err(&pdev->dev, "init hca failed\n");
 		goto err_pagealloc_stop;
 	}
+
+	dev->caps.max_vfs = mlx5_get_max_vfs(dev);
 
 	mlx5_set_driver_version(dev);
 

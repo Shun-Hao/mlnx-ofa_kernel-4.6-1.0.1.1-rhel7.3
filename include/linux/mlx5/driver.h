@@ -1021,6 +1021,7 @@ struct mlx5_core_dev {
 		u32 fpga[MLX5_ST_SZ_DW(fpga_cap)];
 		u32 qcam[MLX5_ST_SZ_DW(qcam_reg)];
 		u8  embedded_cpu;
+		u16 max_vfs;
 	} caps;
 	u64			sys_image_guid;
 	phys_addr_t		iseg_base;
@@ -1528,17 +1529,9 @@ static inline bool mlx5_ecpf_vport_exists(struct mlx5_core_dev *dev)
 	return mlx5_core_is_pf(dev) && MLX5_CAP_ESW(dev, ecpf_vport_exists);
 }
 
-#define MLX5_HOST_PF_MAX_VFS       (63u)
 static inline u16 mlx5_core_max_vfs(struct mlx5_core_dev *dev)
 {
-	if (mlx5_core_is_ecpf_esw_manager(dev))
-		return MLX5_HOST_PF_MAX_VFS;
-
-	/* In RH6.8 and lower pci_sriov_get_totalvfs might return -EINVAL
-	 * return in that case 1
-	 */
-	return (pci_sriov_get_totalvfs(dev->pdev) < 0) ? 0 :
-		pci_sriov_get_totalvfs(dev->pdev);
+	return dev->caps.max_vfs;
 }
 
 static inline int mlx5_get_gid_table_len(u16 param)
