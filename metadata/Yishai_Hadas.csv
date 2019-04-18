@@ -96,3 +96,4 @@ Change-Id=If480a457dbf831a49733817f4a68bceec8c419b2; subject=BACKPORT: handle de
 Change-Id=I39c9524cf8614b2ffaddcfd203e502a0c202875e; subject=MD: Add metadata for the non upstream patches post rebasing DEVX; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=Ic5c025632dc6a7ea3e0647dbb2a6b8bb5e1596d0; subject=net/mlx5: Fix DCT creation bad flow; feature=mlx5_core_bugs; upstream_status=accepted; general=upstream commit ID: f84b66b9cce7, tag: v5.1-rc2;
 Change-Id=Ibd80a75ee350e0ee1ef7d8a42cfdb30ce4b8c83d; subject=IB/mlx5: Use mlx5 core to create/destroy a DEVX DCT; feature=devx; upstream_status=accepted; general=upstream commit ID: c5ae1954c47d, tag: v5.1-rc2;
+Change-Id=I46e560713109a0ffaa1e9704baf6d961913760bc; subject=net/mlx5: Set completion EQs as shared resources; feature=devx; upstream_status=in_progress; general=;
