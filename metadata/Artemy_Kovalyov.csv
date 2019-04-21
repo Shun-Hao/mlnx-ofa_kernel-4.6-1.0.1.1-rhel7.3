@@ -40,3 +40,4 @@ Change-Id=I38437bb159c34acc670c6812a02b396c0ef35774; subject=RDMA/umem: Add miss
 Change-Id=I00606b91c1bd0e44808c4297f649021bdbeb63e8; subject=IB/uverbs: Expose signature handover caps to UAPI; feature=signature_handover; upstream_status=NA; general=;
 Change-Id=I0759c8ac5f202da093055f47d93607b2327e5860; subject=IB/{uverbs,mlx5}: Pass SIG MR PSV indices to userspace; feature=signature_handover; upstream_status=NA; general=;
 Change-Id=I57d7a666250855b745fbc7dccee0128f986b1098; subject={IB,net}/mlx5: Handover SIGERR SQD to userspace; feature=signature_pipeline; upstream_status=NA; general=;
+Change-Id=Idc6793c4b4574f7378f9bd494cfdc49aa1de95fc; subject=IB/mlx5: Fix DCT min_rnr_timer; feature=mlx5_ib_bugs; upstream_status=NA; general=;
