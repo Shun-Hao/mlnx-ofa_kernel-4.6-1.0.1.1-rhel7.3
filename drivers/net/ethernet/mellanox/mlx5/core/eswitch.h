@@ -218,6 +218,7 @@ struct mlx5_host_work {
 
 struct mlx5_host_info {
 	u16			num_vfs;
+	struct workqueue_struct *work_queue;
 };
 
 struct mlx5_esw_handler {

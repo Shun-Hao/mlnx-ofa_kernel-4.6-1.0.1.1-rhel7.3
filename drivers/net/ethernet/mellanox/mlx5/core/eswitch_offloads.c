@@ -1948,7 +1948,8 @@ void esw_host_params_event(struct mlx5_eswitch *esw)
 	host_work->esw = esw;
 
 	INIT_WORK(&host_work->work, esw_host_params_event_handler);
-	queue_work(esw->work_queue, &host_work->work);
+	if (esw->host_info.work_queue)
+		queue_work(esw->host_info.work_queue, &host_work->work);
 }
 
 #define ESW_OFFLOADS_DEVCOM_PAIR        (0)
@@ -2050,6 +2051,35 @@ static void esw_offloads_devcom_cleanup(struct mlx5_eswitch *esw)
 	mlx5_devcom_unregister_component(devcom, MLX5_DEVCOM_ESW_OFFLOADS);
 }
 
+static int esw_functions_init(struct mlx5_eswitch *esw, int num_vfs)
+{
+	int err = 0;
+
+	if (!mlx5_core_is_ecpf_esw_manager(esw->dev))
+		return 0;
+
+	esw->host_info.work_queue =
+		create_singlethread_workqueue("mlx5_esw_functions");
+	if (!esw->host_info.work_queue) {
+		err = -ENOMEM;
+		goto out;
+	}
+
+	esw->host_info.num_vfs = num_vfs;
+
+out:
+	return err;
+}
+
+static void esw_functions_cleanup(struct mlx5_eswitch *esw, u16 *num_vfs)
+{
+	if (!mlx5_core_is_ecpf_esw_manager(esw->dev))
+		return;
+
+	destroy_workqueue(esw->host_info.work_queue);
+	*num_vfs = esw->host_info.num_vfs;
+}
+
 int esw_offloads_init(struct mlx5_eswitch *esw, int vf_nvports,
 		      int total_nvports)
 {
@@ -2063,8 +2093,9 @@ int esw_offloads_init(struct mlx5_eswitch *esw, int vf_nvports,
 	if (err)
 		goto err_reps;
 
-	if (mlx5_core_is_ecpf_esw_manager(esw->dev))
-		esw->host_info.num_vfs = vf_nvports;
+	err = esw_functions_init(esw, vf_nvports);
+	if (err)
+		goto err_host;
 
 	esw_offloads_devcom_init(esw);
 
@@ -2082,6 +2113,8 @@ int esw_offloads_init(struct mlx5_eswitch *esw, int vf_nvports,
 
 	return 0;
 
+err_host:
+	esw_offloads_unload_all_reps(esw, vf_nvports);
 err_reps:
 	esw_offloads_steering_cleanup(esw);
 	return err;
@@ -2139,12 +2172,8 @@ void esw_offloads_cleanup(struct mlx5_eswitch *esw)
 		esw_offloads_default_fdb_rules_del(esw);
 #endif
 
-	if (mlx5_core_is_ecpf_esw_manager(esw->dev)) {
-		flush_workqueue(esw->work_queue);
-		num_vfs = esw->host_info.num_vfs;
-	} else {
-		num_vfs = esw->dev->priv.sriov.num_vfs;
-	}
+	num_vfs = esw->dev->priv.sriov.num_vfs;
+	esw_functions_cleanup(esw, &num_vfs);
 
 	mlx5_disable_roce(esw);
 	esw_offloads_unload_all_reps(esw, num_vfs);

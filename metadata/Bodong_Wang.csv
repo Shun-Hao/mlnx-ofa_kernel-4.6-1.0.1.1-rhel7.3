@@ -67,3 +67,4 @@ Change-Id=Ib57c646d34df657f471c7c8790ecadca8aa23cda; subject=mlx5/core: Should u
 Change-Id=Ib349da4e4f73a2a00bbb795b7df6f7a0c18b3759; subject=net/mlx5: Get max VF supported by host PF from firmware; feature=mlx5_bf; upstream_status=in_progress; general=;
 Change-Id=Ic697faaac0bf905e12e4dc91d74e337524135465; subject=net/mlx5: Remove the workaround of VF upper bound for ECPF; feature=mlx5_bf; upstream_status=ignore; general=;
 Change-Id=I37c16d521de1e851cf7e5b7216e4f0df0e73f659; subject=net/mlx5: E-Switch, Handle host VF vports for BlueField; feature=mlx5_bf; upstream_status=in_progress; general=;
+Change-Id=If0c722aea399d2b4f36de635c10e9f1ee23a7ba7; subject=net/mlx5: E-Switch, Use dedicate work queue for host param change; feature=mlx5_bf; upstream_status=in_progress; general=;
