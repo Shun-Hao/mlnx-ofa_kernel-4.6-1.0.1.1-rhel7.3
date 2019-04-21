@@ -77,6 +77,7 @@ struct ib_umem_odp {
 	struct completion	notifier_completion;
 	int			dying;
 	struct work_struct	work;
+	int			invalidating;
 };
 
 static inline struct ib_umem_odp *to_ib_umem_odp(struct ib_umem *umem)

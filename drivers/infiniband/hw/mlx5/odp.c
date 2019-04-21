@@ -63,7 +63,7 @@ static int check_parent(struct ib_umem_odp *odp,
 {
 	struct mlx5_ib_mr *mr = odp->private;
 
-	return mr && mr->parent == parent && !odp->dying;
+	return mr && mr->parent == parent && !odp->invalidating;
 }
 
 struct ib_ucontext_per_mm *mr_to_per_mm(struct mlx5_ib_mr *mr)
@@ -282,7 +282,7 @@ void mlx5_ib_invalidate_range(struct ib_umem_odp *umem_odp, unsigned long start,
 	if (mr->dev)
 		atomic_sub(np_stat, &mr->dev->odp_stats.num_odp_mr_pages);
 	if (unlikely(!umem->npages && mr->parent &&
-		     !cmpxchg(&odp_mr->dying, 0, 1))) {
+		     !cmpxchg(&odp_mr->invalidating, 0, 1))) {
 		idx = ib_umem_start(umem) >> MLX5_IMR_MTT_SHIFT;
 
 		mlx5_ib_update_xlt(mr->parent, idx, 0, 1, 0,
@@ -573,7 +573,7 @@ static int mr_leaf_free(struct ib_umem_odp *umem_odp, u64 start, u64 end,
 				    &np_stat);
 	atomic_sub(np_stat, &mr->dev->odp_stats.num_odp_mr_pages);
 
-	if (cmpxchg(&odp_mr->dying, 0, 1))
+	if (cmpxchg(&odp_mr->invalidating, 0, 1))
 		return 0;
 
 	atomic_inc(&imr->num_leaf_free);
@@ -707,7 +707,7 @@ next_mr:
 
 out:
 	if (ret == -EAGAIN) {
-		if (imr || !odp->dying) {
+		if (!odp->dying) {
 			unsigned long timeout =
 				msecs_to_jiffies(MMU_NOTIFIER_TIMEOUT);
 
