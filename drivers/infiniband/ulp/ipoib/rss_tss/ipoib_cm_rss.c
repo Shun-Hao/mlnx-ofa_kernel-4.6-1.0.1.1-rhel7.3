@@ -646,8 +646,8 @@ timeout:
 			ipoib_dma_unmap_tx(priv, tx_req);
 		dev_kfree_skb_any(tx_req->skb);
 		tx_req->skb = NULL;
-		++p->tx_tail;
 		netif_tx_lock_bh(p->dev);
+		++p->tx_tail;
 		++send_ring->tx_tail;
 		if (send_ring->tx_head - send_ring->tx_tail ==
 		    (priv->sendq_size >> 1) &&

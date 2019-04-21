@@ -37,4 +37,5 @@ Change-Id=I1885b177bdfe07ffca7d0caf57ec3df90f2cca78; subject=mlx5/core: Check FW
 Change-Id=I2adbbdf5c3e1d3d5c8639c3e1ab579414fbd2234; subject=Revert "net/mlx5: Don't overrun EQ count when creating CQs"; feature=set_cpu_eeh; upstream_status=ignore; general=;
 Change-Id=I6877156462c7adbb22ac7661dd66831df3d30d59; subject=Revert "net/mlx5: Don't create inner tirs if in ENCAP mode"; feature=bf_compat; upstream_status=ignore; general=;
 Change-Id=I64282e30ab2c3f08f71cac180ff83366012a8872; subject=net/mlx5e: IPoIB, Fix RX adaptive mode for IPoIB; feature=mlx5_adaptive_moderation; upstream_status=in_progress; general=;
-Change-Id=I169db05dbcfd67cbb66349913c3daa4f3001fe1e; subject=IB/ipoib: RSS/ULP tx timeout flow fix; feature=ipoib_bugs; upstream_status=in_progress; general=;
+Change-Id=I169db05dbcfd67cbb66349913c3daa4f3001fe1e; subject=IB/ipoib: RSS/ULP tx timeout flow fix; feature=ipoib_bugs; upstream_status=NA; general=;
+Change-Id=I2e78255d258edec1cc6b677b138d46dcd806f130; subject=IB/ipoib: RSS timeout flow fix; feature=ipoib_bugs; upstream_status=NA; general=;
