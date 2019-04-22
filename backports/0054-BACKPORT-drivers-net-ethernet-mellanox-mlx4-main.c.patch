@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx4/main.c
 
 Change-Id: I295f0c7ccb9121cda2f0c24b3e8e218a11a027b8
 ---
- drivers/net/ethernet/mellanox/mlx4/main.c | 110 +++++++++++++++++++++++++++---
- 1 file changed, 102 insertions(+), 8 deletions(-)
+ drivers/net/ethernet/mellanox/mlx4/main.c | 114 +++++++++++++++++++++++++++---
+ 1 file changed, 105 insertions(+), 9 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx4/main.c b/drivers/net/ethernet/mellanox/mlx4/main.c
 index xxxxxxx..xxxxxxx 100644
@@ -263,7 +263,7 @@ index xxxxxxx..xxxxxxx 100644
  	}
  	dev->persist->pdev = pdev;
  	dev->persist->dev = dev;
-@@ -4801,30 +4855,50 @@ static int mlx4_init_one(struct pci_dev *pdev, const struct pci_device_id *id)
+@@ -4801,30 +4855,52 @@ static int mlx4_init_one(struct pci_dev *pdev, const struct pci_device_id *id)
  	mutex_init(&dev->persist->interface_state_mutex);
  	mutex_init(&dev->persist->pci_status_mutex);
  
@@ -280,14 +280,18 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
 +#endif
  	ret =  __mlx4_init_one(pdev, id->driver_data, priv);
++#ifdef HAVE_DEVLINK_H
 +#ifdef HAVE_DEVLINK_PARAM
  	if (ret)
  		goto err_params_unregister;
-+#endif
-+#ifdef HAVE_DEVLINK_H
++#else
++	if (ret)
++		goto err_devlink_unregister;
++#endif /* HAVE_DEVLINK_PARAM  */
  
  	pci_save_state(pdev);
  	return 0;
+-
 +#else
 +	if (ret) {
 +		kfree(dev->persist);
@@ -295,17 +299,16 @@ index xxxxxxx..xxxxxxx 100644
 +	} else {
 +		pci_save_state(pdev);
 +	}
-+#endif
++#endif /* HAVE_DEVLINK_H */
 + 
 +#ifdef HAVE_DEVLINK_H
- 
 +#ifdef HAVE_DEVLINK_PARAM
  err_params_unregister:
  	devlink_params_unregister(devlink, mlx4_devlink_params,
  				  ARRAY_SIZE(mlx4_devlink_params));
++#endif
  err_devlink_unregister:
  	devlink_unregister(devlink);
-+#endif
  err_persist_free:
  	kfree(dev->persist);
  err_devlink_free:
@@ -314,7 +317,7 @@ index xxxxxxx..xxxxxxx 100644
  	return ret;
  }
  
-@@ -4921,7 +4995,9 @@ static void mlx4_remove_one(struct pci_dev *pdev)
+@@ -4921,7 +4997,9 @@ static void mlx4_remove_one(struct pci_dev *pdev)
  	struct mlx4_dev_persistent *persist = pci_get_drvdata(pdev);
  	struct mlx4_dev  *dev  = persist->dev;
  	struct mlx4_priv *priv = mlx4_priv(dev);
@@ -324,7 +327,7 @@ index xxxxxxx..xxxxxxx 100644
  	int active_vfs = 0;
  
  	if (mlx4_is_slave(dev))
-@@ -4956,11 +5032,19 @@ static void mlx4_remove_one(struct pci_dev *pdev)
+@@ -4957,11 +5035,19 @@ static void mlx4_remove_one(struct pci_dev *pdev)
  
  	pci_release_regions(pdev);
  	mlx4_pci_disable_device(dev);
@@ -344,7 +347,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static int restore_current_port_types(struct mlx4_dev *dev,
-@@ -4982,7 +5066,11 @@ static int restore_current_port_types(struct mlx4_dev *dev,
+@@ -4983,7 +5069,11 @@ static int restore_current_port_types(struct mlx4_dev *dev,
  	return err;
  }
  
@@ -356,7 +359,7 @@ index xxxxxxx..xxxxxxx 100644
  {
  	struct mlx4_dev_persistent *persist = pci_get_drvdata(pdev);
  	struct mlx4_dev	 *dev  = persist->dev;
-@@ -4995,8 +5083,10 @@ int mlx4_restart_one(struct pci_dev *pdev, bool reload, struct devlink *devlink)
+@@ -4996,8 +5086,10 @@ int mlx4_restart_one(struct pci_dev *pdev, bool reload, struct devlink *devlink)
  	memcpy(nvfs, dev->persist->nvfs, sizeof(dev->persist->nvfs));
  
  	mlx4_unload_one(pdev);
@@ -367,7 +370,7 @@ index xxxxxxx..xxxxxxx 100644
  	err = mlx4_load_one(pdev, pci_dev_data, total_vfs, nvfs, priv, 1);
  	if (err) {
  		mlx4_err(dev, "%s: ERROR: mlx4_load_one failed, pci_name=%s, err=%d\n",
-@@ -5149,7 +5239,11 @@ static void mlx4_shutdown(struct pci_dev *pdev)
+@@ -5150,7 +5242,11 @@ static void mlx4_shutdown(struct pci_dev *pdev)
  	mutex_unlock(&persist->interface_state_mutex);
  }
  
