@@ -1373,11 +1373,15 @@ static void mlx5_cleanup_once(struct mlx5_core_dev *dev)
 
 static u16 mlx5_get_max_vfs(struct mlx5_core_dev *dev)
 {
-	int total_vfs = 0;
+	int total_vfs = 0, err;
 
 	if (mlx5_core_is_ecpf_esw_manager(dev)) {
-		mlx5_query_host_params_total_vfs(dev, &total_vfs);
-		return total_vfs;
+		err = mlx5_query_host_params_total_vfs(dev, &total_vfs);
+		/* Old FW doesn't support getting total_vfs from host params
+		 * but supports getting from pci_sriov.
+		 */
+		if (!err && total_vfs)
+			return total_vfs;
 	}
 
 	/* In RH6.8 and lower pci_sriov_get_totalvfs might return -EINVAL
