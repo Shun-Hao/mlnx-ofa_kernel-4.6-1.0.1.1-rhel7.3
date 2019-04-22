@@ -12,3 +12,4 @@ Change-Id=I981f9eaa493f5041701f828589cdfd36c41548cd; subject=IB/uverb: Set dlid 
 Change-Id=Ia7036db3fda7fece95e5bbe6f432b0f79c195b84; subject=IB/core: Check if rdma_dev is null in bond master filter; feature=ib_core_bugs; upstream_status=in_progress; general=;
 Change-Id=If2a6ff789ff853a526d117ebeacc853c1fc4dc58; subject=IB/ucm: Initialize ucm request GID attribute pointer; feature=ib_core_bugs; upstream_status=in_progress; general=;
 Change-Id=Ib6f6c62b6d22e1616c0820b527994a54a0b69f6b; subject=IB/mlx5: For an outstanding wr reuse the soft WC for poll; feature=mlx5_ib_bugs; upstream_status=in_progress; general=;
+Change-Id=I393a5320b5f947692df33d9d0197e2e3d08e7985; subject=IB/uverbs: Get ucontext properly in ib_uverbs_exp_query_device; feature=ib_core_bugs; upstream_status=NA; general=;
