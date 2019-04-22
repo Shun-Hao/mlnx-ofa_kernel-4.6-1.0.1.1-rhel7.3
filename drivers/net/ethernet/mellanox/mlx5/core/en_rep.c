@@ -1550,6 +1550,14 @@ static void mlx5e_vf_rep_enable(struct mlx5e_priv *priv)
 	netdev->min_mtu = ETH_MIN_MTU;
 	mlx5_query_port_max_mtu(mdev, &max_mtu, 1);
 	netdev->max_mtu = MLX5E_HW2SW_MTU(&priv->channels.params, max_mtu);
+
+	if (priv->profile->update_stats)
+		queue_delayed_work(priv->wq, &priv->update_stats_work, 0);
+}
+
+static void mlx5e_vf_rep_disable(struct mlx5e_priv *priv)
+{
+	cancel_delayed_work_sync(&priv->update_stats_work);
 }
 
 static void mlx5e_uplink_rep_enable(struct mlx5e_priv *priv)
@@ -1569,12 +1577,16 @@ static void mlx5e_uplink_rep_enable(struct mlx5e_priv *priv)
 	mlx5e_dcbnl_initialize(priv);
 	mlx5e_dcbnl_init_app(priv);
 #endif
+
+	if (priv->profile->update_stats)
+		queue_delayed_work(priv->wq, &priv->update_stats_work, 0);
 }
 
 static void mlx5e_uplink_rep_disable(struct mlx5e_priv *priv)
 {
 	struct mlx5_core_dev *mdev = priv->mdev;
 
+	cancel_delayed_work_sync(&priv->update_stats_work);
 #ifdef CONFIG_MLX5_CORE_EN_DCB
 	mlx5e_dcbnl_delete_app(priv);
 #endif
@@ -1590,6 +1602,7 @@ static const struct mlx5e_profile mlx5e_vf_rep_profile = {
 	.init_tx		= mlx5e_init_rep_tx,
 	.cleanup_tx		= mlx5e_cleanup_rep_tx,
 	.enable		        = mlx5e_vf_rep_enable,
+	.disable	        = mlx5e_vf_rep_disable,
 	.update_stats           = mlx5e_vf_rep_update_hw_counters,
 	.rx_handlers.handle_rx_cqe       = mlx5e_handle_rx_cqe_rep,
 	.rx_handlers.handle_rx_cqe_mpwqe = mlx5e_handle_rx_cqe_mpwrq,

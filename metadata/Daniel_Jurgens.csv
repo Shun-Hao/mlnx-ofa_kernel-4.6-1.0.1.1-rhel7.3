@@ -16,3 +16,4 @@ Change-Id=I11f01ce3f8d818a63815b95d45b1fc6864984515; subject=net/mlx5: Implement
 Change-Id=Icc0f2c7900840b5bf3b9fb614b5bb8bb3d25d7c4; subject=net/mlx5: When fetching CQEs return a CQE pointer instead of void; feature=cqe_padding; upstream_status=accepted; general=;
 Change-Id=I70cd0ad4ad66e2582b86f92a42b2552f36a6e113; subject=net/mlx5e: Use CQE padding for Ethernet CQs; feature=cqe_padding; upstream_status=accepted; general=upstream commit ID: 939de57d3034, tag: v5.0-rc1;
 Change-Id=Iaffafa25ef3de39374a73e5a75611f8c189d89b3; subject=net/mlx5: Use eswitch manager vport for roce steering; feature=mlx5_core_bugs; upstream_status=in_progress; general=;
+Change-Id=Ie40ccdac1123b07821a8d915425290975bd1f16d; subject=net/mlx5e: Start stats work for reps; feature=mlx5_core_bugs; upstream_status=ignore; general=;
