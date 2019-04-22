@@ -2,22 +2,20 @@ From: Yevgeny Kliteynik <kliteyn@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c
 
 ---
- drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c | 15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c b/drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c
 +++ b/drivers/net/ethernet/mellanox/mlx5/core/lag_mp.c
-@@ -2,12 +2,24 @@
+@@ -2,12 +2,17 @@
  /* Copyright (c) 2019 Mellanox Technologies. */
  
  #include <linux/netdevice.h>
-+#ifdef HAVE_FIB_NH_NOTIFIER_INFO
- #include <net/ip_fib.h>
- #include "lag.h"
- #include "lag_mp.h"
-+#endif
+-#include <net/ip_fib.h>
+-#include "lag.h"
+-#include "lag_mp.h"
  #include "mlx5_core.h"
  #include "eswitch.h"
  
@@ -26,15 +24,13 @@ index xxxxxxx..xxxxxxx 100644
 +#endif
 +
 +#ifdef MLX_LAG_SUPPORTED
-+#include <net/ip_fib.h>
 +#include "lag.h"
-+#include "lag_mp.h"
 +
 +#ifdef HAVE_FIB_NH_NOTIFIER_INFO
  static bool mlx5_lag_multipath_check_prereq(struct mlx5_lag *ldev)
  {
  	if (!ldev->pf[0].dev || !ldev->pf[1].dev)
-@@ -15,6 +27,7 @@ static bool mlx5_lag_multipath_check_prereq(struct mlx5_lag *ldev)
+@@ -15,6 +20,7 @@ static bool mlx5_lag_multipath_check_prereq(struct mlx5_lag *ldev)
  
  	return mlx5_esw_multipath_prereq(ldev->pf[0].dev, ldev->pf[1].dev);
  }
@@ -42,7 +38,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static bool __mlx5_lag_is_multipath(struct mlx5_lag *ldev)
  {
-@@ -32,6 +45,7 @@ bool mlx5_lag_is_multipath(struct mlx5_core_dev *dev)
+@@ -32,6 +38,7 @@ bool mlx5_lag_is_multipath(struct mlx5_core_dev *dev)
  	return res;
  }
  
@@ -50,7 +46,7 @@ index xxxxxxx..xxxxxxx 100644
  void mlx5e_tc_reoffload_flows_work(struct mlx5_core_dev *mdev);
  
  /**
-@@ -311,3 +325,5 @@ void mlx5_lag_mp_cleanup(struct mlx5_lag *ldev)
+@@ -311,3 +318,5 @@ void mlx5_lag_mp_cleanup(struct mlx5_lag *ldev)
  	unregister_fib_notifier(&mp->fib_nb);
  	mp->fib_nb.notifier_call = NULL;
  }

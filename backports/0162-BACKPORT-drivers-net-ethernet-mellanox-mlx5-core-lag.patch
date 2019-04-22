@@ -3,14 +3,14 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/lag.c
 
 Change-Id: I34b6ff4b816ec2241c10e228dced0b8dd3f0b34f
 ---
- drivers/net/ethernet/mellanox/mlx5/core/lag.c | 168 +++++++++++++++++++++++++-
- 1 file changed, 167 insertions(+), 1 deletion(-)
+ drivers/net/ethernet/mellanox/mlx5/core/lag.c | 169 +++++++++++++++++++++++++-
+ 1 file changed, 167 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/lag.c b/drivers/net/ethernet/mellanox/mlx5/core/lag.c
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/net/ethernet/mellanox/mlx5/core/lag.c
 +++ b/drivers/net/ethernet/mellanox/mlx5/core/lag.c
-@@ -35,6 +35,22 @@
+@@ -35,14 +35,117 @@
  #include <linux/mlx5/vport.h>
  #include "mlx5_core.h"
  #include "eswitch.h"
@@ -31,9 +31,10 @@ index xxxxxxx..xxxxxxx 100644
 +
 +#ifdef MLX_LAG_SUPPORTED
  #include "lag.h"
- #include "lag_mp.h"
+-#include "lag_mp.h"
  
-@@ -43,6 +59,94 @@
+ /* General purpose, use for short periods of time.
+  * Beware of lock dependencies (preferably, no locks should be acquired
   * under it).
   */
  static DEFINE_MUTEX(lag_mutex);
@@ -128,7 +129,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static int mlx5_cmd_create_lag(struct mlx5_core_dev *dev, u8 remap_port1,
  			       u8 remap_port2)
-@@ -84,26 +188,35 @@ static int mlx5_cmd_destroy_lag(struct mlx5_core_dev *dev)
+@@ -84,26 +187,35 @@ static int mlx5_cmd_destroy_lag(struct mlx5_core_dev *dev)
  
  	return mlx5_cmd_exec(dev, in, sizeof(in), out, sizeof(out));
  }
@@ -164,7 +165,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  EXPORT_SYMBOL(mlx5_cmd_destroy_vport_lag);
  
-@@ -121,15 +234,17 @@ static int mlx5_cmd_query_cong_counter(struct mlx5_core_dev *dev,
+@@ -121,15 +233,17 @@ static int mlx5_cmd_query_cong_counter(struct mlx5_core_dev *dev,
  int mlx5_lag_dev_get_netdev_idx(struct mlx5_lag *ldev,
  				struct net_device *ndev)
  {
@@ -183,7 +184,7 @@ index xxxxxxx..xxxxxxx 100644
  static bool __mlx5_lag_is_roce(struct mlx5_lag *ldev)
  {
  	return !!(ldev->flags & MLX5_LAG_FLAG_ROCE);
-@@ -385,15 +500,21 @@ static int mlx5_handle_changeupper_event(struct mlx5_lag *ldev,
+@@ -406,15 +520,21 @@ static int mlx5_handle_changeupper_event(struct mlx5_lag *ldev,
  	 * as slaves (e.g., if a new slave is added to a master that bonds two
  	 * of our netdevs, we should unbond).
  	 */
@@ -205,7 +206,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	/* None of this lagdev's netdevs are slaves of this master. */
  	if (!(bond_status & 0x3))
-@@ -585,10 +706,12 @@ static ssize_t mlx5_lag_set_enabled(struct device *device,
+@@ -606,10 +726,12 @@ static ssize_t mlx5_lag_set_enabled(struct device *device,
  
  static DEVICE_ATTR(roce_lag_enable, 0644, mlx5_lag_show_enabled, mlx5_lag_set_enabled);
  static struct device_attribute *mlx5_lag_dev_attrs = &dev_attr_roce_lag_enable;
@@ -218,7 +219,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5_lag *ldev = NULL;
  	struct mlx5_core_dev *tmp_dev;
  	int err;
-@@ -634,11 +757,13 @@ void mlx5_lag_add(struct mlx5_core_dev *dev, struct net_device *netdev)
+@@ -655,11 +777,13 @@ void mlx5_lag_add(struct mlx5_core_dev *dev, struct net_device *netdev)
  
  remove_file:
  	device_remove_file(&dev->pdev->dev, mlx5_lag_dev_attrs);
@@ -232,7 +233,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5_lag *ldev;
  	int i;
  
-@@ -664,6 +789,7 @@ void mlx5_lag_remove(struct mlx5_core_dev *dev)
+@@ -685,6 +809,7 @@ void mlx5_lag_remove(struct mlx5_core_dev *dev)
  		cancel_delayed_work_sync(&ldev->bond_work);
  		mlx5_lag_dev_free(ldev);
  	}
@@ -240,7 +241,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  bool mlx5_lag_is_roce(struct mlx5_core_dev *dev)
-@@ -686,6 +812,9 @@ EXPORT_SYMBOL(mlx5_lag_is_roce);
+@@ -707,6 +832,9 @@ EXPORT_SYMBOL(mlx5_lag_is_roce);
  
  bool mlx5_lag_is_active(struct mlx5_core_dev *dev)
  {
@@ -250,7 +251,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5_lag *ldev;
  	bool res;
  
-@@ -695,6 +824,7 @@ bool mlx5_lag_is_active(struct mlx5_core_dev *dev)
+@@ -716,6 +844,7 @@ bool mlx5_lag_is_active(struct mlx5_core_dev *dev)
  	mutex_unlock(&lag_mutex);
  
  	return res;
@@ -258,7 +259,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  EXPORT_SYMBOL(mlx5_lag_is_active);
  
-@@ -718,6 +848,7 @@ EXPORT_SYMBOL(mlx5_lag_is_sriov);
+@@ -739,6 +868,7 @@ EXPORT_SYMBOL(mlx5_lag_is_sriov);
  
  void mlx5_lag_update(struct mlx5_core_dev *dev)
  {
@@ -266,7 +267,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5_lag *ldev;
  
  	mlx5_dev_list_lock();
-@@ -729,11 +860,15 @@ void mlx5_lag_update(struct mlx5_core_dev *dev)
+@@ -750,11 +880,15 @@ void mlx5_lag_update(struct mlx5_core_dev *dev)
  
  unlock:
  	mlx5_dev_list_unlock();
@@ -282,7 +283,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct net_device *ndev = NULL;
  	struct mlx5_lag *ldev;
  
-@@ -756,11 +891,15 @@ unlock:
+@@ -777,11 +911,15 @@ unlock:
  	mutex_unlock(&lag_mutex);
  
  	return ndev;
@@ -298,7 +299,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5_core_dev *dev = container_of(priv, struct mlx5_core_dev,
  						 priv);
  	struct mlx5_lag *ldev;
-@@ -774,6 +913,7 @@ bool mlx5_lag_intf_add(struct mlx5_interface *intf, struct mlx5_priv *priv)
+@@ -795,6 +933,7 @@ bool mlx5_lag_intf_add(struct mlx5_interface *intf, struct mlx5_priv *priv)
  
  	/* If bonded, we do not add an IB device for PF1. */
  	return false;
@@ -306,7 +307,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  int mlx5_lag_query_cong_counters(struct mlx5_core_dev *dev,
-@@ -783,7 +923,9 @@ int mlx5_lag_query_cong_counters(struct mlx5_core_dev *dev,
+@@ -804,7 +943,9 @@ int mlx5_lag_query_cong_counters(struct mlx5_core_dev *dev,
  {
  	int outlen = MLX5_ST_SZ_BYTES(query_cong_statistics_out);
  	struct mlx5_core_dev *mdev[MLX5_MAX_PORTS];
@@ -316,7 +317,7 @@ index xxxxxxx..xxxxxxx 100644
  	int num_ports;
  	int ret, i, j;
  	void *out;
-@@ -794,6 +936,7 @@ int mlx5_lag_query_cong_counters(struct mlx5_core_dev *dev,
+@@ -815,6 +956,7 @@ int mlx5_lag_query_cong_counters(struct mlx5_core_dev *dev,
  
  	memset(values, 0, sizeof(*values) * num_counters);
  
@@ -324,7 +325,7 @@ index xxxxxxx..xxxxxxx 100644
  	mutex_lock(&lag_mutex);
  	ldev = mlx5_lag_dev_get(dev);
  	if (ldev && __mlx5_lag_is_roce(ldev)) {
-@@ -804,6 +947,10 @@ int mlx5_lag_query_cong_counters(struct mlx5_core_dev *dev,
+@@ -825,6 +967,10 @@ int mlx5_lag_query_cong_counters(struct mlx5_core_dev *dev,
  		num_ports = 1;
  		mdev[0] = dev;
  	}
@@ -335,7 +336,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	for (i = 0; i < num_ports; ++i) {
  		ret = mlx5_cmd_query_cong_counter(mdev[i], false, out, outlen);
-@@ -815,7 +962,9 @@ int mlx5_lag_query_cong_counters(struct mlx5_core_dev *dev,
+@@ -836,7 +982,9 @@ int mlx5_lag_query_cong_counters(struct mlx5_core_dev *dev,
  	}
  
  unlock:
@@ -345,7 +346,7 @@ index xxxxxxx..xxxxxxx 100644
  	kvfree(out);
  	return ret;
  }
-@@ -833,11 +982,14 @@ int mlx5_lag_modify_cong_params(struct mlx5_core_dev *dev,
+@@ -854,11 +1002,14 @@ int mlx5_lag_modify_cong_params(struct mlx5_core_dev *dev,
  				void *in, int in_size)
  {
  	struct mlx5_core_dev *mdev[MLX5_MAX_PORTS];
@@ -360,7 +361,7 @@ index xxxxxxx..xxxxxxx 100644
  	mutex_lock(&lag_mutex);
  	ldev = mlx5_lag_dev_get(dev);
  	if (ldev && __mlx5_lag_is_active(ldev)) {
-@@ -848,6 +1000,10 @@ int mlx5_lag_modify_cong_params(struct mlx5_core_dev *dev,
+@@ -869,6 +1020,10 @@ int mlx5_lag_modify_cong_params(struct mlx5_core_dev *dev,
  		num_ports = 1;
  		mdev[0] = dev;
  	}
@@ -371,7 +372,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	for (i = 0; i < num_ports; i++) {
  		ret = mlx5_cmd_modify_cong_params(mdev[i], in, in_size);
-@@ -856,13 +1012,18 @@ int mlx5_lag_modify_cong_params(struct mlx5_core_dev *dev,
+@@ -877,13 +1032,18 @@ int mlx5_lag_modify_cong_params(struct mlx5_core_dev *dev,
  	}
  
  unlock:
@@ -390,7 +391,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5_core_dev *peer_dev = NULL;
  	struct mlx5_lag *ldev;
  
-@@ -876,10 +1037,14 @@ struct mlx5_core_dev *mlx5_lag_get_peer_mdev(struct mlx5_core_dev *dev)
+@@ -897,10 +1057,14 @@ struct mlx5_core_dev *mlx5_lag_get_peer_mdev(struct mlx5_core_dev *dev)
  unlock:
  	mutex_unlock(&lag_mutex);
  	return peer_dev;
@@ -405,7 +406,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct net_device *peer_ndev = NULL;
  	struct mlx5_lag *ldev;
  
-@@ -893,4 +1058,5 @@ struct net_device *mlx5_lag_get_peer_netdev(struct mlx5_core_dev *dev)
+@@ -914,4 +1078,5 @@ struct net_device *mlx5_lag_get_peer_netdev(struct mlx5_core_dev *dev)
  unlock:
  	mutex_unlock(&lag_mutex);
  	return peer_ndev;

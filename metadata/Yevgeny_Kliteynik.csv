@@ -4,3 +4,5 @@ Change-Id=I5635f5850ce880fda06389c7ef4b234fa8a1d179; subject=net/mlx5: Add flow-
 Change-Id=I6a5c2b8742b1b881964fcd8f6d50061862d87df6; subject=net/mlx5/fpga/Makefile: Adapt include line to OFED environment; feature=fpga; upstream_status=NA; general=;
 Change-Id=I9fd9accf4d19afe2a30b8e6a4bf2d2c1761c5a7f; subject=net/mlx5: FPGA, fix compilation warnings in sdk.c; feature=fpga; upstream_status=in_progress; general=;
 Change-Id=Icc2ece954a128bb3b68fe1a8906afc1ece650945; subject=Metadata update; feature=ofed_scripts; upstream_status=ignore; general=;
+Change-Id=I8421903f75ce7a4ec4c33cb36b24f6f391f90bef; subject=net/mlx5: fix compilation issues with LAG and fib; feature=mlx5_asap; upstream_status=ignore; general=;
+Change-Id=Iecec84d8a052d5702572591dfdfa91e92b4456b1; subject=BACKPORTS: update and add metadata; feature=backports; upstream_status=ignore; general=;
