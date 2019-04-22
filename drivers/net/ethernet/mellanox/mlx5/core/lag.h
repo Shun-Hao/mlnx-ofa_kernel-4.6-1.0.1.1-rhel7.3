@@ -5,6 +5,9 @@
 #define __MLX5_LAG_H__
 
 #include "mlx5_core.h"
+#ifdef HAVE_FIB_NH_NOTIFIER_INFO
+#include <net/ip_fib.h>
+#endif
 #include "lag_mp.h"
 
 enum {
