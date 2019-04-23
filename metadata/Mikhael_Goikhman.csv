@@ -27,3 +27,4 @@ Change-Id=Ie1cec5aa0ea9aea05d3e3c143a5cab58472affa9; subject=net/mlx5e: Restrict
 Change-Id=I2ffd23af8d6a3052c7e3b67e23aedf71c71ae74d; subject=net/mlx5: Fix enabling spoofchk on VF in VST mode steering; feature=mlx5_qinq_vst; upstream_status=NA; general=;
 Change-Id=Icf7f7431bd57425e577138e955183c04ca79c93b; subject=matadata: Change status of feature mlx5_qinq_vst to be OFED only; feature=ofed_scripts; upstream_status=ignore; general=;
 Change-Id=Id724170fc9e4e1b9e012b09b301f279fc9e68e83; subject=BACKPORTS: net/mlx5e: Fix serious backport bug causing bad memory usage; feature=backports; upstream_status=ignore; general=;
+Change-Id=I620410c1d7a3bb16913ccbae3cd469632d96eae2; subject=net/mlx5e: Rx, Fixup skb checksum for packets with tail padding; feature=rebase; upstream_status=accepted; general=upstream commit ID: 0aa1d18615c1, tag: v5.1-rc6;

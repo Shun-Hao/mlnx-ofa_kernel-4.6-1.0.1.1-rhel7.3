@@ -1,18 +1,18 @@
-From: Alaa Hleihel <alaa@mellanox.com>
+From: Mikhael Goikhman <migo@mellanox.com>
 Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en_stats.h
 
-Change-Id: I6db0ee8fc78de67b5c221691650468fb64a2f2ba
+Change-Id: I347dc13a67f9de0899ef9cc6cc98e0780a83e4d0
 ---
- drivers/net/ethernet/mellanox/mlx5/core/en_stats.h | 25 ++++++++++++++++++++--
+ .../ethernet/mellanox/mlx5/core/en_stats.h    | 25 +++++++++++++++++--
  1 file changed, 23 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en_stats.h b/drivers/net/ethernet/mellanox/mlx5/core/en_stats.h
 index xxxxxxx..xxxxxxx 100644
 --- a/drivers/net/ethernet/mellanox/mlx5/core/en_stats.h
 +++ b/drivers/net/ethernet/mellanox/mlx5/core/en_stats.h
-@@ -72,12 +72,16 @@ struct mlx5e_sw_stats {
- 	u64 rx_csum_none;
- 	u64 rx_csum_complete;
+@@ -74,12 +74,16 @@ struct mlx5e_sw_stats {
+ 	u64 rx_csum_complete_tail;
+ 	u64 rx_csum_complete_tail_slow;
  	u64 rx_csum_unnecessary_inner;
 +#ifdef HAVE_XDP_BUFF
  	u64 rx_xdp_drop;
@@ -27,7 +27,7 @@ index xxxxxxx..xxxxxxx 100644
  	u64 tx_csum_none;
  	u64 tx_csum_partial;
  	u64 tx_csum_partial_inner;
-@@ -88,10 +92,17 @@ struct mlx5e_sw_stats {
+@@ -90,10 +94,17 @@ struct mlx5e_sw_stats {
  	u64 tx_cqes;
  	u64 tx_queue_wake;
  	u64 tx_cqe_err;
@@ -45,7 +45,7 @@ index xxxxxxx..xxxxxxx 100644
  	u64 rx_wqe_err;
  	u64 rx_mpwqe_filler_cqes;
  	u64 rx_mpwqe_filler_strides;
-@@ -114,7 +125,7 @@ struct mlx5e_sw_stats {
+@@ -116,7 +127,7 @@ struct mlx5e_sw_stats {
  	u64 ch_aff_change;
  	u64 ch_eq_rearm;
  
@@ -54,7 +54,7 @@ index xxxxxxx..xxxxxxx 100644
  	u64 tx_tls_ooo;
  	u64 tx_tls_resync_bytes;
  #endif
-@@ -189,8 +200,12 @@ struct mlx5e_rq_stats {
+@@ -193,8 +204,12 @@ struct mlx5e_rq_stats {
  	u64 lro_bytes;
  	u64 ecn_mark;
  	u64 removed_vlan_packets;
@@ -67,7 +67,7 @@ index xxxxxxx..xxxxxxx 100644
  	u64 wqe_err;
  	u64 mpwqe_filler_cqes;
  	u64 mpwqe_filler_strides;
-@@ -222,7 +237,7 @@ struct mlx5e_sq_stats {
+@@ -226,7 +241,7 @@ struct mlx5e_sq_stats {
  	u64 csum_partial_inner;
  	u64 added_vlan_packets;
  	u64 nop;
@@ -76,7 +76,7 @@ index xxxxxxx..xxxxxxx 100644
  	u64 tls_ooo;
  	u64 tls_resync_bytes;
  #endif
-@@ -237,6 +252,7 @@ struct mlx5e_sq_stats {
+@@ -241,6 +256,7 @@ struct mlx5e_sq_stats {
  	u64 cqe_err;
  };
  
@@ -84,7 +84,7 @@ index xxxxxxx..xxxxxxx 100644
  struct mlx5e_xdpsq_stats {
  	u64 xmit;
  	u64 full;
-@@ -244,6 +260,7 @@ struct mlx5e_xdpsq_stats {
+@@ -248,6 +264,7 @@ struct mlx5e_xdpsq_stats {
  	/* dirtied @completion */
  	u64 cqes ____cacheline_aligned_in_smp;
  };
@@ -92,7 +92,7 @@ index xxxxxxx..xxxxxxx 100644
  
  struct mlx5e_ch_stats {
  	u64 events;
-@@ -259,7 +276,11 @@ struct mlx5e_stats {
+@@ -263,7 +280,11 @@ struct mlx5e_stats {
  	struct mlx5e_vnic_env_stats vnic;
  	struct mlx5e_vport_stats vport;
  	struct mlx5e_pport_stats pport;
