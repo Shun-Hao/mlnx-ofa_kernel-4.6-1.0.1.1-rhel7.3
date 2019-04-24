@@ -69,3 +69,6 @@ Change-Id=Ic697faaac0bf905e12e4dc91d74e337524135465; subject=net/mlx5: Remove th
 Change-Id=I37c16d521de1e851cf7e5b7216e4f0df0e73f659; subject=net/mlx5: E-Switch, Handle host VF vports for BlueField; feature=mlx5_bf; upstream_status=in_progress; general=;
 Change-Id=If0c722aea399d2b4f36de635c10e9f1ee23a7ba7; subject=net/mlx5: E-Switch, Use dedicate work queue for host param change; feature=mlx5_bf; upstream_status=in_progress; general=;
 Change-Id=I484a2b750f210377d0e2693bde445c64bccbe791; subject=net/mlx5: Workaround for old BlueField FW runs with new driver; feature=mlx5_bf; upstream_status=ignore; general=;
+Change-Id=I885297be48056f40d531d4fd1cd47eb0058e85d6; subject=net/mlx5: E-Switch, Enable correct number of VFs in legacy mode; feature=mlx5_bf; upstream_status=ignore; general=;
+Change-Id=If1d8139ab31d6f55207b64a3f15665818da2e58f; subject=Revert "net/mlx5: Fix no-carrier issue when changing to legacy mode"; feature=mlx5_core_bugs; upstream_status=ignore; general=;
+Change-Id=Icd5198602658d7cea4ece565dc7b9dc5762ac6f9; subject=Metadata: Set reverted patch to ignore; feature=ofed_scripts; upstream_status=ignore; general=;

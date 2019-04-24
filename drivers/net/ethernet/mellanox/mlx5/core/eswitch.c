@@ -2166,7 +2166,7 @@ void mlx5_eswitch_disable_vport(struct mlx5_eswitch *esw, u16 vport_num)
 
 int mlx5_eswitch_enable_sriov(struct mlx5_eswitch *esw, int nvfs, int mode)
 {
-	int vf_nvports = 0, total_nvports = 0;
+	int vf_nvports = nvfs, total_nvports = 0;
 	struct mlx5_vport *vport;
 	int err;
 	int i, enabled_events;
@@ -2192,7 +2192,6 @@ int mlx5_eswitch_enable_sriov(struct mlx5_eswitch *esw, int nvfs, int mode)
 				return err;
 			total_nvports = esw->total_vports;
 		} else {
-			vf_nvports = nvfs;
 			total_nvports = nvfs + MLX5_SPECIAL_VPORTS(esw->dev);
 		}
 	}
