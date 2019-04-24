@@ -1025,18 +1025,19 @@ int ib_uverbs_exp_prefetch_mr(struct ib_uverbs_file *file,
 	if (!mr)
 		return -EINVAL;
 
-	if (!mr->device->exp_prefetch_mr)
-		return -ENOSYS;
+	if (!mr->device->exp_prefetch_mr) {
+		ret = -ENOSYS;
+		goto out;
+	}
 
 	ret = mr->device->exp_prefetch_mr(mr, cmd.start, cmd.length, cmd.flags);
-
-	uobj_put_read(mr->uobject);
-
 	if (ret)
-		return ret;
+		goto out;
 
-	ib_umem_odp_account_prefetch_handled(file->device->ib_dev);
+	ib_umem_odp_account_prefetch_handled(mr->device);
 
+out:
+	uobj_put_read(mr->uobject);
 	return ret;
 }
 #endif /* CONFIG_INFINIBAND_ON_DEMAND_PAGING */
@@ -1294,7 +1295,7 @@ int ib_uverbs_exp_create_dct(struct ib_uverbs_file *file,
 		goto err_put;
 	}
 
-	dct->device        = file->device->ib_dev;
+	dct->device        = ib_dev;
 	dct->uobject       = &obj->uevent.uobject;
 	dct->event_handler = attr->event_handler;
 	dct->dct_context   = attr->dct_context;
@@ -1505,10 +1506,15 @@ int ib_uverbs_exp_set_context_attr(struct ib_uverbs_file *file,
 	struct ib_uverbs_exp_set_context_attr cmd = {};
 	struct ib_device *device;
 	struct ib_exp_context_attr attr = {};
+	struct ib_ucontext *ucontext;
 	size_t required_cmd_sz;
 	int ret;
 
-	device = file->device->ib_dev;
+	ucontext = ib_uverbs_get_ucontext(file);
+	if (IS_ERR(ucontext))
+		return PTR_ERR(ucontext);
+
+	device = ucontext->device;
 	required_cmd_sz = offsetof(typeof(cmd), peer_name) + sizeof(cmd.peer_name);
 
 	if (ucore->inlen < required_cmd_sz)
@@ -1535,7 +1541,7 @@ int ib_uverbs_exp_set_context_attr(struct ib_uverbs_file *file,
 		attr.peer_name = cmd.peer_name;
 	}
 
-	ret = device->exp_set_context_attr(device, file->ucontext, &attr);
+	ret = device->exp_set_context_attr(device, ucontext, &attr);
 
 	return ret;
 }
@@ -1627,7 +1633,7 @@ int ib_uverbs_exp_alloc_dm(struct ib_uverbs_file *file,
 	if (IS_ERR(uobj))
 		return PTR_ERR(uobj);
 
-	dm = ib_dev->exp_alloc_dm(ib_dev, file->ucontext,
+	dm = ib_dev->exp_alloc_dm(ib_dev, uobj->context,
 				  cmd.length, cmd.uaddr, uhw);
 	if (IS_ERR(dm)) {
 		ret = PTR_ERR(dm);
