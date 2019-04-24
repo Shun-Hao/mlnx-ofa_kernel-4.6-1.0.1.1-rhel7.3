@@ -2243,7 +2243,7 @@ int mlx5_eswitch_enable_sriov(struct mlx5_eswitch *esw, int nvfs, int mode)
 	}
 
 	/* Enable VF vports */
-	mlx5_esw_for_each_vf_vport(esw, i, vport, vf_nvports)
+	mlx5_esw_for_each_vf_vport(esw, i, vport, nvfs)
 		esw_enable_vport(esw, vport, enabled_events);
 
 	esw_info(esw->dev, "SRIOV enabled: active vports(%d)\n",
