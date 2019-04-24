@@ -965,6 +965,7 @@ EXPORT_SYMBOL(ib_query_port);
  * @filter_cookie: Cookie passed to filter
  * @cb: Callback to call for each found RoCE ports
  * @cookie: Cookie passed back to the callback
+ * @ndev_event: Netdev event notified using ndev notifier chain
  *
  * Enumerates all of the physical RoCE ports of ib_dev
  * which are related to netdevice and calls callback() on each
@@ -974,9 +975,17 @@ void ib_enum_roce_netdev(struct ib_device *ib_dev,
 			 roce_netdev_filter filter,
 			 void *filter_cookie,
 			 roce_netdev_callback cb,
-			 void *cookie)
+			 void *cookie, unsigned long ndev_event)
 {
 	u8 port;
+
+	/*
+	 * rdma bond device doesn't need to do any GID handling during
+	 * netdevice failover event.
+	 */
+	if (ib_dev->dev_immutable.bond_device &&
+	    ndev_event == NETDEV_BONDING_FAILOVER)
+		return;
 
 	for (port = rdma_start_port(ib_dev); port <= rdma_end_port(ib_dev);
 	     port++)
@@ -1006,6 +1015,7 @@ void ib_enum_roce_netdev(struct ib_device *ib_dev,
  * @filter_cookie: Cookie passed to filter
  * @cb: Callback to call for each found RoCE ports
  * @cookie: Cookie passed back to the callback
+ * @ndev_event: Netdev event occurred through netdev notifier chain
  *
  * Enumerates all RoCE devices' physical ports which are related
  * to netdevices and calls callback() on each device for which
@@ -1014,13 +1024,14 @@ void ib_enum_roce_netdev(struct ib_device *ib_dev,
 void ib_enum_all_roce_netdevs(roce_netdev_filter filter,
 			      void *filter_cookie,
 			      roce_netdev_callback cb,
-			      void *cookie)
+			      void *cookie, unsigned long ndev_event)
 {
 	struct ib_device *dev;
 
 	down_read(&lists_rwsem);
 	list_for_each_entry(dev, &device_list, core_list)
-		ib_enum_roce_netdev(dev, filter, filter_cookie, cb, cookie);
+		ib_enum_roce_netdev(dev, filter, filter_cookie, cb,
+				    cookie, ndev_event);
 	up_read(&lists_rwsem);
 }
 

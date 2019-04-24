@@ -2368,6 +2368,13 @@ struct ib_counters_read_attr {
 
 struct uverbs_attr_bundle;
 
+struct ib_device_immutable {
+	/*
+	 * Provider driver indicates if this is rdma bond device or not.
+	 */
+	bool bond_device;
+};
+
 struct ib_device {
 	/* Do not access @dma_device directly from ULP nor from HW drivers. */
 	struct device                *dma_device;
@@ -2781,6 +2788,8 @@ struct ib_device {
 	 */
 	refcount_t refcount;
 	struct completion unreg_completion;
+
+	struct ib_device_immutable dev_immutable;
 };
 
 struct ib_client {
