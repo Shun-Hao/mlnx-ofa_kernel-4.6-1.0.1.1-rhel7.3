@@ -17,3 +17,6 @@ Change-Id=I5815757b1228d0b4aea5ee05f940f7180f7fa14c; subject=RDMA: Introduce and
 Change-Id=I05d88d2d7fb7918ea87ed5a2e12346431d187544; subject=RDMA/cma: Use rdma_read_gid_attr_ndev_rcu to access netdev; feature=ib_core_bugs; upstream_status=in_progress; general=;
 Change-Id=I6b23b9ffb8674a3a97a3ea4ed2904a7ee892234f; subject=RDMA/core: Allow detaching gid attribute netdevice for RoCE; feature=ib_core_bugs; upstream_status=in_progress; general=;
 Change-Id=I44cc764251d2a807b45b1fbd31322f3002c7adb5; subject=BACKPORTS: mlx5/main.c core/addr.c core/cache.c; feature=backports; upstream_status=ignore; general=;
+Change-Id=I3955098d099c1e48dd3bd7923f3e6cb6662b7247; subject=IB/core: Introduce and honor bond_device flag; feature=ib_core_bugs; upstream_status=NA; general=;
+Change-Id=I6f769128b981e4e784b582f69d3b038de6cc3553; subject=IB/mlx5: Expose rdma bond device; feature=ib_core_bugs; upstream_status=NA; general=;
+Change-Id=I30827f1199218ab02ce64d9879d7d723a513bab9; subject=IB/mlx4: Expose rdma bond device; feature=ib_core_bugs; upstream_status=NA; general=;

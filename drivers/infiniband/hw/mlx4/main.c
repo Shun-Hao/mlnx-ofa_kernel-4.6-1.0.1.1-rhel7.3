@@ -2786,6 +2786,7 @@ static void *mlx4_ib_add(struct mlx4_dev *dev)
 	ibdev->ib_dev.get_netdev	= mlx4_ib_get_netdev;
 	ibdev->ib_dev.add_gid		= mlx4_ib_add_gid;
 	ibdev->ib_dev.del_gid		= mlx4_ib_del_gid;
+	ibdev->ib_dev.dev_immutable.bond_device = mlx4_is_bonded(dev);
 
 	if (dev->caps.userspace_caps)
 		ibdev->ib_dev.uverbs_abi_ver = MLX4_IB_UVERBS_ABI_VERSION;
