@@ -19,3 +19,4 @@ Change-Id=Iaffafa25ef3de39374a73e5a75611f8c189d89b3; subject=net/mlx5: Use eswit
 Change-Id=Ie40ccdac1123b07821a8d915425290975bd1f16d; subject=net/mlx5e: Start stats work for reps; feature=mlx5_core_bugs; upstream_status=ignore; general=;
 Change-Id=I65da6c0b79814f3618a8da8907a0e572fb3fd693; subject=net/mlx5: Removed duplicate read of caps; feature=memic; upstream_status=NA; general=;
 Change-Id=I549fc8212e9ae95ce5285e1193a28972dc5ee1d3; subject=net/mlx5e: Enable per queue stats for reps; feature=mlx5e_rep_stats; upstream_status=in_progress; general=;
+Change-Id=I7399815b07a531e148a83c3f8448c91393bcf58a; subject=net/mlx5e: Get rep stats from the correct struct; feature=mlx5e_rep_stats; upstream_status=in_progress; general=;

@@ -385,11 +385,10 @@ static int mlx5e_grp_rep_vport_fill_strings(struct mlx5e_priv *priv, u8 *data,
 static int mlx5e_grp_rep_vport_fill_stats(struct mlx5e_priv *priv, u64 *data,
 					  int idx)
 {
-	int i;
-
-	for (i = 0; i < NUM_VPORT_REP_HW_COUNTERS; i++)
-		data[idx++] = MLX5E_READ_CTR64_BE(priv->stats.vport.query_vport_out,
-						  vport_rep_stats_desc, i);
+	data[idx++] = priv->stats.vf_vport.rx_packets;
+	data[idx++] = priv->stats.vf_vport.rx_bytes;
+	data[idx++] = priv->stats.vf_vport.tx_packets;
+	data[idx++] = priv->stats.vf_vport.tx_bytes;
 	return idx;
 }
 
