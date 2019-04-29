@@ -39,3 +39,4 @@ Change-Id=I6877156462c7adbb22ac7661dd66831df3d30d59; subject=Revert "net/mlx5: D
 Change-Id=I64282e30ab2c3f08f71cac180ff83366012a8872; subject=net/mlx5e: IPoIB, Fix RX adaptive mode for IPoIB; feature=mlx5_adaptive_moderation; upstream_status=in_progress; general=;
 Change-Id=I169db05dbcfd67cbb66349913c3daa4f3001fe1e; subject=IB/ipoib: RSS/ULP tx timeout flow fix; feature=ipoib_bugs; upstream_status=NA; general=;
 Change-Id=I2e78255d258edec1cc6b677b138d46dcd806f130; subject=IB/ipoib: RSS timeout flow fix; feature=ipoib_bugs; upstream_status=NA; general=;
+Change-Id=Ib0132b7d6564ca872a81aeb69f8cde4536222d6a; subject=Revert "mlx5/core: Use fast teardown in the driver remove flow"; feature=mlx5_fast_driver_unload; upstream_status=ignore; general=;

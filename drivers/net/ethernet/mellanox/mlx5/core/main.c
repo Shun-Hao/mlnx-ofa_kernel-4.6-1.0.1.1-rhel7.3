@@ -1699,49 +1699,6 @@ out_err:
 	return err;
 }
 
-static int mlx5_try_fast_unload(struct mlx5_core_dev *dev)
-{
-	bool fast_teardown = false, force_teardown = false;
-	int ret = 1;
-
-	fast_teardown = MLX5_CAP_GEN(dev, fast_teardown);
-	force_teardown = MLX5_CAP_GEN(dev, force_teardown);
-
-	mlx5_core_dbg(dev, "force teardown firmware support=%d\n", force_teardown);
-	mlx5_core_dbg(dev, "fast teardown firmware support=%d\n", fast_teardown);
-
-	if (!fast_teardown && !force_teardown)
-		return -EOPNOTSUPP;
-
-	if (dev->state == MLX5_DEVICE_STATE_INTERNAL_ERROR) {
-		mlx5_core_dbg(dev, "Device in internal error state, giving up\n");
-		return -EAGAIN;
-	}
-
-	/* Panic tear down fw command will stop the PCI bus communication
-	 * with the HCA, so the health polll is no longer needed.
-	 */
-	mlx5_drain_health_wq(dev);
-	mlx5_stop_health_poll(dev, false);
-
-	ret = mlx5_cmd_fast_teardown_hca(dev);
-	if (!ret)
-		goto succeed;
-
-	ret = mlx5_cmd_force_teardown_hca(dev);
-	if (!ret)
-		goto succeed;
-
-	mlx5_core_dbg(dev, "Firmware couldn't do fast unload error: %d\n", ret);
-	mlx5_start_health_poll(dev);
-	return ret;
-
-succeed:
-	mlx5_enter_error_state(dev, true);
-
-	return 0;
-}
-
 static int mlx5_unload_one(struct mlx5_core_dev *dev, struct mlx5_priv *priv,
 			   bool cleanup)
 {
@@ -2343,9 +2300,6 @@ static void remove_one(struct pci_dev *pdev)
 	if (pdev->is_virtfn && !priv->sriov.probe_vf)
 		goto out;
 
-	if (mlx5_try_fast_unload(dev))
-		dev_dbg(&dev->pdev->dev, "mlx5_try_fast_unload failed\n");
-
 	devlink_unregister(devlink);
 	mlx5_unregister_device(dev);
 
@@ -2556,6 +2510,49 @@ static const struct pci_error_handlers mlx5_err_handler = {
 	.slot_reset	= mlx5_pci_slot_reset,
 	.resume		= mlx5_pci_resume
 };
+
+static int mlx5_try_fast_unload(struct mlx5_core_dev *dev)
+{
+	bool fast_teardown = false, force_teardown = false;
+	int ret = 1;
+
+	fast_teardown = MLX5_CAP_GEN(dev, fast_teardown);
+	force_teardown = MLX5_CAP_GEN(dev, force_teardown);
+
+	mlx5_core_dbg(dev, "force teardown firmware support=%d\n", force_teardown);
+	mlx5_core_dbg(dev, "fast teardown firmware support=%d\n", fast_teardown);
+
+	if (!fast_teardown && !force_teardown)
+		return -EOPNOTSUPP;
+
+	if (dev->state == MLX5_DEVICE_STATE_INTERNAL_ERROR) {
+		mlx5_core_dbg(dev, "Device in internal error state, giving up\n");
+		return -EAGAIN;
+	}
+
+	/* Panic tear down fw command will stop the PCI bus communication
+	 * with the HCA, so the health polll is no longer needed.
+	 */
+	mlx5_drain_health_wq(dev);
+	mlx5_stop_health_poll(dev, false);
+
+	ret = mlx5_cmd_fast_teardown_hca(dev);
+	if (!ret)
+		goto succeed;
+
+	ret = mlx5_cmd_force_teardown_hca(dev);
+	if (!ret)
+		goto succeed;
+
+	mlx5_core_dbg(dev, "Firmware couldn't do fast unload error: %d\n", ret);
+	mlx5_start_health_poll(dev);
+	return ret;
+
+succeed:
+	mlx5_enter_error_state(dev, true);
+
+	return 0;
+}
 
 static void shutdown(struct pci_dev *pdev)
 {
