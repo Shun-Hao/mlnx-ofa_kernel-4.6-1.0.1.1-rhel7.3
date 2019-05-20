@@ -13,11 +13,11 @@ Change-Id=I87bf1d738bb2a180f93ea067e96b3c32d5c797d8; subject=net/mlx5_core: Exec
 Change-Id=I2cf76074ceba87de2b1dde6ff428fc4169025849; subject=IB/mlx5: Device memory code rebase adjustment; feature=memic; upstream_status=NA; general=;
 Change-Id=I9d21bda3324476e313de288168b7d3ef16b79e47; subject=IB/uverbs: Expand DM MR boundries check; feature=memic; upstream_status=NA; general=;
 Change-Id=I3293234f26e712c7f9bc5e0630f5cf9c251820d0; subject=IB/uverbs: Align uverbs DM related commands; feature=memic; upstream_status=NA; general=;
-Change-Id=Id40bb72ba622bb68d81019d38e45b5b5b8876b15; subject=IB/mlx5: Support device memory type attribute; feature=sw_icm; upstream_status=in_progress; general=;
+Change-Id=Id40bb72ba622bb68d81019d38e45b5b5b8876b15; subject=IB/mlx5: Support device memory type attribute; feature=sw_icm; upstream_status=accepted; general=upstream commit ID: 3b113a1ec3d4, tag: v5.2-rc1;
 Change-Id=I0eddfdb605cf141cacf0baecc393c935fd91f48f; subject=net/mlx5: Expose steering SW ICM capabilities; feature=sw_icm; upstream_status=in_progress; general=;
 Change-Id=I4bedc817b2cfc2db2b7e84074efa0ef74d46e6ca; subject=IB/mlx5: Add SW steering SW ICM device memory type; feature=sw_icm; upstream_status=in_progress; general=;
 Change-Id=I89e544b64c4f1359787125e5789e7bd08424c4ca; subject=net/mlx5: Expose TIR outbox to caller; feature=sw_icm; upstream_status=in_progress; general=;
-Change-Id=Ib8cefb5d28edf016e091214f9b99689e9685ee42; subject=IB/mlx5: Expose TIR ICM address to user space; feature=sw_icm; upstream_status=in_progress; general=;
+Change-Id=Ib8cefb5d28edf016e091214f9b99689e9685ee42; subject=IB/mlx5: Expose TIR ICM address to user space; feature=sw_icm; upstream_status=accepted; general=upstream commit ID: 1f1d6abbf0be, tag: v5.2-rc1;
 Change-Id=I7f47ea5de0b5d25955f75b9d9ea4e300c9409930; subject=IB/mlx5: Expose header modify SW ICM capabilities; feature=sw_icm; upstream_status=in_progress; general=;
 Change-Id=I22165af343662cc353f006ccc91a7a02c5250908; subject=IB/mlx5: Add header modify SW ICM device memory type; feature=sw_icm; upstream_status=in_progress; general=;
 Change-Id=Idb6d82dbb412eddb25a45cdeafb472213d3388a8; subject=net/mlx5: expose sysfs to force local loopback disablement; feature=disable_local_lb; upstream_status=NA; general=;
@@ -28,7 +28,7 @@ Change-Id=I6aedd69fa99c4e080194de26718a3bf05ebf81b7; subject=IB/mlx5: Fix SW ICM
 Change-Id=I26a44bdae6af27222b061917aea473269fea45ed; subject=net/mlx5: Prevent ALLOC_MEMIC command error prints; feature=mlx5_ib_bugs; upstream_status=in_progress; general=;
 Change-Id=I55abe373fc5bb2930e1145e7746e033d536efd83; subject=net/mlx5: Eswitch, Rate limiting per VF group; feature=vf_group_rate_limit; upstream_status=in_progress; general=;
 Change-Id=I501fb65cde2be01bd2356da26d36622534fb4a03; subject=IB/mlx5: Device memory code adjustments; feature=sw_icm; upstream_status=in_progress; general=;
-Change-Id=I74d3edfd1052273053b2ce020760132a4036227a; subject=IB/mlx5: Device resource control for privileged DEVX user; feature=sw_icm; upstream_status=in_progress; general=;
+Change-Id=I74d3edfd1052273053b2ce020760132a4036227a; subject=IB/mlx5: Device resource control for privileged DEVX user; feature=sw_icm; upstream_status=accepted; general=upstream commit ID: 33cde96fb5d7, tag: v5.2-rc1;
 Change-Id=I9c41c47053ae5cc3b6fecf75b5f7884079a98d60; subject=IB/mlx5: Avoid allocation of zero size SW ICM maps; feature=sw_icm; upstream_status=in_progress; general=;
 Change-Id=If4737062159c7bd03ae873eb7e5556e39ff8849e; subject=net/mlx5: Use a single MSIX vector for all control EQs in VFs; feature=shared_msix; upstream_status=in_progress; general=;
 Change-Id=I8a99fccb87de0b5cc7eb307d5f45417313151a3a; subject=IB/mlx5: Set tunnel offloads for experimental RSS qp creation command; feature=mlx5_ib_bugs; upstream_status=NA; general=;

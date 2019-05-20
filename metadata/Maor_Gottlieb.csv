@@ -86,12 +86,12 @@ Change-Id=I546cef3f0ea7bdee9d6125c0da0a919dd22d7983; subject=net/mlx5: Create fl
 Change-Id=I5c295896b7f580baf9c6ec436d910d1a2a3f4a32; subject=IB/core: Fix IB_RX_HASH_INNER to be unsigned; feature=mlx5_tunnel_offloads; upstream_status=NA; general=;
 Change-Id=I583db38e7b9e4948b5c087edaddbe5f95c2abd89; subject=IB/mlx5: Report missing RSS inner capability; feature=mlx5_tunnel_offloads; upstream_status=NA; general=;
 Change-Id=Iab7d25cfa9390e79ea49f76f9b42c02975a5e0d5; subject=IB/mlx5: Add ingress_log_flow_table_size sysfs; feature=50k_rules; upstream_status=NA; general=;
-Change-Id=I742f792b3ae6a6ce6e56fc42cedd62b89135f34f; subject=RDMA/mlx5: Add query e-switch vport context to devx white list; feature=devx; upstream_status=in_progress; general=;
+Change-Id=I742f792b3ae6a6ce6e56fc42cedd62b89135f34f; subject=RDMA/mlx5: Add query e-switch vport context to devx white list; feature=devx; upstream_status=accepted; general=upstream commit ID: 56e5acd405fa, tag: v5.2-rc1;
 Change-Id=Ia01a0ec9c661eab7eb064e37203b5bcc799e1d1d; subject=BACKPORTS: Fix mlx5_ib; feature=backports; upstream_status=ignore; general=;
 Change-Id=I80ff995616c60d698469e33727fa2543e5729c5d; subject=Update metadata; feature=ofed_scripts; upstream_status=ignore; general=;
-Change-Id=Ibee1a8fbd2bd05c79255ffc7a36fd38fe74020c3; subject=net/mlx5: Pass flow steering objects to fs_cmd; feature=roce_steering; upstream_status=in_progress; general=;
-Change-Id=I88221fb0cb2aae2dbd8a5b7ef494306b7b4abbf8; subject=net/mlx5: Add support in RDMA RX steering; feature=roce_steering; upstream_status=in_progress; general=;
-Change-Id=Ifdaa06d181acffd061abfcf2da518ee5ba08f4e7; subject=net/mlx5: Eswitch, enable RoCE loopback traffic; feature=roce_steering; upstream_status=in_progress; general=;
+Change-Id=Ibee1a8fbd2bd05c79255ffc7a36fd38fe74020c3; subject=net/mlx5: Pass flow steering objects to fs_cmd; feature=roce_steering; upstream_status=accepted; general=upstream commit ID: ae288a487514, tag: v5.2-rc1;
+Change-Id=I88221fb0cb2aae2dbd8a5b7ef494306b7b4abbf8; subject=net/mlx5: Add support in RDMA RX steering; feature=roce_steering; upstream_status=accepted; general=upstream commit ID: d83eb50e29de, tag: v5.2-rc1;
+Change-Id=Ifdaa06d181acffd061abfcf2da518ee5ba08f4e7; subject=net/mlx5: Eswitch, enable RoCE loopback traffic; feature=roce_steering; upstream_status=accepted; general=upstream commit ID: 80f09dfc237f, tag: v5.2-rc1;
 Change-Id=I09cac383906eb21fb767a2f45db24c4f5c9a10f4; subject=BACKPORTS: Fix backports; feature=backports; upstream_status=ignore; general=;
 Change-Id=Iaa6e6ac3804db13062ac6d505a3ab3ed192527bc; subject=RDMA/mlx5: Allow raw creation flow on reps; feature=mlx5_ib_reps; upstream_status=in_progress; general=;
 Change-Id=I7771ffab7493ab9e1a567d7674f39d2b4eb03745; subject=net/mlx5: Eswitch, expose eswitch encap mode; feature=sw_steering; upstream_status=in_progress; general=;
