@@ -59,7 +59,7 @@ Change-Id=I0480b5d616e8a04a84194dda5d0d8f250fd336da; subject=net/mlx5: Correctly
 Change-Id=Ic967d9c8c8297707b8576a42c41aa9ce1bd51463; subject=Revert "net/mlx5e: RX, Implement page biased-refcount optimization"; feature=mlx5e_perf_improvements; upstream_status=NA; general=;
 Change-Id=Ibebb7675aa5a3d5fe3de189ad7b9ee0e61bff977; subject=net/mlx5e: Cleanup refcnt optimization on XDP; feature=mlx5e_perf_improvements; upstream_status=NA; general=;
 Change-Id=I37b6f38243036f581170edaf001a165e24a5b408; subject=Backports: Fix mlx5 backports; feature=backports; upstream_status=ignore; general=;
-Change-Id=Ifcd36bdeee145201946bf44c2e5179915d63b714; subject=RDMA/mlx5: Cleanup rep when doing unload; feature=mlx5_bf; upstream_status=in_progress; general=;
+Change-Id=Ifcd36bdeee145201946bf44c2e5179915d63b714; subject=RDMA/mlx5: Cleanup rep when doing unload; feature=mlx5_bf; upstream_status=accepted; general=upstream commit ID: b8ca123860ee, tag: v5.3-rc1;
 Change-Id=Id47b7b7d27194d12909523d74b31ddfaa0b9f6b7; subject=net/mlx5: Fix VF upper bound for ECPF; feature=mlx5_bf; upstream_status=ignore; general=;
 Change-Id=I144cadfd3b5c7a85a468bddce62a7862d57f9f13; subject=mlx5/core: Use less aggressive warning when host PF is holding FW page; feature=mlx5_bf; upstream_status=in_progress; general=;
 Change-Id=I5fcdf14817b4d645d69c6dbf9b6b6dafcedd0489; subject=mlx5/core: E-Switch, Handle UC address change in switchdev mode; feature=mlx5_bf; upstream_status=in_progress; general=;

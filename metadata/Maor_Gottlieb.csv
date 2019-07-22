@@ -95,5 +95,5 @@ Change-Id=Ifdaa06d181acffd061abfcf2da518ee5ba08f4e7; subject=net/mlx5: Eswitch, 
 Change-Id=I09cac383906eb21fb767a2f45db24c4f5c9a10f4; subject=BACKPORTS: Fix backports; feature=backports; upstream_status=ignore; general=;
 Change-Id=Iaa6e6ac3804db13062ac6d505a3ab3ed192527bc; subject=RDMA/mlx5: Allow raw creation flow on reps; feature=mlx5_ib_reps; upstream_status=in_progress; general=;
 Change-Id=I7771ffab7493ab9e1a567d7674f39d2b4eb03745; subject=net/mlx5: Eswitch, expose eswitch encap mode; feature=sw_steering; upstream_status=in_progress; general=;
-Change-Id=Ifddf7f229b50aa4a44d7db69ea847f4ac790778b; subject=RDMA/mlx5: Consider eswitch encap mode; feature=sw_steering; upstream_status=in_progress; general=;
+Change-Id=Ifddf7f229b50aa4a44d7db69ea847f4ac790778b; subject=RDMA/mlx5: Consider eswitch encap mode; feature=sw_steering; upstream_status=accepted; general=upstream commit ID: cecae747b620, tag: v5.3-rc1;
 Change-Id=I507869cf9c2a7b6e21989735aa8e527d08ce60cb; subject=RDMA/mlx5: Check esw encap in switchdev only; feature=sw_steering; upstream_status=in_progress; general=;

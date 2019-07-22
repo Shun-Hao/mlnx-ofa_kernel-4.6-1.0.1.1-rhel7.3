@@ -7,7 +7,7 @@ Change-Id=I8c678617b49574cb5f11ac37febe1fe1a9e8aaad; subject=IB/mlx4: Allow work
 Change-Id=I2ff9268b638e35a4eb7cb9248284b1ce7ab0b0f4; subject=net/mlx4: Add deprecated module parameters; feature=mlx4_core_bugs; upstream_status=NA; general=;
 Change-Id=I1bc9a34f7c9ba0ffb9c73170cc88251efce7d3cf; subject=net/mlx5: Don't overrun EQ count when creating CQs; feature=set_cpu_eeh; upstream_status=ignore; general=;
 Change-Id=I839df8e9ac7a1208d703463ea57f8a97110593a5; subject=net/mlx5: Save PCI state after driver init; feature=mlx5_eeh_save_pci_state; upstream_status=in_progress; general=;
-Change-Id=Ifdfbab5c6038b71e134f62eafee35005e413b97b; subject=net/mlx5: Increase wait time for fw initialization; feature=wait_for_vf_flr; upstream_status=in_progress; general=;
+Change-Id=Ifdfbab5c6038b71e134f62eafee35005e413b97b; subject=net/mlx5: Increase wait time for fw initialization; feature=wait_for_vf_flr; upstream_status=accepted; general=upstream commit ID: b8a92577f4be, tag: v5.3-rc1;
 Change-Id=I5ff18bcaa89d6ede5e3686c5a0a95377e2e2b371; subject=IB/ipoib: Don't rely on netdev reg_state for synchronization; feature=ipoib_bugs; upstream_status=in_progress; general=;
 Change-Id=Id65bffc7b6195caeed4ae9014ebd9ddbcd9997e5; subject=net/mlx4: Add linux/prefetch.h include in en_rx.c; feature=mlx4_en_bugs; upstream_status=in_progress; general=;
 Change-Id=I12cbd31d408a96bb535412d17bb39a1a66d86c46; subject=net/mlx5: Don't create inner tirs if in ENCAP mode; feature=bf_compat; upstream_status=ignore; general=;
