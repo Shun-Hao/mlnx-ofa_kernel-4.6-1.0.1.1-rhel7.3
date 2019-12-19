@@ -77,3 +77,4 @@ Change-Id=If9957aa0ea90a60564dbc06af4b3b696e2ee8158; subject=mlx5/core: Properly
 Change-Id=I0bb35de7662b235f0b3ee52143cb793d3b43eff5; subject=IB/core: Move peer memory client umem handling to separate function; feature=peer_direct; upstream_status=NA; general=;
 Change-Id=Ice8136c1e515e922865bbd5eb1a6b58298958922; subject=IB/core: Go to host umem flow if peer client does not exist; feature=peer_direct; upstream_status=NA; general=;
 Change-Id=I15d1b0a8d0bde08b94c5bb00102453a165f30d7a; subject=IB/core: Return ENOMEM if peer client does not exist; feature=peer_direct; upstream_status=NA; general=;
+Change-Id=Idb5aefe2689f0b897b9c270b5b7a451604c025a9; subject=net/mlx4: Fix port up if trap when backports are disabled; feature=backports; upstream_status=ignore; general=;
