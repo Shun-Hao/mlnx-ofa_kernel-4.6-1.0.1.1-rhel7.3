@@ -1,0 +1,5 @@
+This repo is used for adding VXLAN encap/decap HW offload feature to OFED driver on rhel7.3.
+To compile:
+1. (This is need before the first compilation only)
+  ./configure  --with-core-mod --with-mlx5-mod --kernel-sources=<kernel src path> --kernel-version=VERSION -j
+2. make -j  
