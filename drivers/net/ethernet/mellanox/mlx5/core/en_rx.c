@@ -1084,7 +1084,7 @@ static struct metadata_dst *vxlan_tun_rx_dst_from_decap_match(struct mlx5e_decap
 
 #define MLX5E_CE_BIT_MASK 0x80
 
-static inline void mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
+static inline int mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
 				      u32 cqe_bcnt,
 				      struct mlx5e_rq *rq,
 				      struct sk_buff *skb)
@@ -1096,18 +1096,19 @@ static inline void mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
 	struct mlx5e_priv *priv = netdev_priv(netdev);
 	struct mlx5e_decap_match *decap_match = NULL;
 	struct metadata_dst *tun_dst;
+#ifdef CONFIG_COMPAT_LRO_ENABLED_IPOIB
+	u8 l4_hdr_type;
+#endif
 	u32 flow_tag = (be32_to_cpu(cqe->sop_drop_qpn) & MLX5E_TC_FLOW_ID_MASK);
 
 	if (flow_tag != (u32)MLX5E_DECAP_TABLE_MISS_TAG) {
 		decap_match = &priv->decap_match_table->data[flow_tag];
 		netdev = decap_match->vxlan_device;
+		if (!netdev) {
+			kfree_skb(skb);
+			return -ENODEV;
+		}
 	}
-
-#ifdef CONFIG_COMPAT_LRO_ENABLED_IPOIB
-	//struct mlx5e_priv *priv = netdev_priv(netdev);
-	u8 l4_hdr_type;
-#endif
-
 	skb->mac_len = ETH_HLEN;
 
 #if defined(CONFIG_MLX5_EN_TLS) && defined(HAVE_TLS_OFFLOAD_RX_RSYNC_REQUEST)
@@ -1183,9 +1184,10 @@ static inline void mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
 		skb_dst_set(skb, (struct dst_entry *)tun_dst);
 	}
 
+	return 0; 
 }
 
-static inline void mlx5e_complete_rx_cqe(struct mlx5e_rq *rq,
+static inline int mlx5e_complete_rx_cqe(struct mlx5e_rq *rq,
 					 struct mlx5_cqe64 *cqe,
 					 u32 cqe_bcnt,
 					 struct sk_buff *skb)
@@ -1195,12 +1197,13 @@ static inline void mlx5e_complete_rx_cqe(struct mlx5e_rq *rq,
 
 	stats->packets++;
 	stats->bytes += cqe_bcnt;
-	mlx5e_build_rx_skb(cqe, cqe_bcnt, rq, skb);
 
 	if (l4_hdr_type != CQE_L4_HDR_TYPE_TCP_ACK_NO_DATA) {
 		rq->dim_obj.sample.pkt_ctr  = rq->stats->packets;
 		rq->dim_obj.sample.byte_ctr = rq->stats->bytes;
 	}
+
+	return mlx5e_build_rx_skb(cqe, cqe_bcnt, rq, skb);
 }
 
 #ifndef HAVE_BUILD_SKB
@@ -1374,6 +1377,7 @@ void mlx5e_handle_rx_cqe(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
 	struct sk_buff *skb;
 	u32 cqe_bcnt;
 	u16 ci;
+	int err;
 
 	ci       = mlx5_wq_cyc_ctr2ix(wq, be16_to_cpu(cqe->wqe_counter));
 	wi       = get_frag(rq, ci);
@@ -1391,7 +1395,10 @@ void mlx5e_handle_rx_cqe(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
 		goto free_wqe;
 	}
 
-	mlx5e_complete_rx_cqe(rq, cqe, cqe_bcnt, skb);
+	err = mlx5e_complete_rx_cqe(rq, cqe, cqe_bcnt, skb);
+	if (err)
+		goto free_wqe;
+
 #ifdef CONFIG_COMPAT_LRO_ENABLED_IPOIB
 	if (IS_SW_LRO(&priv->channels.params))
 #if defined(HAVE_VLAN_GRO_RECEIVE) || defined(HAVE_VLAN_HWACCEL_RX)
@@ -1441,6 +1448,7 @@ void mlx5e_handle_rx_cqe_rep(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
 	struct sk_buff *skb;
 	u32 cqe_bcnt;
 	u16 ci;
+	int err;
 
 	ci       = mlx5_wq_cyc_ctr2ix(wq, be16_to_cpu(cqe->wqe_counter));
 	wi       = get_frag(rq, ci);
@@ -1458,7 +1466,9 @@ void mlx5e_handle_rx_cqe_rep(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
 		goto free_wqe;
 	}
 
-	mlx5e_complete_rx_cqe(rq, cqe, cqe_bcnt, skb);
+	err = mlx5e_complete_rx_cqe(rq, cqe, cqe_bcnt, skb);
+	if (err)
+		goto free_wqe;
 
 #ifdef HAVE_SKB_VLAN_POP
 	if (rep->vlan && skb_vlan_tag_present(skb))
@@ -1610,6 +1620,7 @@ void mlx5e_handle_rx_cqe_mpwrq(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
 	struct mlx5_wq_ll *wq;
 	struct sk_buff *skb;
 	u16 cqe_bcnt;
+	int err;
 
 	wi->consumed_strides += cstrides;
 
@@ -1633,7 +1644,10 @@ void mlx5e_handle_rx_cqe_mpwrq(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
 	if (!skb)
 		goto mpwrq_cqe_out;
 
-	mlx5e_complete_rx_cqe(rq, cqe, cqe_bcnt, skb);
+	err = mlx5e_complete_rx_cqe(rq, cqe, cqe_bcnt, skb);
+	if (err)
+		goto mpwrq_cqe_out;
+
 #ifdef CONFIG_COMPAT_LRO_ENABLED_IPOIB
 	if (IS_SW_LRO(&priv->channels.params))
 #if defined(HAVE_VLAN_GRO_RECEIVE) || defined(HAVE_VLAN_HWACCEL_RX)
@@ -1894,6 +1908,7 @@ void mlx5e_ipsec_handle_rx_cqe(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
 	struct sk_buff *skb;
 	u32 cqe_bcnt;
 	u16 ci;
+	int err;
 
 	ci       = mlx5_wq_cyc_ctr2ix(wq, be16_to_cpu(cqe->wqe_counter));
 	wi       = get_frag(rq, ci);
@@ -1911,9 +1926,13 @@ void mlx5e_ipsec_handle_rx_cqe(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
 		goto wq_cyc_pop;
 	}
 
-	mlx5e_complete_rx_cqe(rq, cqe, cqe_bcnt, skb);
+	err = mlx5e_complete_rx_cqe(rq, cqe, cqe_bcnt, skb);
+	if (err)
+		goto free_wqe;
+
 	napi_gro_receive(rq->cq.napi, skb);
 
+free_wqe:
 	mlx5e_free_rx_wqe(rq, wi, true);
 wq_cyc_pop:
 	mlx5_wq_cyc_pop(wq);
