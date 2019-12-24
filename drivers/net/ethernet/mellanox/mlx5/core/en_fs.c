@@ -1682,18 +1682,18 @@ static bool netdev_is_bond(struct net_device *netdev)
 }
 
 static void bond_insert_decap_match(struct net_device *netdev, __be64 tun_id, __be32 src, __be32 dst,
-				  __u8 tos, __u8 ttl, __be16 tp_src, __be16 tp_dst, struct net_device *vxlan_device)
+				  __u8 tos, __u8 ttl, __be16 tp_src, __be16 tp_dst, u32 mark, struct net_device *vxlan_device)
 {
 	struct bonding *bond = netdev_priv(netdev);
 	struct slave *slave;
 	struct list_head *iter;
 
 	bond_for_each_slave(bond, slave, iter)
-		mlx5e_insert_decap_match(slave->dev, tun_id, src, dst, tos, ttl, tp_src, tp_dst, vxlan_device);
+		mlx5e_insert_decap_match(slave->dev, tun_id, src, dst, tos, ttl, tp_src, tp_dst, mark, vxlan_device);
 }
 
 void mlx5e_insert_decap_match(struct net_device *netdev, __be64 tun_id, __be32 src, __be32 dst,
-				  __u8 tos, __u8 ttl, __be16 tp_src, __be16 tp_dst, struct net_device *vxlan_device)
+				  __u8 tos, __u8 ttl, __be16 tp_src, __be16 tp_dst, u32 mark, struct net_device *vxlan_device)
 {
 	struct mlx5e_priv *priv;
 	struct mlx5e_decap_match_table *decap_match_table;
@@ -1703,7 +1703,7 @@ void mlx5e_insert_decap_match(struct net_device *netdev, __be64 tun_id, __be32 s
 
 	if (!netdev_is_mlx5e_netdev(netdev)) {
 		if (netdev_is_bond(netdev)) {
-			bond_insert_decap_match(netdev, tun_id, src, dst, tos, ttl, tp_src, tp_dst, vxlan_device);
+			bond_insert_decap_match(netdev, tun_id, src, dst, tos, ttl, tp_src, tp_dst, mark, vxlan_device);
 		}
 		return;
 	}
@@ -1731,6 +1731,7 @@ void mlx5e_insert_decap_match(struct net_device *netdev, __be64 tun_id, __be32 s
 	new_decap_match->ttl = ttl;
 	new_decap_match->tp_src = tp_src;
 	new_decap_match->tp_dst = tp_dst;
+	new_decap_match->mark = mark;
 	new_decap_match->vxlan_device = vxlan_device;
 
 	err = mlx5e_add_decap_rule(priv, new_decap_match, new_entry_index);

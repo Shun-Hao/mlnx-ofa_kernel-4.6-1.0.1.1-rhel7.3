@@ -265,7 +265,7 @@ int mlx5e_insert_encap_context(struct net_device *netdev, __be64 tun_id, __be32 
 void mlx5e_remove_encap_context(struct net_device *netdev, u32 encap_flow_tag);
 
 void mlx5e_insert_decap_match(struct net_device *netdev, __be64 tun_id, __be32 src, __be32 dst,
-				  __u8 tos, __u8 ttl, __be16 tp_src, __be16 tp_dst, struct net_device *vxlan_device);
+				  __u8 tos, __u8 ttl, __be16 tp_src, __be16 tp_dst, u32 mark, struct net_device *vxlan_device);
 void mlx5e_remove_decap_match(struct net_device *netdev, __be64 tun_id, __be32 src, __be32 dst, __be16 tp_dst);
 
 #endif

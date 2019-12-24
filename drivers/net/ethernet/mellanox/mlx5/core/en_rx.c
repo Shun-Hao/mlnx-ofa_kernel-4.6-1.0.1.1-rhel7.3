@@ -1181,6 +1181,7 @@ static inline int mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
 	if (decap_match) {
 		tun_dst = vxlan_tun_rx_dst_from_decap_match(decap_match);
 		skb_dst_set(skb, (struct dst_entry *)tun_dst);
+		skb->mark = decap_match->mark;
 	}
 
 	return 0; 
