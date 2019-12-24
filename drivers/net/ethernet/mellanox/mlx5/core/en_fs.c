@@ -1624,6 +1624,9 @@ static int mlx5e_add_decap_rule(struct mlx5e_priv *priv, struct mlx5e_decap_matc
 	MLX5_SET_TO_ONES(fte_match_param, spec->match_criteria, outer_headers.dst_ipv4_dst_ipv6.ipv4_layout.ipv4);
 	MLX5_SET(fte_match_param, spec->match_value, outer_headers.dst_ipv4_dst_ipv6.ipv4_layout.ipv4, be32_to_cpu(decap_match->dst));
 
+	MLX5_SET_TO_ONES(fte_match_param, spec->match_criteria, outer_headers.src_ipv4_src_ipv6.ipv4_layout.ipv4);
+	MLX5_SET(fte_match_param, spec->match_value, outer_headers.src_ipv4_src_ipv6.ipv4_layout.ipv4, be32_to_cpu(decap_match->src));
+
 	MLX5_SET_TO_ONES(fte_match_param, spec->match_criteria, misc_parameters.vxlan_vni);
 	MLX5_SET(fte_match_param, spec->match_value, misc_parameters.vxlan_vni, be64_to_cpu(decap_match->tun_id));
 
@@ -1641,13 +1644,14 @@ free_spec:
 	return err;
 }
 
-static int mlx5e_find_decap_match(struct mlx5e_decap_match_table *decap_match_table, __be64 tun_id, __be32 dst, __be16 tp_dst)
+static int mlx5e_find_decap_match(struct mlx5e_decap_match_table *decap_match_table, __be64 tun_id, __be32 src, __be32 dst, __be16 tp_dst)
 {
 	int i;
 
 	for (i = 0; i < MLX5E_DECAP_MATCHES_TABLE_LEN; i++) {
 		if (decap_match_table->data[i].ref_count > 0) {
 			if (decap_match_table->data[i].tun_id == tun_id &&
+				decap_match_table->data[i].src == src &&
 				decap_match_table->data[i].dst == dst &&
 				decap_match_table->data[i].tp_dst == tp_dst)
 				return i;
@@ -1709,7 +1713,7 @@ void mlx5e_insert_decap_match(struct net_device *netdev, __be64 tun_id, __be32 s
 
 	mutex_lock(&decap_match_table->lock);
 
-	new_entry_index = mlx5e_find_decap_match(decap_match_table, tun_id, dst, tp_dst);
+	new_entry_index = mlx5e_find_decap_match(decap_match_table, tun_id, src, dst, tp_dst);
 	if (new_entry_index < 0)
 		new_entry_index = mlx5e_find_available_decap_entry_slot(decap_match_table);
 	if (new_entry_index < 0)
@@ -1741,17 +1745,17 @@ unlock:
 }
 EXPORT_SYMBOL(mlx5e_insert_decap_match);
 
-static void bond_remove_decap_match(struct net_device *netdev, __be64 tun_id, __be32 dst, __be16 tp_dst)
+static void bond_remove_decap_match(struct net_device *netdev, __be64 tun_id, __be32 src, __be32 dst, __be16 tp_dst)
 {
 	struct bonding *bond = netdev_priv(netdev);
 	struct slave *slave;
 	struct list_head *iter;
 
 	bond_for_each_slave(bond, slave, iter)
-		mlx5e_remove_decap_match(slave->dev, tun_id, dst, tp_dst);
+		mlx5e_remove_decap_match(slave->dev, tun_id, src, dst, tp_dst);
 }
 
-void mlx5e_remove_decap_match(struct net_device *netdev, __be64 tun_id, __be32 dst, __be16 tp_dst)
+void mlx5e_remove_decap_match(struct net_device *netdev, __be64 tun_id, __be32 src, __be32 dst, __be16 tp_dst)
 {
 	struct mlx5e_priv *priv;
 	struct mlx5e_decap_match_table *decap_match_table;
@@ -1760,7 +1764,7 @@ void mlx5e_remove_decap_match(struct net_device *netdev, __be64 tun_id, __be32 d
 
 	if (!netdev_is_mlx5e_netdev(netdev)) {
 		if (netdev_is_bond(netdev)) {
-			bond_remove_decap_match(netdev, tun_id, dst, tp_dst);
+			bond_remove_decap_match(netdev, tun_id, src, dst, tp_dst);
 		}
 		return;
 	}
@@ -1770,7 +1774,7 @@ void mlx5e_remove_decap_match(struct net_device *netdev, __be64 tun_id, __be32 d
 
 	mutex_lock(&decap_match_table->lock);
 
-	entry_index = mlx5e_find_decap_match(decap_match_table, tun_id, dst, tp_dst);
+	entry_index = mlx5e_find_decap_match(decap_match_table, tun_id, src, dst, tp_dst);
 	if (entry_index < 0)
 		goto unlock;
 
@@ -1876,6 +1880,7 @@ static int mlx5e_create_decap_table(struct mlx5e_priv *priv)
 	MLX5_SET_TO_ONES(fte_match_param, match_criteria, outer_headers.ethertype);
 	MLX5_SET_TO_ONES(fte_match_param, match_criteria, outer_headers.udp_dport);
 	MLX5_SET_TO_ONES(fte_match_param, match_criteria, outer_headers.dst_ipv4_dst_ipv6.ipv4_layout.ipv4);
+	MLX5_SET_TO_ONES(fte_match_param, match_criteria, outer_headers.src_ipv4_src_ipv6.ipv4_layout.ipv4);
 	MLX5_SET_TO_ONES(fte_match_param, match_criteria, misc_parameters.vxlan_vni);
 	MLX5_SET_CFG(decap_in, match_criteria_enable, MLX5_MATCH_OUTER_HEADERS | MLX5_MATCH_MISC_PARAMETERS);
 	MLX5_SET_CFG(decap_in, start_flow_index, ix);
@@ -2313,6 +2318,9 @@ int mlx5e_insert_encap_context(struct net_device *netdev, __be64 tun_id, __be32 
 	struct mlx5e_encap_context *new_encap_context;
 	int new_entry_index;
 	int err = 0;
+
+	if (!netdev)
+		return -EOPNOTSUPP;
 
 	if (!netdev_is_mlx5e_netdev(netdev)) {
 		if (netdev_is_bond(netdev)) {
