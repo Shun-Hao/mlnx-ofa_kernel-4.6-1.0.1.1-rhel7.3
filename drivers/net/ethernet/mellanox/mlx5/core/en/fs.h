@@ -110,6 +110,10 @@ enum {
 #endif
 };
 
+enum {
+	MLX5E_ENCAP_FT_LEVEL = 0,
+};
+
 #ifdef CONFIG_MLX5_EN_RXNFC
 
 struct mlx5e_ethtool_table {
@@ -208,6 +212,52 @@ struct ttc_params {
 	struct mlx5e_ttc_table *inner_ttc;
 };
 
+struct mlx5_encap_info {
+	char  *encap_header;
+	int    encap_size;
+	u32    encap_id;
+	int    encap_id_valid;
+};
+
+struct mlx5e_encap_table {
+	struct mlx5e_flow_table  ft;
+	struct mlx5_flow_handle *dont_encap_rule;
+};
+
+struct mlx5e_encap_context {
+	/*VxLAN fields*/
+	__be64	tun_id;
+	/*L4 fields*/
+	__be16	tp_dst;
+	/*L3 fields*/
+	__be32	src;
+	__be32	dst;
+	__u8	ttl;
+	__u8	tos;
+	__be16	frag_off;
+	/*L2 fields*/
+	unsigned char	mac_dest[ETH_ALEN];
+	unsigned char	mac_source[ETH_ALEN];
+	bool	is_vlan;
+	int	vid;
+	u16 vlan_proto;
+	/*Control fields*/
+	struct mlx5_flow_handle	*rule;
+	struct mlx5_encap_info	info;
+	u32 flow_tag;
+	int ref_count;
+};
+
+struct mlx5e_encap_context_table {
+	struct mutex lock;
+	struct mlx5e_encap_context data[];
+};
+
+struct mlx5e_tx_steering {
+	struct mlx5e_encap_context_table *encap_context_table;
+	struct mlx5e_encap_table    encap;
+};
+
 void mlx5e_set_ttc_basic_params(struct mlx5e_priv *priv, struct ttc_params *ttc_params);
 void mlx5e_set_ttc_ft_params(struct ttc_params *ttc_params);
 void mlx5e_set_inner_ttc_ft_params(struct ttc_params *ttc_params);
@@ -231,6 +281,9 @@ int mlx5e_sniffer_start(struct mlx5e_priv *priv);
 int mlx5e_sniffer_stop(struct mlx5e_priv *priv);
 int mlx5e_create_flow_steering(struct mlx5e_priv *priv);
 void mlx5e_destroy_flow_steering(struct mlx5e_priv *priv);
+
+int mlx5e_create_tx_steering(struct mlx5e_priv *priv);
+void mlx5e_destroy_tx_steering(struct mlx5e_priv *priv);
 
 #endif /* __MLX5E_FLOW_STEER_H__ */
 

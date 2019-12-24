@@ -900,6 +900,7 @@ struct mlx5e_priv {
 					    MLX5E_MAX_RL_QUEUES];
 
 	struct mlx5e_flow_steering fs;
+	struct mlx5e_tx_steering   tx_steering;
 
 	struct workqueue_struct    *wq;
 	struct work_struct         update_carrier_work;
@@ -973,6 +974,11 @@ struct mlx5e_profile {
 	} rx_handlers;
 	int	max_tc;
 };
+
+static inline bool netdev_is_mlx5e_netdev(struct net_device *netdev)
+{
+	return netdev->netdev_ops == &mlx5e_netdev_ops;
+}
 
 /* Use this function to get max num channels after netdev was created */
 static inline int mlx5e_get_netdev_max_channels(struct mlx5e_priv *priv)
