@@ -39,6 +39,7 @@
 #include <net/page_pool.h>
 #endif
 #include <net/inet_ecn.h>
+#include <net/vxlan.h>
 #include "en.h"
 #include "en_tc.h"
 #include "eswitch.h"
@@ -48,6 +49,7 @@
 #include "en_accel/tls_rxtx.h"
 #include "lib/clock.h"
 #include "en/xdp.h"
+#include "en/fs.h"
 
 static inline bool mlx5e_rx_hw_stamp(struct hwtstamp_config *config)
 {
@@ -1041,6 +1043,45 @@ csum_none:
 	stats->csum_none++;
 }
 
+static inline struct metadata_dst *backport__ip_tun_set_dst(__be32 saddr,
+							    __be32 daddr,
+							    __u8 tos, __u8 ttl,
+							    __be16 tp_dst,
+							    __be16 flags,
+							    __be64 tunnel_id,
+							    int md_size)
+{
+	struct metadata_dst *tun_dst;
+
+	tun_dst = tun_rx_dst(md_size);
+	if (!tun_dst)
+		return NULL;
+
+	ip_tunnel_key_init(&tun_dst->u.tun_info.key,
+			   saddr, daddr, tos, ttl,
+			   0, 0, tp_dst, tunnel_id, flags);
+	return tun_dst;
+}
+
+static struct metadata_dst *vxlan_tun_rx_dst_from_decap_match(struct mlx5e_decap_match* decap_match)
+{
+	struct metadata_dst *tun_dst;
+	struct ip_tunnel_info *info;
+
+	tun_dst = backport__ip_tun_set_dst(decap_match->src, decap_match->dst, decap_match->tos, decap_match->ttl,
+				0, TUNNEL_KEY, decap_match->tun_id, sizeof(struct vxlan_metadata));
+
+	if (!tun_dst)
+		return NULL;
+
+	info = &tun_dst->u.tun_info;
+	info->key.tp_src = decap_match->tp_src;
+	info->key.tp_dst = decap_match->tp_dst;
+	// if (udp_hdr(skb)->check)
+	// 	info->key.tun_flags |= TUNNEL_CSUM;
+	return tun_dst;
+}
+
 #define MLX5E_CE_BIT_MASK 0x80
 
 static inline void mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
@@ -1051,8 +1092,19 @@ static inline void mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
 	u8 lro_num_seg = be32_to_cpu(cqe->srqn) >> 24;
 	struct mlx5e_rq_stats *stats = rq->stats;
 	struct net_device *netdev = rq->netdev;
-#ifdef CONFIG_COMPAT_LRO_ENABLED_IPOIB
+
 	struct mlx5e_priv *priv = netdev_priv(netdev);
+	struct mlx5e_decap_match *decap_match = NULL;
+	struct metadata_dst *tun_dst;
+	u32 flow_tag = (be32_to_cpu(cqe->sop_drop_qpn) & MLX5E_TC_FLOW_ID_MASK);
+
+	if (flow_tag != (u32)MLX5E_DECAP_TABLE_MISS_TAG) {
+		decap_match = &priv->decap_match_table->data[flow_tag];
+		netdev = decap_match->vxlan_device;
+	}
+
+#ifdef CONFIG_COMPAT_LRO_ENABLED_IPOIB
+	//struct mlx5e_priv *priv = netdev_priv(netdev);
 	u8 l4_hdr_type;
 #endif
 
@@ -1116,6 +1168,7 @@ static inline void mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
 			  (l4_hdr_type != CQE_L4_HDR_TYPE_NONE) &&
 			  (l4_hdr_type != CQE_L4_HDR_TYPE_UDP)));
 #endif
+
 	/* checking CE bit in cqe - MSB in ml_path field */
 	if (unlikely(cqe->ml_path & MLX5E_CE_BIT_MASK))
 		mlx5e_enable_ecn(rq, skb);
@@ -1124,6 +1177,12 @@ static inline void mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
 	if (unlikely(mlx5_get_cqe_ft(cqe) ==
 		     cpu_to_be32(MLX5_FS_OFFLOAD_FLOW_TAG)))
 		skb->protocol = 0xffff;
+
+	if (decap_match) {
+		tun_dst = vxlan_tun_rx_dst_from_decap_match(decap_match);
+		skb_dst_set(skb, (struct dst_entry *)tun_dst);
+	}
+
 }
 
 static inline void mlx5e_complete_rx_cqe(struct mlx5e_rq *rq,

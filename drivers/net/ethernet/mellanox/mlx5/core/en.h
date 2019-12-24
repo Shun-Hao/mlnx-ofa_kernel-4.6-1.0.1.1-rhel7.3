@@ -953,6 +953,8 @@ struct mlx5e_priv {
 	struct mlx5e_ecn_ctx ecn_ctx[MLX5E_CONG_PROTOCOL_NUM];
 	struct mlx5e_ecn_enable_ctx ecn_enable_ctx[MLX5E_CONG_PROTOCOL_NUM][8];
 	struct mlx5e_delay_drop delay_drop;
+
+	struct mlx5e_decap_match_table* decap_match_table;
 };
 
 struct mlx5e_profile {

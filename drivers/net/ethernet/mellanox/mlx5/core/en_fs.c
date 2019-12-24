@@ -39,6 +39,7 @@
 #include "en.h"
 #include "lib/mpfs.h"
 #include "fs_core.h"
+#include "net/ip_tunnels.h"
 
 static int mlx5e_add_l2_flow_rule(struct mlx5e_priv *priv,
 				  struct mlx5e_l2_rule *ai, int type);
@@ -1285,7 +1286,7 @@ static int mlx5e_add_l2_flow_rule(struct mlx5e_priv *priv,
 			       outer_headers.dmac_47_16);
 
 	dest.type = MLX5_FLOW_DESTINATION_TYPE_FLOW_TABLE;
-	dest.ft = priv->fs.ttc.ft.t;
+	dest.ft = priv->fs.decap.ft.t;
 
 	switch (type) {
 	case MLX5E_FULLMATCH:
@@ -1584,6 +1585,322 @@ static void mlx5e_destroy_vlan_table(struct mlx5e_priv *priv)
 	mlx5e_destroy_flow_table(&priv->fs.vlan.ft);
 }
 
+#define MLX5E_DECAP_MATCHES_TABLE_LEN 20
+#define MLX5E_DECAP_NUM_GROUPS 2
+#define MLX5E_DECAP_GROUP2_SIZE 1 //miss group
+#define MLX5E_DECAP_TABLE_SIZE (MLX5E_DECAP_MATCHES_TABLE_LEN + MLX5E_DECAP_GROUP2_SIZE)
+
+static int mlx5e_add_decap_rule(struct mlx5e_priv *priv, struct mlx5e_decap_match *decap_match, int match_index)
+{
+	struct mlx5_flow_table *ft = priv->fs.decap.ft.t;
+	struct mlx5_flow_handle *decap_rule;
+	struct mlx5_flow_destination dest = {};
+	struct mlx5_flow_act flow_act = {
+               .action = MLX5_FLOW_CONTEXT_ACTION_FWD_DEST | MLX5_FLOW_CONTEXT_ACTION_DECAP,
+	};
+	struct mlx5_flow_spec *spec;
+	int err = 0;
+
+	spec = kvzalloc(sizeof(*spec), GFP_KERNEL);
+	if (!spec)
+		return -ENOMEM;
+
+	flow_act.flags |= FLOW_ACT_HAS_TAG;
+	flow_act.flow_tag = match_index;
+
+	dest.type = MLX5_FLOW_DESTINATION_TYPE_FLOW_TABLE;
+	dest.ft = priv->fs.ttc.ft.t;
+	// update spec, flow act, dest here
+	spec->match_criteria_enable = MLX5_MATCH_OUTER_HEADERS | MLX5_MATCH_MISC_PARAMETERS;
+
+	MLX5_SET_TO_ONES(fte_match_param, spec->match_criteria, outer_headers.ethertype);
+	MLX5_SET(fte_match_param, spec->match_value, outer_headers.ethertype, ETH_P_IP);
+	MLX5_SET_TO_ONES(fte_match_param, spec->match_criteria, outer_headers.udp_dport);
+	MLX5_SET(fte_match_param, spec->match_value, outer_headers.udp_dport, be16_to_cpu(decap_match->tp_dst));
+
+	MLX5_SET_TO_ONES(fte_match_param, spec->match_criteria, outer_headers.dst_ipv4_dst_ipv6.ipv4_layout.ipv4);
+	MLX5_SET(fte_match_param, spec->match_value, outer_headers.dst_ipv4_dst_ipv6.ipv4_layout.ipv4, be32_to_cpu(decap_match->dst));
+
+	MLX5_SET_TO_ONES(fte_match_param, spec->match_criteria, misc_parameters.vxlan_vni);
+	MLX5_SET(fte_match_param, spec->match_value, misc_parameters.vxlan_vni, be64_to_cpu(decap_match->tun_id));
+
+	decap_rule = mlx5_add_flow_rules(ft, spec, &flow_act, &dest, 1);
+	if (IS_ERR(decap_rule)) {
+		err = PTR_ERR(decap_rule);
+		netdev_err(priv->netdev, "%s: Failed to add decap rule, err:%d\n", __func__, err);
+		goto free_spec;
+	}
+
+	decap_match->rule = decap_rule;
+
+free_spec:
+	kvfree(spec);
+	return err;
+}
+
+static int mlx5e_find_decap_match(struct mlx5e_decap_match_table *decap_match_table, __be64 tun_id, __be32 dst, __be16 tp_dst)
+{
+	int i;
+
+	for (i = 0; i < MLX5E_DECAP_MATCHES_TABLE_LEN; i++) {
+		if (decap_match_table->data[i].ref_count > 0) {
+			if (decap_match_table->data[i].tun_id == tun_id &&
+				decap_match_table->data[i].dst == dst &&
+				decap_match_table->data[i].tp_dst == tp_dst)
+				return i;
+		}
+	}
+
+	return -ENODATA;
+}
+
+static int mlx5e_find_available_decap_entry_slot(struct mlx5e_decap_match_table *decap_match_table)
+{
+	int i;
+
+	for (i = 0; i < MLX5E_DECAP_MATCHES_TABLE_LEN; i++) {
+		if (decap_match_table->data[i].ref_count == 0)
+			return i;
+	}
+
+	return -ENODATA;
+}
+
+void mlx5e_insert_decap_match(struct net_device *netdev, __be64 tun_id, __be32 src, __be32 dst,
+				  __u8 tos, __u8 ttl, __be16 tp_src, __be16 tp_dst, struct net_device *vxlan_device)
+{
+	struct mlx5e_priv *priv;
+	struct mlx5e_decap_match_table *decap_match_table;
+	struct mlx5e_decap_match *new_decap_match;
+	int new_entry_index;
+	int err;
+
+	if (!netdev_is_mlx5e_netdev(netdev))
+		return;
+
+	priv = netdev_priv(netdev);
+	decap_match_table = priv->decap_match_table;
+
+	mutex_lock(&decap_match_table->lock);
+
+	new_entry_index = mlx5e_find_decap_match(decap_match_table, tun_id, dst, tp_dst);
+	if (new_entry_index < 0)
+		new_entry_index = mlx5e_find_available_decap_entry_slot(decap_match_table);
+	if (new_entry_index < 0)
+		goto unlock;
+
+	new_decap_match = &decap_match_table->data[new_entry_index];
+
+	if (new_decap_match->ref_count > 0)
+		goto increment_ref_count;
+
+	new_decap_match->tun_id = tun_id;
+	new_decap_match->src = src;
+	new_decap_match->dst = dst;
+	new_decap_match->tos = tos;
+	new_decap_match->ttl = ttl;
+	new_decap_match->tp_src = tp_src;
+	new_decap_match->tp_dst = tp_dst;
+	new_decap_match->vxlan_device = vxlan_device;
+
+	err = mlx5e_add_decap_rule(priv, new_decap_match, new_entry_index);
+	if (err)
+		goto unlock;
+
+increment_ref_count:
+	new_decap_match->ref_count++;
+
+unlock:
+	mutex_unlock(&decap_match_table->lock);
+}
+EXPORT_SYMBOL(mlx5e_insert_decap_match);
+
+void mlx5e_remove_decap_match(struct net_device *netdev, __be64 tun_id, __be32 dst, __be16 tp_dst)
+{
+	struct mlx5e_priv *priv;
+	struct mlx5e_decap_match_table *decap_match_table;
+	struct mlx5e_decap_match *decap_match;
+	int entry_index;
+
+	if (!netdev_is_mlx5e_netdev(netdev))
+		return;
+
+	priv = netdev_priv(netdev);
+	decap_match_table = priv->decap_match_table;
+
+	mutex_lock(&decap_match_table->lock);
+
+	entry_index = mlx5e_find_decap_match(decap_match_table, tun_id, dst, tp_dst);
+	if (entry_index < 0)
+		goto unlock;
+
+	decap_match = &decap_match_table->data[entry_index];
+	if (decap_match->ref_count <= 0)
+		goto unlock;
+
+	decap_match->ref_count--;
+
+	if (decap_match->ref_count <= 0) {
+		if (decap_match->rule) {
+			mlx5_del_flow_rules(decap_match->rule);
+			decap_match->rule = NULL;
+		}
+	}
+
+unlock:
+	mutex_unlock(&decap_match_table->lock);
+}
+EXPORT_SYMBOL(mlx5e_remove_decap_match);
+
+static int mlx5e_add_decap_table_miss_rule(struct mlx5e_priv *priv)
+{
+	struct mlx5_flow_table *ft = priv->fs.decap.ft.t;
+	struct mlx5_flow_handle *miss_rule;
+	struct mlx5_flow_destination dest = {};
+	struct mlx5_flow_act flow_act = {};
+	struct mlx5_flow_spec *spec;
+	int err = 0;
+
+	spec = kvzalloc(sizeof(*spec), GFP_KERNEL);
+	if (!spec)
+		return -ENOMEM;
+
+	dest.type = MLX5_FLOW_DESTINATION_TYPE_FLOW_TABLE;
+	dest.ft = priv->fs.ttc.ft.t;
+
+	flow_act.action = MLX5_FLOW_CONTEXT_ACTION_FWD_DEST;
+	flow_act.flags = FLOW_ACT_HAS_TAG;
+	flow_act.flow_tag = MLX5E_DECAP_TABLE_MISS_TAG;
+
+	miss_rule = mlx5_add_flow_rules(ft, spec, &flow_act, &dest, 1);
+	if (IS_ERR(miss_rule)) {
+		err = PTR_ERR(miss_rule);
+		netdev_err(priv->netdev, "%s: Failed to add decap table miss rule, err:%d\n", __func__, err);
+		goto free_spec;
+	}
+
+	priv->fs.decap.miss_rule = miss_rule;
+
+free_spec:
+	kvfree(spec);
+	return err;
+}
+
+static void mlx5e_del_decap_table_miss_rule(struct mlx5e_priv *priv)
+{
+	if (priv->fs.decap.miss_rule){
+		mlx5_del_flow_rules(priv->fs.decap.miss_rule);
+		priv->fs.decap.miss_rule = NULL;
+	}
+}
+
+static int mlx5e_create_decap_table(struct mlx5e_priv *priv)
+{
+	int inlen = MLX5_ST_SZ_BYTES(create_flow_group_in);
+	struct mlx5e_flow_table *ft = &priv->fs.decap.ft;
+	struct mlx5_flow_table_attr ft_attr = {};
+	int ix=0;
+	int err;
+	u32 *decap_in;
+	void *match_criteria;
+
+	ft_attr.max_fte = MLX5E_DECAP_TABLE_SIZE;
+	ft_attr.level = MLX5E_DECAP_FT_LEVEL;
+	ft_attr.prio = MLX5E_NIC_PRIO;
+	ft_attr.flags = MLX5_FLOW_TABLE_TUNNEL_EN_DECAP; //decap_en bit
+
+	ft->t = mlx5_create_flow_table(priv->fs.ns, &ft_attr);
+
+	if (IS_ERR(ft->t)) {
+		err = PTR_ERR(ft->t);
+		ft->t = NULL;
+		return err;
+	}
+
+	// add more groups for more matchers.
+	ft->g = kcalloc(MLX5E_DECAP_NUM_GROUPS, sizeof(*ft->g), GFP_KERNEL);
+	if (!ft->g) {
+		err = -ENOMEM;
+		goto err_destroy_decap_table;
+	}
+
+	decap_in = kvzalloc(inlen, GFP_KERNEL);
+	if (!decap_in) {
+		err = -ENOMEM;
+		kfree(ft->g);
+		goto err_destroy_decap_table;
+	}
+
+	memset(decap_in, 0, inlen);
+	match_criteria = MLX5_ADDR_OF(create_flow_group_in, decap_in, match_criteria);
+	MLX5_SET_TO_ONES(fte_match_param, match_criteria, outer_headers.ethertype);
+	MLX5_SET_TO_ONES(fte_match_param, match_criteria, outer_headers.udp_dport);
+	MLX5_SET_TO_ONES(fte_match_param, match_criteria, outer_headers.dst_ipv4_dst_ipv6.ipv4_layout.ipv4);
+	MLX5_SET_TO_ONES(fte_match_param, match_criteria, misc_parameters.vxlan_vni);
+	MLX5_SET_CFG(decap_in, match_criteria_enable, MLX5_MATCH_OUTER_HEADERS | MLX5_MATCH_MISC_PARAMETERS);
+	MLX5_SET_CFG(decap_in, start_flow_index, ix);
+	ix += MLX5E_DECAP_MATCHES_TABLE_LEN;
+	MLX5_SET_CFG(decap_in, end_flow_index, ix - 1);
+
+	ft->g[ft->num_groups] = mlx5_create_flow_group(ft->t, decap_in);
+	if (IS_ERR(ft->g[ft->num_groups]))
+		goto err_destroy_groups;
+	ft->num_groups++;
+
+	memset(decap_in, 0, inlen);
+	MLX5_SET_CFG(decap_in, start_flow_index, ix);
+	ix += MLX5E_DECAP_GROUP2_SIZE;
+	MLX5_SET_CFG(decap_in, end_flow_index, ix - 1);
+
+	ft->g[ft->num_groups] = mlx5_create_flow_group(ft->t, decap_in);
+	if (IS_ERR(ft->g[ft->num_groups]))
+		goto err_destroy_groups;
+	ft->num_groups++;
+
+	mlx5e_add_decap_table_miss_rule(priv);
+
+	kvfree(decap_in);
+	return 0;
+
+err_destroy_groups:
+	err = PTR_ERR(ft->g[ft->num_groups]);
+	ft->g[ft->num_groups] = NULL;
+	mlx5e_destroy_groups(ft);
+	kfree(ft->g);
+	kvfree(decap_in);
+err_destroy_decap_table:
+	mlx5_destroy_flow_table(ft->t);
+	ft->t = NULL;
+
+	return err;
+}
+
+static void mlx5e_destroy_decap_table(struct mlx5e_priv *priv)
+{
+	mlx5e_del_decap_table_miss_rule(priv);
+	mlx5e_destroy_flow_table(&priv->fs.decap.ft);
+}
+
+int mlx5e_init_decap_matches_table(struct mlx5e_priv *priv)
+{
+	struct mlx5e_decap_match_table *decap_match_table;
+
+	decap_match_table = kzalloc(sizeof(*decap_match_table) + MLX5E_DECAP_MATCHES_TABLE_LEN * sizeof(struct mlx5e_decap_match), GFP_ATOMIC);
+	if (!decap_match_table)
+		return -ENODATA;
+
+	mutex_init(&decap_match_table->lock);
+
+	priv->decap_match_table = decap_match_table;
+
+	return 0;
+}
+
+void mlx5e_destroy_decap_matches_table(struct mlx5e_priv *priv)
+{
+	kfree(priv->decap_match_table);
+}
+
 int mlx5e_create_flow_steering(struct mlx5e_priv *priv)
 {
 	struct ttc_params ttc_params = {};
@@ -1641,10 +1958,19 @@ int mlx5e_create_flow_steering(struct mlx5e_priv *priv)
 		goto err_destroy_l2_table;
 	}
 
+	err = mlx5e_create_decap_table(priv);
+	if (err) {
+		netdev_err(priv->netdev, "Failed to create decap table, err=%d\n",
+			   err);
+		goto err_destroy_vlan_table;
+	}
+
 	mlx5e_ethtool_init_steering(priv);
 
 	return 0;
 
+err_destroy_vlan_table:
+	mlx5e_destroy_vlan_table(priv);
 err_destroy_l2_table:
 	mlx5e_destroy_l2_table(priv);
 err_destroy_ttc_table:
@@ -1659,6 +1985,7 @@ err_destroy_arfs_tables:
 
 void mlx5e_destroy_flow_steering(struct mlx5e_priv *priv)
 {
+	mlx5e_destroy_decap_table(priv);
 	mlx5e_destroy_vlan_table(priv);
 	mlx5e_destroy_l2_table(priv);
 	mlx5e_destroy_ttc_table(priv, &priv->fs.ttc);

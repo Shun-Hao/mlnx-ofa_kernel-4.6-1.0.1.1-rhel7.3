@@ -6121,8 +6121,14 @@ static int mlx5e_init_nic_rx(struct mlx5e_priv *priv)
 	if (err)
 		goto err_destroy_flow_steering;
 
+	err = mlx5e_init_decap_matches_table(priv);
+	if (err)
+		goto err_destroy_tc_nic;
+
 	return 0;
 
+err_destroy_tc_nic:
+	mlx5e_tc_nic_cleanup(priv);
 err_destroy_flow_steering:
 	mlx5e_destroy_flow_steering(priv);
 err_destroy_direct_tirs:
@@ -6142,6 +6148,7 @@ err_destroy_q_counters:
 
 static void mlx5e_cleanup_nic_rx(struct mlx5e_priv *priv)
 {
+	mlx5e_destroy_decap_matches_table(priv);
 	mlx5e_tc_nic_cleanup(priv);
 	mlx5e_destroy_flow_steering(priv);
 	mlx5e_destroy_direct_tirs(priv);
