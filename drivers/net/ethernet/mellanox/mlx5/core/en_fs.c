@@ -36,6 +36,7 @@
 #include <linux/tcp.h>
 #include <linux/mlx5/fs.h>
 #include <net/vxlan.h>
+#include <net/bonding.h>
 #include "en.h"
 #include "lib/mpfs.h"
 #include "fs_core.h"
@@ -1667,6 +1668,25 @@ static int mlx5e_find_available_decap_entry_slot(struct mlx5e_decap_match_table 
 	return -ENODATA;
 }
 
+static bool netdev_is_bond(struct net_device *netdev)
+{
+	if (netdev && netdev->dev.type && netdev->dev.type->name)
+		return !strcmp(netdev->dev.type->name, "bond");
+
+	return false;
+}
+
+static void bond_insert_decap_match(struct net_device *netdev, __be64 tun_id, __be32 src, __be32 dst,
+				  __u8 tos, __u8 ttl, __be16 tp_src, __be16 tp_dst, struct net_device *vxlan_device)
+{
+	struct bonding *bond = netdev_priv(netdev);
+	struct slave *slave;
+	struct list_head *iter;
+
+	bond_for_each_slave(bond, slave, iter)
+		mlx5e_insert_decap_match(slave->dev, tun_id, src, dst, tos, ttl, tp_src, tp_dst, vxlan_device);
+}
+
 void mlx5e_insert_decap_match(struct net_device *netdev, __be64 tun_id, __be32 src, __be32 dst,
 				  __u8 tos, __u8 ttl, __be16 tp_src, __be16 tp_dst, struct net_device *vxlan_device)
 {
@@ -1676,8 +1696,12 @@ void mlx5e_insert_decap_match(struct net_device *netdev, __be64 tun_id, __be32 s
 	int new_entry_index;
 	int err;
 
-	if (!netdev_is_mlx5e_netdev(netdev))
+	if (!netdev_is_mlx5e_netdev(netdev)) {
+		if (netdev_is_bond(netdev)) {
+			bond_insert_decap_match(netdev, tun_id, src, dst, tos, ttl, tp_src, tp_dst, vxlan_device);
+		}
 		return;
+	}
 
 	priv = netdev_priv(netdev);
 	decap_match_table = priv->decap_match_table;
@@ -1716,6 +1740,16 @@ unlock:
 }
 EXPORT_SYMBOL(mlx5e_insert_decap_match);
 
+static void bond_remove_decap_match(struct net_device *netdev, __be64 tun_id, __be32 dst, __be16 tp_dst)
+{
+	struct bonding *bond = netdev_priv(netdev);
+	struct slave *slave;
+	struct list_head *iter;
+
+	bond_for_each_slave(bond, slave, iter)
+		mlx5e_remove_decap_match(slave->dev, tun_id, dst, tp_dst);
+}
+
 void mlx5e_remove_decap_match(struct net_device *netdev, __be64 tun_id, __be32 dst, __be16 tp_dst)
 {
 	struct mlx5e_priv *priv;
@@ -1723,8 +1757,12 @@ void mlx5e_remove_decap_match(struct net_device *netdev, __be64 tun_id, __be32 d
 	struct mlx5e_decap_match *decap_match;
 	int entry_index;
 
-	if (!netdev_is_mlx5e_netdev(netdev))
+	if (!netdev_is_mlx5e_netdev(netdev)) {
+		if (netdev_is_bond(netdev)) {
+			bond_remove_decap_match(netdev, tun_id, dst, tp_dst);
+		}
 		return;
+	}
 
 	priv = netdev_priv(netdev);
 	decap_match_table = priv->decap_match_table;
@@ -2205,6 +2243,36 @@ static int mlx5e_find_available_encap_context_slot(struct mlx5e_encap_context_ta
 	return -ENODATA;
 }
 
+static int bond_insert_encap_context(struct net_device *netdev, __be64 tun_id, __be32 src, __be32 dst,
+				 __u8 tos, __u8 ttl, __be16 frag_off, __be16 tp_dst, unsigned char *mac_source, unsigned char *mac_dest)
+{
+	struct bonding *bond = netdev_priv(netdev);
+	struct slave *slave, *rollback_slave;
+	struct list_head *iter;
+	u32 added_flow_tag;
+	int res;
+
+	bond_for_each_slave(bond, slave, iter) {
+		res = mlx5e_insert_encap_context(slave->dev, tun_id, src, dst, tos, ttl, frag_off, tp_dst, mac_source, mac_dest);
+		if (res < 0)
+			goto unwind;
+		added_flow_tag = res;
+	}
+
+	return added_flow_tag;
+
+unwind:
+	/* unwind to the slave that failed */
+	bond_for_each_slave(bond, rollback_slave, iter) {
+		if (rollback_slave == slave)
+			break;
+
+		mlx5e_remove_encap_context(rollback_slave->dev, added_flow_tag);
+	}
+
+	return res;
+}
+
 int mlx5e_insert_encap_context(struct net_device *netdev, __be64 tun_id, __be32 src, __be32 dst,
 				 __u8 tos, __u8 ttl, __be16 frag_off, __be16 tp_dst, unsigned char *mac_source, unsigned char *mac_dest)
 {
@@ -2214,8 +2282,12 @@ int mlx5e_insert_encap_context(struct net_device *netdev, __be64 tun_id, __be32 
 	int new_entry_index;
 	int err = 0;
 
-	if (!netdev_is_mlx5e_netdev(netdev))
+	if (!netdev_is_mlx5e_netdev(netdev)) {
+		if (netdev_is_bond(netdev)) {
+			return bond_insert_encap_context(netdev, tun_id, src, dst, tos, ttl, frag_off, tp_dst, mac_source, mac_dest);
+		}
 		return -EOPNOTSUPP;
+	}
 
 	priv = netdev_priv(netdev);
 	encap_context_table = priv->tx_steering.encap_context_table;
@@ -2260,6 +2332,16 @@ unlock:
 }
 EXPORT_SYMBOL(mlx5e_insert_encap_context);
 
+static void bond_remove_encap_context(struct net_device *netdev, u32 encap_flow_tag)
+{
+	struct bonding *bond = netdev_priv(netdev);
+	struct slave *slave;
+	struct list_head *iter;
+
+	bond_for_each_slave(bond, slave, iter)
+		mlx5e_remove_encap_context(slave->dev, encap_flow_tag);
+}
+
 void mlx5e_remove_encap_context(struct net_device *netdev, u32 encap_flow_tag)
 {
 	struct mlx5e_priv *priv;
@@ -2267,8 +2349,12 @@ void mlx5e_remove_encap_context(struct net_device *netdev, u32 encap_flow_tag)
 	struct mlx5e_encap_context *encap_context;
 	int context_index;
 
-	if (!netdev_is_mlx5e_netdev(netdev))
+	if (!netdev_is_mlx5e_netdev(netdev)) {
+		if (netdev_is_bond(netdev)) {
+			bond_remove_encap_context(netdev, encap_flow_tag);
+		}
 		return;
+	}
 
 	context_index = encap_flow_tag - MLX5E_ENCAP_TAG_OFFSET;
 
