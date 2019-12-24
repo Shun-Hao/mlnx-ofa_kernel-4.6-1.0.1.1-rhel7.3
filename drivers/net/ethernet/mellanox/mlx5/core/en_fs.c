@@ -1490,7 +1490,7 @@ static void mlx5e_destroy_vlan_table(struct mlx5e_priv *priv)
 	mlx5e_destroy_flow_table(&priv->fs.vlan.ft);
 }
 
-#define MLX5E_MAX_AMOUNT_OF_ACCELERATED_TUNNELS 40
+#define MLX5E_MAX_AMOUNT_OF_ACCELERATED_TUNNELS 5000
 #define MLX5E_DECAP_MATCHES_TABLE_LEN MLX5E_MAX_AMOUNT_OF_ACCELERATED_TUNNELS
 #define MLX5E_DECAP_NUM_GROUPS 2
 #define MLX5E_DECAP_GROUP2_SIZE 1 //miss group
