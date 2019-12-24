@@ -262,6 +262,7 @@ struct mlx5e_decap_match {
 	__u8 ttl;
 	__be16	tp_src;
 	__be16	tp_dst;
+	u32 mark;
 	struct net_device *vxlan_device;
 	struct mlx5_flow_handle *rule;
 	int ref_count;
