@@ -1047,11 +1047,10 @@ static inline int mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
 	struct mlx5e_decap_match *decap_match = NULL;
 	struct metadata_dst *tun_dst;
 	u32 flow_tag = (be32_to_cpu(cqe->sop_drop_qpn) & MLX5E_TC_FLOW_ID_MASK);
-
 	if (flow_tag != (u32)MLX5E_DECAP_TABLE_MISS_TAG) {
 		decap_match = &priv->decap_match_table->data[flow_tag];
 		netdev = decap_match->vxlan_device;
-		if (!netdev) {
+		if (!netdev || netdev->reg_state != NETREG_REGISTERED) {
 			kfree_skb(skb);
 			return -ENODEV;
 		}
