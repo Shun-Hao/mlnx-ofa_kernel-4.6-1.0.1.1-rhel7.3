@@ -1488,7 +1488,8 @@ static void mlx5e_destroy_vlan_table(struct mlx5e_priv *priv)
 	mlx5e_destroy_flow_table(&priv->fs.vlan.ft);
 }
 
-#define MLX5E_DECAP_MATCHES_TABLE_LEN 20
+#define MLX5E_MAX_AMOUNT_OF_ACCELERATED_TUNNELS 40
+#define MLX5E_DECAP_MATCHES_TABLE_LEN MLX5E_MAX_AMOUNT_OF_ACCELERATED_TUNNELS
 #define MLX5E_DECAP_NUM_GROUPS 2
 #define MLX5E_DECAP_GROUP2_SIZE 1 //miss group
 #define MLX5E_DECAP_TABLE_SIZE (MLX5E_DECAP_MATCHES_TABLE_LEN + MLX5E_DECAP_GROUP2_SIZE)
@@ -1801,7 +1802,17 @@ int mlx5e_init_decap_matches_table(struct mlx5e_priv *priv)
 
 void mlx5e_destroy_decap_matches_table(struct mlx5e_priv *priv)
 {
-	kfree(priv->decap_match_table);
+	struct mlx5e_decap_match_table *decap_match_table = priv->decap_match_table;
+	int i;
+
+	for (i = 0; i < MLX5E_DECAP_MATCHES_TABLE_LEN; i++) {
+			struct mlx5_flow_handle *current_rule = decap_match_table->data[i].rule;
+
+			if (current_rule)
+					mlx5_del_flow_rules(current_rule);
+	}
+
+	kfree(decap_match_table);
 }
 
 int mlx5e_create_flow_steering(struct mlx5e_priv *priv)
@@ -1906,8 +1917,8 @@ static inline __be32 tunnel_id_to_key32(__be64 tun_id)
 }
 #endif
 
-#define MLX5E_ENCAP_TABLE_LEN 40
-#define MLX5E_ENCAP_CONTEXT_TABLE_LEN (MLX5E_ENCAP_TABLE_LEN - 1)
+#define MLX5E_ENCAP_CONTEXT_TABLE_LEN MLX5E_MAX_AMOUNT_OF_ACCELERATED_TUNNELS
+#define MLX5E_ENCAP_TABLE_LEN (MLX5E_ENCAP_CONTEXT_TABLE_LEN + 1)
 #define MLX5E_DONT_ENCAP_TAG 0x0
 #define MLX5E_ENCAP_TAG_STAMP 0x0af2
 #define MLX5E_ENCAP_TAG_OFFSET (MLX5E_ENCAP_TAG_STAMP << 16)
@@ -2024,7 +2035,7 @@ static int mlx5e_add_encap_rule(struct mlx5e_priv *priv, struct mlx5e_encap_cont
 	flow_act.reformat_id = encap_info->encap_id;
 	spec->match_criteria_enable = MLX5_MATCH_MISC_PARAMETERS_2;
 	MLX5_SET_TO_ONES(fte_match_param, spec->match_criteria, misc_parameters_2.metadata_reg_a);
-	MLX5_SET(fte_match_param, spec->match_value, misc_parameters_2.metadata_reg_a, be32_to_cpu(encap_context->flow_tag));
+	MLX5_SET(fte_match_param, spec->match_value, misc_parameters_2.metadata_reg_a, htonl(encap_context->flow_tag));
 	encap_rule = mlx5_add_flow_rules(ft, spec, &flow_act, NULL, 0);
 	if (IS_ERR(encap_rule)) {
 		err = PTR_ERR(encap_rule);
@@ -2332,7 +2343,13 @@ int mlx5e_init_encap_context_table(struct mlx5e_priv *priv)
 
 void mlx5e_destroy_encap_context_table(struct mlx5e_priv *priv)
 {
-	kfree(priv->tx_steering.encap_context_table);
+	struct mlx5e_encap_context_table *encap_context_table = priv->tx_steering.encap_context_table;
+	int i;
+
+	for (i = 0; i < MLX5E_ENCAP_CONTEXT_TABLE_LEN; i++)
+			mlx5e_del_encap_rule(priv, &encap_context_table->data[i]);
+
+	kfree(encap_context_table);
 }
 
 int mlx5e_create_tx_steering(struct mlx5e_priv *priv)
