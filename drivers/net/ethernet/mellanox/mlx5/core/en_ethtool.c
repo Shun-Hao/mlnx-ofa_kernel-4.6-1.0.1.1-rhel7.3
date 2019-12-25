@@ -33,6 +33,7 @@
 #include "en.h"
 #include "en/port.h"
 #include "lib/clock.h"
+#include "en/fs.h"
 
 void mlx5e_ethtool_get_drvinfo(struct mlx5e_priv *priv,
 			       struct ethtool_drvinfo *drvinfo)
@@ -721,6 +722,7 @@ const char mlx5e_priv_flags[][ETH_GSTRING_LEN] = {
 	"dropless_rq",
 	"per_channel_stats",
 	"tx_xdp_hw_checksum",
+	"accelerated_decap",
 };
 
 int mlx5e_priv_flags_num(void)
@@ -2562,6 +2564,13 @@ static int set_pflag_tx_xdp_hw_checksum(struct net_device *netdev, bool new_val)
 	return err;
 }
 
+static int set_pflag_accelerated_decap(struct net_device *netdev, bool enable)
+{
+	struct mlx5e_priv *priv = netdev_priv(netdev);
+
+	return toggle_accelerated_decap(priv, enable);
+}
+
 static int mlx5e_handle_pflag(struct net_device *netdev,
 			      u32 wanted_flags,
 			      enum mlx5e_priv_flag flag,
@@ -2650,7 +2659,12 @@ int mlx5e_set_priv_flags(struct net_device *netdev, u32 pflags)
 	err = mlx5e_handle_pflag(netdev, pflags,
 				 MLX5E_PFLAG_TX_XDP_CSUM,
 				 set_pflag_tx_xdp_hw_checksum);
+	if (err)
+		goto out;
 
+	err = mlx5e_handle_pflag(netdev, pflags,
+				 MLX5E_PFLAG_DECAP_ACCEL,
+				 set_pflag_accelerated_decap);
 out:
 	mutex_unlock(&priv->state_lock);
 

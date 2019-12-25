@@ -189,6 +189,7 @@ static inline int mlx5e_arfs_disable(struct mlx5e_priv *priv) {	return -EOPNOTSU
 struct mlx5e_decap_table {
 	struct mlx5e_flow_table		ft;
 	struct mlx5_flow_handle		*miss_rule;
+	bool enabled;
 };
 
 struct mlx5e_sniffer;
@@ -317,6 +318,8 @@ void mlx5e_destroy_tx_steering(struct mlx5e_priv *priv);
 
 int mlx5e_init_decap_matches_table(struct mlx5e_priv *priv);
 void mlx5e_destroy_decap_matches_table(struct mlx5e_priv *priv);
+
+int toggle_accelerated_decap(struct mlx5e_priv *priv, bool enable);
 
 #endif /* __MLX5E_FLOW_STEER_H__ */
 

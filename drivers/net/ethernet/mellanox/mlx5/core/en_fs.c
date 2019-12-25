@@ -1288,7 +1288,7 @@ static int mlx5e_add_l2_flow_rule(struct mlx5e_priv *priv,
 			       outer_headers.dmac_47_16);
 
 	dest.type = MLX5_FLOW_DESTINATION_TYPE_FLOW_TABLE;
-	dest.ft = priv->fs.decap.ft.t;
+	dest.ft = priv->fs.decap.enabled ? priv->fs.decap.ft.t : priv->fs.ttc.ft.t;
 
 	switch (type) {
 	case MLX5E_FULLMATCH:
@@ -1905,6 +1905,8 @@ static int mlx5e_create_decap_table(struct mlx5e_priv *priv)
 
 	mlx5e_add_decap_table_miss_rule(priv);
 
+	priv->fs.decap.enabled = true;
+
 	kvfree(decap_in);
 	return 0;
 
@@ -2031,11 +2033,18 @@ int mlx5e_create_flow_steering(struct mlx5e_priv *priv)
 		goto err_destroy_inner_ttc_table;
 	}
 
+	err = mlx5e_create_decap_table(priv);
+	if (err) {
+		netdev_err(priv->netdev, "Failed to create decap table, err=%d\n",
+			   err);
+		goto err_destroy_ttc_table;
+	}
+
 	err = mlx5e_create_l2_table(priv);
 	if (err) {
 		netdev_err(priv->netdev, "Failed to create l2 table, err=%d\n",
 			   err);
-		goto err_destroy_ttc_table;
+		goto err_destroy_decap_table;
 	}
 
 	err = mlx5e_create_vlan_table(priv);
@@ -2045,21 +2054,14 @@ int mlx5e_create_flow_steering(struct mlx5e_priv *priv)
 		goto err_destroy_l2_table;
 	}
 
-	err = mlx5e_create_decap_table(priv);
-	if (err) {
-		netdev_err(priv->netdev, "Failed to create decap table, err=%d\n",
-			   err);
-		goto err_destroy_vlan_table;
-	}
-
 	mlx5e_ethtool_init_steering(priv);
 
 	return 0;
 
-err_destroy_vlan_table:
-	mlx5e_destroy_vlan_table(priv);
 err_destroy_l2_table:
 	mlx5e_destroy_l2_table(priv);
+err_destroy_decap_table:
+	mlx5e_destroy_decap_table(priv);
 err_destroy_ttc_table:
 	mlx5e_destroy_ttc_table(priv, &priv->fs.ttc);
 err_destroy_inner_ttc_table:
@@ -2072,9 +2074,9 @@ err_destroy_arfs_tables:
 
 void mlx5e_destroy_flow_steering(struct mlx5e_priv *priv)
 {
-	mlx5e_destroy_decap_table(priv);
 	mlx5e_destroy_vlan_table(priv);
 	mlx5e_destroy_l2_table(priv);
+	mlx5e_destroy_decap_table(priv);
 	mlx5e_destroy_ttc_table(priv, &priv->fs.ttc);
 	mlx5e_destroy_inner_ttc_table(priv, &priv->fs.inner_ttc);
 	mlx5e_arfs_destroy_tables(priv);
@@ -2608,4 +2610,55 @@ void mlx5e_destroy_tx_steering(struct mlx5e_priv *priv)
 {
 	mlx5e_destroy_encap_context_table(priv);
 	mlx5e_destroy_encap_table(priv);
+}
+
+int toggle_accelerated_decap(struct mlx5e_priv *priv, bool enable)
+{
+	struct mlx5_flow_destination dest = {};
+	struct mlx5e_l2_table *ea = &priv->fs.l2;
+	struct mlx5e_l2_hash_node *hn;
+	struct hlist_node *tmp;
+	int err = 0;
+	int i;
+
+	dest.type = MLX5_FLOW_DESTINATION_TYPE_FLOW_TABLE;
+	dest.ft = enable ? priv->fs.decap.ft.t : priv->fs.ttc.ft.t;
+
+	if (ea->promisc_enabled) {
+		err = mlx5_modify_rule_destination(ea->promisc.rule, &dest, NULL);
+		if (err)
+			goto err_modify;
+	}
+
+	if (ea->allmulti_enabled) {
+		err = mlx5_modify_rule_destination(ea->allmulti.rule, &dest, NULL);
+		if (err)
+			goto err_modify;
+	}
+
+	if (ea->broadcast_enabled) {
+		err = mlx5_modify_rule_destination(ea->broadcast.rule, &dest, NULL);
+		if (err)
+			goto err_modify;
+	}
+
+	mlx5e_for_each_hash_node(hn, tmp, priv->fs.l2.netdev_uc, i) {
+		err = mlx5_modify_rule_destination(hn->ai.rule, &dest, NULL);
+		if (err)
+			goto err_modify;
+	}
+
+	mlx5e_for_each_hash_node(hn, tmp, priv->fs.l2.netdev_mc, i){
+		err = mlx5_modify_rule_destination(hn->ai.rule, &dest, NULL);
+		if (err)
+			goto err_modify;
+	}
+
+	priv->fs.decap.enabled = enable;
+
+	return 0;
+
+err_modify:
+	netdev_err(priv->netdev, "%s: modify l2 rule destination failed\n", __func__);
+	return err;
 }

@@ -1100,7 +1100,8 @@ static inline int mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
 	u8 l4_hdr_type;
 #endif
 	u32 flow_tag = (be32_to_cpu(cqe->sop_drop_qpn) & MLX5E_TC_FLOW_ID_MASK);
-	if (flow_tag != (u32)MLX5E_DECAP_TABLE_MISS_TAG) {
+
+	if (priv->fs.decap.enabled && flow_tag != (u32)MLX5E_DECAP_TABLE_MISS_TAG) {
 		decap_match = &priv->decap_match_table->data[flow_tag];
 		netdev = decap_match->vxlan_device;
 		if (!netdev || netdev->reg_state != NETREG_REGISTERED) {
