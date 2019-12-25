@@ -1156,8 +1156,6 @@ static inline int mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
 		stats->removed_vlan_packets++;
 	}
 
-	skb->mark = be32_to_cpu(cqe->sop_drop_qpn) & MLX5E_TC_FLOW_ID_MASK;
-
 #ifndef CONFIG_COMPAT_LRO_ENABLED_IPOIB
 	mlx5e_handle_csum(netdev, cqe, rq, skb, !!lro_num_seg);
 #else
