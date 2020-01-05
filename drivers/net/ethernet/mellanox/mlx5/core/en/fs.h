@@ -251,6 +251,8 @@ struct mlx5e_encap_context {
 	int	vid;
 	u16 vlan_proto;
 	/*Control fields*/
+	struct mlx5e_priv *priv;
+	struct work_struct neighbour_update_work;
 	struct mlx5_flow_handle	*rule;
 	struct mlx5_encap_info	info;
 	u32 flow_tag;
@@ -264,6 +266,7 @@ struct mlx5e_encap_context_table {
 
 struct mlx5e_tx_steering {
 	struct mlx5e_encap_context_table *encap_context_table;
+	struct notifier_block encap_context_table_netevent_nb;
 	struct mlx5e_encap_table    encap;
 };
 

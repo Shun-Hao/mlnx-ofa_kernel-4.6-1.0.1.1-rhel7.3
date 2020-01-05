@@ -1934,9 +1934,9 @@ static int mlx5e_decap_matches_table_process_netevent(struct notifier_block *nb,
 {
 	struct mlx5e_decap_match_table *decap_matches_table = container_of(nb, struct mlx5e_decap_match_table,
 												netevent_nb);
-	struct net_device *netdev = netdev_notifier_info_to_dev(ptr);
 
 	if (event == NETDEV_UNREGISTER) {
+			struct net_device *netdev = netdev_notifier_info_to_dev(ptr);
 			int i;
 
 			for (i = 0; i < MLX5E_DECAP_MATCHES_TABLE_LEN; i++) {
@@ -1945,6 +1945,7 @@ static int mlx5e_decap_matches_table_process_netevent(struct notifier_block *nb,
 							decap_match->vxlan_device = NULL;
 			}
 	}
+
 	return NOTIFY_OK;
 }
 
@@ -2283,6 +2284,27 @@ static int mlx5e_find_available_encap_context_slot(struct mlx5e_encap_context_ta
 	return -ENODATA;
 }
 
+static void mlx5e_encap_context_neighbour_update(struct work_struct *work)
+{
+	struct mlx5e_encap_context *encap_context = container_of(work, struct  mlx5e_encap_context, neighbour_update_work);
+	struct mlx5e_priv *priv = encap_context->priv;
+	struct mlx5e_encap_context_table *encap_context_table = priv->tx_steering.encap_context_table;
+	int err;
+
+	mutex_lock(&encap_context_table->lock);
+
+	if (encap_context->ref_count > 0) {
+		mlx5e_del_encap_rule(priv, encap_context);
+		err = mlx5e_add_encap_rule(priv, encap_context);
+		if (err) {
+			encap_context->ref_count = 0;
+			// notify OVS the flow is invalid
+		}
+	}
+
+	mutex_unlock(&encap_context_table->lock);
+}
+
 static int bond_insert_encap_context(struct net_device *netdev, __be64 tun_id, __be32 src, __be32 dst,
 				 __u8 tos, __u8 ttl, __be16 frag_off, __be16 tp_dst, unsigned char *mac_source, unsigned char *mac_dest)
 {
@@ -2364,6 +2386,9 @@ int mlx5e_insert_encap_context(struct net_device *netdev, __be64 tun_id, __be32 
 	err = mlx5e_add_encap_rule(priv, new_encap_context);
 	if (err)
 		goto unlock;
+
+	new_encap_context->priv = priv;
+	INIT_WORK(&new_encap_context->neighbour_update_work, mlx5e_encap_context_neighbour_update);
 
 increment_ref_count:
 	new_encap_context->ref_count++;
@@ -2554,9 +2579,42 @@ static void mlx5e_destroy_encap_table(struct mlx5e_priv *priv)
 	mlx5e_destroy_flow_table(&priv->tx_steering.encap.ft);
 }
 
+static int mlx5e_encap_context_table_process_netevent(struct notifier_block *nb,
+				    unsigned long event, void *ptr)
+{
+	struct mlx5e_priv *priv = container_of(nb, struct mlx5e_priv,
+						    tx_steering.encap_context_table_netevent_nb);
+	struct mlx5e_encap_context_table *encap_context_table = priv->tx_steering.encap_context_table;
+
+	if (event == NETEVENT_NEIGH_UPDATE) {
+		struct neighbour *n = ptr;
+		__be32 dst_ip;
+		int i;
+
+		if (priv != netdev_priv(n->dev) || n->ops->family != AF_INET)
+			return NOTIFY_OK;
+
+		memcpy(&dst_ip, n->primary_key, n->tbl->key_len);
+
+		for (i = 0; i < MLX5E_ENCAP_CONTEXT_TABLE_LEN; i++) {
+			struct mlx5e_encap_context *encap_context = &encap_context_table->data[i];
+
+			if (encap_context->ref_count > 0 &&
+			    encap_context->dst == dst_ip &&
+			    !ether_addr_equal(encap_context->mac_dest, n->ha)) {
+				ether_addr_copy(encap_context->mac_dest, n->ha);
+				queue_work(priv->wq, &encap_context->neighbour_update_work);
+			}
+		}
+	}
+
+	return NOTIFY_OK;
+}
+
 int mlx5e_init_encap_context_table(struct mlx5e_priv *priv)
 {
 	struct mlx5e_encap_context_table *encap_context_table;
+	int err;
 
 	encap_context_table = kzalloc(sizeof(*encap_context_table) + MLX5E_ENCAP_CONTEXT_TABLE_LEN * sizeof(struct mlx5e_encap_context), GFP_ATOMIC);
 	if (!encap_context_table)
@@ -2564,15 +2622,26 @@ int mlx5e_init_encap_context_table(struct mlx5e_priv *priv)
 
 	mutex_init(&encap_context_table->lock);
 
+	priv->tx_steering.encap_context_table_netevent_nb.notifier_call = mlx5e_encap_context_table_process_netevent;
+	err = register_netevent_notifier(&priv->tx_steering.encap_context_table_netevent_nb);
+	if (err)
+		goto out_err;
+
 	priv->tx_steering.encap_context_table = encap_context_table;
 
 	return 0;
+
+out_err:
+	kfree(encap_context_table);
+	return err;
 }
 
 void mlx5e_destroy_encap_context_table(struct mlx5e_priv *priv)
 {
 	struct mlx5e_encap_context_table *encap_context_table = priv->tx_steering.encap_context_table;
 	int i;
+
+	unregister_netevent_notifier(&priv->tx_steering.encap_context_table_netevent_nb);
 
 	for (i = 0; i < MLX5E_ENCAP_CONTEXT_TABLE_LEN; i++)
 			mlx5e_del_encap_rule(priv, &encap_context_table->data[i]);
