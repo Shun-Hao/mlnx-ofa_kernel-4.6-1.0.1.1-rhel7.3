@@ -2627,11 +2627,14 @@ static void mlx5e_encap_context_table_neighbour_lookup(struct mlx5e_priv *priv)
 	}
 }
 
+static uint neighbourLookupInterval = 1;
+module_param(neighbourLookupInterval, uint, 0644);
+
 static void mlx5e_encap_context_table_neighbour_lookup_work(struct work_struct *work)
 {
 	struct mlx5e_priv *priv = container_of(work, struct mlx5e_priv, tx_steering.encap_context_table_neighbour_lookup_work.work);
 
-	queue_delayed_work(priv->wq, &priv->tx_steering.encap_context_table_neighbour_lookup_work, HZ);
+	queue_delayed_work(priv->wq, &priv->tx_steering.encap_context_table_neighbour_lookup_work, neighbourLookupInterval * HZ);
 
 	mlx5e_encap_context_table_neighbour_lookup(priv);
 }
@@ -2655,7 +2658,7 @@ int mlx5e_init_encap_context_table(struct mlx5e_priv *priv)
 	priv->tx_steering.encap_context_table = encap_context_table;
 
 	INIT_DELAYED_WORK(&priv->tx_steering.encap_context_table_neighbour_lookup_work, mlx5e_encap_context_table_neighbour_lookup_work);
-	queue_delayed_work(priv->wq, &priv->tx_steering.encap_context_table_neighbour_lookup_work, HZ);
+	queue_delayed_work(priv->wq, &priv->tx_steering.encap_context_table_neighbour_lookup_work, neighbourLookupInterval * HZ);
 
 	return 0;
 
