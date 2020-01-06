@@ -600,6 +600,13 @@ netdev_tx_t mlx5e_xmit(struct sk_buff *skb, struct net_device *dev)
 	sq = priv->txq2sq[skb_get_queue_mapping(skb)];
 	mlx5e_sq_fetch_wqe(sq, &wqe, &pi);
 
+	if (skb->mark != MLX5E_DONT_ENCAP_TAG) {
+		int context_index = skb->mark - MLX5E_ENCAP_TAG_OFFSET;
+
+		if (context_index >= 0 && context_index < MLX5E_ENCAP_CONTEXT_TABLE_LEN)
+			priv->tx_steering.encap_context_table->data[context_index].used_recently = true;
+	}
+
 	/* might send skbs and update wqe and pi */
 	skb = mlx5e_accel_handle_tx(skb, sq, dev, &wqe, &pi);
 	if (unlikely(!skb))

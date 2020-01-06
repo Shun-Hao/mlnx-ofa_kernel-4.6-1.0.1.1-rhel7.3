@@ -221,6 +221,13 @@ struct ttc_params {
 	struct mlx5e_ttc_table *inner_ttc;
 };
 
+#define MLX5E_MAX_AMOUNT_OF_ACCELERATED_TUNNELS 5000
+#define MLX5E_ENCAP_CONTEXT_TABLE_LEN MLX5E_MAX_AMOUNT_OF_ACCELERATED_TUNNELS
+#define MLX5E_ENCAP_TABLE_LEN (MLX5E_ENCAP_CONTEXT_TABLE_LEN + 1)
+#define MLX5E_DONT_ENCAP_TAG 0x0
+#define MLX5E_ENCAP_TAG_STAMP 0x0af2
+#define MLX5E_ENCAP_TAG_OFFSET (MLX5E_ENCAP_TAG_STAMP << 16)
+
 struct mlx5_encap_info {
 	char  *encap_header;
 	int    encap_size;
@@ -256,6 +263,7 @@ struct mlx5e_encap_context {
 	struct mlx5_flow_handle	*rule;
 	struct mlx5_encap_info	info;
 	u32 flow_tag;
+	bool used_recently;
 	int ref_count;
 };
 
@@ -267,6 +275,7 @@ struct mlx5e_encap_context_table {
 struct mlx5e_tx_steering {
 	struct mlx5e_encap_context_table *encap_context_table;
 	struct notifier_block encap_context_table_netevent_nb;
+	struct delayed_work encap_context_table_neighbour_lookup_work;
 	struct mlx5e_encap_table    encap;
 };
 
