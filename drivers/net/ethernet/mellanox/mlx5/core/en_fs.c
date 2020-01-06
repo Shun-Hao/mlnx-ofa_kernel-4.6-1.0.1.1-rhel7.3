@@ -35,6 +35,7 @@
 #include <linux/ipv6.h>
 #include <linux/tcp.h>
 #include <linux/mlx5/fs.h>
+#include <net/arp.h>
 #include <net/vxlan.h>
 #include <net/bonding.h>
 #include <net/netevent.h>
@@ -1490,7 +1491,6 @@ static void mlx5e_destroy_vlan_table(struct mlx5e_priv *priv)
 	mlx5e_destroy_flow_table(&priv->fs.vlan.ft);
 }
 
-#define MLX5E_MAX_AMOUNT_OF_ACCELERATED_TUNNELS 5000
 #define MLX5E_DECAP_MATCHES_TABLE_LEN MLX5E_MAX_AMOUNT_OF_ACCELERATED_TUNNELS
 #define MLX5E_DECAP_NUM_GROUPS 2
 #define MLX5E_DECAP_GROUP2_SIZE 1 //miss group
@@ -1995,12 +1995,6 @@ static inline __be32 tunnel_id_to_key32(__be64 tun_id)
 #endif
 }
 #endif
-
-#define MLX5E_ENCAP_CONTEXT_TABLE_LEN MLX5E_MAX_AMOUNT_OF_ACCELERATED_TUNNELS
-#define MLX5E_ENCAP_TABLE_LEN (MLX5E_ENCAP_CONTEXT_TABLE_LEN + 1)
-#define MLX5E_DONT_ENCAP_TAG 0x0
-#define MLX5E_ENCAP_TAG_STAMP 0x0af2
-#define MLX5E_ENCAP_TAG_OFFSET (MLX5E_ENCAP_TAG_STAMP << 16)
 
 static int mlx5e_create_encap_header(struct mlx5e_priv *priv, struct mlx5e_encap_context *encap_context)
 {
@@ -2512,6 +2506,37 @@ static int mlx5e_encap_context_table_process_netevent(struct notifier_block *nb,
 	return NOTIFY_OK;
 }
 
+static void mlx5e_encap_context_table_neighbour_lookup(struct mlx5e_priv *priv)
+{
+	struct mlx5e_encap_context_table *encap_context_table = priv->tx_steering.encap_context_table;
+	int i;
+
+	for (i = 0; i < MLX5E_ENCAP_CONTEXT_TABLE_LEN; i++) {
+		struct mlx5e_encap_context *encap_context = &encap_context_table->data[i];
+
+		if (encap_context->ref_count > 0 && encap_context->used_recently) {
+
+			struct neighbour *n = neigh_lookup(&arp_tbl, &encap_context->dst, priv->netdev);
+			if (!n)
+				continue;
+
+			neigh_event_send(n, NULL);
+			neigh_release(n);
+
+			encap_context->used_recently = false;
+		}
+	}
+}
+
+static void mlx5e_encap_context_table_neighbour_lookup_work(struct work_struct *work)
+{
+	struct mlx5e_priv *priv = container_of(work, struct mlx5e_priv, tx_steering.encap_context_table_neighbour_lookup_work.work);
+
+	queue_delayed_work(priv->wq, &priv->tx_steering.encap_context_table_neighbour_lookup_work, HZ);
+
+	mlx5e_encap_context_table_neighbour_lookup(priv);
+}
+
 int mlx5e_init_encap_context_table(struct mlx5e_priv *priv)
 {
 	struct mlx5e_encap_context_table *encap_context_table;
@@ -2530,6 +2555,9 @@ int mlx5e_init_encap_context_table(struct mlx5e_priv *priv)
 
 	priv->tx_steering.encap_context_table = encap_context_table;
 
+	INIT_DELAYED_WORK(&priv->tx_steering.encap_context_table_neighbour_lookup_work, mlx5e_encap_context_table_neighbour_lookup_work);
+	queue_delayed_work(priv->wq, &priv->tx_steering.encap_context_table_neighbour_lookup_work, HZ);
+
 	return 0;
 
 out_err:
@@ -2541,6 +2569,8 @@ void mlx5e_destroy_encap_context_table(struct mlx5e_priv *priv)
 {
 	struct mlx5e_encap_context_table *encap_context_table = priv->tx_steering.encap_context_table;
 	int i;
+
+	cancel_delayed_work_sync(&priv->tx_steering.encap_context_table_neighbour_lookup_work);
 
 	unregister_netevent_notifier(&priv->tx_steering.encap_context_table_netevent_nb);
 
