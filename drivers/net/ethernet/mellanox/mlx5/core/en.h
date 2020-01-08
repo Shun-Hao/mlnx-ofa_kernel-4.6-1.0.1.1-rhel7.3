@@ -911,6 +911,7 @@ struct mlx5e_priv {
 
 	struct mlx5_core_dev      *mdev;
 	struct net_device         *netdev;
+	struct net_device         *bond_master;
 	struct mlx5e_stats         stats;
 	struct mlx5e_channel_stats channel_stats[MLX5E_MAX_NUM_CHANNELS];
 #ifdef CONFIG_COMPAT_LRO_ENABLED_IPOIB

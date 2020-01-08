@@ -6296,6 +6296,7 @@ int mlx5e_netdev_init(struct net_device *netdev,
 	/* priv init */
 	priv->mdev        = mdev;
 	priv->netdev      = netdev;
+	priv->bond_master = NULL;
 	priv->profile     = profile;
 	priv->ppriv       = ppriv;
 	priv->msglevel    = MLX5E_MSG_LEVEL;
