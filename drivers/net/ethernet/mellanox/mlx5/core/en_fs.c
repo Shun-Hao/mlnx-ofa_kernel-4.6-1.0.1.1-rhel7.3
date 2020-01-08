@@ -1584,6 +1584,17 @@ static bool netdev_is_bond(struct net_device *netdev)
 	return false;
 }
 
+static void mlx5e_set_bond_master(struct net_device *bond_master, struct net_device *bond_mlx5e_slave)
+{
+	struct mlx5e_priv *priv;
+
+	if (!netdev_is_bond(bond_master) || !netdev_is_mlx5e_netdev(bond_mlx5e_slave))
+		return;
+
+	priv = netdev_priv(bond_mlx5e_slave);
+	priv->bond_master = bond_master;
+}
+
 static void bond_insert_decap_match(struct net_device *netdev, __be64 tun_id, __be32 src, __be32 dst,
 				  __u8 tos, __u8 ttl, __be16 tp_src, __be16 tp_dst, u32 mark, struct net_device *vxlan_device)
 {
@@ -1591,8 +1602,10 @@ static void bond_insert_decap_match(struct net_device *netdev, __be64 tun_id, __
 	struct slave *slave;
 	struct list_head *iter;
 
-	bond_for_each_slave(bond, slave, iter)
+	bond_for_each_slave(bond, slave, iter) {
 		mlx5e_insert_decap_match(slave->dev, tun_id, src, dst, tos, ttl, tp_src, tp_dst, mark, vxlan_device);
+		mlx5e_set_bond_master(netdev, slave->dev);
+	}
 }
 
 void mlx5e_insert_decap_match(struct net_device *netdev, __be64 tun_id, __be32 src, __be32 dst,
@@ -2214,6 +2227,7 @@ static int bond_insert_encap_context(struct net_device *netdev, __be64 tun_id, _
 		if (res < 0)
 			goto unwind;
 		added_flow_tag = res;
+		mlx5e_set_bond_master(netdev, slave->dev);
 	}
 
 	return added_flow_tag;
@@ -2501,6 +2515,11 @@ static int mlx5e_encap_context_table_process_netevent(struct notifier_block *nb,
 				queue_work(priv->wq, &encap_context->neighbour_update_work);
 			}
 		}
+	}
+
+	if (event == NETDEV_UNREGISTER) {
+		if (netdev_notifier_info_to_dev(ptr) == priv->bond_master)
+			priv->bond_master = NULL;
 	}
 
 	return NOTIFY_OK;
