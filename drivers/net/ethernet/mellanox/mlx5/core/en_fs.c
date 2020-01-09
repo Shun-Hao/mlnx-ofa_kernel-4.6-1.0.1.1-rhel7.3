@@ -2500,7 +2500,7 @@ static int mlx5e_encap_context_table_process_netevent(struct notifier_block *nb,
 		__be32 dst_ip;
 		int i;
 
-		if (priv != netdev_priv(n->dev) || n->ops->family != AF_INET)
+		if ((priv->netdev != n->dev && priv->bond_master != n->dev) || n->ops->family != AF_INET)
 			return NOTIFY_OK;
 
 		memcpy(&dst_ip, n->primary_key, n->tbl->key_len);
@@ -2535,7 +2535,7 @@ static void mlx5e_encap_context_table_neighbour_lookup(struct mlx5e_priv *priv)
 
 		if (encap_context->ref_count > 0 && encap_context->used_recently) {
 
-			struct neighbour *n = neigh_lookup(&arp_tbl, &encap_context->dst, priv->netdev);
+			struct neighbour *n = neigh_lookup(&arp_tbl, &encap_context->dst, priv->bond_master ? : priv->netdev);
 			if (!n)
 				continue;
 
