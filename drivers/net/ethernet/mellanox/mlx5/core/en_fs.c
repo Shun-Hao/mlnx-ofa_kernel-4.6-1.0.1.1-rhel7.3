@@ -37,6 +37,7 @@
 #include <linux/mlx5/fs.h>
 #include <net/vxlan.h>
 #include <net/bonding.h>
+#include <net/netevent.h>
 #include "en.h"
 #include "lib/mpfs.h"
 #include "fs_core.h"
@@ -1823,9 +1824,30 @@ static void mlx5e_destroy_decap_table(struct mlx5e_priv *priv)
 	mlx5e_destroy_flow_table(&priv->fs.decap.ft);
 }
 
+static int mlx5e_decap_matches_table_process_netevent(struct notifier_block *nb,
+                                   unsigned long event, void *ptr)
+{
+	struct mlx5e_decap_match_table *decap_matches_table = container_of(nb, struct mlx5e_decap_match_table,
+												netevent_nb);
+	struct net_device *netdev = netdev_notifier_info_to_dev(ptr);
+
+	if (event == NETDEV_UNREGISTER) {
+			int i;
+
+			for (i = 0; i < MLX5E_DECAP_MATCHES_TABLE_LEN; i++) {
+					struct mlx5e_decap_match *decap_match = &decap_matches_table->data[i];
+					if (decap_match->vxlan_device == netdev)
+							decap_match->vxlan_device = NULL;
+			}
+	}
+	return NOTIFY_OK;
+}
+
+
 int mlx5e_init_decap_matches_table(struct mlx5e_priv *priv)
 {
 	struct mlx5e_decap_match_table *decap_match_table;
+	int err;
 
 	decap_match_table = kzalloc(sizeof(*decap_match_table) + MLX5E_DECAP_MATCHES_TABLE_LEN * sizeof(struct mlx5e_decap_match), GFP_ATOMIC);
 	if (!decap_match_table)
@@ -1833,15 +1855,25 @@ int mlx5e_init_decap_matches_table(struct mlx5e_priv *priv)
 
 	mutex_init(&decap_match_table->lock);
 
+	decap_match_table->netevent_nb.notifier_call = mlx5e_decap_matches_table_process_netevent;
+	err = register_netevent_notifier(&decap_match_table->netevent_nb);
+	if (err)
+			goto out_err;
+
 	priv->decap_match_table = decap_match_table;
 
 	return 0;
+out_err:
+	kfree(decap_match_table);
+	return err;
 }
 
 void mlx5e_destroy_decap_matches_table(struct mlx5e_priv *priv)
 {
 	struct mlx5e_decap_match_table *decap_match_table = priv->decap_match_table;
 	int i;
+
+	unregister_netevent_notifier(&decap_match_table->netevent_nb);
 
 	for (i = 0; i < MLX5E_DECAP_MATCHES_TABLE_LEN; i++) {
 			struct mlx5_flow_handle *current_rule = decap_match_table->data[i].rule;
@@ -2150,7 +2182,7 @@ static int bond_insert_encap_context(struct net_device *netdev, __be64 tun_id, _
 	struct bonding *bond = netdev_priv(netdev);
 	struct slave *slave, *rollback_slave;
 	struct list_head *iter;
-	u32 added_flow_tag;
+	u32 added_flow_tag = MLX5E_DONT_ENCAP_TAG;
 	int res;
 
 	bond_for_each_slave(bond, slave, iter) {

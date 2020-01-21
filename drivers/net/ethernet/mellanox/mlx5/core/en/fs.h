@@ -269,6 +269,7 @@ struct mlx5e_decap_match {
 
 struct mlx5e_decap_match_table {
 	struct mutex lock;
+	struct notifier_block netevent_nb;
 	struct mlx5e_decap_match data[];
 };
 
