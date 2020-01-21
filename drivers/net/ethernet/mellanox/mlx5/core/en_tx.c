@@ -479,6 +479,9 @@ netdev_tx_t mlx5e_sq_xmit(struct mlx5e_txqsq *sq, struct sk_buff *skb,
 
 	eseg->mss = mss;
 
+	/* Set WQE encap tag */
+	eseg->rsvd2 = skb->mark;
+
 	if (ihs) {
 		eseg->inline_hdr.sz = cpu_to_be16(ihs);
 		if (vlan_present) {

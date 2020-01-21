@@ -35,8 +35,10 @@
 #include <linux/ipv6.h>
 #include <linux/tcp.h>
 #include <linux/mlx5/fs.h>
+#include <net/vxlan.h>
 #include "en.h"
 #include "lib/mpfs.h"
+#include "fs_core.h"
 
 static int mlx5e_add_l2_flow_rule(struct mlx5e_priv *priv,
 				  struct mlx5e_l2_rule *ai, int type);
@@ -1564,4 +1566,476 @@ void mlx5e_destroy_flow_steering(struct mlx5e_priv *priv)
 	mlx5e_destroy_inner_ttc_table(priv, &priv->fs.inner_ttc);
 	mlx5e_arfs_destroy_tables(priv);
 	mlx5e_ethtool_cleanup_steering(priv);
+}
+
+#ifndef CONFIG_COMPAT_IP_TUNNELS
+static inline __be32 tunnel_id_to_key32(__be64 tun_id)
+{
+#ifdef __BIG_ENDIAN
+   return (__force __be32)tun_id;
+#else
+   return (__force __be32)((__force u64)tun_id >> 32);
+#endif
+}
+#endif
+
+#define MLX5E_ENCAP_TABLE_LEN 40
+#define MLX5E_ENCAP_CONTEXT_TABLE_LEN (MLX5E_ENCAP_TABLE_LEN - 1)
+#define MLX5E_DONT_ENCAP_TAG 0x0
+#define MLX5E_ENCAP_TAG_STAMP 0x0af2
+#define MLX5E_ENCAP_TAG_OFFSET (MLX5E_ENCAP_TAG_STAMP << 16)
+
+static int mlx5e_create_encap_header(struct mlx5e_priv *priv, struct mlx5e_encap_context *encap_context)
+{
+	int encap_size;
+	char *encap_header;
+	struct vxlanhdr *vxh;
+	struct udphdr *uh;
+	struct iphdr *ip;
+	struct ethhdr *ehdr;
+
+	/*
++	VxLAN header:
++	ETH:   14(VLAN:18)
++	IP:    20
++	UDP:   8
++	VxLAN: 8
++	*/
+
+	int max_encap_size = MLX5_CAP_FLOWTABLE(priv->mdev, max_encap_header_size);
+	encap_size = (encap_context->is_vlan ? VLAN_ETH_HLEN : ETH_HLEN) + sizeof(struct iphdr) + VXLAN_HLEN;
+	if (encap_size > max_encap_size) {
+		mlx5_core_warn(priv->mdev, "encap size %d too big, max supported is %d\n",
+			       encap_size, max_encap_size);
+		return -EOPNOTSUPP;
+	}
+
+	encap_header = kvzalloc(encap_size, GFP_KERNEL);
+	if (!encap_header)
+		return -ENOMEM;
+
+	/* add ethernet header */
+	ehdr = (struct ethhdr *)encap_header;
+	ether_addr_copy(ehdr->h_dest, encap_context->mac_dest);
+	ether_addr_copy(ehdr->h_source, encap_context->mac_source);
+
+	/* add ip header */
+	if (encap_context->is_vlan) {
+		struct vlan_hdr *vlan = (struct vlan_hdr *)
+					((char *)ehdr + ETH_HLEN);
+		ip = (struct iphdr *)((char *)vlan + VLAN_HLEN);
+		ehdr->h_proto = htons(encap_context->vlan_proto);
+		vlan->h_vlan_TCI = htons(encap_context->vid);
+		vlan->h_vlan_encapsulated_proto = htons(ETH_P_IP);
+	}
+	else {
+		ehdr->h_proto = htons(ETH_P_IP);
+		ip = (struct iphdr *)((char *)ehdr + ETH_HLEN);
+	}
+
+	ip->version = 4;
+	ip->ihl = sizeof(struct iphdr) >> 2;
+	ip->protocol = IPPROTO_UDP;
+	ip->tos = encap_context->tos;
+	ip->ttl = encap_context->ttl;
+	ip->daddr = encap_context->dst;
+	ip->saddr = encap_context->src;
+	ip->frag_off = encap_context->frag_off;
+
+	/* add tunneling protocol header */
+	uh = (struct udphdr *)((char*)ip + sizeof(struct iphdr));
+	uh->dest = encap_context->tp_dst;
+	uh->source = htons((encap_context->tp_dst % 1024) + 1025);
+	vxh = (struct vxlanhdr *)((char *)uh + sizeof(struct udphdr));
+	vxh->vx_flags = VXLAN_HF_VNI;
+	vxh->vx_vni = vxlan_vni_field(tunnel_id_to_key32(encap_context->tun_id));
+
+	encap_context->info.encap_header = encap_header;
+	encap_context->info.encap_size = encap_size;
+
+	return 0;
+}
+
+static int mlx5e_add_encap_rule(struct mlx5e_priv *priv, struct mlx5e_encap_context *encap_context)
+{
+	struct mlx5_flow_handle *encap_rule;
+	struct mlx5_flow_spec *spec;
+	struct mlx5e_encap_table *encap = &priv->tx_steering.encap;
+	struct mlx5_flow_table *ft = encap->ft.t;
+	struct mlx5_encap_info *encap_info = &encap_context->info;
+	struct mlx5_flow_act flow_act = {
+			   .action = MLX5_FLOW_CONTEXT_ACTION_ALLOW | MLX5_FLOW_CONTEXT_ACTION_PACKET_REFORMAT,
+	};
+	int err = 0;
+
+	spec = kvzalloc(sizeof(*spec), GFP_KERNEL);
+	if (!spec) {
+		return -ENOMEM;
+	}
+
+	err = mlx5e_create_encap_header(priv, encap_context);
+	if (err) {
+		mlx5_core_warn(priv->mdev, "Failed to create encap offload header, %d\n",
+				err);
+		goto err_free_spec;
+	}
+
+	err = mlx5_packet_reformat_alloc(priv->mdev,
+					MLX5_REFORMAT_TYPE_L2_TO_L2_TUNNEL,
+					encap_info->encap_size,
+					encap_info->encap_header,
+					MLX5_FLOW_NAMESPACE_EGRESS,
+					&encap_info->encap_id);
+	if (err) {
+		mlx5_core_warn(priv->mdev, "Failed to offload cached encapsulation header, %d\n",
+				err);
+		goto err_free_encap;
+	}
+
+	encap_info->encap_id_valid = 1;
+	memset(spec, 0, sizeof(*spec));
+	flow_act.reformat_id = encap_info->encap_id;
+	spec->match_criteria_enable = MLX5_MATCH_MISC_PARAMETERS_2;
+	MLX5_SET_TO_ONES(fte_match_param, spec->match_criteria, misc_parameters_2.metadata_reg_a);
+	MLX5_SET(fte_match_param, spec->match_value, misc_parameters_2.metadata_reg_a, be32_to_cpu(encap_context->flow_tag));
+	encap_rule = mlx5_add_flow_rules(ft, spec, &flow_act, NULL, 0);
+	if (IS_ERR(encap_rule)) {
+		err = PTR_ERR(encap_rule);
+		netdev_err(priv->netdev, "%s: add encap rule failed, err:%d\n", __func__, err);
+		goto err_free_encap;
+	}
+
+	encap_context->rule = encap_rule;
+
+	kvfree(spec);
+	return 0;
+
+err_free_encap:
+	kvfree(encap_info->encap_header);
+	encap_info->encap_header = NULL;
+err_free_spec:
+	kvfree(spec);
+	return err;
+}
+
+static void mlx5e_del_encap_rule(struct mlx5e_priv *priv, struct mlx5e_encap_context *encap_context)
+{
+	if (encap_context->info.encap_header){
+		kvfree(encap_context->info.encap_header);
+		encap_context->info.encap_header = NULL;
+	}
+	if (encap_context->rule){
+		mlx5_del_flow_rules(encap_context->rule);
+		encap_context->rule = NULL;
+	}
+	if (encap_context->info.encap_id_valid){
+		mlx5_packet_reformat_dealloc(priv->mdev, encap_context->info.encap_id);
+		encap_context->info.encap_id_valid = 0;
+	}
+}
+
+static int mlx5e_find_encap_context(struct mlx5e_encap_context_table *encap_context_table, __be64 tun_id, __be32 src, __be32 dst,
+				 __u8 tos, __u8 ttl, __be16 frag_off, __be16 tp_dst, unsigned char *mac_source, unsigned char *mac_dest)
+{
+	int i;
+
+	for (i = 0; i < MLX5E_ENCAP_CONTEXT_TABLE_LEN; i++) {
+		if (encap_context_table->data[i].ref_count > 0) {
+			if (encap_context_table->data[i].tun_id == tun_id &&
+				encap_context_table->data[i].src == src &&
+				encap_context_table->data[i].tos == tos &&
+				encap_context_table->data[i].ttl == ttl &&
+				encap_context_table->data[i].frag_off == frag_off &&
+				encap_context_table->data[i].tp_dst == tp_dst &&
+				ether_addr_equal(encap_context_table->data[i].mac_source, mac_source) &&
+				ether_addr_equal(encap_context_table->data[i].mac_dest, mac_dest))
+				return i;
+		}
+	}
+
+	return -ENODATA;
+}
+
+static int mlx5e_find_available_encap_context_slot(struct mlx5e_encap_context_table *encap_context_table)
+{
+	int i;
+
+	for (i = 0; i < MLX5E_ENCAP_CONTEXT_TABLE_LEN; i++) {
+		if (encap_context_table->data[i].ref_count == 0)
+			return i;
+	}
+
+	return -ENODATA;
+}
+
+int mlx5e_insert_encap_context(struct net_device *netdev, __be64 tun_id, __be32 src, __be32 dst,
+				 __u8 tos, __u8 ttl, __be16 frag_off, __be16 tp_dst, unsigned char *mac_source, unsigned char *mac_dest)
+{
+	struct mlx5e_priv *priv;
+	struct mlx5e_encap_context_table *encap_context_table;
+	struct mlx5e_encap_context *new_encap_context;
+	int new_entry_index;
+	int err = 0;
+
+	if (!netdev_is_mlx5e_netdev(netdev))
+		return -EOPNOTSUPP;
+
+	priv = netdev_priv(netdev);
+	encap_context_table = priv->tx_steering.encap_context_table;
+
+	mutex_lock(&encap_context_table->lock);
+
+	new_entry_index = mlx5e_find_encap_context(encap_context_table, tun_id, src, dst, tos, ttl, frag_off, tp_dst, mac_source, mac_dest);
+	if (new_entry_index < 0)
+		new_entry_index = mlx5e_find_available_encap_context_slot(encap_context_table);
+	if (new_entry_index < 0) {
+		err = -ENODATA;
+		goto unlock;
+	}
+
+	new_encap_context = &encap_context_table->data[new_entry_index];
+
+	if (new_encap_context->ref_count > 0)
+		goto increment_ref_count;
+
+	new_encap_context->tun_id = tun_id;
+	new_encap_context->src = src;
+	new_encap_context->dst = dst;
+	new_encap_context->tos = tos;
+	new_encap_context->ttl = ttl;
+	new_encap_context->frag_off = frag_off;
+	new_encap_context->tp_dst = tp_dst;
+	ether_addr_copy(new_encap_context->mac_source, mac_source);
+	ether_addr_copy(new_encap_context->mac_dest, mac_dest);
+	new_encap_context->flow_tag = new_entry_index + MLX5E_ENCAP_TAG_OFFSET;
+
+	err = mlx5e_add_encap_rule(priv, new_encap_context);
+	if (err)
+		goto unlock;
+
+increment_ref_count:
+	new_encap_context->ref_count++;
+
+unlock:
+	mutex_unlock(&encap_context_table->lock);
+
+	return (err < 0) ? err : new_encap_context->flow_tag;
+}
+EXPORT_SYMBOL(mlx5e_insert_encap_context);
+
+void mlx5e_remove_encap_context(struct net_device *netdev, u32 encap_flow_tag)
+{
+	struct mlx5e_priv *priv;
+	struct mlx5e_encap_context_table *encap_context_table;
+	struct mlx5e_encap_context *encap_context;
+	int context_index;
+
+	if (!netdev_is_mlx5e_netdev(netdev))
+		return;
+
+	context_index = encap_flow_tag - MLX5E_ENCAP_TAG_OFFSET;
+
+	if (context_index < 0 || context_index >= MLX5E_ENCAP_CONTEXT_TABLE_LEN)
+		return;
+
+	priv = netdev_priv(netdev);
+	encap_context_table = priv->tx_steering.encap_context_table;
+
+	mutex_lock(&encap_context_table->lock);
+
+	encap_context = &encap_context_table->data[context_index];
+	if (encap_context->ref_count <= 0)
+		goto unlock;
+
+	encap_context->ref_count--;
+
+	if (encap_context->ref_count <= 0) {
+		if (encap_context->rule) {
+			mlx5e_del_encap_rule(priv, encap_context);
+			encap_context->rule = NULL;
+		}
+	}
+
+unlock:
+	mutex_unlock(&encap_context_table->lock);
+}
+EXPORT_SYMBOL(mlx5e_remove_encap_context);
+
+static int mlx5e_add_encap_table_dont_encap_rule(struct mlx5e_priv *priv)
+{
+	struct mlx5_flow_table *ft = priv->tx_steering.encap.ft.t;
+	struct mlx5_flow_handle *dont_encap_rule;
+	struct mlx5_flow_act flow_act = {};
+	struct mlx5_flow_spec *spec;
+	int err = 0;
+
+	spec = kvzalloc(sizeof(*spec), GFP_KERNEL);
+	if (!spec)
+		return -ENOMEM;
+
+	memset(spec, 0, sizeof(*spec));
+	memset(&flow_act, 0, sizeof(struct mlx5_flow_act));
+	flow_act.action = MLX5_FLOW_CONTEXT_ACTION_ALLOW;
+	spec->match_criteria_enable = MLX5_MATCH_MISC_PARAMETERS_2;
+	MLX5_SET_TO_ONES(fte_match_param, spec->match_criteria, misc_parameters_2.metadata_reg_a);
+	MLX5_SET(fte_match_param, spec->match_value, misc_parameters_2.metadata_reg_a, MLX5E_DONT_ENCAP_TAG);
+
+	dont_encap_rule = mlx5_add_flow_rules(ft, spec, &flow_act, NULL, 0);
+	if (IS_ERR(dont_encap_rule)) {
+		err = PTR_ERR(dont_encap_rule);
+		netdev_err(priv->netdev, "%s: add Dont encap rule failed, err:%d\n", __func__, err);
+		goto err_free_spec;
+	}
+
+	priv->tx_steering.encap.dont_encap_rule = dont_encap_rule;
+
+err_free_spec:
+	kvfree(spec);
+	return err;
+}
+
+static void mlx5e_del_encap_table_dont_encap_rule(struct mlx5e_priv *priv)
+{
+	if (priv->tx_steering.encap.dont_encap_rule){
+		mlx5_del_flow_rules(priv->tx_steering.encap.dont_encap_rule);
+		priv->tx_steering.encap.dont_encap_rule = NULL;
+	}
+}
+
+#define MLX5E_ENCAP_TABLE_MAX_NUM_GROUPS 1
+static int mlx5e_create_encap_table(struct mlx5e_priv *priv)
+{
+	struct mlx5_flow_namespace *root_ns;
+	int inlen = MLX5_ST_SZ_BYTES(create_flow_group_in);
+	struct mlx5e_flow_table *ft = &priv->tx_steering.encap.ft;
+	struct mlx5_flow_table_attr ft_attr = {};
+	int ix=0;
+	void *match_criteria;
+	u32 *encap_in;
+	int err;
+
+	root_ns = mlx5_get_flow_namespace(priv->mdev, MLX5_FLOW_NAMESPACE_EGRESS);
+	if (!root_ns) {
+		netdev_warn(priv->netdev, "Failed to get FDB flow namespace\n");
+		err = -EOPNOTSUPP;
+		return err;
+	}
+
+	ft_attr.max_fte = MLX5E_ENCAP_TABLE_LEN;
+	ft_attr.level = MLX5E_ENCAP_FT_LEVEL;
+	ft_attr.prio = MLX5E_NIC_PRIO;
+	ft_attr.flags = MLX5_FLOW_TABLE_TUNNEL_EN_REFORMAT;
+
+	ft->t = mlx5_create_flow_table(root_ns, &ft_attr);
+
+	if (IS_ERR(ft->t)) {
+		err = PTR_ERR(ft->t);
+		ft->t = NULL;
+		netdev_warn(priv->netdev, "Failed to create Encap Table, err=%d (table prio: %d, level: %d, size: %d)\n",
+			 err, MLX5E_NIC_PRIO, MLX5E_ENCAP_FT_LEVEL, MLX5E_ENCAP_TABLE_LEN);
+		return err;
+	}
+
+	ft->g = kcalloc(MLX5E_ENCAP_TABLE_MAX_NUM_GROUPS, sizeof(*ft->g), GFP_KERNEL);
+	if (!ft->g) {
+		err = -ENOMEM;
+		goto err_destroy_encap_table;
+	}
+
+	encap_in = kvzalloc(inlen, GFP_KERNEL);
+	if (!encap_in) {
+		err = -ENOMEM;
+		kfree(ft->g);
+		goto err_destroy_encap_table;
+	}
+
+	memset(encap_in, 0, inlen);
+	match_criteria = MLX5_ADDR_OF(create_flow_group_in, encap_in, match_criteria);
+	MLX5_SET_TO_ONES(fte_match_param, match_criteria, misc_parameters_2.metadata_reg_a);
+	MLX5_SET_CFG(encap_in, match_criteria_enable, MLX5_MATCH_MISC_PARAMETERS_2);
+	MLX5_SET_CFG(encap_in, start_flow_index, ix);
+	ix += MLX5E_ENCAP_TABLE_LEN;
+	MLX5_SET_CFG(encap_in, end_flow_index, ix - 1);
+
+	ft->g[ft->num_groups] = mlx5_create_flow_group(ft->t, encap_in);
+	if (IS_ERR(ft->g[ft->num_groups])) {
+		err = PTR_ERR(ft->g[ft->num_groups]);
+		ft->g[ft->num_groups] = NULL;
+		goto err_destroy_groups;
+	}
+	ft->num_groups++;
+
+	err = mlx5e_add_encap_table_dont_encap_rule(priv);
+	if (err)
+		goto err_destroy_groups;
+
+	kvfree(encap_in);
+	return 0;
+
+err_destroy_groups:
+	mlx5e_destroy_groups(ft);
+	kfree(ft->g);
+	kvfree(encap_in);
+err_destroy_encap_table:
+	mlx5_destroy_flow_table(ft->t);
+	ft->t = NULL;
+	return err;
+}
+
+static void mlx5e_destroy_encap_table(struct mlx5e_priv *priv)
+{
+	mlx5e_del_encap_table_dont_encap_rule(priv);
+	mlx5e_destroy_flow_table(&priv->tx_steering.encap.ft);
+}
+
+int mlx5e_init_encap_context_table(struct mlx5e_priv *priv)
+{
+	struct mlx5e_encap_context_table *encap_context_table;
+
+	encap_context_table = kzalloc(sizeof(*encap_context_table) + MLX5E_ENCAP_CONTEXT_TABLE_LEN * sizeof(struct mlx5e_encap_context), GFP_ATOMIC);
+	if (!encap_context_table)
+		return -ENODATA;
+
+	mutex_init(&encap_context_table->lock);
+
+	priv->tx_steering.encap_context_table = encap_context_table;
+
+	return 0;
+}
+
+void mlx5e_destroy_encap_context_table(struct mlx5e_priv *priv)
+{
+	kfree(priv->tx_steering.encap_context_table);
+}
+
+int mlx5e_create_tx_steering(struct mlx5e_priv *priv)
+{
+	int err;
+
+	err = mlx5e_init_encap_context_table(priv);
+	if (err) {
+		netdev_err(priv->netdev, "Failed to init encap context table, err=%d\n",
+			   err);
+		goto error_out;
+	}
+
+	err = mlx5e_create_encap_table(priv);
+	if (err) {
+		netdev_err(priv->netdev, "Failed to create Encap Table, err=%d\n",
+			   err);
+		goto destroy_encap_context_table;
+	}
+
+	return 0;
+
+destroy_encap_context_table:
+	mlx5e_destroy_encap_context_table(priv);
+error_out:
+	return err;
+}
+
+void mlx5e_destroy_tx_steering(struct mlx5e_priv *priv)
+{
+	mlx5e_destroy_encap_context_table(priv);
+	mlx5e_destroy_encap_table(priv);
 }

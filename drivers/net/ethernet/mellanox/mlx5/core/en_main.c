@@ -3505,12 +3505,18 @@ err_close_tises:
 	return err;
 }
 
-static void mlx5e_cleanup_nic_tx(struct mlx5e_priv *priv)
+static void mlx5e_destroy_tises(struct mlx5e_priv *priv)
 {
 	int tc;
 
 	for (tc = 0; tc < priv->profile->max_tc; tc++)
 		mlx5e_destroy_tis(priv->mdev, priv->tisn[tc]);
+}
+
+static void mlx5e_cleanup_nic_tx(struct mlx5e_priv *priv)
+{
+	mlx5e_destroy_tises(priv);
+	mlx5e_destroy_tx_steering(priv);
 }
 
 static void mlx5e_build_indir_tir_ctx_common(struct mlx5e_priv *priv,
@@ -5334,10 +5340,18 @@ static int mlx5e_init_nic_tx(struct mlx5e_priv *priv)
 		return err;
 	}
 
+	err = mlx5e_create_tx_steering(priv);
+	if (err)
+		goto err_destroy_tises;
+
 #ifdef CONFIG_MLX5_CORE_EN_DCB
 	mlx5e_dcbnl_initialize(priv);
 #endif
 	return 0;
+
+err_destroy_tises:
+	mlx5e_destroy_tises(priv);
+	return err;
 }
 
 static void mlx5e_nic_enable(struct mlx5e_priv *priv)

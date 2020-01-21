@@ -259,4 +259,9 @@ struct mlx5_event_data {
 
 void mlx5_get_rule_flow_spec(struct mlx5_flow_spec *flow_spec,
 			     struct mlx5_flow_rule *rule);
+
+int mlx5e_insert_encap_context(struct net_device *netdev, __be64 tun_id, __be32 src, __be32 dst,
+				 __u8 tos, __u8 ttl, __be16 frag_off, __be16 tp_dst, unsigned char *mac_source, unsigned char *mac_dest);
+void mlx5e_remove_encap_context(struct net_device *netdev, u32 encap_flow_tag);
+
 #endif
