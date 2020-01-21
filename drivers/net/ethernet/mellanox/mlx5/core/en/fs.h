@@ -95,6 +95,7 @@ struct mlx5e_ttc_table {
 enum {
 	MLX5E_VLAN_FT_LEVEL = 0,
 	MLX5E_L2_FT_LEVEL,
+	MLX5E_DECAP_FT_LEVEL,
 	MLX5E_TTC_FT_LEVEL,
 	MLX5E_INNER_TTC_FT_LEVEL,
 #ifdef CONFIG_MLX5_EN_ARFS
@@ -173,6 +174,11 @@ static inline int mlx5e_arfs_enable(struct mlx5e_priv *priv) { return -EOPNOTSUP
 static inline int mlx5e_arfs_disable(struct mlx5e_priv *priv) {	return -EOPNOTSUPP; }
 #endif
 
+struct mlx5e_decap_table {
+	struct mlx5e_flow_table		ft;
+	struct mlx5_flow_handle		*miss_rule;
+};
+
 struct mlx5e_sniffer;
 
 struct mlx5e_flow_steering {
@@ -189,6 +195,8 @@ struct mlx5e_flow_steering {
 	struct mlx5e_arfs_tables        arfs;
 #endif
 	struct mlx5e_sniffer            *sniffer;
+
+	struct mlx5e_decap_table        decap;
 };
 
 struct ttc_params {
@@ -244,6 +252,26 @@ struct mlx5e_tx_steering {
 	struct mlx5e_encap_table    encap;
 };
 
+#define MLX5E_DECAP_TABLE_MISS_TAG 0xffff
+
+struct mlx5e_decap_match {
+	__be64	tun_id;
+	__be32 src;
+	__be32	dst;
+	__u8 tos;
+	__u8 ttl;
+	__be16	tp_src;
+	__be16	tp_dst;
+	struct net_device *vxlan_device;
+	struct mlx5_flow_handle *rule;
+	int ref_count;
+};
+
+struct mlx5e_decap_match_table {
+	struct mutex lock;
+	struct mlx5e_decap_match data[];
+};
+
 void mlx5e_set_ttc_basic_params(struct mlx5e_priv *priv, struct ttc_params *ttc_params);
 void mlx5e_set_ttc_ft_params(struct ttc_params *ttc_params);
 void mlx5e_set_inner_ttc_ft_params(struct ttc_params *ttc_params);
@@ -270,6 +298,9 @@ void mlx5e_destroy_flow_steering(struct mlx5e_priv *priv);
 
 int mlx5e_create_tx_steering(struct mlx5e_priv *priv);
 void mlx5e_destroy_tx_steering(struct mlx5e_priv *priv);
+
+int mlx5e_init_decap_matches_table(struct mlx5e_priv *priv);
+void mlx5e_destroy_decap_matches_table(struct mlx5e_priv *priv);
 
 #endif /* __MLX5E_FLOW_STEER_H__ */
 
