@@ -3,8 +3,8 @@ Subject: [PATCH] BACKPORT: drivers/net/ethernet/mellanox/mlx5/core/en_rx.c
 
 Change-Id: I4b062c1563b59fbf61b8b4bc30a71dafdaca01c6
 ---
- .../net/ethernet/mellanox/mlx5/core/en_rx.c   | 266 +++++++++++++++++-
- 1 file changed, 264 insertions(+), 2 deletions(-)
+ .../net/ethernet/mellanox/mlx5/core/en_rx.c   | 265 +++++++++++++++++-
+ 1 file changed, 263 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en_rx.c b/drivers/net/ethernet/mellanox/mlx5/core/en_rx.c
 index xxxxxxx..xxxxxxx 100644
@@ -18,9 +18,9 @@ index xxxxxxx..xxxxxxx 100644
  #include <net/page_pool.h>
 +#endif
  #include <net/inet_ecn.h>
+ #include <net/vxlan.h>
  #include "en.h"
- #include "en_tc.h"
-@@ -277,7 +279,11 @@ static inline bool mlx5e_rx_cache_extend(struct mlx5e_rq *rq)
+@@ -279,7 +281,11 @@ static inline bool mlx5e_rx_cache_extend(struct mlx5e_rq *rq)
  
  static inline bool mlx5e_page_is_reserved(struct page *page)
  {
@@ -32,7 +32,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static inline bool mlx5e_rx_cache_put(struct mlx5e_rq *rq,
-@@ -351,7 +357,11 @@ static inline int mlx5e_page_alloc_mapped(struct mlx5e_rq *rq,
+@@ -353,7 +359,11 @@ static inline int mlx5e_page_alloc_mapped(struct mlx5e_rq *rq,
  					  struct mlx5e_dma_info *dma_info)
  {
  	if (!mlx5e_rx_cache_get(rq, dma_info)) {
@@ -44,7 +44,7 @@ index xxxxxxx..xxxxxxx 100644
  		if (unlikely(!dma_info->page))
  			return -ENOMEM;
  		rq->stats->cache_alloc++;
-@@ -379,6 +389,7 @@ void mlx5e_page_release(struct mlx5e_rq *rq, struct mlx5e_dma_info *dma_info,
+@@ -381,6 +391,7 @@ void mlx5e_page_release(struct mlx5e_rq *rq, struct mlx5e_dma_info *dma_info,
  			bool recycle)
  {
  	mlx5e_page_dma_unmap(rq, dma_info);
@@ -52,7 +52,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (likely(recycle)) {
  		if (mlx5e_rx_cache_put(rq, dma_info))
  			return;
-@@ -388,6 +399,12 @@ void mlx5e_page_release(struct mlx5e_rq *rq, struct mlx5e_dma_info *dma_info,
+@@ -390,6 +401,12 @@ void mlx5e_page_release(struct mlx5e_rq *rq, struct mlx5e_dma_info *dma_info,
  	} else {
  		mlx5e_put_page(dma_info);
  	}
@@ -65,7 +65,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static inline int mlx5e_get_rx_frag(struct mlx5e_rq *rq,
-@@ -531,6 +548,7 @@ mlx5e_copy_skb_header_mpwqe(struct device *pdev,
+@@ -533,6 +550,7 @@ mlx5e_copy_skb_header_mpwqe(struct device *pdev,
  static void
  mlx5e_free_rx_mpwqe(struct mlx5e_rq *rq, struct mlx5e_mpw_info *wi, bool recycle)
  {
@@ -73,7 +73,7 @@ index xxxxxxx..xxxxxxx 100644
  	const bool no_xdp_xmit =
  		bitmap_empty(wi->xdp_xmit_bitmap, MLX5_MPWRQ_PAGES_PER_WQE);
  	struct mlx5e_dma_info *dma_info = wi->umr.dma_info;
-@@ -539,6 +557,13 @@ mlx5e_free_rx_mpwqe(struct mlx5e_rq *rq, struct mlx5e_mpw_info *wi, bool recycle
+@@ -541,6 +559,13 @@ mlx5e_free_rx_mpwqe(struct mlx5e_rq *rq, struct mlx5e_mpw_info *wi, bool recycle
  	for (i = 0; i < MLX5_MPWRQ_PAGES_PER_WQE; i++)
  		if (no_xdp_xmit || !test_bit(i, wi->xdp_xmit_bitmap))
  			mlx5e_page_release(rq, &dma_info[i], recycle);
@@ -87,7 +87,7 @@ index xxxxxxx..xxxxxxx 100644
  }
  
  static void mlx5e_post_rx_mpwqe(struct mlx5e_rq *rq)
-@@ -551,7 +576,11 @@ static void mlx5e_post_rx_mpwqe(struct mlx5e_rq *rq)
+@@ -553,7 +578,11 @@ static void mlx5e_post_rx_mpwqe(struct mlx5e_rq *rq)
  	mlx5_wq_ll_push(wq, be16_to_cpu(wqe->next.next_wqe_index));
  
  	/* ensure wqes are visible to device before updating doorbell record */
@@ -99,7 +99,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	mlx5_wq_ll_update_db_record(wq);
  
-@@ -609,7 +638,9 @@ static int mlx5e_alloc_rx_mpwqe(struct mlx5e_rq *rq, u16 ix)
+@@ -611,7 +640,9 @@ static int mlx5e_alloc_rx_mpwqe(struct mlx5e_rq *rq, u16 ix)
  		umr_wqe->inline_mtts[i].ptag = cpu_to_be64(dma_info->addr | MLX5_EN_WR);
  	}
  
@@ -109,7 +109,7 @@ index xxxxxxx..xxxxxxx 100644
  	wi->consumed_strides = 0;
  
  	rq->mpwqe.umr_in_progress = true;
-@@ -669,7 +700,11 @@ bool mlx5e_post_rx_wqes(struct mlx5e_rq *rq)
+@@ -671,7 +702,11 @@ bool mlx5e_post_rx_wqes(struct mlx5e_rq *rq)
  	} while (mlx5_wq_cyc_missing(wq) >= wqe_bulk);
  
  	/* ensure wqes are visible to device before updating doorbell record */
@@ -121,7 +121,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	mlx5_wq_cyc_update_db_record(wq);
  
-@@ -813,15 +848,21 @@ static void mlx5e_lro_update_hdr(struct sk_buff *skb, struct mlx5_cqe64 *cqe,
+@@ -815,15 +850,21 @@ static void mlx5e_lro_update_hdr(struct sk_buff *skb, struct mlx5_cqe64 *cqe,
  	}
  }
  
@@ -143,7 +143,7 @@ index xxxxxxx..xxxxxxx 100644
  
  static inline bool is_last_ethertype_ip(struct sk_buff *skb, int *network_depth,
  					__be16 *proto)
-@@ -843,7 +884,11 @@ static inline void mlx5e_enable_ecn(struct mlx5e_rq *rq, struct sk_buff *skb)
+@@ -845,7 +886,11 @@ static inline void mlx5e_enable_ecn(struct mlx5e_rq *rq, struct sk_buff *skb)
  
  	ip = skb->data + network_depth;
  	rc = ((proto == htons(ETH_P_IP)) ? IP_ECN_set_ce((struct iphdr *)ip) :
@@ -155,7 +155,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	rq->stats->ecn_mark += !!rc;
  }
-@@ -979,8 +1024,12 @@ csum_unnecessary:
+@@ -981,8 +1026,12 @@ csum_unnecessary:
  		    (get_cqe_l4_hdr_type(cqe) == CQE_L4_HDR_TYPE_NONE)))) {
  		skb->ip_summed = CHECKSUM_UNNECESSARY;
  		if (cqe_is_tunneled(cqe)) {
@@ -168,15 +168,18 @@ index xxxxxxx..xxxxxxx 100644
  			stats->csum_unnecessary_inner++;
  			return;
  		}
-@@ -1002,10 +1051,14 @@ static inline void mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
- 	u8 lro_num_seg = be32_to_cpu(cqe->srqn) >> 24;
- 	struct mlx5e_rq_stats *stats = rq->stats;
- 	struct net_device *netdev = rq->netdev;
+@@ -1046,6 +1095,9 @@ static inline int mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
+ 	struct mlx5e_priv *priv = netdev_priv(netdev);
+ 	struct mlx5e_decap_match *decap_match = NULL;
+ 	struct metadata_dst *tun_dst;
 +#ifdef CONFIG_COMPAT_LRO_ENABLED_IPOIB
-+	struct mlx5e_priv *priv = netdev_priv(netdev);
 +	u8 l4_hdr_type;
 +#endif
+ 	u32 flow_tag = (be32_to_cpu(cqe->sop_drop_qpn) & MLX5E_TC_FLOW_ID_MASK);
  
+ 	if (priv->fs.decap.enabled && flow_tag != (u32)MLX5E_DECAP_TABLE_MISS_TAG) {
+@@ -1058,7 +1110,7 @@ static inline int mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
+ 	}
  	skb->mac_len = ETH_HLEN;
  
 -#ifdef CONFIG_MLX5_EN_TLS
@@ -184,7 +187,7 @@ index xxxxxxx..xxxxxxx 100644
  	mlx5e_tls_handle_rx_skb(netdev, skb, &cqe_bcnt);
  #endif
  
-@@ -1018,6 +1071,16 @@ static inline void mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
+@@ -1071,6 +1123,16 @@ static inline int mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
  		stats->packets += lro_num_seg - 1;
  		stats->lro_packets++;
  		stats->lro_bytes += cqe_bcnt;
@@ -201,7 +204,7 @@ index xxxxxxx..xxxxxxx 100644
  	}
  
  	if (unlikely(mlx5e_rx_hw_stamp(rq->tstamp)))
-@@ -1026,18 +1089,33 @@ static inline void mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
+@@ -1079,16 +1141,31 @@ static inline int mlx5e_build_rx_skb(struct mlx5_cqe64 *cqe,
  
  	skb_record_rx_queue(skb, rq->ix);
  
@@ -220,8 +223,6 @@ index xxxxxxx..xxxxxxx 100644
  		stats->removed_vlan_packets++;
  	}
  
- 	skb->mark = be32_to_cpu(cqe->sop_drop_qpn) & MLX5E_TC_FLOW_ID_MASK;
- 
 +#ifndef CONFIG_COMPAT_LRO_ENABLED_IPOIB
  	mlx5e_handle_csum(netdev, cqe, rq, skb, !!lro_num_seg);
 +#else
@@ -235,8 +236,8 @@ index xxxxxxx..xxxxxxx 100644
  	/* checking CE bit in cqe - MSB in ml_path field */
  	if (unlikely(cqe->ml_path & MLX5E_CE_BIT_MASK))
  		mlx5e_enable_ecn(rq, skb);
-@@ -1066,6 +1144,42 @@ static inline void mlx5e_complete_rx_cqe(struct mlx5e_rq *rq,
- 	}
+@@ -1126,6 +1203,42 @@ static inline int mlx5e_complete_rx_cqe(struct mlx5e_rq *rq,
+ 	return mlx5e_build_rx_skb(cqe, cqe_bcnt, rq, skb);
  }
  
 +#ifndef HAVE_BUILD_SKB
@@ -278,7 +279,7 @@ index xxxxxxx..xxxxxxx 100644
  static inline
  struct sk_buff *mlx5e_build_linear_skb(struct mlx5e_rq *rq, void *va,
  				       u32 frag_size, u16 headroom,
-@@ -1083,6 +1197,7 @@ struct sk_buff *mlx5e_build_linear_skb(struct mlx5e_rq *rq, void *va,
+@@ -1143,6 +1256,7 @@ struct sk_buff *mlx5e_build_linear_skb(struct mlx5e_rq *rq, void *va,
  
  	return skb;
  }
@@ -286,7 +287,7 @@ index xxxxxxx..xxxxxxx 100644
  
  struct sk_buff *
  mlx5e_skb_from_cqe_linear(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe,
-@@ -1092,7 +1207,9 @@ mlx5e_skb_from_cqe_linear(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe,
+@@ -1152,7 +1266,9 @@ mlx5e_skb_from_cqe_linear(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe,
  	u16 rx_headroom = rq->buff.headroom;
  	struct sk_buff *skb;
  	void *va, *data;
@@ -296,7 +297,7 @@ index xxxxxxx..xxxxxxx 100644
  	u32 frag_size;
  
  	va             = page_address(di->page) + wi->offset;
-@@ -1109,17 +1226,26 @@ mlx5e_skb_from_cqe_linear(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe,
+@@ -1169,17 +1285,26 @@ mlx5e_skb_from_cqe_linear(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe,
  		return NULL;
  	}
  
@@ -323,7 +324,7 @@ index xxxxxxx..xxxxxxx 100644
  	di->refcnt_bias--;
  
  	return skb;
-@@ -1144,7 +1270,11 @@ mlx5e_skb_from_cqe_nonlinear(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe,
+@@ -1204,7 +1329,11 @@ mlx5e_skb_from_cqe_nonlinear(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe,
  	/* XDP is not supported in this configuration, as incoming packets
  	 * might spread among multiple pages.
  	 */
@@ -335,7 +336,7 @@ index xxxxxxx..xxxxxxx 100644
  			     ALIGN(MLX5E_RX_MAX_HEAD, sizeof(long)));
  	if (unlikely(!skb)) {
  		rq->stats->buff_alloc_err++;
-@@ -1177,6 +1307,9 @@ mlx5e_skb_from_cqe_nonlinear(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe,
+@@ -1237,6 +1366,9 @@ mlx5e_skb_from_cqe_nonlinear(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe,
  
  void mlx5e_handle_rx_cqe(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
  {
@@ -345,10 +346,10 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5_wq_cyc *wq = &rq->wqe.wq;
  	struct mlx5e_wqe_frag_info *wi;
  	struct sk_buff *skb;
-@@ -1200,6 +1333,31 @@ void mlx5e_handle_rx_cqe(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
- 	}
+@@ -1264,6 +1396,31 @@ void mlx5e_handle_rx_cqe(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
+ 	if (err)
+ 		goto free_wqe;
  
- 	mlx5e_complete_rx_cqe(rq, cqe, cqe_bcnt, skb);
 +#ifdef CONFIG_COMPAT_LRO_ENABLED_IPOIB
 +	if (IS_SW_LRO(&priv->channels.params))
 +#if defined(HAVE_VLAN_GRO_RECEIVE) || defined(HAVE_VLAN_HWACCEL_RX)
@@ -377,7 +378,7 @@ index xxxxxxx..xxxxxxx 100644
  	napi_gro_receive(rq->cq.napi, skb);
  
  free_wqe:
-@@ -1211,10 +1369,14 @@ wq_cyc_pop:
+@@ -1275,10 +1432,14 @@ wq_cyc_pop:
  #ifdef CONFIG_MLX5_ESWITCH
  void mlx5e_handle_rx_cqe_rep(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
  {
@@ -392,9 +393,9 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5_wq_cyc *wq = &rq->wqe.wq;
  	struct mlx5e_wqe_frag_info *wi;
  	struct sk_buff *skb;
-@@ -1239,9 +1401,23 @@ void mlx5e_handle_rx_cqe_rep(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
- 
- 	mlx5e_complete_rx_cqe(rq, cqe, cqe_bcnt, skb);
+@@ -1306,9 +1467,23 @@ void mlx5e_handle_rx_cqe_rep(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
+ 	if (err)
+ 		goto free_wqe;
  
 +#ifdef HAVE_SKB_VLAN_POP
  	if (rep->vlan && skb_vlan_tag_present(skb))
@@ -416,7 +417,7 @@ index xxxxxxx..xxxxxxx 100644
  	napi_gro_receive(rq->cq.napi, skb);
  
  free_wqe:
-@@ -1262,7 +1438,11 @@ mlx5e_skb_from_cqe_mpwrq_nonlinear(struct mlx5e_rq *rq, struct mlx5e_mpw_info *w
+@@ -1329,7 +1504,11 @@ mlx5e_skb_from_cqe_mpwrq_nonlinear(struct mlx5e_rq *rq, struct mlx5e_mpw_info *w
  	struct mlx5e_dma_info *head_di = di;
  	struct sk_buff *skb;
  
@@ -428,7 +429,7 @@ index xxxxxxx..xxxxxxx 100644
  			     ALIGN(MLX5E_RX_MAX_HEAD, sizeof(long)));
  	if (unlikely(!skb)) {
  		rq->stats->buff_alloc_err++;
-@@ -1308,7 +1488,9 @@ mlx5e_skb_from_cqe_mpwrq_linear(struct mlx5e_rq *rq, struct mlx5e_mpw_info *wi,
+@@ -1375,7 +1554,9 @@ mlx5e_skb_from_cqe_mpwrq_linear(struct mlx5e_rq *rq, struct mlx5e_mpw_info *wi,
  	struct sk_buff *skb;
  	void *va, *data;
  	u32 frag_size;
@@ -438,7 +439,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	/* Check packet size. Note LRO doesn't use linear SKB. */
  	if (unlikely(cqe_bcnt > rq->hw_mtu)) {
-@@ -1325,6 +1507,7 @@ mlx5e_skb_from_cqe_mpwrq_linear(struct mlx5e_rq *rq, struct mlx5e_mpw_info *wi,
+@@ -1392,6 +1573,7 @@ mlx5e_skb_from_cqe_mpwrq_linear(struct mlx5e_rq *rq, struct mlx5e_mpw_info *wi,
  	prefetchw(va); /* xdp_frame data area */
  	prefetch(data);
  
@@ -446,7 +447,7 @@ index xxxxxxx..xxxxxxx 100644
  	rcu_read_lock();
  	consumed = mlx5e_xdp_handle(rq, di, va, &rx_headroom, &cqe_bcnt32);
  	rcu_read_unlock();
-@@ -1333,12 +1516,20 @@ mlx5e_skb_from_cqe_mpwrq_linear(struct mlx5e_rq *rq, struct mlx5e_mpw_info *wi,
+@@ -1400,12 +1582,20 @@ mlx5e_skb_from_cqe_mpwrq_linear(struct mlx5e_rq *rq, struct mlx5e_mpw_info *wi,
  			__set_bit(page_idx, wi->xdp_xmit_bitmap); /* non-atomic */
  		return NULL; /* page/packet was consumed by XDP */
  	}
@@ -467,7 +468,7 @@ index xxxxxxx..xxxxxxx 100644
  	di->refcnt_bias--;
  
  	return skb;
-@@ -1346,6 +1537,9 @@ mlx5e_skb_from_cqe_mpwrq_linear(struct mlx5e_rq *rq, struct mlx5e_mpw_info *wi,
+@@ -1413,6 +1603,9 @@ mlx5e_skb_from_cqe_mpwrq_linear(struct mlx5e_rq *rq, struct mlx5e_mpw_info *wi,
  
  void mlx5e_handle_rx_cqe_mpwrq(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
  {
@@ -477,10 +478,10 @@ index xxxxxxx..xxxxxxx 100644
  	u16 cstrides       = mpwrq_get_cqe_consumed_strides(cqe);
  	u16 wqe_id         = be16_to_cpu(cqe->wqe_id);
  	struct mlx5e_mpw_info *wi = &rq->mpwqe.info[wqe_id];
-@@ -1381,6 +1575,31 @@ void mlx5e_handle_rx_cqe_mpwrq(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
+@@ -1452,6 +1645,31 @@ void mlx5e_handle_rx_cqe_mpwrq(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
+ 	if (err)
  		goto mpwrq_cqe_out;
  
- 	mlx5e_complete_rx_cqe(rq, cqe, cqe_bcnt, skb);
 +#ifdef CONFIG_COMPAT_LRO_ENABLED_IPOIB
 +	if (IS_SW_LRO(&priv->channels.params))
 +#if defined(HAVE_VLAN_GRO_RECEIVE) || defined(HAVE_VLAN_HWACCEL_RX)
@@ -509,7 +510,7 @@ index xxxxxxx..xxxxxxx 100644
  	napi_gro_receive(rq->cq.napi, skb);
  
  mpwrq_cqe_out:
-@@ -1396,9 +1615,20 @@ mpwrq_cqe_out:
+@@ -1467,9 +1685,20 @@ mpwrq_cqe_out:
  int mlx5e_poll_rx_cq(struct mlx5e_cq *cq, int budget)
  {
  	struct mlx5e_rq *rq = container_of(cq, struct mlx5e_rq, cq);
@@ -530,7 +531,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	if (unlikely(!test_bit(MLX5E_RQ_STATE_ENABLED, &rq->state)))
  		return 0;
-@@ -1412,7 +1642,9 @@ int mlx5e_poll_rx_cq(struct mlx5e_cq *cq, int budget)
+@@ -1483,7 +1712,9 @@ int mlx5e_poll_rx_cq(struct mlx5e_cq *cq, int budget)
  			goto out;
  		return 0;
  	}
@@ -541,7 +542,7 @@ index xxxxxxx..xxxxxxx 100644
  	do {
  		if (mlx5_get_cqe_format(cqe) == MLX5_COMPRESSED) {
  			work_done +=
-@@ -1427,21 +1659,30 @@ int mlx5e_poll_rx_cq(struct mlx5e_cq *cq, int budget)
+@@ -1498,21 +1729,30 @@ int mlx5e_poll_rx_cq(struct mlx5e_cq *cq, int budget)
  	} while ((++work_done < budget) && (cqe = mlx5_cqwq_get_cqe(&cq->wq)));
  
  out:
@@ -572,7 +573,7 @@ index xxxxxxx..xxxxxxx 100644
  	return work_done;
  }
  
-@@ -1464,6 +1705,9 @@ static inline void mlx5i_complete_rx_cqe(struct mlx5e_rq *rq,
+@@ -1535,6 +1775,9 @@ static inline void mlx5i_complete_rx_cqe(struct mlx5e_rq *rq,
  	u32 qpn;
  	u8 *dgid;
  	u8 g;
@@ -582,7 +583,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	qpn = be32_to_cpu(cqe->sop_drop_qpn) & 0xffffff;
  	netdev = mlx5i_pkey_get_netdev(rq->netdev, qpn);
-@@ -1499,6 +1743,11 @@ static inline void mlx5i_complete_rx_cqe(struct mlx5e_rq *rq,
+@@ -1570,6 +1813,11 @@ static inline void mlx5i_complete_rx_cqe(struct mlx5e_rq *rq,
  
  	skb->protocol = *((__be16 *)(skb->data));
  
@@ -594,7 +595,7 @@ index xxxxxxx..xxxxxxx 100644
  	if (netdev->features & NETIF_F_RXCSUM) {
  		skb->ip_summed = CHECKSUM_COMPLETE;
  		skb->csum = csum_unfold((__force __sum16)cqe->check_sum);
-@@ -1514,8 +1763,10 @@ static inline void mlx5i_complete_rx_cqe(struct mlx5e_rq *rq,
+@@ -1585,8 +1833,10 @@ static inline void mlx5i_complete_rx_cqe(struct mlx5e_rq *rq,
  
  	skb_record_rx_queue(skb, rq->ix);
  
@@ -605,7 +606,7 @@ index xxxxxxx..xxxxxxx 100644
  
  	/* 20 bytes of ipoib header and 4 for encap existing */
  	pseudo_header = skb_push(skb, MLX5_IPOIB_PSEUDO_LEN);
-@@ -1536,6 +1787,9 @@ static inline void mlx5i_complete_rx_cqe(struct mlx5e_rq *rq,
+@@ -1607,6 +1857,9 @@ static inline void mlx5i_complete_rx_cqe(struct mlx5e_rq *rq,
  
  void mlx5i_handle_rx_cqe(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
  {
@@ -615,7 +616,7 @@ index xxxxxxx..xxxxxxx 100644
  	struct mlx5_wq_cyc *wq = &rq->wqe.wq;
  	struct mlx5e_wqe_frag_info *wi;
  	struct sk_buff *skb;
-@@ -1555,6 +1809,11 @@ void mlx5i_handle_rx_cqe(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
+@@ -1626,6 +1879,11 @@ void mlx5i_handle_rx_cqe(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
  		dev_kfree_skb_any(skb);
  		goto wq_free_wqe;
  	}
@@ -627,7 +628,7 @@ index xxxxxxx..xxxxxxx 100644
  	napi_gro_receive(rq->cq.napi, skb);
  
  wq_free_wqe:
-@@ -1568,6 +1827,9 @@ wq_free_wqe:
+@@ -1639,6 +1897,9 @@ wq_free_wqe:
  
  void mlx5e_ipsec_handle_rx_cqe(struct mlx5e_rq *rq, struct mlx5_cqe64 *cqe)
  {
